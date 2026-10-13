@@ -1,3 +1,6 @@
+import contextlib
+import time
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -58,6 +61,15 @@ CASES: list[tuple[str, Node]] = [
     (r"1-2-3", Add((Num("1"), Neg(Num("2")), Neg(Num("3"))))),
     (r"-1\frac{1}{2}", Neg(Mixed(Num("1"), Div(Num("1"), Num("2"), "frac")))),
     (r"2^{100}", Pow(Num("2"), Num("100"))),
+    (r"\frac12", Div(Num("1"), Num("2"), "frac")),
+    (r"\frac{1}2", Div(Num("1"), Num("2"), "frac")),
+    (r"\frac1{2}", Div(Num("1"), Num("2"), "frac")),
+    (r"\frac x2", Div(Var("x"), Num("2"), "frac")),
+    (r"\sqrt2", Sqrt(Num("2"), None)),
+    (r"\sqrt x", Sqrt(Var("x"), None)),
+    (r"\sqrt\pi", Sqrt(Const("pi"), None)),
+    (r"1\frac12", Mixed(Num("1"), Div(Num("1"), Num("2"), "frac"))),
+    (r"1\frac{1}2", Mixed(Num("1"), Div(Num("1"), Num("2"), "frac"))),
 ]
 
 
@@ -88,6 +100,10 @@ def test_parse(src: str, expected: Node) -> None:
         "2!",
         r"\left[x\right]",
         "{x}",
+        r"\frac123",
+        r"\frac1.5",
+        r"\sqrt",
+        r"\frac1",
     ],
 )
 def test_unreadable(src: str) -> None:
@@ -130,4 +146,19 @@ def test_parse_never_raises_other_errors(src: str) -> None:
         return
     assert isinstance(
         result, Num | Var | Neg | Add | Mul | Div | Pow | Sqrt | Mixed | Eq | Group | Const
+    )
+
+
+def test_nested_frac_parse_is_not_exponential() -> None:
+    src = r"2\frac{" * 18 + "x" + "}{1}" * 18
+    assert len(src) <= 200
+    start = time.perf_counter()
+    with contextlib.suppress(Unreadable):
+        parse(src)
+    assert time.perf_counter() - start < 0.5
+
+
+def test_numeric_frac_inside_nested_still_mixed() -> None:
+    assert parse(r"\frac{1\frac{1}{2}}{3}") == Div(
+        Mixed(Num("1"), Div(Num("1"), Num("2"), "frac")), Num("3"), "frac"
     )

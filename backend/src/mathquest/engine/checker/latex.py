@@ -9,6 +9,8 @@ Supported: digits, decimals, single-letter variables, ``+ - =``, parentheses
 (also ``\\left( \\right)``), ``\\cdot \\times \\div /``, ``^{...}`` and a single
 character ``^d``, ``\\frac``, ``\\dfrac``, ``\\sqrt``, ``\\sqrt[n]{x}``, ``\\pi``,
 the unicode minus, whitespace and the ``\\,`` and ``\\ `` spacing commands.
+``\\frac`` and ``\\sqrt`` arguments may be braced or a single token (one digit,
+letter or ``\\pi``), so ``\\frac12`` and ``\\sqrt2`` work.
 Anything else raises ``Unreadable``.
 
 Rules worth knowing:
@@ -291,16 +293,40 @@ class _Parser:
 
     def try_mixed(self) -> Mixed | None:
         whole = self.toks[self.pos]
-        nxt = self.toks[self.pos + 1]
-        if nxt.kind != "FRAC" or "." in whole.text:
+        if "." in whole.text or not self.frac_has_num_args(self.pos + 1):
             return None
-        start = self.pos
         self.pos += 1
         frac = self.parse_frac()
-        if isinstance(frac.n, Num) and isinstance(frac.d, Num):
-            return Mixed(Num(whole.text), frac)
-        self.pos = start
-        return None
+        assert isinstance(frac.n, Num) and isinstance(frac.d, Num)
+        return Mixed(Num(whole.text), frac)
+
+    def frac_has_num_args(self, i: int) -> bool:
+        """Token lookahead (no parsing): is a FRAC at ``i`` followed by two number arguments?"""
+        if self.kind_at(i) != "FRAC":
+            return False
+        i += 1
+        first = self.toks[i] if i < len(self.toks) else None
+        if first is None:
+            return False
+        if first.kind == "NUM":
+            if "." in first.text:
+                return False
+            if len(first.text) >= 2:
+                return True
+            i += 1
+        elif first.kind == "{" and self.kind_at(i + 1) == "NUM" and self.kind_at(i + 2) == "}":
+            i += 3
+        else:
+            return False
+        second = self.toks[i] if i < len(self.toks) else None
+        if second is None:
+            return False
+        if second.kind == "NUM":
+            return "." not in second.text
+        return second.kind == "{" and self.kind_at(i + 1) == "NUM" and self.kind_at(i + 2) == "}"
+
+    def kind_at(self, i: int) -> str | None:
+        return self.toks[i].kind if i < len(self.toks) else None
 
     def parse_exponent(self) -> Node:
         self.in_exponent += 1
@@ -331,10 +357,31 @@ class _Parser:
         self.expect("}")
         return node
 
+    def parse_arg(self) -> Node:
+        """A braced group or exactly one token (a digit, letter or command)."""
+        if self.peek() == "{":
+            return self.parse_braced()
+        tok = self.next()
+        if tok.kind == "NUM":
+            if len(tok.text) > 1:
+                if "." in tok.text:
+                    raise Unreadable("bad argument")
+                self.toks[self.pos - 1 : self.pos] = [
+                    _Tok("NUM", tok.text[0]),
+                    _Tok("NUM", tok.text[1:]),
+                ]
+                return Num(tok.text[0])
+            return Num(tok.text)
+        if tok.kind == "VAR":
+            return Var(tok.text)
+        if tok.kind == "PI":
+            return Const("pi")
+        raise Unreadable("bad argument")
+
     def parse_frac(self) -> Div:
         self.expect("FRAC")
-        n = self.parse_braced()
-        d = self.parse_braced()
+        n = self.parse_arg()
+        d = self.parse_arg()
         return Div(n, d, "frac")
 
     def parse_atom(self) -> Node:
@@ -366,7 +413,7 @@ class _Parser:
                 finally:
                     self.leave()
                 self.expect("]")
-            return Sqrt(self.parse_braced(), index)
+            return Sqrt(self.parse_arg(), index)
         raise Unreadable("unexpected token")
 
 
