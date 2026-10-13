@@ -179,10 +179,9 @@ def _has_power_of_n_factor(n: int, index: int) -> bool:
     """
     if n < 2:
         return False
-    root = round(n ** (1 / index))
-    for candidate in (root - 1, root, root + 1):
-        if candidate > 1 and candidate**index == n:
-            return True
+    root, exact = sympy.integer_nthroot(n, index)
+    if exact and root > 1:
+        return True
     p = 2
     while p <= _TRIAL_LIMIT and p**index <= n:
         if n % (p**index) == 0:
@@ -238,7 +237,15 @@ def _simplified_radical(node: Node) -> bool:
                 n = int(index.value)
             return _radicand_simplified(x, n)
         case Div(n, d, _):
-            return not _has_sqrt(d) and _simplified_radical(n) and _simplified_radical(d)
+            return (
+                not _has_sqrt(d)
+                and _simplified_radical(n)
+                and _simplified_radical(d)
+                and _coefficient_reduced(n, d)
+            )
+        case Add(terms):
+            keys = [_radical_part(t) for t in terms]
+            return len(set(keys)) == len(keys) and all(_simplified_radical(t) for t in terms)
         case Pow(base, exp):
             return (
                 not _has_sqrt(exp)
@@ -248,12 +255,47 @@ def _simplified_radical(node: Node) -> bool:
             )
         case Neg(x) | Group(x):
             return _simplified_radical(x)
-        case Add(items) | Mul(items, _):
+        case Mul(items, _):
             return all(_simplified_radical(i) for i in items)
         case Mixed(whole, frac):
             return _simplified_radical(whole) and _simplified_radical(frac)
         case _:
             return True
+
+
+def _integer_coefficient(term: Node) -> int:
+    """Product of the integer literal factors of a term (1 when there are none)."""
+    inner = _unneg(term)
+    if isinstance(inner, Num) and "." not in inner.value:
+        return int(inner.value)
+    if isinstance(inner, Mul):
+        return math.prod(
+            int(f.value) for f in inner.factors if isinstance(f, Num) and "." not in f.value
+        )
+    return 1
+
+
+def _coefficient_reduced(numerator: Node, denominator: Node) -> bool:
+    """True unless the integer coefficients of the numerator share a factor with the denominator."""
+    if not (isinstance(denominator, Num) and "." not in denominator.value):
+        return True
+    terms = numerator.terms if isinstance(numerator, Add) else (numerator,)
+    divisor = int(denominator.value)
+    for term in terms:
+        divisor = math.gcd(divisor, _integer_coefficient(term))
+    return divisor == 1
+
+
+def _radical_part(term: Node) -> object:
+    """The non-numeric part of a term; terms with an equal part are like terms."""
+    inner = _unneg(term)
+    if isinstance(inner, Div):
+        return _radical_part(inner.n), inner.d if not isinstance(inner.d, Num) else None
+    if isinstance(inner, Mul):
+        return frozenset(f for f in inner.factors if not isinstance(f, Num))
+    if isinstance(inner, Num):
+        return frozenset()
+    return frozenset({inner})
 
 
 def _factor_ok(node: Node) -> bool:
@@ -290,6 +332,7 @@ def _poly_ok(node: Node) -> bool:
 
 
 def _factored(node: Node) -> bool:
+    node = _unneg(node)
     if isinstance(node, Pow):
         return isinstance(node.base, Group) and _factor_ok(node)
     return isinstance(node, Mul) and all(_factor_ok(f) for f in node.factors)
@@ -303,12 +346,11 @@ def _is_group(node: Node) -> bool:
 def _has_unexpanded_product(node: Node) -> bool:
     match node:
         case Mul(factors, _):
-            for i, f in enumerate(factors):
-                if _is_group(f) and any(_has_var(g) for j, g in enumerate(factors) if j != i):
-                    return True
+            if len(factors) > 1 and any(_is_group(f) for f in factors):
+                return True
             return any(_has_unexpanded_product(f) for f in factors)
         case Pow(Group(x), exp):
-            if _has_var(x) and not (isinstance(exp, Num) and exp.value == "1"):
+            if not (isinstance(exp, Num) and exp.value == "1"):
                 return True
             return _has_unexpanded_product(x) or _has_unexpanded_product(exp)
         case Neg(x) | Group(x):

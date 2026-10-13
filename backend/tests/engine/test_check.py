@@ -177,3 +177,90 @@ def test_expansion_blowup_is_unreadable_and_fast(latex: str) -> None:
     start = time.perf_counter()
     assert verdict(make_problem(sympy.Integer(1)), latex) is Verdict.UNREADABLE
     assert time.perf_counter() - start < 1
+
+
+@pytest.mark.parametrize(
+    "latex", [r"x=(1+\sqrt{2})^2", r"(1+\sqrt2)^2=x", r"x=3+2\sqrt{2}", r"x-1=2+2\sqrt{2}"]
+)
+def test_equation_with_radical_solution_is_elementwise(latex: str) -> None:
+    problem = make_problem(sympy.Eq(x, 3 + 2 * sympy.sqrt(2)))
+    assert verdict(problem, latex) is Verdict.CORRECT
+
+
+@pytest.mark.parametrize(
+    ("latex", "expected"),
+    [
+        ("x^2=49", Verdict.INCORRECT),
+        ("(x-7)^2=0", Verdict.CORRECT),
+        ("x^2-49=0", Verdict.INCORRECT),
+        ("x^4-7x^3=0", Verdict.INCORRECT),
+        ("x^5-7x^4=0", Verdict.UNREADABLE),
+    ],
+)
+def test_equation_extra_solutions_are_rejected(latex: str, expected: Verdict) -> None:
+    assert verdict(make_problem(sympy.Eq(x, 7)), latex) is expected
+
+
+@pytest.mark.parametrize(
+    "latex", ["x^{99}+x^{37}+3x=1", r"\sqrt{x}+x^{3}=x^{7}+1", "x^{99}=x^{37}+3x"]
+)
+def test_hard_student_equations_are_fast(latex: str) -> None:
+    start = time.perf_counter()
+    assert verdict(make_problem(sympy.Eq(x, 7)), latex) in (Verdict.INCORRECT, Verdict.UNREADABLE)
+    assert time.perf_counter() - start < 1
+
+
+def test_nonzero_difference_skips_simplify_and_is_fast() -> None:
+    start = time.perf_counter()
+    assert verdict(make_problem(sympy.Integer(1)), "(x+1)^{60}(y+1)^{60}") is Verdict.INCORRECT
+    assert time.perf_counter() - start < 1
+
+
+def test_rational_function_equivalence() -> None:
+    problem = make_problem((x + 1) * (x - 1) / (x - 1))
+    assert verdict(problem, "x+1") is Verdict.CORRECT
+
+
+def test_factored_negated_power() -> None:
+    problem = make_problem(-((x + 3) ** 2), AnswerForm.FACTORED)
+    assert verdict(problem, "-(x+3)^2") is Verdict.CORRECT
+
+
+def test_unexpanded_constant_multiple_is_wrong_form() -> None:
+    problem = make_problem(2 * x + 6, AnswerForm.EXPANDED)
+    assert verdict(problem, "2(x+3)") is Verdict.WRONG_FORM
+    assert verdict(problem, "2x+6") is Verdict.CORRECT
+
+
+@pytest.mark.parametrize(
+    ("answer", "latex", "expected"),
+    [
+        (2 * sympy.sqrt(2), r"\frac{6\sqrt{2}}{3}", Verdict.WRONG_FORM),
+        (2 * sympy.sqrt(2), r"\sqrt{2}+\sqrt{2}", Verdict.WRONG_FORM),
+        (sympy.sqrt(2) / 2, r"\frac{2\sqrt{2}}{4}", Verdict.WRONG_FORM),
+        (sympy.sqrt(2) / 2, r"\frac{\sqrt{2}}{2}", Verdict.CORRECT),
+    ],
+)
+def test_radical_coefficients_and_like_terms(
+    answer: sympy.Expr, latex: str, expected: Verdict
+) -> None:
+    assert verdict(make_problem(answer, AnswerForm.SIMPLIFIED_RADICAL), latex) is expected
+
+
+y = sympy.Symbol("y")
+
+
+@pytest.mark.parametrize(
+    ("latex", "expected"),
+    [
+        ("y=2x+1", Verdict.CORRECT),
+        ("2y=4x+2", Verdict.CORRECT),
+        ("2x+1=y", Verdict.CORRECT),
+        ("y-2x=1", Verdict.CORRECT),
+        ("y=2x+2", Verdict.INCORRECT),
+        ("y=x", Verdict.INCORRECT),
+        ("5", Verdict.INCORRECT),
+    ],
+)
+def test_multivariable_equation_constant_multiple(latex: str, expected: Verdict) -> None:
+    assert verdict(make_problem(sympy.Eq(y, 2 * x + 1)), latex) is expected
