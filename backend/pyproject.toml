@@ -50,6 +50,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 include = ["src", "tests"]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
+reportMissingTypeStubs = false
 venvPath = "."
 venv = ".venv"
 
