@@ -63,3 +63,13 @@ def test_limiter_window_and_retry_after() -> None:
     limiter.hit("t", "k", limit=3, window_s=100)
     clock.advance(60)
     limiter.hit("s", "k", limit=3, window_s=100)
+
+
+def test_limiter_sweeps_expired_slots_on_a_cadence() -> None:
+    clock = FakeClock()
+    limiter = RateLimiter(clock)
+    for n in range(50):
+        limiter.hit("s", f"k{n}", limit=1, window_s=10)
+    clock.advance(61)
+    limiter.hit("s", "fresh", limit=1, window_s=10)
+    assert len(limiter._hits) == 1  # pyright: ignore[reportPrivateUsage]

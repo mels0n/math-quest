@@ -62,8 +62,10 @@ def create_app(
         if engine is not None:
             db_engine = engine
         else:
-            assert cfg.database_url is not None
-            db_engine = database.create_engine(cfg.database_url.get_secret_value())
+            url = cfg.database_url
+            if url is None:
+                raise RuntimeError("database_url is not configured")
+            db_engine = database.create_engine(url.get_secret_value())
         factory = database.create_session_factory(db_engine)
         pool = checker_pool or CheckerPool()
         try:
@@ -97,7 +99,8 @@ def create_app(
     async def device_cookie(  # pyright: ignore[reportUnusedFunction]
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        if not request.url.path.startswith("/api"):
+        path = request.url.path
+        if path != "/api" and not path.startswith("/api/"):
             return await call_next(request)
         sent = request.cookies.get(DEVICE_COOKIE)
         key = sent if sent is not None and valid_device_key(sent) else new_device_key()

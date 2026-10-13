@@ -62,18 +62,22 @@ def get_settings(request: Request) -> Settings:
     return settings
 
 
-def get_client_ip(request: Request) -> str:
+def resolve_client_ip(request: Request) -> str:
     trusted: tuple[IPNetwork, ...] = request.app.state.trusted_networks
     peer = request.client.host if request.client is not None else None
     return client_ip(peer, request.headers.getlist("x-forwarded-for"), trusted)
 
 
-def get_device_key(request: Request) -> str:
+async def get_client_ip(request: Request) -> str:
+    return resolve_client_ip(request)
+
+
+async def get_device_key(request: Request) -> str:
     key: str = request.state.device_key
     return key
 
 
-def require_csrf(request: Request) -> None:
+async def require_csrf(request: Request) -> None:
     if request.method not in SAFE_METHODS and request.headers.get(CSRF_HEADER) != CSRF_VALUE:
         raise Forbidden("csrf")
 
@@ -83,16 +87,16 @@ def _limiter(request: Request) -> ratelimit.RateLimiter:
     return limiter
 
 
-def limit_signup(request: Request) -> None:
-    key = ratelimit.rate_bucket(get_client_ip(request))
+async def limit_signup(request: Request) -> None:
+    key = ratelimit.rate_bucket(resolve_client_ip(request))
     _limiter(request).hit(
         "signup", key, limit=ratelimit.SIGNUP_LIMIT, window_s=ratelimit.SIGNUP_WINDOW_S
     )
 
 
-def limit_auth(request: Request) -> None:
+async def limit_auth(request: Request) -> None:
     """Login and recovery attempts share one counter."""
-    key = ratelimit.rate_bucket(get_client_ip(request))
+    key = ratelimit.rate_bucket(resolve_client_ip(request))
     _limiter(request).hit("auth", key, limit=ratelimit.AUTH_LIMIT, window_s=ratelimit.AUTH_WINDOW_S)
 
 

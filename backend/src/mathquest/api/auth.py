@@ -126,6 +126,7 @@ async def recover(
     ip: ClientIp,
     device_key: DeviceKey,
 ) -> SignupOut:
+    """Replace credentials; the response carries the rotated recovery word."""
     result = await accounts.recover(
         db,
         nickname=body.nickname,
@@ -142,11 +143,17 @@ async def recover(
 
 
 @router.post("/auth/logout")
-async def logout(request: Request, response: Response, db: Db) -> Done:
+async def logout(request: Request, response: Response, db: Db, settings: AppSettings) -> Done:
     token = request.cookies.get(SESSION_COOKIE)
     if token:
         await accounts.logout(db, token)
-    response.delete_cookie(SESSION_COOKIE, path="/")
+    response.delete_cookie(
+        SESSION_COOKIE,
+        path="/",
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
+    )
     return Done()
 
 

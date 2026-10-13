@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 
 from tests.conftest import SIGNUP_WORD, ApiFactory
@@ -74,3 +76,19 @@ async def test_signup_and_login_counters_are_separate(api: ApiFactory) -> None:
     for n in range(10):
         assert (await _signup(h.client, n)).status_code == 200
     assert (await _login(h.client)).status_code == 401
+
+
+async def test_concurrent_signups_cannot_exceed_the_limit(api: ApiFactory) -> None:
+    h = await api()
+    results = await asyncio.gather(*(_signup(h.client, n) for n in range(40)))
+    codes = [r.status_code for r in results]
+    assert codes.count(200) == 10
+    assert codes.count(429) == 30
+
+
+async def test_concurrent_logins_cannot_exceed_the_limit(api: ApiFactory) -> None:
+    h = await api()
+    results = await asyncio.gather(*(_login(h.client) for _ in range(40)))
+    codes = [r.status_code for r in results]
+    assert codes.count(401) == 30
+    assert codes.count(429) == 10

@@ -227,5 +227,10 @@ async def test_unexpected_error_is_generic_500(
 
 
 async def test_unknown_api_path_is_404(api: ApiFactory) -> None:
-    r = await (await api()).client.get("/api/nope")
+    c = (await api()).client
+    r = await c.get("/api/nope")
     assert r.status_code == 404
+    assert r.json() == {"error": "not_found"}
+    wrong = await c.post("/api/health", headers=CSRF)
+    assert wrong.status_code == 405
+    assert wrong.json() == {"error": "method_not_allowed"}

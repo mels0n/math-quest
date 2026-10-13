@@ -5,6 +5,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
 
 from mathquest.shared.errors import (
     Conflict,
@@ -57,6 +58,12 @@ async def _rate_limited(_: Request, exc: Exception) -> JSONResponse:
     return _body("rate_limited", 429, exc.retry_after_s)
 
 
+async def _http(_: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, HTTPException)
+    code = {404: "not_found", 405: "method_not_allowed"}.get(exc.status_code, "http_error")
+    return JSONResponse({"error": code}, status_code=exc.status_code, headers=exc.headers)
+
+
 async def _bad_request(_: Request, __: Exception) -> JSONResponse:
     return _body("invalid_request", 422)
 
@@ -74,5 +81,6 @@ def install_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(NotFound, _not_found)
     app.add_exception_handler(Locked, _locked)
     app.add_exception_handler(RateLimited, _rate_limited)
+    app.add_exception_handler(HTTPException, _http)
     app.add_exception_handler(RequestValidationError, _bad_request)
     app.add_exception_handler(Exception, _internal)
