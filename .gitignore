@@ -1,0 +1,16 @@
+# local-only
+CLAUDE.md
+.claude/*
+!.claude/*.json
+.superpowers/
+docs/superpowers/
+scratch/
+memory/
+MEMORY.md
+.env
+.env.*
+!.env.example
+.dev.vars
+node_modules/
+__pycache__/
+.venv/
