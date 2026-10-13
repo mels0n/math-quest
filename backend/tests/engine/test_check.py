@@ -264,3 +264,26 @@ y = sympy.Symbol("y")
 )
 def test_multivariable_equation_constant_multiple(latex: str, expected: Verdict) -> None:
     assert verdict(make_problem(sympy.Eq(y, 2 * x + 1)), latex) is expected
+
+
+@pytest.mark.parametrize(
+    ("answer", "latex", "expected"),
+    [
+        (sympy.Eq(y, sympy.sqrt(2) * x), r"y=\sqrt{2}x", Verdict.CORRECT),
+        (sympy.Eq(y, sympy.sqrt(2) * x), r"\sqrt{2}y=2x", Verdict.CORRECT),
+        (sympy.Eq(y, sympy.sqrt(2) * x), r"y=\frac{2x}{\sqrt{2}}", Verdict.CORRECT),
+        (sympy.Eq(y, sympy.sqrt(2) * x), r"y=\sqrt{3}x", Verdict.INCORRECT),
+        (sympy.Eq(y, sympy.pi * x), r"y=\pi x", Verdict.CORRECT),
+        (sympy.Eq(y, sympy.pi * x), r"2y=2\pi x", Verdict.CORRECT),
+        (sympy.Eq(y, sympy.sqrt(x)), r"y=\sqrt{x}", Verdict.CORRECT),
+        (sympy.Eq(y, 2**x), r"y=2^{x}", Verdict.CORRECT),
+        (sympy.Eq(y, x + sympy.sqrt(2)), r"y=x+\sqrt{2}", Verdict.CORRECT),
+        (sympy.Eq(y, x + sympy.sqrt(2)), r"y=x+\sqrt{3}", Verdict.INCORRECT),
+    ],
+)
+def test_multivariable_equation_with_irrational_terms(
+    answer: sympy.Equality, latex: str, expected: Verdict
+) -> None:
+    start = time.perf_counter()
+    assert verdict(make_problem(answer), latex) is expected
+    assert time.perf_counter() - start < 1

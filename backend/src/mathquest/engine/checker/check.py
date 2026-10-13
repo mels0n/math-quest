@@ -93,11 +93,22 @@ def _solution_set_matches(
 
 
 def _constant_multiple(student: sympy.Equality, answer: sympy.Equality) -> bool:
+    """Whether the student's equation is the answer's scaled by a nonzero constant."""
     a, s = _difference(answer), _difference(student)
-    if a == 0 or not (_rational_only(a) and _rational_only(s)):
+    if a == 0:
         return False
-    ratio = sympy.cancel(s / a)
-    return ratio.is_number and ratio != 0
+    if _expr_equal(s, a) or _expr_equal(s, -a):
+        return True
+    ratio = (
+        sympy.cancel(s / a) if _rational_only(s) and _rational_only(a) else sympy.simplify(s / a)
+    )
+    if ratio.is_number:
+        return bool(ratio != 0 and ratio.is_finite is not False)
+    for symbol in sorted(a.free_symbols, key=str):
+        scale = sympy.simplify(sympy.diff(s, symbol) / sympy.diff(a, symbol))
+        if scale.is_number and scale != 0 and scale.is_finite is not False:
+            return _is_zero(s - scale * a)
+    return False
 
 
 def _equation_equivalent(student: sympy.Expr | sympy.Equality, answer: sympy.Equality) -> bool:
