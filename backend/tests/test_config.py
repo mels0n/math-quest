@@ -45,7 +45,7 @@ def test_initial_signup_word_is_read_from_file(
 ) -> None:
     _clear(monkeypatch)
     word = tmp_path / "word"
-    word.write_text("﻿rainbow\n", encoding="utf-8")
+    word.write_text("\ufeffrainbow\n", encoding="utf-8")
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
     monkeypatch.setenv("INITIAL_SIGNUP_WORD_FILE", str(word))
     word = Settings().initial_signup_word

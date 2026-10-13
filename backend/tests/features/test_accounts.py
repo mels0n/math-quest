@@ -452,15 +452,14 @@ async def test_recover_rotates_word_and_revokes_old_devices(
         ip=IP1,
         now=clock,
     )
+    assert result.recovery_word != signup.recovery_word
     assert await service.player_for_token(seeded, signup.device_token) is None
     assert await service.player_for_token(seeded, result.device_token) is not None
     with pytest.raises(Unauthorized):
         await service.recover(
             seeded,
             nickname="SwiftOtter42",
-            recovery_word=signup.recovery_word
-            if signup.recovery_word != result.recovery_word
-            else "zzzzzz",
+            recovery_word=signup.recovery_word,
             new_pin="1111",
             device_key=DEV_A,
             ip=IP1,
@@ -512,3 +511,26 @@ async def test_old_failures_are_pruned(seeded: AsyncSession, clock: Clock) -> No
     await _fail_login(seeded, clock)
     count = (await seeded.execute(select(func.count()).select_from(AuthFailure))).scalar_one()
     assert count == 1
+
+
+async def test_hidden_player_cannot_log_in(seeded: AsyncSession, clock: Clock) -> None:
+    from sqlalchemy import update
+
+    from mathquest.entities.models import Player
+
+    await _signup(seeded)
+    await seeded.execute(update(Player).values(hidden=True))
+    with pytest.raises(Unauthorized):
+        await service.login(
+            seeded, nickname="SwiftOtter42", pin="1234", device_key=DEV_A, ip=IP1, now=clock
+        )
+
+
+async def test_seed_accepts_secret_str(db: AsyncSession) -> None:
+    from pydantic import SecretStr
+
+    await service.seed_signup_word(db, SecretStr("sesame"))
+    result = await service.signup(
+        db, signup_word="sesame", nickname="SwiftOtter42", pin="1234", picture=None
+    )
+    assert result.player_id is not None

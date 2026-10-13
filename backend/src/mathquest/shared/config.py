@@ -22,7 +22,7 @@ def _read_secret_file(path: Path, what: str) -> str:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError):
         raise ValueError(f"{what} file could not be read") from None
-    value = text.lstrip("﻿").strip()
+    value = text.lstrip("\ufeff").strip()
     if not value:
         raise ValueError(f"{what} file is empty")
     return value

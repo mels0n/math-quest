@@ -3,18 +3,36 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, text
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mathquest.entities.models import AuthFailure, Lockout, Player
+from mathquest.shared.errors import Locked
 
 ANY_DEVICE = "*"
+LOCK_NOT_AVAILABLE = "55P03"
+LOCK_TIMEOUT = "3s"
+LOCK_RETRY_AFTER_S = 5
 
 
 async def lock_player(db: AsyncSession, player_id: uuid.UUID) -> None:
-    """Serialize auth attempts for one player until the transaction ends."""
-    await db.execute(select(Player.id).where(Player.id == player_id).with_for_update())
+    """Serialize auth attempts for one player until the transaction ends.
+
+    Takes a non-key row lock so inserts into child tables are not blocked. Waiting
+    longer than the lock timeout raises Locked.
+    """
+    await db.execute(text(f"SET LOCAL lock_timeout = '{LOCK_TIMEOUT}'"))
+    try:
+        await db.execute(
+            select(Player.id).where(Player.id == player_id).with_for_update(key_share=True)
+        )
+    except DBAPIError as exc:
+        if getattr(exc.orig, "sqlstate", None) != LOCK_NOT_AVAILABLE:
+            raise
+        await db.rollback()
+        raise Locked(LOCK_RETRY_AFTER_S) from None
 
 
 async def active_lockout_until(

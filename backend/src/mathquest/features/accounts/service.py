@@ -18,6 +18,7 @@ from typing import NoReturn
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
+from pydantic import SecretStr
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -114,11 +115,12 @@ def _normalize_recovery(word: str) -> str:
     return word.strip().lower()
 
 
-async def seed_signup_word(db: AsyncSession, word: str | None) -> None:
+async def seed_signup_word(db: AsyncSession, word: SecretStr | str | None) -> None:
     """Store the signup word's hash when none exists yet; never overwrites."""
     if word is None or await get_setting(db, SIGNUP_WORD_KEY) is not None:
         return
-    await set_setting(db, SIGNUP_WORD_KEY, await _hash(word))
+    plain = word.get_secret_value() if isinstance(word, SecretStr) else word
+    await set_setting(db, SIGNUP_WORD_KEY, await _hash(plain))
     await db.commit()
 
 
@@ -188,6 +190,10 @@ async def _attempt(
         raise Invalid("device_key")
     await lockouts.lock_player(db, player.id)
     await db.refresh(player)
+    if player.hidden:
+        await verify()
+        await db.commit()
+        raise Unauthorized()
     moment = now()
     await lockouts.delete_failures_before(db, player.id, moment - FAILURE_RETENTION)
     until = await lockouts.active_lockout_until(db, player.id, device_key, ip, moment)
@@ -276,7 +282,10 @@ async def recover(
         now=now,
         verify=lambda: _verify(player.recovery_hash, secret),
     )
-    new_word = secrets.choice(load_recovery_words(content_dir or default_content_dir()))
+    candidates = [
+        w for w in load_recovery_words(content_dir or default_content_dir()) if w != secret
+    ]
+    new_word = secrets.choice(candidates)
     player.pin_hash = await _hash(new_pin) if new_pin is not None else None
     player.picture_hash = (
         await _hash(_picture_secret(new_picture)) if new_picture is not None else None
