@@ -2,6 +2,8 @@ import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 
+const apiTarget = 'http://127.0.0.1:8000';
+
 export default defineConfig({
 	plugins: [
 		sveltekit({
@@ -13,6 +15,8 @@ export default defineConfig({
 			adapter: adapter({ fallback: 'index.html' })
 		})
 	],
+	server: { proxy: { '/api': apiTarget } },
+	preview: { proxy: { '/api': apiTarget } },
 	test: {
 		include: ['src/**/*.test.ts']
 	}
