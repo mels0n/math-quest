@@ -54,7 +54,7 @@ const EXTRAS: Record<KeypadProfile, Key[]> = {
 		insert('−', 'Minus', '-'),
 		insert('=', 'Equals', '='),
 		insert('^', 'Power', '^{#?}'),
-		insert('√', 'Square root', '\sqrt{#0}'),
+		insert('√', 'Square root', String.raw`\sqrt{#0}`),
 		insert('(', 'Open bracket', '('),
 		insert(')', 'Close bracket', ')'),
 		FRACTION,

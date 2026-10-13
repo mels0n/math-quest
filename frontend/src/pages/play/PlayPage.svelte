@@ -12,7 +12,7 @@
 	import type { Mastery, Problem } from '../../entities/problem';
 	import { fetchMe, logout } from '../../entities/player';
 	import type { Player } from '../../entities/player';
-		import { ERROR_COPY } from '../../shared/api';
+	import { ERROR_COPY } from '../../shared/api';
 	import { PixelButton, PixelFrame } from '../../shared/ui';
 	import { MathCard } from '../../widgets/math-card';
 	import type { CardFeedback } from '../../widgets/math-card';
@@ -28,14 +28,15 @@
 	let finished = $state(false);
 	let busy = $state(false);
 	let solvedCount = $state(0);
-	let notice = $state<{ text: string; retry: () => Promise<void> } | null>(null);
+	let notice = $state<{ text: string; retry: () => Promise<void>; label: string } | null>(null);
 	let card: MathCard | undefined = $state();
 
 	/** Shows a failure as a notice with a retry; 'reload' means the problem was already closed. */
 	function fail(
 		err: unknown,
 		retry: () => Promise<void>,
-		allowReload = false
+		allowReload = false,
+		label: string = PLAY_COPY.retry
 	): 'handled' | 'reload' {
 		const failure = classifyPlayError(err);
 		if (failure.kind === 'signed_out') {
@@ -45,7 +46,8 @@
 		if (failure.kind === 'reload' && allowReload) return 'reload';
 		notice = {
 			text: failure.kind === 'notice' ? failure.text : ERROR_COPY.fallback,
-			retry
+			retry,
+			label
 		};
 		return 'handled';
 	}
@@ -104,7 +106,7 @@
 				if (verdict === 'incorrect') card?.resetInput();
 			}
 		} catch (err) {
-			if (fail(err, dismiss, true) === 'reload') {
+			if (fail(err, dismiss, true, PLAY_COPY.ok) === 'reload') {
 				busy = false;
 				await loadNext();
 				return;
@@ -141,7 +143,7 @@
 	{#if notice}
 		<div class="notice" role="alert">
 			<p>{notice.text}</p>
-			<PixelButton variant="gold" onclick={notice.retry}>{PLAY_COPY.retry}</PixelButton>
+			<PixelButton variant="gold" onclick={notice.retry}>{notice.label}</PixelButton>
 		</div>
 	{/if}
 

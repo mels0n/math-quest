@@ -22,5 +22,6 @@ export const PLAY_COPY = {
 	revealed: 'Good try! Every mistake helps you learn.',
 	loading: 'Getting your quest ready',
 	rateLimited: 'Whoa, slow down!',
-	retry: 'Try again'
+	retry: 'Try again',
+	ok: 'OK'
 } as const;

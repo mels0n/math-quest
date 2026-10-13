@@ -101,8 +101,7 @@ export default async function globalSetup() {
 		await Promise.race([waitForHealth(60_000), spawnFailed]);
 	} catch (err) {
 		cleanup();
-		throw new Error(`${(err as Error).message}
-${tail}`);
+		throw new Error(`${(err as Error).message}\n${tail}`);
 	}
 	return cleanup;
 }

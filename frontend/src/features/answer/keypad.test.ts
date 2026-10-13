@@ -48,3 +48,28 @@ describe('keypad layout', () => {
 		expect(layoutFor('algebra').extras.length).toBeLessThanOrEqual(12);
 	});
 });
+
+describe('insert keys', () => {
+	const inserts = (p: Parameters<typeof keysFor>[0]) =>
+		Object.fromEntries(
+			keysFor(p).flatMap((k) => (k.action.kind === 'insert' ? [[k.name, k.action.latex]] : []))
+		);
+
+	it('inserts the exact latex for every key', () => {
+		const digits = Object.fromEntries('0123456789'.split('').map((d) => [d, d]));
+		expect(inserts('numbers')).toEqual(digits);
+		expect(inserts('fractions')).toEqual({ ...digits, Fraction: String.raw`\frac{#0}{#?}` });
+		expect(inserts('algebra')).toEqual({
+			...digits,
+			x: 'x',
+			Plus: '+',
+			Minus: '-',
+			Equals: '=',
+			Power: '^{#?}',
+			'Square root': String.raw`\sqrt{#0}`,
+			'Open bracket': '(',
+			'Close bracket': ')',
+			Fraction: String.raw`\frac{#0}{#?}`
+		});
+	});
+});
