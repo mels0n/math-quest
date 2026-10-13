@@ -95,7 +95,7 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
         b_tens = rng.randint(max(1, 5 - a_tens), 8 - a_tens)
     else:
         a_tens = rng.randint(2, 9)
-        b_tens = rng.randint(9 - a_tens, 9)
+        b_tens = rng.randint(max(1, 9 - a_tens), 9)
     a, b = a_tens * 10 + a_ones, b_tens * 10 + b_ones
     total = a + b
     return Built(
