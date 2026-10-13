@@ -21,7 +21,7 @@
 </script>
 
 <div class="pad" role="group" aria-label="PIN pad">
-	<div class="dots" aria-live="polite" aria-label="{filled} of {PIN_LENGTH} numbers entered">
+	<div class="dots" role="status" aria-live="polite" aria-label="{filled} of {PIN_LENGTH} numbers entered">
 		{#each Array.from({ length: PIN_LENGTH }, (_, i) => i) as i (i)}
 			<span class="dot" class:on={i < filled}></span>
 		{/each}

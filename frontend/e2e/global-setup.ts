@@ -72,26 +72,37 @@ export default async function globalSetup() {
 	process.env.E2E_SIGNUP_WORD = signupWord;
 
 	const env = { ...process.env, TEST_DATABASE_URL: databaseUrl(), E2E_WORD_FILE: wordFile };
-	run('prepare', schema, env);
-
-	const server = spawn(python, [ctl, 'serve', schema], { env, stdio: 'pipe' });
+	let server: ChildProcess | undefined;
 	let tail = '';
-	server.stderr?.on('data', (d: Buffer) => (tail = (tail + String(d)).slice(-1500)));
 
 	const cleanup = () => {
-		stop(server);
 		try {
-			run('drop', schema, env);
+			if (server) stop(server);
 		} finally {
-			rmSync(dir, { recursive: true, force: true });
+			try {
+				run('drop', schema, env);
+			} finally {
+				rmSync(dir, { recursive: true, force: true });
+			}
 		}
 	};
 
 	try {
-		await waitForHealth(60_000);
+		run('prepare', schema, env);
+		const child = spawn(python, [ctl, 'serve', schema], { env, stdio: 'pipe' });
+		server = child;
+		child.stderr?.on('data', (d: Buffer) => (tail = (tail + String(d)).slice(-1500)));
+		const spawnFailed = new Promise<never>((_, reject) => {
+			child.on('error', (e) => reject(new Error(`backend failed to start: ${e.message}`)));
+			child.on('exit', (code) => reject(new Error(`backend exited early (code ${code})`)));
+		});
+		// Marks the rejection handled so a crash after startup is not an unhandled rejection.
+		spawnFailed.catch(() => undefined);
+		await Promise.race([waitForHealth(60_000), spawnFailed]);
 	} catch (err) {
 		cleanup();
-		throw new Error(`${(err as Error).message}\n${tail}`);
+		throw new Error(`${(err as Error).message}
+${tail}`);
 	}
 	return cleanup;
 }

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { login, recover, signup, suggestNickname } from '../../entities/player';
+	import { suggestNickname } from '../../entities/player';
 	import type { Player } from '../../entities/player';
 	import { PixelButton } from '../../shared/ui';
+	import { createRecoveryReveal, submitAuth, type AuthMode, type RecoveryReveal } from './auth-flow';
 	import { authErrorMessage } from './messages';
 	import PinPad from './PinPad.svelte';
 	import RecoveryWord from './RecoveryWord.svelte';
 
 	let { onSignedIn }: { onSignedIn: (player: Player) => void } = $props();
 
-	type Mode = 'signup' | 'login' | 'recover';
-	let mode = $state<Mode>('login');
+	let mode = $state<AuthMode>('login');
 	let nickname = $state('');
 	let signupWord = $state('');
 	let recoveryWord = $state('');
@@ -17,7 +17,8 @@
 	let pinKey = $state(0);
 	let busy = $state(false);
 	let error = $state('');
-	let reveal = $state<{ word: string; player: Player } | null>(null);
+	let reveal = $state<RecoveryReveal | null>(null);
+	let shownWord = $state<string | null>(null);
 
 	async function reroll() {
 		try {
@@ -27,7 +28,7 @@
 		}
 	}
 
-	function choose(next: Mode) {
+	function choose(next: AuthMode) {
 		mode = next;
 		error = '';
 		pin = null;
@@ -45,14 +46,12 @@
 		busy = true;
 		error = '';
 		try {
-			if (mode === 'login') {
-				onSignedIn((await login(nickname.trim(), pin)).player);
-			} else if (mode === 'signup') {
-				const r = await signup(signupWord.trim(), nickname.trim(), pin);
-				reveal = { word: r.recovery_word, player: r.player };
+			const outcome = await submitAuth(mode, { nickname, pin, signupWord, recoveryWord });
+			if (outcome.kind === 'signed_in') {
+				onSignedIn(outcome.player);
 			} else {
-				const r = await recover(nickname.trim(), recoveryWord.trim(), pin);
-				reveal = { word: r.recovery_word, player: r.player };
+				reveal = createRecoveryReveal(outcome, onSignedIn);
+				shownWord = reveal.word();
 			}
 		} catch (err) {
 			error = authErrorMessage(err);
@@ -64,22 +63,26 @@
 	}
 </script>
 
-{#if reveal}
-	<RecoveryWord word={reveal.word} onDone={() => reveal && onSignedIn(reveal.player)} />
+{#if reveal && shownWord !== null}
+	<RecoveryWord
+		word={shownWord}
+		onDone={() => {
+			reveal?.acknowledge();
+			shownWord = reveal?.word() ?? null;
+		}}
+	/>
 {:else}
 	<form class="panel" onsubmit={submit}>
-		<div class="tabs" role="tablist" aria-label="How do you want to start?">
+		<div class="tabs">
 			<button
 				type="button"
-				role="tab"
-				aria-selected={mode !== 'signup'}
+				aria-pressed={mode !== 'signup'}
 				class:on={mode !== 'signup'}
 				onclick={() => choose('login')}>Log in</button
 			>
 			<button
 				type="button"
-				role="tab"
-				aria-selected={mode === 'signup'}
+				aria-pressed={mode === 'signup'}
 				class:on={mode === 'signup'}
 				onclick={() => choose('signup')}>New player</button
 			>

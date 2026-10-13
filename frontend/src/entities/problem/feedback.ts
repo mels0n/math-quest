@@ -16,3 +16,11 @@ export function feedbackMessage(verdict: Verdict | Uppercase<Verdict>, misconcep
 	const key = verdict.toUpperCase() as keyof typeof COPY;
 	return COPY[key] ?? COPY.INCORRECT;
 }
+
+/** Other kid-facing play copy. */
+export const PLAY_COPY = {
+	revealed: 'Good try! Every mistake helps you learn.',
+	loading: 'Getting your quest ready',
+	rateLimited: 'Whoa, slow down!',
+	retry: 'Try again'
+} as const;

@@ -1,4 +1,4 @@
-export { feedbackMessage } from './feedback';
+export { PLAY_COPY, feedbackMessage } from './feedback';
 export { nextProblem, startSession, submitAnswer } from './api';
 export { MAX_ATTEMPTS, keypadProfile } from './model';
 export type {

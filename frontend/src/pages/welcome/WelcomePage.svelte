@@ -7,12 +7,15 @@
 	import { PixelButton, PixelFrame } from '../../shared/ui';
 
 	let returning = $state<Player | null>(null);
+	let checked = $state(false);
 
 	onMount(async () => {
 		try {
 			returning = (await fetchMe()).player;
 		} catch {
 			returning = null;
+		} finally {
+			checked = true;
 		}
 	});
 
@@ -30,7 +33,9 @@
 
 <PixelFrame title="MATH QUEST">
 	<p class="lead">Solve puzzles, level up your skills, and master the math world!</p>
-	{#if returning}
+	{#if !checked}
+		<p class="lead" role="status">Loading...</p>
+	{:else if returning}
 		<section class="back">
 			<p>Welcome back, <strong data-testid="nickname">{returning.nickname}</strong>!</p>
 			<PixelButton variant="mint" onclick={play}>Continue</PixelButton>

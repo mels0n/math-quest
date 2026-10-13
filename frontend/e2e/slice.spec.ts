@@ -36,7 +36,7 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 
 	await page.goto('/');
 	await expect(page.getByRole('heading', { name: 'MATH QUEST' })).toBeVisible();
-	await page.getByRole('tab', { name: 'New player' }).click();
+	await page.getByRole('button', { name: 'New player', exact: true }).click();
 	const nickname = page.getByLabel('Nickname', { exact: true });
 	await expect(nickname).not.toHaveValue('');
 	const chosenNickname = await nickname.inputValue();
@@ -48,7 +48,8 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 
 	const word = page.getByTestId('recovery-word');
 	await expect(word).toBeVisible();
-	expect((await word.innerText()).trim().length).toBeGreaterThan(2);
+	const firstWord = (await word.innerText()).trim();
+	expect(firstWord.length).toBeGreaterThan(2);
 
 	const firstNext = page.waitForResponse(isNext);
 	await page.getByRole('button', { name: 'I wrote it down' }).click();
@@ -62,7 +63,7 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 
 		if (round === 0) {
 			await expect(page.getByTestId('math-field')).toBeVisible();
-			if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/task-11-play.png` });
+			if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/task-11-play.png`, fullPage: true });
 			await typeAnswer(page, '12345');
 			await expect(page.getByTestId('feedback')).toHaveText('So close! Try again.');
 		}
@@ -82,11 +83,26 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 
 	await page.getByRole('button', { name: 'Log out' }).click();
 	await expect(page).toHaveURL(/\/$/);
-	await expect(page.getByRole('tab', { name: 'Log in' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
 
 	await page.getByLabel('Nickname', { exact: true }).fill(chosenNickname);
 	await tapPin(page, '1234');
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
+	await expect(page).toHaveURL(/\/play$/);
+	await expect(page.getByTestId('prompt')).toBeVisible();
+
+	// Recovery: forgot the PIN, use the recovery word, get a NEW word shown once.
+	await page.getByRole('button', { name: 'Log out' }).click();
+	await expect(page).toHaveURL(/\/$/);
+	await page.getByRole('button', { name: 'Forgot your PIN?' }).click();
+	await page.getByLabel('Nickname', { exact: true }).fill(chosenNickname);
+	await page.getByLabel('Recovery word').fill(firstWord);
+	await tapPin(page, '5678');
+	await page.getByRole('button', { name: 'Get back in' }).click();
+	const newWord = page.getByTestId('recovery-word');
+	await expect(newWord).toBeVisible();
+	expect((await newWord.innerText()).trim()).not.toBe(firstWord);
+	await page.getByRole('button', { name: 'I wrote it down' }).click();
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(page.getByTestId('prompt')).toBeVisible();
 });

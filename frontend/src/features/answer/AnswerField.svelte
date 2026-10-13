@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { MathfieldElement } from 'mathlive';
 	import type { KeypadProfile } from '../../entities/problem';
-	import { keysFor, type Key } from './keypad';
+	import { layoutFor, type Key } from './keypad';
 
 	let {
 		profile,
@@ -16,7 +16,8 @@
 
 	let host: HTMLDivElement;
 	let field = $state.raw<MathfieldElement | null>(null);
-	const keys = $derived(keysFor(profile));
+	const layout = $derived(layoutFor(profile));
+	let ready = $state(false);
 
 	export function clear() {
 		if (field) field.value = '';
@@ -32,13 +33,14 @@
 		if (latex !== '' && !disabled) onSubmit(latex);
 	}
 
-	function press(key: Key) {
+	function press(key: Key, event: MouseEvent) {
 		if (!field || disabled) return;
 		const { action } = key;
 		if (action.kind === 'go') submit();
 		else if (action.kind === 'insert') field.insert(action.latex);
 		else field.executeCommand(action.command);
-		if (action.kind !== 'go') field.focus();
+		// Pointer taps keep the caret in the field; keyboard presses keep focus on the key.
+		if (action.kind !== 'go' && event.detail > 0) field.focus();
 	}
 
 	onMount(() => {
@@ -61,6 +63,7 @@
 				}
 			});
 			field = mf;
+			ready = true;
 			mf.focus();
 		});
 		return () => {
@@ -78,18 +81,33 @@
 <div class="answer">
 	<div class="field" bind:this={host}></div>
 	<div class="pad" role="group" aria-label="Answer keypad" data-profile={profile}>
-		{#each keys as key (key.name)}
-			<button
-				type="button"
-				class="key {key.tone ?? ''}" class:del={key.name === 'Delete'}
-				aria-label={key.name}
-				{disabled}
-				onpointerdown={(e) => e.preventDefault()}
-				onclick={() => press(key)}>{key.label}</button
-			>
-		{/each}
-	</div>
+		<div class="block digits">
+			{#each layout.digits as key (key.name)}
+				{@render keyButton(key)}
+			{/each}
+		</div>
+		{#if layout.extras.length > 0}
+			<div class="block extras">
+				{#each layout.extras as key (key.name)}
+					{@render keyButton(key)}
+				{/each}
+			</div>
+		{/if}
+		<div class="go">{@render keyButton(layout.go)}</div>
 </div>
+</div>
+
+{#snippet keyButton(key: Key)}
+	<button
+		type="button"
+		class="key {key.tone ?? ''}"
+		class:zero={key.name === '0'}
+		aria-label={key.name}
+		disabled={disabled || !ready}
+		onpointerdown={(e) => e.preventDefault()}
+		onclick={(e) => press(key, e)}>{key.label}</button
+	>
+{/snippet}
 
 <style>
 	.answer {
@@ -121,8 +139,36 @@
 	}
 	.pad {
 		display: grid;
-		grid-template-columns: repeat(5, 1fr);
+		grid-template-columns: auto 1fr;
 		gap: 0.5rem;
+		align-items: start;
+	}
+	.pad[data-profile='numbers'] {
+		grid-template-columns: 1fr;
+	}
+	.block {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(var(--mq-tap), 1fr));
+		gap: 0.5rem;
+	}
+	.pad:not([data-profile='numbers']) .digits {
+		width: min(20rem, 55vw);
+	}
+	.pad[data-profile='numbers'] .digits {
+		max-width: 22rem;
+		margin: 0 auto;
+		width: 100%;
+	}
+	.go {
+		grid-column: 1 / -1;
+	}
+	@media (max-width: 34rem) {
+		.pad:not([data-profile='numbers']) {
+			grid-template-columns: 1fr;
+		}
+		.pad:not([data-profile='numbers']) .digits {
+			width: 100%;
+		}
 	}
 	.key {
 		min-height: var(--mq-tap);
@@ -140,14 +186,11 @@
 	.key.aux {
 		background: #dfe3f2;
 	}
-	.pad[data-profile='numbers'] .key.del {
+	.key.zero {
 		grid-column: span 2;
 	}
-	.pad[data-profile='numbers'] .key.mint {
-		grid-column: span 3;
-	}
 	.key.mint {
-		grid-column: 1 / -1;
+		width: 100%;
 		background: var(--mq-mint);
 		border-color: var(--mq-navy-deep);
 		box-shadow: 0 3px 0 var(--mq-navy-deep);
