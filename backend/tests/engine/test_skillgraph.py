@@ -32,19 +32,19 @@ def test_load_slice_pack() -> None:
 def test_cycle_rejected(tmp_path: Path) -> None:
     body = """
 skills:
-  - {id: a, name: A, region: r, prerequisites: [b], fluency: false, anchor: false}
-  - {id: b, name: B, region: r, prerequisites: [a], fluency: false, anchor: false}
+  - {id: alpha_skill, name: A, region: r, prerequisites: [beta_skill]}
+  - {id: beta_skill, name: B, region: r, prerequisites: [alpha_skill]}
 """
     with pytest.raises(ContentError) as exc:
         load_pack(_write_pack(tmp_path, body))
-    assert "a" in str(exc.value)
-    assert "b" in str(exc.value)
+    assert "alpha_skill" in str(exc.value)
+    assert "beta_skill" in str(exc.value)
 
 
 def test_missing_prereq_rejected(tmp_path: Path) -> None:
     body = """
 skills:
-  - {id: a, name: A, region: r, prerequisites: [ghost], fluency: false, anchor: false}
+  - {id: a, name: A, region: r, prerequisites: [ghost]}
 """
     with pytest.raises(ContentError, match="ghost"):
         load_pack(_write_pack(tmp_path, body))
