@@ -11,7 +11,7 @@ from starlette.exceptions import HTTPException
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
-from mathquest.api import auth, health
+from mathquest.api import auth, health, play
 from mathquest.api.clientip import parse_networks
 from mathquest.api.deps import (
     DEVICE_COOKIE,
@@ -23,10 +23,13 @@ from mathquest.api.deps import (
 from mathquest.api.errors import install_error_handlers
 from mathquest.api.ratelimit import Clock, RateLimiter
 from mathquest.engine.checker.bounded import CheckerPool
+from mathquest.engine.skillgraph import load_pack
 from mathquest.features import accounts
 from mathquest.shared import db as database
 from mathquest.shared.config import Settings, get_settings
 from mathquest.shared.logging import configure_logging
+
+CONTENT_PACK = "k8-core"
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +81,7 @@ def create_app(
             app.state.blocklist = accounts.load_blocklist(cfg.content_dir)
             app.state.nickname_words = accounts.load_nickname_words(cfg.content_dir)
             accounts.load_recovery_words(cfg.content_dir)
+            app.state.skill_graph = load_pack(cfg.content_dir / "packs" / CONTENT_PACK)
             await pool.warm()
             app.state.checker_pool = pool
             yield
@@ -112,6 +116,7 @@ def create_app(
 
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(play.router)
 
     if cfg.static_dir is not None:
         static_dir: Path = cfg.static_dir
