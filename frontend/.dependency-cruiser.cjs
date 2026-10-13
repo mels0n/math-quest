@@ -51,13 +51,27 @@ module.exports = {
       to: { path: '^src/$1/(?!$2/)[^/]+/' },
     },
     {
-      name: 'slice-public-api-only',
-      comment: 'Import a slice through its index, never a file inside it.',
+      name: 'slice-public-api-only-from-slice',
+      comment:
+        "Import another slice through its index, never a file inside it. A slice's own files are exempt.",
       severity: 'error',
-      from: { pathNot: '^src/(pages|widgets|features|entities)/([^/]+)/' },
+      from: { path: '^src/(pages|widgets|features|entities)/([^/]+)/' },
       to: {
         path: '^src/(pages|widgets|features|entities)/[^/]+/.+',
-        pathNot: '^src/(pages|widgets|features|entities)/[^/]+/index\.(ts|js)$',
+        pathNot: [
+          '^src/(pages|widgets|features|entities)/[^/]+/index\\.(ts|js)$',
+          '^src/$1/$2/',
+        ],
+      },
+    },
+    {
+      name: 'slice-public-api-only-from-outside',
+      comment: 'Import a slice through its index, never a file inside it.',
+      severity: 'error',
+      from: { pathNot: '^src/(pages|widgets|features|entities)/[^/]+/' },
+      to: {
+        path: '^src/(pages|widgets|features|entities)/[^/]+/.+',
+        pathNot: '^src/(pages|widgets|features|entities)/[^/]+/index\\.(ts|js)$',
       },
     },
     {
@@ -72,7 +86,7 @@ module.exports = {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.json' },
     tsPreCompilationDeps: true,
-    exclude: { path: '\.(test|spec)\.(ts|js)$' },
+    exclude: { path: '\\.(test|spec)\\.(ts|js)$' },
     reporterOptions: { text: { highlightFocused: true } },
   },
 };
