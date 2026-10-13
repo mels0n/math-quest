@@ -11,12 +11,16 @@ from mathquest.engine.checker.check import CheckResult, Verdict, check
 from mathquest.engine.types import AnswerForm, Problem
 
 SLOW = "slow"
+MID = "mid"
 
 
 def slow_or_check(problem: Problem, latex: str) -> CheckResult:
     """Module-level so it pickles under the spawn start method."""
     if latex == SLOW:
         time.sleep(5)
+    if latex == MID:
+        time.sleep(1)
+        latex = "2"
     return check(problem, latex)
 
 
@@ -56,6 +60,7 @@ async def test_default_worker_round_trips_a_real_problem() -> None:
 
 
 async def test_timeout_returns_unreadable(pool: CheckerPool) -> None:
+    await pool.warm()
     start = time.monotonic()
     result = await pool.check(problem_for(sympy.Integer(2)), SLOW)
     assert result == CheckResult(Verdict.UNREADABLE, None)
@@ -86,3 +91,37 @@ async def test_concurrent_normal_check_survives_replacement(pool: CheckerPool) -
     slow, normal = await asyncio.gather(pool.check(problem, SLOW), pool.check(problem, "2"))
     assert slow.verdict is Verdict.UNREADABLE
     assert normal.verdict is Verdict.CORRECT
+
+
+async def test_two_simultaneous_timeouts_do_not_raise(pool: CheckerPool) -> None:
+    problem = problem_for(sympy.Integer(2))
+    results = await asyncio.gather(pool.check(problem, SLOW), pool.check(problem, SLOW))
+    assert [r.verdict for r in results] == [Verdict.UNREADABLE, Verdict.UNREADABLE]
+
+
+async def test_in_flight_peer_is_retried_after_kill(pool: CheckerPool) -> None:
+    problem = problem_for(sympy.Integer(2))
+    await pool.warm()
+    slow = asyncio.create_task(pool.check(problem, SLOW))
+    await asyncio.sleep(1.5)
+    peer = await pool.check(problem, MID)
+    assert (await slow).verdict is Verdict.UNREADABLE
+    assert peer.verdict is Verdict.CORRECT
+
+
+async def test_two_timeouts_plus_queued_check_do_not_raise(pool: CheckerPool) -> None:
+    problem = problem_for(sympy.Integer(2))
+    results = await asyncio.gather(
+        pool.check(problem, SLOW), pool.check(problem, SLOW), pool.check(problem, "2")
+    )
+    assert results[0].verdict is Verdict.UNREADABLE
+    assert results[1].verdict is Verdict.UNREADABLE
+    assert (await pool.check(problem, "2")).verdict is Verdict.CORRECT
+
+
+async def test_warm_pool_checks_well_under_budget(pool: CheckerPool) -> None:
+    await pool.warm()
+    start = time.monotonic()
+    result = await pool.check(problem_for(sympy.Integer(2)), "2")
+    assert result.verdict is Verdict.CORRECT
+    assert time.monotonic() - start < 1.0
