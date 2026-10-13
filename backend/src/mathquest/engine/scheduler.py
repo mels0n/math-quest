@@ -31,4 +31,7 @@ def pick_skill(
         return min(ready, key=lambda sid: ratings.get(sid, SkillRating()).rating)
     if due_reviews:
         return due_reviews[0]
-    return next(sid for sid in graph.topo_order() if sid in mastered)
+    for sid in graph.topo_order():
+        if sid in mastered:
+            return sid
+    raise ValueError("no skills available")

@@ -56,17 +56,27 @@ def test_update_returns_new_rating_with_history() -> None:
     assert r.attempts == 0
 
 
-def test_simulated_learner_converges() -> None:
-    rng = random.Random(12345)
-    true_ability = 1.0
-    tiers = (-1.0, 0.0, 1.0)
-    r = SkillRating()
-    for _ in range(200):
-        tier = choose_tier(r, tiers)
-        d = tiers[tier]
-        correct = rng.random() < predict(true_ability, d)
-        r = update(r, d, _o(correct=correct))
-    assert abs(r.rating - true_ability) < 0.4
+@pytest.mark.parametrize("ability", [-1.0, 0.5, 1.0, 2.0])
+def test_simulated_learner_converges(ability: float) -> None:
+    # Tiers are centred on round(ability) so tier selection is meaningful.
+    # Single-run error is noisy (k floor 0.15), so assert on last-50 means:
+    # the cross-seed mean within 0.4 and every run within 0.8.
+    base = float(round(ability))
+    tiers = (base - 1, base, base + 1)
+    tail_means: list[float] = []
+    for seed in range(20):
+        rng = random.Random(seed)
+        r = SkillRating()
+        tail: list[float] = []
+        for attempt in range(200):
+            d = tiers[choose_tier(r, tiers)]
+            correct = rng.random() < predict(ability, d)
+            r = update(r, d, _o(correct=correct))
+            if attempt >= 150:
+                tail.append(r.rating)
+        tail_means.append(sum(tail) / len(tail))
+    assert abs(sum(tail_means) / len(tail_means) - ability) < 0.4
+    assert all(abs(m - ability) < 0.8 for m in tail_means)
 
 
 def test_choose_tier_targets_775() -> None:
@@ -96,3 +106,8 @@ def test_review_steps() -> None:
     assert next_review_days(7, True) == 21
     assert next_review_days(21, True) == 42
     assert next_review_days(7, False) == 1
+    assert next_review_days(42, True) == 84
+
+
+def test_review_non_step_previous_moves_to_next_larger_step() -> None:
+    assert next_review_days(5, True) == 7
