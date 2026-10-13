@@ -1,7 +1,7 @@
 """Accounts slice: signup, login, recovery and device tokens."""
 
 from mathquest.features.accounts.nicknames import nickname_allowed, suggest_nickname
-from mathquest.features.accounts.schema import LoginResult, PlayerOut, SignupResult
+from mathquest.features.accounts.schema import LoginResult, PlayerOut, RecoverResult, SignupResult
 from mathquest.features.accounts.service import (
     login,
     player_for_token,
@@ -13,6 +13,7 @@ from mathquest.features.accounts.service import (
 __all__ = [
     "LoginResult",
     "PlayerOut",
+    "RecoverResult",
     "SignupResult",
     "login",
     "nickname_allowed",

@@ -23,3 +23,9 @@ class SignupResult(_Frozen):
 class LoginResult(_Frozen):
     player_id: uuid.UUID
     device_token: str
+
+
+class RecoverResult(_Frozen):
+    player_id: uuid.UUID
+    device_token: str
+    recovery_word: str

@@ -4,7 +4,7 @@ import hashlib
 import uuid
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mathquest.entities.models import Device, Player
@@ -37,3 +37,7 @@ async def player_for_token(db: AsyncSession, token: str, now: datetime) -> Playe
     device.last_seen = now
     await db.flush()
     return player
+
+
+async def revoke_all(db: AsyncSession, player_id: uuid.UUID) -> None:
+    await db.execute(update(Device).where(Device.player_id == player_id).values(revoked=True))

@@ -59,7 +59,7 @@ def upgrade() -> None:
         sa.Column("ip", postgresql.INET(), nullable=False),
         sa.Column("at", sa.DateTime(timezone=True), nullable=False),
     )
-    op.create_index("ix_auth_failures_player_id", "auth_failures", ["player_id"])
+    op.create_index("ix_auth_failures_player_ip_at", "auth_failures", ["player_id", "ip", "at"])
     op.create_table(
         "lockouts",
         sa.Column(
@@ -83,7 +83,7 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("app_settings")
     op.drop_table("lockouts")
-    op.drop_index("ix_auth_failures_player_id", table_name="auth_failures")
+    op.drop_index("ix_auth_failures_player_ip_at", table_name="auth_failures")
     op.drop_table("auth_failures")
     op.drop_table("devices")
     op.drop_table("players")

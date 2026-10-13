@@ -399,3 +399,116 @@ async def test_no_pii_columns(db: AsyncSession) -> None:
     for name in names:
         for banned in ("email", "name", "age", "birth"):
             assert banned not in name.replace("nickname", ""), name
+
+
+async def test_rotating_device_keys_from_one_ip_locks_the_pair(
+    seeded: AsyncSession, clock: Clock
+) -> None:
+    signup = await _signup(seeded)
+    for i in range(15):
+        await _fail_login(seeded, clock, device=f"rot-{i}", ip=IP1)
+        clock.advance(1)
+    with pytest.raises(Locked) as err:
+        await service.login(
+            seeded, nickname="SwiftOtter42", pin="1234", device_key="fresh", ip=IP1, now=clock
+        )
+    assert 1700 <= err.value.retry_after_s <= 1800
+    ok = await service.login(
+        seeded, nickname="SwiftOtter42", pin="1234", device_key="fresh", ip=IP2, now=clock
+    )
+    assert ok.player_id == signup.player_id
+    me = await service.player_for_token(seeded, signup.device_token, now=clock)
+    assert me is not None
+
+
+async def test_fourteen_rotated_failures_do_not_lock(seeded: AsyncSession, clock: Clock) -> None:
+    await _signup(seeded)
+    for i in range(14):
+        await _fail_login(seeded, clock, device=f"rot-{i}", ip=IP1)
+    ok = await service.login(
+        seeded, nickname="SwiftOtter42", pin="1234", device_key="fresh", ip=IP1, now=clock
+    )
+    assert ok.device_token
+
+
+async def test_reserved_device_key_rejected(seeded: AsyncSession, clock: Clock) -> None:
+    await _signup(seeded)
+    with pytest.raises(Invalid):
+        await service.login(
+            seeded, nickname="SwiftOtter42", pin="1234", device_key="*", ip=IP1, now=clock
+        )
+
+
+async def test_recover_rotates_word_and_revokes_old_devices(
+    seeded: AsyncSession, clock: Clock
+) -> None:
+    signup = await _signup(seeded)
+    result = await service.recover(
+        seeded,
+        nickname="SwiftOtter42",
+        recovery_word=signup.recovery_word,
+        new_pin="9876",
+        device_key=DEV_A,
+        ip=IP1,
+        now=clock,
+    )
+    assert await service.player_for_token(seeded, signup.device_token) is None
+    assert await service.player_for_token(seeded, result.device_token) is not None
+    with pytest.raises(Unauthorized):
+        await service.recover(
+            seeded,
+            nickname="SwiftOtter42",
+            recovery_word=signup.recovery_word
+            if signup.recovery_word != result.recovery_word
+            else "zzzzzz",
+            new_pin="1111",
+            device_key=DEV_A,
+            ip=IP1,
+            now=clock,
+        )
+    again = await service.recover(
+        seeded,
+        nickname="SwiftOtter42",
+        recovery_word=result.recovery_word,
+        new_pin="2222",
+        device_key=DEV_A,
+        ip=IP1,
+        now=clock,
+    )
+    assert again.player_id == signup.player_id
+
+
+async def test_unknown_nickname_still_spends_a_verify(
+    seeded: AsyncSession, clock: Clock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str | None] = []
+    real = service._verify  # pyright: ignore[reportPrivateUsage]
+
+    async def spy(stored: str | None, secret: str) -> bool:
+        calls.append(stored)
+        return await real(stored, secret)
+
+    monkeypatch.setattr(service, "_verify", spy)
+    with pytest.raises(Unauthorized):
+        await service.login(
+            seeded, nickname="Nobody", pin="1234", device_key=DEV_A, ip=IP1, now=clock
+        )
+    assert calls == [None]
+
+
+def test_hasher_uses_pinned_argon2_parameters() -> None:
+    hasher = service._hasher  # pyright: ignore[reportPrivateUsage]
+    assert (hasher.memory_cost, hasher.time_cost, hasher.parallelism) == (19456, 2, 1)
+
+
+async def test_old_failures_are_pruned(seeded: AsyncSession, clock: Clock) -> None:
+    from sqlalchemy import func, select
+
+    from mathquest.entities.models import AuthFailure
+
+    await _signup(seeded)
+    await _fail_login(seeded, clock)
+    clock.advance(3601)
+    await _fail_login(seeded, clock)
+    count = (await seeded.execute(select(func.count()).select_from(AuthFailure))).scalar_one()
+    assert count == 1

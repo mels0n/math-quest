@@ -21,7 +21,7 @@ def _url() -> str:
     settings_url = get_settings().database_url
     if settings_url is None:
         raise RuntimeError("database url is not configured")
-    return settings_url
+    return settings_url.get_secret_value()
 
 
 def _do_run(connection: Connection) -> None:

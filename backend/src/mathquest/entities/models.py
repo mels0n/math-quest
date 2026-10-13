@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Text, func
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Text, func
 from sqlalchemy.dialects.postgresql import INET, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -38,10 +38,11 @@ class Device(Base):
 
 class AuthFailure(Base):
     __tablename__ = "auth_failures"
+    __table_args__ = (Index("ix_auth_failures_player_ip_at", "player_id", "ip", "at"),)
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     player_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE"), index=True
+        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE")
     )
     device_key: Mapped[str] = mapped_column(Text)
     ip: Mapped[str] = mapped_column(INET)
