@@ -41,3 +41,9 @@ async def player_for_token(db: AsyncSession, token: str, now: datetime) -> Playe
 
 async def revoke_all(db: AsyncSession, player_id: uuid.UUID) -> None:
     await db.execute(update(Device).where(Device.player_id == player_id).values(revoked=True))
+
+
+async def revoke_token(db: AsyncSession, token: str) -> None:
+    await db.execute(
+        update(Device).where(Device.token_hash == hash_token(token)).values(revoked=True)
+    )

@@ -69,3 +69,14 @@ def test_signup_word_not_settable_from_env(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
     monkeypatch.setenv("INITIAL_SIGNUP_WORD", "rainbow")
     assert Settings().initial_signup_word is None
+
+
+def test_trusted_proxies_split_from_env_and_validated(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear(monkeypatch)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
+    assert Settings().trusted_proxies == []
+    monkeypatch.setenv("TRUSTED_PROXIES", "10.0.1.0/24, fd00::/8")
+    assert Settings().trusted_proxies == ["10.0.1.0/24", "fd00::/8"]
+    monkeypatch.setenv("TRUSTED_PROXIES", "nonsense")
+    with pytest.raises(ValidationError):
+        Settings()

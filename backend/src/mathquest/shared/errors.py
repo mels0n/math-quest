@@ -29,3 +29,15 @@ class Invalid(DomainError):
     def __init__(self, code: str) -> None:
         super().__init__(code)
         self.code = code
+
+
+class RateLimited(DomainError):
+    def __init__(self, retry_after_s: int) -> None:
+        super().__init__(f"rate limited for {retry_after_s}s")
+        self.retry_after_s = retry_after_s
+
+
+class Forbidden(DomainError):
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code

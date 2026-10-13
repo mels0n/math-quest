@@ -302,3 +302,9 @@ async def player_for_token(db: AsyncSession, token: str, now: Clock = utcnow) ->
     if player is None:
         return None
     return PlayerOut(id=player.id, nickname=player.nickname)
+
+
+async def logout(db: AsyncSession, token: str) -> None:
+    """Revoke one device token."""
+    await devices.revoke_token(db, token)
+    await db.commit()

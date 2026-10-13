@@ -1,11 +1,12 @@
 """Boot-validated settings. The only module that reads environment variables or secret files."""
 
+import ipaddress
 from functools import lru_cache
 from pathlib import Path
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import PrivateAttr, SecretStr, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import PrivateAttr, SecretStr, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 def default_content_dir() -> Path:
@@ -38,6 +39,8 @@ class Settings(BaseSettings):
     cookie_secure: bool = True
     initial_signup_word_file: Path | None = None
     dev_expose_answers: bool = False
+    # IPs or CIDRs of reverse proxies whose X-Forwarded-For is believed; comma-separated in env.
+    trusted_proxies: Annotated[list[str], NoDecode] = []
 
     # Read only from `initial_signup_word_file`; deliberately not an env-settable field.
     _initial_signup_word: SecretStr | None = PrivateAttr(default=None)
@@ -45,6 +48,23 @@ class Settings(BaseSettings):
     @property
     def initial_signup_word(self) -> SecretStr | None:
         return self._initial_signup_word
+
+    @field_validator("trusted_proxies", mode="before")
+    @classmethod
+    def _split_trusted_proxies(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [part.strip() for part in value.split(",") if part.strip()]
+        return value
+
+    @field_validator("trusted_proxies")
+    @classmethod
+    def _check_trusted_proxies(cls, value: list[str]) -> list[str]:
+        for entry in value:
+            try:
+                ipaddress.ip_network(entry, strict=False)
+            except ValueError:
+                raise ValueError("trusted_proxies holds an invalid IP or CIDR") from None
+        return value
 
     @model_validator(mode="after")
     def _resolve_secret_files(self) -> Self:

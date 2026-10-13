@@ -61,6 +61,18 @@ Both checks fail CI.
 - Text shown to children uses no em dashes.
 - Container images are tagged `sha-<12 chars>`, never `:latest`.
 
+## Deployment settings
+
+- `COOKIE_SECURE` (default true): sets the `Secure` flag on the session and device cookies.
+- `TRUSTED_PROXIES`: comma-separated IPs or CIDRs of the reverse proxy in front of the
+  app. The client address comes from the socket peer. Only when the peer is in this
+  list is the right-most address in `X-Forwarded-For` that is not itself a trusted
+  proxy used instead. Production sets it to the proxy's address on the overlay network
+  the app shares with it (for example `10.0.1.0/24`). Left empty, `X-Forwarded-For`
+  is ignored and every request is attributed to the proxy's address, which collapses
+  per-client rate limits and lockouts into one.
+- Rate limits are counted in process, so the app must run as a single replica.
+
 ## Decisions
 
 Architecture decisions are numbered records in `docs/adr/`. Read the relevant one
