@@ -6,6 +6,7 @@ from mathquest.engine.mastery import (
     Outcome,
     SkillRating,
     choose_tier,
+    initial_rating,
     is_mastered,
     next_review_days,
     predict,
@@ -48,18 +49,18 @@ def test_slow_concept_not_penalized() -> None:
 
 
 def test_update_returns_new_rating_with_history() -> None:
-    r = SkillRating(recent=(True,) * 10)
-    n = update(r, 0.0, _o(correct=False))
+    r = SkillRating(recent=((True, 0),) * 10)
+    n = update(r, 0.0, Outcome(correct=False, hints_used=0, seconds=1.0, fluency=False, tier=2))
     assert n.attempts == 1
     assert len(n.recent) == 10
-    assert n.recent[-1] is False
+    assert n.recent[-1] == (False, 2)
     assert r.attempts == 0
 
 
 @pytest.mark.parametrize("ability", [-1.0, 0.5, 1.0, 2.0])
 def test_simulated_learner_converges(ability: float) -> None:
     # Tiers are centred on round(ability) so tier selection is meaningful.
-    # Single-run error is noisy (k floor 0.15), so assert on last-50 means:
+    # Single-run error is noisy (k floor 0.3), so assert on last-50 means:
     # the cross-seed mean within 0.4 and every run within 0.8.
     base = float(round(ability))
     tiers = (base - 1, base, base + 1)
@@ -90,13 +91,50 @@ def test_choose_tier_targets_775() -> None:
     assert choose_tier(SkillRating(rating=0.0), (0.0, 0.0)) == 0
 
 
+_TOP_STREAK = ((True, 2),) * 6
+
+
 def test_is_mastered_needs_8_attempts() -> None:
-    strong = (True,) * 10
-    assert not is_mastered(SkillRating(rating=5.0, attempts=7, recent=strong), 0.0)
-    assert is_mastered(SkillRating(rating=5.0, attempts=8, recent=strong), 0.0)
-    assert not is_mastered(SkillRating(rating=0.0, attempts=20, recent=strong), 0.0)
-    weak = (True, True, False, False, True)
-    assert not is_mastered(SkillRating(rating=5.0, attempts=20, recent=weak), 0.0)
+    assert not is_mastered(SkillRating(rating=5.0, attempts=7, recent=_TOP_STREAK), 0.0)
+    assert is_mastered(SkillRating(rating=5.0, attempts=8, recent=_TOP_STREAK), 0.0)
+    assert not is_mastered(SkillRating(rating=-3.0, attempts=20, recent=_TOP_STREAK), 0.0)
+
+
+def test_is_mastered_needs_top_tier_streak() -> None:
+    def rated(recent: tuple[tuple[bool, int], ...]) -> SkillRating:
+        return SkillRating(rating=5.0, attempts=20, recent=recent)
+
+    assert is_mastered(rated(((False, 2), *(((True, 2),) * 5))), 0.0)
+    assert not is_mastered(rated(((False, 2), (False, 2), *(((True, 2),) * 4))), 0.0)
+    assert not is_mastered(rated(((True, 1),) * 6), 0.0)
+    assert not is_mastered(rated(((True, 2), (True, 1), (True, 1), *(((True, 2),) * 3))), 0.0)
+    assert not is_mastered(rated(((True, 2),) * 4), 0.0)
+
+
+@pytest.mark.parametrize("base", [-2.0, 0.0, 0.8])
+def test_perfect_learner_masters_quickly(base: float) -> None:
+    tiers = (base - 1, base, base + 1)
+    r = SkillRating(rating=initial_rating(tiers))
+    for n in range(1, 40):
+        tier = choose_tier(r, tiers)
+        r = update(r, tiers[tier], Outcome(True, 0, 1.0, True, tier))
+        if is_mastered(r, tiers[2]):
+            assert n <= 15
+            return
+    raise AssertionError("never mastered")
+
+
+@pytest.mark.parametrize("seed", range(15))
+def test_learner_at_base_difficulty_does_not_master(seed: int) -> None:
+    base = 0.0
+    tiers = (base - 1, base, base + 1)
+    rng = random.Random(seed)
+    r = SkillRating(rating=initial_rating(tiers))
+    for _ in range(80):
+        tier = choose_tier(r, tiers)
+        correct = rng.random() < predict(base, tiers[tier])
+        r = update(r, tiers[tier], Outcome(correct, 0, 1.0, False, tier))
+        assert not is_mastered(r, tiers[2])
 
 
 def test_review_steps() -> None:

@@ -13,6 +13,7 @@ from sqlalchemy import (
     Text,
     func,
     select,
+    update,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,10 +40,10 @@ class ProblemInstance(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("play_sessions.id", ondelete="CASCADE")
+        UUID(as_uuid=True), ForeignKey("play_sessions.id", ondelete="CASCADE"), index=True
     )
     player_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE")
+        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE"), index=True
     )
     skill_id: Mapped[str] = mapped_column(Text)
     tier: Mapped[int] = mapped_column(Integer)
@@ -58,20 +59,16 @@ class Attempt(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     problem_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("problem_instances.id", ondelete="CASCADE")
+        UUID(as_uuid=True), ForeignKey("problem_instances.id", ondelete="CASCADE"), index=True
     )
     player_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE")
+        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE"), index=True
     )
     latex: Mapped[str] = mapped_column(Text)
     verdict: Mapped[str] = mapped_column(Text)
     misconception: Mapped[str | None] = mapped_column(Text, nullable=True)
     seconds: Mapped[float] = mapped_column(Float)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-
-# Verdicts that use up one of the three tries.
-CONSUMING = ("correct", "incorrect")
 
 
 async def add_session(
@@ -157,11 +154,18 @@ async def add_attempt(
     return row
 
 
-async def consuming_attempts(db: AsyncSession, problem_id: uuid.UUID) -> list[Attempt]:
-    """Attempts that used up a try, oldest first."""
+async def attempts_for(db: AsyncSession, problem_id: uuid.UUID) -> list[Attempt]:
+    """Every attempt on the problem, oldest first."""
     result = await db.execute(
-        select(Attempt)
-        .where(Attempt.problem_id == problem_id, Attempt.verdict.in_(CONSUMING))
-        .order_by(Attempt.id)
+        select(Attempt).where(Attempt.problem_id == problem_id).order_by(Attempt.id)
     )
     return list(result.scalars().all())
+
+
+async def close_open(db: AsyncSession, session_id: uuid.UUID, at: datetime) -> None:
+    """Close the session's unanswered problems: answered_at set, correct left NULL."""
+    await db.execute(
+        update(ProblemInstance)
+        .where(ProblemInstance.session_id == session_id, ProblemInstance.answered_at.is_(None))
+        .values(answered_at=at)
+    )

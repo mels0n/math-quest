@@ -7,6 +7,11 @@ from math import exp, sqrt
 
 TARGET_SUCCESS = 0.775
 RECENT_WINDOW = 10
+MASTERY_PREDICT = 0.7
+MASTERY_MIN_ATTEMPTS = 8
+MASTERY_STREAK_WINDOW = 6
+MASTERY_STREAK_NEEDED = 5
+TOP_TIER = 2
 REVIEW_STEPS = (1, 3, 7, 21)
 
 
@@ -20,11 +25,11 @@ class SkillState(StrEnum):
 
 @dataclass(frozen=True)
 class SkillRating:
-    """Rating plus the last 10 outcomes (correctness), newest last."""
+    """Rating plus the last 10 outcomes as (correct, tier), newest last."""
 
     rating: float = 0.0
     attempts: int = 0
-    recent: tuple[bool, ...] = ()
+    recent: tuple[tuple[bool, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -33,6 +38,7 @@ class Outcome:
     hints_used: int
     seconds: float
     fluency: bool
+    tier: int = 0
 
 
 def predict(rating: float, difficulty: float) -> float:
@@ -55,13 +61,13 @@ def score(o: Outcome) -> float:
 
 
 def update(r: SkillRating, difficulty: float, o: Outcome) -> SkillRating:
-    k = max(0.15, 0.6 / sqrt(1 + r.attempts))
+    k = max(0.3, 1.0 / sqrt(1 + r.attempts))
     rating = r.rating + k * (score(o) - predict(r.rating, difficulty))
     return replace(
         r,
         rating=rating,
         attempts=r.attempts + 1,
-        recent=(*r.recent, o.correct)[-RECENT_WINDOW:],
+        recent=(*r.recent, (o.correct, o.tier))[-RECENT_WINDOW:],
     )
 
 
@@ -76,8 +82,19 @@ def choose_tier(r: SkillRating, tier_difficulties: Sequence[float]) -> int:
     return best
 
 
-def is_mastered(r: SkillRating, top_difficulty: float) -> bool:
-    return r.attempts >= 8 and predict(r.rating, top_difficulty) >= 0.9 and sum(r.recent[-5:]) >= 4
+def initial_rating(tier_difficulties: Sequence[float]) -> float:
+    """A skill's first rating: its base (middle tier) difficulty plus 1.0."""
+    return tier_difficulties[1] + 1.0
+
+
+def is_mastered(r: SkillRating, top_difficulty: float, top_tier: int = TOP_TIER) -> bool:
+    """Enough attempts, high predicted success on the top tier, and a recent top-tier streak."""
+    if r.attempts < MASTERY_MIN_ATTEMPTS or predict(r.rating, top_difficulty) < MASTERY_PREDICT:
+        return False
+    streak = sum(
+        1 for correct, tier in r.recent[-MASTERY_STREAK_WINDOW:] if correct and tier == top_tier
+    )
+    return streak >= MASTERY_STREAK_NEEDED
 
 
 def next_review_days(previous: int | None, success: bool) -> int:

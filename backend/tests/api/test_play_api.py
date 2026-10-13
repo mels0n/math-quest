@@ -1,5 +1,7 @@
 """Play routes. Most tests swap in an in-process checker; one uses the real worker pool."""
 
+import uuid
+
 import httpx
 
 from mathquest.engine.checker.bounded import CheckerPool
@@ -136,3 +138,28 @@ async def test_bad_input_is_422(api: ApiFactory) -> None:
     assert extra.status_code == 422
     not_uuid = await _answer(h.client, "nope", "1")
     assert not_uuid.status_code == 422
+
+
+async def test_answers_are_rate_limited_per_player(api: ApiFactory) -> None:
+    h = await _api(api)
+    missing = str(uuid.uuid4())
+    for _ in range(60):
+        assert (await _answer(h.client, missing, "1")).status_code == 404
+    limited = await _answer(h.client, missing, "1")
+    assert limited.status_code == 429
+    assert limited.json() == {"error": "rate_limited"}
+    assert int(limited.headers["Retry-After"]) >= 1
+    h.clock.advance(61)
+    assert (await _answer(h.client, missing, "1")).status_code == 404
+
+
+async def test_answering_a_closed_problem_is_409(api: ApiFactory) -> None:
+    h = await _api(api)
+    session_id = await _start(h.client)
+    first = (await _next(h.client, session_id)).json()
+    assert (await _next(h.client, session_id)).status_code == 200
+
+    r = await _answer(h.client, first["problem_id"], "1")
+
+    assert r.status_code == 409
+    assert r.json() == {"error": "problem_closed"}

@@ -3,10 +3,10 @@
 import uuid
 from typing import Literal
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field
 
-from mathquest.api.deps import AppSettings, CurrentPlayer, Db
+from mathquest.api.deps import AppSettings, CurrentPlayer, Db, limit_answer
 from mathquest.features import play
 from mathquest.features.play import AnswerOut, ProblemOut, SessionOut
 
@@ -47,7 +47,7 @@ async def next_problem(
     )
 
 
-@router.post("/problems/{problem_id}/answer")
+@router.post("/problems/{problem_id}/answer", dependencies=[Depends(limit_answer)])
 async def answer(
     problem_id: uuid.UUID, body: AnswerIn, request: Request, player: CurrentPlayer, db: Db
 ) -> AnswerOut:

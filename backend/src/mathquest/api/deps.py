@@ -118,3 +118,10 @@ async def current_player(request: Request, db: Db) -> PlayerOut:
 
 
 CurrentPlayer = Annotated[PlayerOut, Depends(current_player)]
+
+
+async def limit_answer(request: Request, player: CurrentPlayer) -> None:
+    """Answer submissions are limited per player."""
+    _limiter(request).hit(
+        "answer", str(player.id), limit=ratelimit.ANSWER_LIMIT, window_s=ratelimit.ANSWER_WINDOW_S
+    )

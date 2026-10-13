@@ -76,6 +76,15 @@ def upgrade() -> None:
         sa.Column("seconds", sa.Float(), nullable=False),
         sa.Column("at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
+    op.create_index("ix_attempts_problem_id", "attempts", ["problem_id"])
+    op.create_index("ix_attempts_player_id", "attempts", ["player_id"])
+    op.create_index("ix_problem_instances_player_id", "problem_instances", ["player_id"])
+    op.create_index("ix_problem_instances_session_id", "problem_instances", ["session_id"])
+    op.create_index(
+        "ix_skill_mastery_player_id_review_due_at",
+        "skill_mastery",
+        ["player_id", "review_due_at"],
+    )
 
 
 def downgrade() -> None:

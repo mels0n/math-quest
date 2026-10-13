@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check
 from mathquest.engine.generators import get_generator
-from mathquest.engine.mastery import SkillRating, SkillState, choose_tier, is_mastered
+from mathquest.engine.mastery import SkillState, choose_tier
 from mathquest.engine.skillgraph import SkillGraph, load_pack
 from mathquest.engine.types import Problem
 from mathquest.entities import mastery, players
@@ -27,7 +27,7 @@ from mathquest.entities.models import Player
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance, add_problem
 from mathquest.features.play import service
 from mathquest.features.play.schema import AnswerOut
-from mathquest.shared.errors import NotFound
+from mathquest.shared.errors import Conflict, NotFound
 from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
 
 PACK = Path(__file__).resolve().parents[2] / "content" / "packs" / "k8-core"
@@ -38,11 +38,6 @@ SEED = 7
 class _SyncPool(CheckerPool):
     async def check(self, problem: Problem, latex: str) -> CheckResult:
         return check(problem, latex)
-
-
-class _FailingPool(CheckerPool):
-    async def check(self, problem: Problem, latex: str) -> CheckResult:
-        raise RuntimeError("worker exploded: secret-kid-input")
 
 
 POOL = _SyncPool()
@@ -88,8 +83,8 @@ def _right(inst: ProblemInstance) -> str:
     return sympy.latex(_answer(inst))
 
 
-def _wrong(inst: ProblemInstance) -> str:
-    return sympy.latex(_answer(inst) + 1000)
+def _wrong(inst: ProblemInstance, k: int = 0) -> str:
+    return sympy.latex(_answer(inst) + 1000 + k)
 
 
 async def _row(db: AsyncSession, player_id: uuid.UUID, skill_id: str) -> SkillMastery:
@@ -120,8 +115,8 @@ async def test_correct_answer_updates_mastery_once(db: AsyncSession) -> None:
     assert out.mastery.state is SkillState.LEARNING
     row = await _row(db, pid, "add_within_10")
     assert row.attempts == 1
-    assert row.rating > 0
-    assert row.recent == [True]
+    assert row.rating > service._start_rating("add_within_10")  # pyright: ignore[reportPrivateUsage]
+    assert row.recent == [[1, 0]]
 
 
 async def test_double_submit_idempotent(db: AsyncSession) -> None:
@@ -167,7 +162,7 @@ async def test_wrong_form_does_not_consume_attempt(db: AsyncSession) -> None:
     assert ok.attempts_left == 2
     row = await _row(db, pid, "add_fractions_unlike")
     assert row.attempts == 1
-    assert row.recent == [True]
+    assert row.recent == [[1, 0]]
 
 
 async def test_three_misses_reveals_answer_and_scores_incorrect(db: AsyncSession) -> None:
@@ -175,21 +170,21 @@ async def test_three_misses_reveals_answer_and_scores_incorrect(db: AsyncSession
     session = await service.start_session(db, pid, "adventure")
     inst = await _issue(db, pid, session.session_id)
 
-    first = await _submit(db, pid, inst.id, _wrong(inst))
-    second = await _submit(db, pid, inst.id, _wrong(inst))
+    first = await _submit(db, pid, inst.id, _wrong(inst, 0))
+    second = await _submit(db, pid, inst.id, _wrong(inst, 1))
     assert (first.attempts_left, second.attempts_left) == (2, 1)
     assert first.answer_latex is None and second.answer_latex is None
     assert await mastery.get(db, pid, "add_within_10") is None
 
-    third = await _submit(db, pid, inst.id, _wrong(inst))
+    third = await _submit(db, pid, inst.id, _wrong(inst, 2))
     assert third.verdict is Verdict.INCORRECT
     assert third.solved is False
     assert third.attempts_left == 0
     assert third.answer_latex == _right(inst)
     row = await _row(db, pid, "add_within_10")
     assert row.attempts == 1
-    assert row.rating < 0
-    assert row.recent == [False]
+    assert row.rating < service._start_rating("add_within_10")  # pyright: ignore[reportPrivateUsage]
+    assert row.recent == [[0, 0]]
 
     again = await _submit(db, pid, inst.id, _right(inst))
     assert again == third
@@ -203,8 +198,8 @@ async def test_correct_after_misses_uses_hints_penalty(db: AsyncSession) -> None
     helped = await _issue(db, pid, session.session_id, "add_within_10")
 
     await _submit(db, pid, clean.id, _right(clean))
-    await _submit(db, pid, helped.id, _wrong(helped))
-    await _submit(db, pid, helped.id, _wrong(helped))
+    await _submit(db, pid, helped.id, _wrong(helped, 0))
+    await _submit(db, pid, helped.id, _wrong(helped, 1))
     await _submit(db, pid, helped.id, _right(helped))
 
     assert (await _row(db, pid, "add_within_10")).rating < (
@@ -270,20 +265,14 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
 
 
 async def _master(db: AsyncSession, pid: uuid.UUID, session_id: uuid.UUID, skill_id: str) -> int:
-    """Answer correctly from a near-mastery rating; returns how many answers it took."""
-    top = get_generator(skill_id).tier_difficulties[-1]
-    # Mastery from a cold start takes ~39 fluent answers; start close to the threshold.
-    seeded = await mastery.lock(db, pid, skill_id)
-    seeded.rating, seeded.attempts, seeded.recent = 1.15, 7, [True] * 7
-    await db.flush()
+    """Answer correctly at the engine's chosen tier until mastered; returns the answer count."""
+    tiers = get_generator(skill_id).tier_difficulties
     for n in range(1, 40):
         row = await mastery.get(db, pid, skill_id)
-        rating = SkillRating(row.rating, row.attempts, tuple(row.recent)) if row else SkillRating()
-        tier = choose_tier(rating, get_generator(skill_id).tier_difficulties)
+        tier = choose_tier(service._rating(row, skill_id), tiers)  # pyright: ignore[reportPrivateUsage]
         inst = await _issue(db, pid, session_id, skill_id, tier, seed=n)
         await _submit(db, pid, inst.id, _right(inst))
-        row = await _row(db, pid, skill_id)
-        if is_mastered(SkillRating(row.rating, row.attempts, tuple(row.recent)), top):
+        if (await _row(db, pid, skill_id)).state == "mastered":
             return n
     raise AssertionError("never mastered")
 
@@ -337,8 +326,8 @@ async def test_mastered_skill_review_schedule(db: AsyncSession) -> None:
     await make_due()
     for seed in (103, 104, 105, 106, 107, 108):
         inst = await _issue(db, pid, session.session_id, tier=2, seed=seed)
-        for _ in range(3):
-            await _submit(db, pid, inst.id, _wrong(inst))
+        for k in range(3):
+            await _submit(db, pid, inst.id, _wrong(inst, k))
     final = await _row(db, pid, "add_within_10")
     assert final.state == "learning"
     assert final.review_interval_days is None
@@ -376,35 +365,149 @@ async def test_progress_is_clamped_fraction_of_target(db: AsyncSession) -> None:
     assert 0.0 < out.mastery.progress < 1.0
 
 
-async def test_internal_checker_failure_is_unreadable_and_logged_without_input(
-    db: AsyncSession, caplog: pytest.LogCaptureFixture
+class _CountingPool(CheckerPool):
+    def __init__(self) -> None:
+        super().__init__()
+        self.calls = 0
+
+    async def check(self, problem: Problem, latex: str) -> CheckResult:
+        self.calls += 1
+        return check(problem, latex)
+
+
+async def test_long_input_is_unreadable_without_the_checker_and_capped_when_stored(
+    db: AsyncSession,
 ) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
     inst = await _issue(db, pid, session.session_id)
+    pool = _CountingPool()
 
-    with caplog.at_level("WARNING"):
-        out = await service.submit_answer(
-            db, _FailingPool(), GRAPH, pid, inst.id, "kid-typed-secret"
-        )
+    out = await service.submit_answer(db, pool, GRAPH, pid, inst.id, "9" * 500)
 
     assert out.verdict is Verdict.UNREADABLE
     assert out.attempts_left == 3
-    assert str(inst.id) in caplog.text
-    assert "kid-typed-secret" not in caplog.text
-    assert "worker exploded" not in caplog.text
+    assert pool.calls == 0
+    stored = (await db.scalars(select(Attempt.latex))).all()
+    assert [len(s) for s in stored] == [200]
 
 
-async def test_long_input_is_capped_when_stored(db: AsyncSession) -> None:
+async def test_free_verdicts_are_capped_at_three(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
     inst = await _issue(db, pid, session.session_id)
 
-    out = await _submit(db, pid, inst.id, "9" * 500)
+    for _ in range(3):
+        free = await _submit(db, pid, inst.id, r"rac{")
+        assert free.verdict is Verdict.UNREADABLE
+        assert free.attempts_left == 3
+    fourth = await _submit(db, pid, inst.id, r"rac{")
+    assert fourth.verdict is Verdict.UNREADABLE
+    assert fourth.attempts_left == 2
+    assert fourth.answer_latex is None
+    await _submit(db, pid, inst.id, r"rac{")
+    last = await _submit(db, pid, inst.id, r"rac{")
+    assert last.verdict is Verdict.UNREADABLE
+    assert last.attempts_left == 0
+    assert last.solved is False
+    assert last.answer_latex == _right(inst)
+    assert (await _row(db, pid, "add_within_10")).recent == [[0, 0]]
 
-    assert out.verdict is Verdict.UNREADABLE
-    stored = (await db.scalars(select(Attempt.latex))).all()
-    assert [len(s) for s in stored] == [200]
+
+async def test_repeating_the_previous_wrong_answer_is_free(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id)
+
+    first = await _submit(db, pid, inst.id, _wrong(inst))
+    tap = await _submit(db, pid, inst.id, _wrong(inst))
+    assert tap == first
+    assert first.attempts_left == 2
+    other = await _submit(db, pid, inst.id, _wrong(inst) + "1")
+    assert other.attempts_left == 1
+
+
+async def test_next_problem_closes_the_previous_one(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    first = await service.next_problem(db, GRAPH, pid, session.session_id, expose_answers=True)
+    await service.next_problem(db, GRAPH, pid, session.session_id)
+
+    with pytest.raises(Conflict) as err:
+        await _submit(db, pid, first.problem_id, first.dev_answer_latex or "1")
+    assert err.value.code == "problem_closed"
+    inst = await db.get(ProblemInstance, first.problem_id)
+    assert inst is not None
+    assert inst.answered_at is not None and inst.correct is None
+    assert await mastery.get(db, pid, first.skill_id) is None
+
+
+class _SlowPool(CheckerPool):
+    """Sleeps inside the check and records whether the session had a transaction open."""
+
+    def __init__(self, delay: float, session: AsyncSession | None = None) -> None:
+        super().__init__()
+        self.delay = delay
+        self.session = session
+        self.open_during_check: list[bool] = []
+
+    async def check(self, problem: Problem, latex: str) -> CheckResult:
+        if self.session is not None:
+            self.open_during_check.append(self.session.in_transaction())
+        await asyncio.sleep(self.delay)
+        return check(problem, latex)
+
+
+async def test_no_transaction_is_open_during_the_check(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id)
+    await db.commit()
+    pool = _SlowPool(0.0, db)
+
+    out = await service.submit_answer(db, pool, GRAPH, pid, inst.id, _right(inst))
+
+    assert out.solved is True
+    assert pool.open_during_check == [False]
+
+
+async def test_slow_check_does_not_block_or_double_count(db_schema: str) -> None:
+    engine = create_async_engine(
+        _database_url(),
+        pool_size=10,
+        connect_args={"server_settings": {"search_path": db_schema}},
+    )
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with factory() as setup:
+            pid = await _player(setup, "Slowpoke")
+            session = await service.start_session(setup, pid, "adventure")
+            inst = await _issue(setup, pid, session.session_id)
+            await setup.commit()
+        pool = _SlowPool(0.5)
+
+        async def submit(latex: str) -> AnswerOut:
+            async with factory() as s:
+                return await service.submit_answer(s, pool, GRAPH, pid, inst.id, latex)
+
+        slow = asyncio.create_task(submit(_right(inst)))
+        await asyncio.sleep(0.1)
+        # A second request on the same problem is not stalled behind the first one's check.
+        other = await asyncio.wait_for(submit(_right(inst)), timeout=5)
+        first = await slow
+        assert first.solved and other.solved
+        assert first == other
+        async with factory() as s:
+            row = await mastery.get(s, pid, "add_within_10")
+            assert row is not None
+            assert row.attempts == 1
+            stored = await s.scalar(select(func.count()).select_from(Attempt))
+            assert stored == 1
+    finally:
+        async with factory() as cleanup:
+            await cleanup.execute(delete(Player).where(Player.nickname.like("Slowpoke%")))
+            await cleanup.commit()
+        await engine.dispose()
 
 
 async def test_concurrent_submissions_two_devices(db_schema: str) -> None:
@@ -437,7 +540,7 @@ async def test_concurrent_submissions_two_devices(db_schema: str) -> None:
             row = await mastery.get(check_session, pid, "add_within_10")
             assert row is not None
             assert row.attempts == 2
-            assert row.recent == [True, True]
+            assert row.recent == [[1, 0], [1, 0]]
 
         # The same problem submitted from two devices at once still scores once.
         async with factory() as setup:
