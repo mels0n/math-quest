@@ -256,3 +256,11 @@ def test_failed_forced_restore_rolls_back(source_db: str, target_db: str, tmp_pa
     result = _run(RESTORE, ["--force", str(dump)], _env(target_db, pw, out))
     assert result.returncode != 0
     assert _counts(target_db) == _counts(source_db)
+    # The FK drop runs before the failing drop; it survives only if the restore rolled back.
+    constraints = asyncio.run(
+        _run_sql(
+            target_db,
+            ["SELECT count(*) AS c FROM pg_constraint WHERE conname = 'attempts_player_id_fkey'"],
+        )
+    )
+    assert constraints[0]["c"] == 1
