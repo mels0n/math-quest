@@ -58,3 +58,18 @@ export function adminErrorMessage(err: unknown): string {
 	}
 	return commonErrorMessage(err, 'Too many tries.');
 }
+
+export type NotFoundVerdict = 'offlan' | 'login' | 'missing' | 'unknown';
+
+/**
+ * The backend answers 404 both for an off-LAN client and for an unknown player. After a 404 from
+ * a player action, the result of a follow-up session check (null when it succeeded) tells which.
+ */
+export function resolveNotFound(sessionCheckFailure: unknown): NotFoundVerdict {
+	if (sessionCheckFailure === null) return 'missing';
+	if (sessionCheckFailure instanceof ApiError) {
+		if (sessionCheckFailure.status === 404) return 'offlan';
+		if (sessionCheckFailure.status === 401) return 'login';
+	}
+	return 'unknown';
+}

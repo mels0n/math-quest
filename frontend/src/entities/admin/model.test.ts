@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../shared/api';
-import { adminErrorMessage, canDelete, isValidNickname, isValidPin, isValidSignupWord } from './model';
+import {
+	adminErrorMessage,
+	canDelete,
+	isValidNickname,
+	isValidPin,
+	isValidSignupWord,
+	resolveNotFound
+} from './model';
 
 describe('canDelete', () => {
 	it('requires the exact nickname', () => {
@@ -67,5 +74,22 @@ describe('nickname rules', () => {
 		expect(adminErrorMessage(new ApiError(422, 'signup_word', null))).toBe(
 			'Use 3 to 32 letters only.'
 		);
+	});
+});
+
+describe('resolveNotFound', () => {
+	it('treats a still-valid session as a missing player', () => {
+		expect(resolveNotFound(null)).toBe('missing');
+	});
+
+	it('treats a 404 session check as off-LAN and a 401 as signed out', () => {
+		expect(resolveNotFound(new ApiError(404, 'not_found', null))).toBe('offlan');
+		expect(resolveNotFound(new ApiError(401, 'unauthorized', null))).toBe('login');
+	});
+
+	it('leaves other failures undecided', () => {
+		expect(resolveNotFound(new ApiError(500, 'http_error', null))).toBe('unknown');
+		expect(resolveNotFound(new ApiError(0, 'network', null))).toBe('unknown');
+		expect(resolveNotFound(new Error('x'))).toBe('unknown');
 	});
 });

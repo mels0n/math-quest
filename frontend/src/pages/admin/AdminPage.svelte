@@ -17,6 +17,7 @@
 		listPlayers,
 		renamePlayer,
 		resetPin,
+		resolveNotFound,
 		setSignupWord,
 		signupWordState,
 		unhidePlayer
@@ -148,10 +149,33 @@
 			notice = done;
 			return true;
 		} catch (err) {
-			if (!leaveIfSessionLost(err)) onFail(adminErrorMessage(err));
+			if (err instanceof ApiError && err.status === 404) await handlePlayerNotFound(err, onFail);
+			else if (!leaveIfSessionLost(err)) onFail(adminErrorMessage(err));
 			return false;
 		} finally {
 			busy = false;
+		}
+	}
+
+	/** A 404 on a player action is either off-LAN or a missing player; a session check tells which. */
+	async function handlePlayerNotFound(err: ApiError, onFail: (m: string) => void) {
+		let failure: unknown = null;
+		try {
+			await adminMe();
+		} catch (probe) {
+			failure = probe;
+		}
+		const verdict = resolveNotFound(failure);
+		if (verdict === 'offlan') {
+			leaveIfSessionLost(new ApiError(404, 'not_found', null));
+		} else if (verdict === 'login') {
+			leaveIfSessionLost(new ApiError(401, 'unauthorized', null));
+		} else if (verdict === 'missing') {
+			closePanel();
+			await refresh();
+			listError = adminErrorMessage(err);
+		} else {
+			onFail(adminErrorMessage(err));
 		}
 	}
 

@@ -17,6 +17,7 @@ export {
 	canDelete,
 	isValidPin,
 	isValidNickname,
-	isValidSignupWord
+	isValidSignupWord,
+	resolveNotFound
 } from './model';
-export type { AdminPlayer, ListParams, PinReset, SignupWordState } from './model';
+export type { AdminPlayer, ListParams, NotFoundVerdict, PinReset, SignupWordState } from './model';
