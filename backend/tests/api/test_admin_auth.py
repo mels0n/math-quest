@@ -139,17 +139,20 @@ async def test_off_lan_admin_variants_match_a_non_admin_control_with_static(
 async def test_trusted_proxy_must_name_an_untrusted_client(
     api: ApiFactory, password_file: Path
 ) -> None:
-    h = await api(peer="10.0.0.2", trusted_proxies="10.0.0.2", admin_password_file=password_file)
+    proxy = "192.168.1.2"
+    h = await api(peer=proxy, trusted_proxies=proxy, admin_password_file=password_file)
     for extra in (
         {},
         {"Forwarded": "for=192.168.1.77"},
-        {"X-Forwarded-For": "10.0.0.2"},
+        {"X-Forwarded-For": proxy},
         {"X-Forwarded-For": "garbage"},
         {"X-Forwarded-For": "192.168.1.77, garbage"},
     ):
         r = await _login(h.client, headers={**CSRF, **extra})
         assert r.status_code == 404, extra
         assert r.json() == NOT_FOUND
+    ok = await _login(h.client, headers={**CSRF, "X-Forwarded-For": "192.168.1.77"})
+    assert ok.status_code == 200
 
 
 async def test_every_api_path_without_a_route_is_404_for_any_method(
