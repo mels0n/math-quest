@@ -38,7 +38,7 @@ warn() {
 }
 
 die() {
-  printf '%s pg-backup: error: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
+  warn "$@"
   exit 1
 }
 
