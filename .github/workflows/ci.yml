@@ -36,6 +36,13 @@ jobs:
       - run: uv run ruff check
       - run: uv run pyright
       - run: uv run lint-imports
+      - name: Install PostgreSQL client tools
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+        working-directory: .
+      - name: Backup script tests (must not skip)
+        run: |
+          uv run pytest tests/ops -v -rs | tee "$RUNNER_TEMP/ops.log"
+          if grep -q SKIPPED "$RUNNER_TEMP/ops.log"; then exit 1; fi
       - run: uv run pytest
 
   frontend:
