@@ -206,6 +206,28 @@ async def test_wrong_password_is_generic_401(api: ApiFactory, password_file: Pat
     assert (await _login(c, "")).status_code == 401
 
 
+async def test_failed_login_is_audited_and_logged_without_secrets(
+    api: ApiFactory, password_file: Path
+) -> None:
+    attempt = "wrong-password-xyz"
+    with captured_logs() as records:
+        h = await _admin(api, password_file)
+        assert (await _login(h.client, attempt)).status_code == 401
+    async with h.app.state.session_factory() as session:
+        rows = (await session.execute(select(AdminAudit).order_by(AdminAudit.id))).scalars().all()
+    assert [r.action for r in rows] == ["login_failed"]
+    row = rows[0]
+    assert row.admin_session_id is None
+    assert row.player_id is None
+    assert row.target_nickname is None
+    assert row.detail is None
+    assert attempt not in repr([getattr(row, c.name) for c in AdminAudit.__table__.columns])
+    failed = [r for r in records if r.levelno == logging.WARNING and "login" in r.getMessage()]
+    assert len(failed) == 1
+    assert attempt not in failed[0].getMessage()
+    assert PASSWORD not in failed[0].getMessage()
+
+
 async def test_login_requires_csrf_header_on_lan(api: ApiFactory, password_file: Path) -> None:
     c = (await _admin(api, password_file)).client
     assert (await _login(c, headers={})).status_code == 403

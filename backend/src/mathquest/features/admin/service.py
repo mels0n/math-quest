@@ -5,6 +5,7 @@ only the hash is kept. Sessions are random 32-byte tokens stored as SHA-256 with
 """
 
 import asyncio
+import logging
 import re
 import secrets
 import uuid
@@ -26,6 +27,8 @@ MAX_PAGE = 100
 DELETE_ATTEMPTS = 2
 DEADLOCK_DETECTED = "40P01"
 _SIGNUP_WORD_RE = re.compile(r"[A-Za-z]{3,32}")
+
+log = logging.getLogger(__name__)
 
 _hasher = PasswordHasher(memory_cost=19456, time_cost=2, parallelism=1)
 
@@ -49,8 +52,14 @@ async def _verify(stored_hash: str, password: str) -> bool:
 
 
 async def login(db: AsyncSession, *, stored_hash: str, password: str) -> AdminLogin:
-    """Verify the password and open a session; raises Unauthorized on any mismatch."""
+    """Verify the password and open a session; raises Unauthorized on any mismatch.
+
+    A mismatch is audited (no password, no session) and logged before the error is raised.
+    """
     if not await _verify(stored_hash, password):
+        await admin.audit(db, action="login_failed", admin_session_id=None)
+        await db.commit()
+        log.warning("admin login failed")
         raise Unauthorized()
     now = utcnow()
     await admin.delete_expired(db, now)
