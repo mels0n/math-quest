@@ -33,8 +33,8 @@ def test_ipv6_and_mapped_addresses() -> None:
 
 
 def test_missing_or_unparsable_peer() -> None:
-    assert client_ip(None, ["1.2.3.4"], TRUSTED) == "unknown"
-    assert client_ip("testclient", ["1.2.3.4"], TRUSTED) == "testclient"
+    assert client_ip(None, ["1.2.3.4"], TRUSTED) == "0.0.0.0"
+    assert client_ip("testclient", ["1.2.3.4"], TRUSTED) == "0.0.0.0"
 
 
 def test_parse_networks_rejects_garbage() -> None:

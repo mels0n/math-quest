@@ -6,7 +6,8 @@ from collections.abc import Iterable, Sequence
 type IPAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
 type IPNetwork = ipaddress.IPv4Network | ipaddress.IPv6Network
 
-UNKNOWN = "unknown"
+# Stored in place of an address that is missing or not an IP, so INET columns always get an IP.
+UNKNOWN = "0.0.0.0"
 
 
 def parse_networks(entries: Iterable[str]) -> tuple[IPNetwork, ...]:
@@ -39,7 +40,7 @@ def client_ip(peer: str | None, forwarded: Sequence[str], trusted: Sequence[IPNe
         return UNKNOWN
     peer_address = _parse(peer)
     if peer_address is None:
-        return peer
+        return UNKNOWN
     if not _trusted(peer_address, trusted):
         return str(peer_address)
     entries = [part for header in forwarded for part in header.split(",")]
