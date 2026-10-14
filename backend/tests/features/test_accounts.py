@@ -1,7 +1,6 @@
 import random
 import re
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
 from sqlalchemy import inspect
@@ -182,9 +181,9 @@ def test_content_files_have_expected_sizes() -> None:
     assert len(recovery) >= 1000
     assert len(set(recovery)) == len(recovery)
     assert all(re.fullmatch(r"[a-z]{3,9}", w) for w in recovery)
-    for path in default_content_dir().glob("*.*"):
+    for path in default_content_dir().rglob("*"):
         if path.is_file():
-            assert "—" not in Path(path).read_text(encoding="utf-8")
+            assert "—" not in path.read_text(encoding="utf-8"), path
 
 
 async def test_signup_returns_token_and_recovery_word(seeded: AsyncSession) -> None:
