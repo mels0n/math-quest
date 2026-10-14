@@ -14,6 +14,7 @@ Run the commands on a Swarm manager. Placeholders in angle brackets are yours to
 | `<swag-overlay-cidr>` | Address range of the overlay network the proxy shares with the app |
 | `<wan-target>` | Public address your existing DNS-only records point to |
 | `<registry-image-tag>` | The exact image, `ghcr.io/<owner>/math-quest:sha-<12 chars>` |
+| `<proxy-network>` | Existing overlay network the reverse proxy is attached to |
 | `<backups-path>` | Host directory for dumps (persistent storage) |
 | `<scripts-path>` | Host directory holding the three scripts from `deploy/backup/` |
 
@@ -25,7 +26,7 @@ Create each secret from a file or a pipe so the value is never echoed or left in
 shell history. Four are needed:
 
 - `mq_db_password`: the database password.
-- `mq_database_url`: the full URL, `postgresql+asyncpg://mathquest:<password>@math-quest-db:5432/mathquest`.
+- `mq_database_url`: the full URL, `postgresql+asyncpg://mathquest:<password>@math-quest-db:5432/mathquest`. Percent-encode the password in the URL if it has characters such as `@`, `/`, `:` or `%`.
 - `mq_signup_word`: the grown-up's secret word that new players must enter.
 - `mq_admin_password`: the admin password.
 
@@ -45,7 +46,7 @@ docker network create --driver overlay --attachable math-quest_net
 docker node update --label-add math-quest.db=true <db-node>
 ```
 
-The app also joins the overlay network the proxy uses (`swag_see_all` below). It
+The app also joins the overlay network the proxy uses (`<proxy-network>`). It
 must already exist.
 
 ## 3. Create the database service
@@ -75,7 +76,7 @@ docker service ps math-quest-db
 
 Put `pg-backup.sh`, `pg-restore.sh` and `pg-common.sh` from
 [deploy/backup/](../../deploy/backup/README.md) in `<scripts-path>` (executable), and
-create `<backups-path>` writable by the postgres user inside the image.
+create `<backups-path>` writable by the container's user (root in this image). Dumps are created mode 600.
 
 ```sh
 docker service create --name math-quest-backup \
@@ -117,7 +118,7 @@ lists the variables (`KEEP`, `BACKUP_AT`, `TZ`) and restore usage.
 ```sh
 docker service create --name math-quest \
   --network math-quest_net \
-  --network swag_see_all \
+  --network <proxy-network> \
   --secret mq_database_url \
   --secret mq_signup_word \
   --secret mq_admin_password \
@@ -151,7 +152,9 @@ The app trusts `X-Forwarded-For` only from the addresses in `TRUSTED_PROXIES`.
 - A trusted proxy that sends no `X-Forwarded-For` also gets 404 on admin routes. The
   SWAG `proxy.conf` include sets it.
 - Left empty, `X-Forwarded-For` is ignored and every client looks like the proxy,
-  which collapses rate limits and lockouts into one shared bucket.
+  which collapses rate limits and lockouts into one shared bucket. Admin routes then
+  return 404 for everyone behind the proxy, because their requests carry
+  `X-Forwarded-For` from an untrusted peer.
 
 `/api/admin` answers only to clients inside `ADMIN_ALLOWED_CIDRS`, default
 `192.168.0.0/16,127.0.0.1/32,::1/128`. Set the variable (comma-separated) if your LAN
@@ -204,12 +207,18 @@ docker service create --name math-quest-restore-test --restart-condition none \
   --env PGPASSWORD_FILE=/run/secrets/mq_db_password \
   --mount type=bind,source=<backups-path>,target=/backups,readonly \
   --mount type=bind,source=<scripts-path>,target=/scripts,readonly \
-  postgres:16 sh -c 'PGDATABASE=mathquest createdb mq_restore_test && /scripts/pg-restore.sh "$(ls -t /backups/math-quest-*.dump | head -n 1)"; PGDATABASE=mathquest dropdb mq_restore_test'
+  postgres:16 sh -c 'export PGPASSWORD="$(cat /run/secrets/mq_db_password)"; PGDATABASE=mathquest createdb mq_restore_test && /scripts/pg-restore.sh "$(ls -t /backups/math-quest-*.dump | head -n 1)"; PGDATABASE=mathquest dropdb mq_restore_test'
 docker service logs math-quest-restore-test
 docker service rm math-quest-restore-test
 ```
 
-Compare the printed row counts with the live database.
+Print the live row counts to compare with the restore output:
+
+```sh
+docker service create --name math-quest-counts --restart-condition none   --network math-quest_net   --secret mq_db_password   --env PGHOST=math-quest-db   --env PGUSER=mathquest   --env PGDATABASE=mathquest   postgres:16 sh -c 'export PGPASSWORD="$(cat /run/secrets/mq_db_password)"; psql -X -tA -c "SELECT format('"'"'%I.%I'"'"', schemaname, tablename) || '"'"' '"'"' || (xpath('"'"'/row/c/text()'"'"', query_to_xml(format('"'"'SELECT count(*) AS c FROM %I.%I'"'"', schemaname, tablename), false, true, '"'"''"'"')))[1]::text FROM pg_catalog.pg_tables WHERE schemaname = '"'"'public'"'"' ORDER BY tablename"'
+docker service logs math-quest-counts
+docker service rm math-quest-counts
+```
 
 ## Update the app later
 

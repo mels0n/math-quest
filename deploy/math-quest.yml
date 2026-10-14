@@ -71,7 +71,7 @@ services:
       - mq_admin_password
     networks:
       - math-quest_net
-      - swag_see_all
+      - <proxy-network>
     deploy:
       replicas: 1
       update_config:
@@ -92,7 +92,7 @@ secrets:
 networks:
   math-quest_net:
     external: true
-  swag_see_all:
+  <proxy-network>:
     external: true
 
 volumes:
