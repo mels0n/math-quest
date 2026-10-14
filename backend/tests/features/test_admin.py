@@ -1,18 +1,19 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import func, select, text
+from sqlalchemy import delete, func, select, text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mathquest.entities import mastery
+from mathquest.entities import credentials, lockouts, mastery, players
 from mathquest.entities.admin import AdminAudit
-from mathquest.entities.models import AppSetting, Device
+from mathquest.entities.models import AppSetting, AuthFailure, Device, Lockout, Player
 from mathquest.entities.problems import add_attempt, add_problem, add_session
 from mathquest.features import admin
 from mathquest.features.accounts import service as accounts
 from mathquest.shared.config import default_content_dir
-from mathquest.shared.errors import Conflict, Invalid, NotFound, Unauthorized
+from mathquest.shared.errors import Conflict, Invalid, Locked, NotFound, Unauthorized
 
 WORD = "rainbow"
 SESSION = uuid.uuid4()
@@ -290,6 +291,7 @@ async def test_every_action_writes_one_audit_row(seeded: AsyncSession) -> None:
     ]
     assert all(r.admin_session_id == SESSION for r in rows)
     assert [r.target_nickname for r in rows] == ["Alpha", "Alpha", "Alpha", "Beta", None, "Beta"]
+    assert [r.detail for r in rows] == [None, None, "Beta", None, None, None]
 
 
 async def test_deleted_player_stays_attributable(seeded: AsyncSession) -> None:
@@ -328,3 +330,165 @@ async def test_signup_word_is_set_reflects_state(db: AsyncSession) -> None:
     assert not await admin.signup_word_is_set(db)
     await admin.set_signup_word(db, SESSION, "abc")
     assert await admin.signup_word_is_set(db)
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.t = datetime(2026, 1, 1, 12, 0, tzinfo=UTC)
+
+    def __call__(self) -> datetime:
+        return self.t
+
+
+async def test_reset_pin_lifts_lockouts_and_failures(seeded: AsyncSession) -> None:
+    s = await _signup(seeded, "Alpha")
+    clock = _Clock()
+    for _ in range(5):
+        with pytest.raises(Unauthorized):
+            await accounts.login(
+                seeded, nickname="Alpha", pin="0000", device_key="dev", ip="10.0.0.1", now=clock
+            )
+    with pytest.raises(Locked):
+        await accounts.login(
+            seeded, nickname="Alpha", pin="1234", device_key="dev", ip="10.0.0.1", now=clock
+        )
+    await seeded.execute(
+        text("UPDATE players SET recovery_locked_until = :t WHERE id = :p"),
+        {"t": clock.t + timedelta(hours=5), "p": s.player_id},
+    )
+    await seeded.execute(
+        text("INSERT INTO recovery_failures (player_id, at) VALUES (:p, :t)"),
+        {"p": s.player_id, "t": clock.t},
+    )
+
+    await admin.reset_pin(seeded, SESSION, s.player_id, "5555")
+
+    await accounts.login(
+        seeded, nickname="Alpha", pin="5555", device_key="dev", ip="10.0.0.1", now=clock
+    )
+    for model in (Lockout, AuthFailure):
+        count = await seeded.execute(select(func.count()).select_from(model))
+        assert count.scalar_one() == 0
+    row = await seeded.execute(
+        text(
+            "SELECT recovery_locked_until, (SELECT count(*) FROM recovery_failures) "
+            "FROM players WHERE id = :p"
+        ),
+        {"p": s.player_id},
+    )
+    assert tuple(row.one()) == (None, 0)
+
+
+def _db_error(sqlstate: str) -> DBAPIError:
+    class Orig(Exception):
+        pass
+
+    orig = Orig()
+    orig.sqlstate = sqlstate  # pyright: ignore[reportAttributeAccessIssue]
+    return DBAPIError("DELETE", {}, orig)
+
+
+async def test_delete_retries_once_after_a_deadlock(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    s = await _signup(seeded, "Alpha")
+    real = players.delete_player
+    calls = 0
+
+    async def flaky(db: AsyncSession, player_id: uuid.UUID) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise _db_error("40P01")
+        await real(db, player_id)
+
+    monkeypatch.setattr(players, "delete_player", flaky)
+    await admin.delete_player(seeded, SESSION, s.player_id)
+    assert calls == 2
+    assert await admin.list_players(seeded) == []
+    assert [r.action for r in await _audit_rows(seeded)] == ["delete"]
+
+
+async def test_delete_that_deadlocks_twice_is_busy_and_changes_nothing(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    s = await _signup(seeded, "Alpha")
+
+    async def always(db: AsyncSession, player_id: uuid.UUID) -> None:
+        raise _db_error("40P01")
+
+    monkeypatch.setattr(players, "delete_player", always)
+    with pytest.raises(Conflict) as info:
+        await admin.delete_player(seeded, SESSION, s.player_id)
+    assert info.value.code == "busy"
+    assert [r.nickname for r in await admin.list_players(seeded)] == ["Alpha"]
+    assert await _audit_rows(seeded) == []
+
+
+async def test_delete_does_not_swallow_other_database_errors(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    s = await _signup(seeded, "Alpha")
+
+    async def broken(db: AsyncSession, player_id: uuid.UUID) -> None:
+        raise _db_error("23503")
+
+    monkeypatch.setattr(players, "delete_player", broken)
+    with pytest.raises(DBAPIError):
+        await admin.delete_player(seeded, SESSION, s.player_id)
+
+
+async def test_rename_losing_the_unique_race_is_a_conflict(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    a = await _signup(seeded, "Alpha")
+    await _signup(seeded, "Bravo")
+
+    async def no_check(*args: object, **kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr(credentials, "check_nickname_available", no_check)
+    with pytest.raises(Conflict) as info:
+        await admin.rename(seeded, SESSION, a.player_id, "bravo")
+    assert info.value.code == "nickname_taken"
+    assert sorted(r.nickname for r in await admin.list_players(seeded)) == ["Alpha", "Bravo"]
+    assert await _audit_rows(seeded) == []
+
+
+def _delete_before_lock(monkeypatch: pytest.MonkeyPatch) -> None:
+    real = lockouts.lock_player
+
+    async def delete_then_lock(db: AsyncSession, player_id: uuid.UUID) -> bool:
+        await db.execute(delete(Player).where(Player.id == player_id))
+        return await real(db, player_id)
+
+    monkeypatch.setattr(lockouts, "lock_player", delete_then_lock)
+
+
+@pytest.mark.parametrize("flow", ["login", "recover"])
+async def test_attempt_racing_a_delete_is_unauthorized_not_a_crash(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch, flow: str
+) -> None:
+    s = await _signup(seeded, "Alpha")
+    _delete_before_lock(monkeypatch)
+    with pytest.raises(Unauthorized):
+        if flow == "login":
+            await _login(seeded, "Alpha")
+        else:
+            await accounts.recover(
+                seeded,
+                nickname="Alpha",
+                recovery_word=s.recovery_word,
+                new_pin="4321",
+                device_key="dev",
+                ip="10.0.0.1",
+            )
+
+
+async def test_reset_pin_on_a_player_deleted_before_the_lock_is_not_found(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    s = await _signup(seeded, "Alpha")
+    _delete_before_lock(monkeypatch)
+    with pytest.raises(NotFound):
+        await admin.reset_pin(seeded, SESSION, s.player_id, "4321")

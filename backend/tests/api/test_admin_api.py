@@ -103,12 +103,17 @@ async def test_off_lan_new_routes_are_404(api: ApiFactory, password_file: Path) 
     h = await api(peer="203.0.113.50", admin_password_file=password_file)
     for method, path in (
         ("GET", "/api/admin/players"),
-        ("DELETE", f"/api/admin/players/{GHOST}"),
-        ("PUT", "/api/admin/signup-word"),
+        ("POST", f"/api/admin/players/{GHOST}/hide"),
+        ("POST", f"/api/admin/players/{GHOST}/unhide"),
+        ("POST", f"/api/admin/players/{GHOST}/rename"),
         ("POST", f"/api/admin/players/{GHOST}/reset-pin"),
+        ("DELETE", f"/api/admin/players/{GHOST}"),
+        ("GET", "/api/admin/signup-word"),
+        ("PUT", "/api/admin/signup-word"),
     ):
         r = await h.client.request(method, path, headers=CSRF)
         assert r.status_code == 404, (method, path)
+        assert r.json() == {"error": "not_found"}
 
 
 async def test_state_changing_routes_require_csrf(api: ApiFactory, password_file: Path) -> None:
@@ -222,6 +227,7 @@ async def test_audit_rows_carry_session_and_nickname_but_no_secrets(
     assert [r.action for r in rows] == ["login", "reset_pin", "signup_word", "delete"]
     assert all(r.admin_session_id == rows[0].admin_session_id for r in rows)
     assert [r.target_nickname for r in rows] == [None, "Alpha", None, "Alpha"]
-    dumped = repr([(r.action, r.target_nickname) for r in rows])
+    columns = [c.name for c in AdminAudit.__table__.columns]
+    dumped = repr([{c: getattr(r, c) for c in columns} for r in rows])
     for secret in ("4321", "Sunshine", word):
         assert secret not in dumped

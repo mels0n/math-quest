@@ -8,27 +8,21 @@ failures within a day disable recovery for that player for another day; PIN logi
 unaffected.
 """
 
-import asyncio
 import math
-import re
 import secrets
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
-from functools import lru_cache
 from pathlib import Path
 from typing import NoReturn
 
-from argon2 import PasswordHasher
-from argon2.exceptions import InvalidHashError, VerificationError
 from pydantic import SecretStr
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mathquest.entities import devices, lockouts, players
+from mathquest.entities import credentials, devices, lockouts, players
 from mathquest.entities.models import Player
 from mathquest.entities.settings import get_setting, set_setting
-from mathquest.features.accounts import nicknames
 from mathquest.features.accounts.schema import (
     LoginResult,
     PlayerOut,
@@ -38,7 +32,7 @@ from mathquest.features.accounts.schema import (
 from mathquest.shared.config import default_content_dir
 from mathquest.shared.errors import Conflict, Invalid, Locked, Unauthorized
 
-SIGNUP_WORD_KEY = "signup_word_hash"
+SIGNUP_WORD_KEY = credentials.SIGNUP_WORD_KEY
 FAILURE_LIMIT = 5
 FAILURE_WINDOW = timedelta(seconds=60)
 LOCK_DURATION = timedelta(minutes=30)
@@ -51,12 +45,11 @@ FAILURE_RETENTION = timedelta(hours=1)
 RECOVERY_FAILURE_LIMIT = 10
 RECOVERY_FAILURE_WINDOW = timedelta(hours=24)
 RECOVERY_LOCK_DURATION = timedelta(hours=24)
-PICTURE_COUNT = 12
-PICTURE_LENGTH = 4
 
-_PIN_RE = re.compile(r"[0-9]{4}")
-_hasher = PasswordHasher(memory_cost=19456, time_cost=2, parallelism=1)
-_DUMMY_HASH = _hasher.hash("dummy-secret")
+_hasher = credentials.hasher
+_picture_secret = credentials.picture_secret
+_require_one_credential = credentials.require_one_credential
+load_recovery_words = credentials.load_recovery_words
 
 Clock = Callable[[], datetime]
 
@@ -66,56 +59,11 @@ def utcnow() -> datetime:
 
 
 async def _hash(secret: str) -> str:
-    return await asyncio.to_thread(_hasher.hash, secret)
+    return await credentials.hash_secret(secret)
 
 
 async def _verify(stored: str | None, secret: str) -> bool:
-    def check() -> bool:
-        try:
-            if stored is None:
-                _hasher.verify(_DUMMY_HASH, secret)
-                return False
-            return _hasher.verify(stored, secret)
-        except (VerificationError, InvalidHashError):
-            return False
-
-    return await asyncio.to_thread(check)
-
-
-def _picture_secret(picture: list[int]) -> str:
-    return "-".join(str(i) for i in picture)
-
-
-def _check_pin(pin: str) -> None:
-    if _PIN_RE.fullmatch(pin) is None:
-        raise Invalid("pin")
-
-
-def _check_picture(picture: list[int]) -> None:
-    ok = len(picture) == PICTURE_LENGTH and all(
-        type(i) is int and 0 <= i < PICTURE_COUNT for i in picture
-    )
-    if not ok:
-        raise Invalid("picture")
-
-
-def _require_one_credential(pin: str | None, picture: list[int] | None) -> None:
-    if (pin is None) == (picture is None):
-        raise Invalid("credential")
-    if pin is not None:
-        _check_pin(pin)
-    if picture is not None:
-        _check_picture(picture)
-
-
-@lru_cache
-def _recovery_words(content_dir: Path) -> tuple[str, ...]:
-    lines = (content_dir / "recovery_words.txt").read_text(encoding="utf-8").splitlines()
-    return tuple(word for line in lines if (word := line.strip().lower()))
-
-
-def load_recovery_words(content_dir: Path) -> tuple[str, ...]:
-    return _recovery_words(content_dir)
+    return await credentials.verify_secret(stored, secret)
 
 
 def _normalize_recovery(word: str) -> str:
@@ -131,33 +79,6 @@ async def seed_signup_word(db: AsyncSession, word: SecretStr | str | None) -> No
     await db.commit()
 
 
-async def check_nickname_available(
-    db: AsyncSession,
-    nickname: str,
-    *,
-    blocklist: frozenset[str] | None = None,
-    owner: uuid.UUID | None = None,
-) -> None:
-    """Raise unless `nickname` is well formed, allowed and free (or already `owner`'s)."""
-    if not nicknames.nickname_valid(nickname):
-        raise Invalid("nickname")
-    words = blocklist if blocklist is not None else nicknames.default_blocklist()
-    if not nicknames.nickname_allowed(nickname, words):
-        raise Invalid("nickname_blocked")
-    existing = await players.get_by_nickname(db, nickname)
-    if existing is not None and existing.id != owner:
-        raise Conflict("nickname_taken")
-
-
-async def set_signup_word(db: AsyncSession, word: str) -> None:
-    """Replace the stored signup word hash; takes effect on the next signup."""
-    await set_setting(db, SIGNUP_WORD_KEY, await _hash(word))
-
-
-async def signup_word_is_set(db: AsyncSession) -> bool:
-    return await get_setting(db, SIGNUP_WORD_KEY) is not None
-
-
 async def signup(
     db: AsyncSession,
     *,
@@ -171,7 +92,7 @@ async def signup(
     if not await _verify(await get_setting(db, SIGNUP_WORD_KEY), signup_word):
         raise Invalid("signup_word")
     _require_one_credential(pin, picture)
-    await check_nickname_available(db, nickname, blocklist=blocklist)
+    await credentials.check_nickname_available(db, nickname, blocklist=blocklist)
 
     recovery_word = secrets.choice(load_recovery_words(content_dir or default_content_dir()))
     pin_hash = await _hash(pin) if pin is not None else None
@@ -218,7 +139,11 @@ async def _attempt(
     """
     if device_key == lockouts.ANY_DEVICE:
         raise Invalid("device_key")
-    await lockouts.lock_player(db, player.id)
+    if not await lockouts.lock_player(db, player.id):
+        # Deleted between the lookup and the lock: indistinguishable from an unknown nickname.
+        await verify()
+        await db.commit()
+        raise Unauthorized()
     await db.refresh(player)
     if player.hidden:
         await verify()
@@ -302,34 +227,6 @@ async def login(
     return LoginResult(player_id=player.id, device_token=token)
 
 
-async def replace_credentials(
-    db: AsyncSession,
-    player: Player,
-    *,
-    pin: str | None,
-    picture: list[int] | None,
-    old_word: str | None = None,
-    content_dir: Path | None = None,
-) -> str:
-    """Set new credentials, rotate the recovery word and revoke every device.
-
-    Returns the new recovery word, which is never the old one. Does not commit.
-    """
-    _require_one_credential(pin, picture)
-    words = load_recovery_words(content_dir or default_content_dir())
-    if old_word is not None:
-        new_word = secrets.choice([w for w in words if w != old_word])
-    else:
-        new_word = secrets.choice(words)
-        while await _verify(player.recovery_hash, new_word):
-            new_word = secrets.choice(words)
-    player.pin_hash = await _hash(pin) if pin is not None else None
-    player.picture_hash = await _hash(_picture_secret(picture)) if picture is not None else None
-    player.recovery_hash = await _hash(new_word)
-    await devices.revoke_all(db, player.id)
-    return new_word
-
-
 async def recover(
     db: AsyncSession,
     *,
@@ -357,7 +254,7 @@ async def recover(
         verify=lambda: _verify(player.recovery_hash, secret),
         recovery=True,
     )
-    new_word = await replace_credentials(
+    new_word = await credentials.replace_credentials(
         db,
         player,
         pin=new_pin,

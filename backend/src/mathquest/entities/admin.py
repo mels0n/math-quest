@@ -35,6 +35,7 @@ class AdminAudit(Base):
         UUID(as_uuid=True), ForeignKey("players.id", ondelete="SET NULL"), nullable=True
     )
     target_nickname: Mapped[str | None] = mapped_column(Text, nullable=True)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -82,6 +83,7 @@ async def audit(
     admin_session_id: uuid.UUID | None,
     player_id: uuid.UUID | None = None,
     target_nickname: str | None = None,
+    detail: str | None = None,
 ) -> None:
     db.add(
         AdminAudit(
@@ -89,6 +91,7 @@ async def audit(
             action=action,
             player_id=player_id,
             target_nickname=target_nickname,
+            detail=detail,
         )
     )
     await db.flush()

@@ -8,17 +8,13 @@ from mathquest.features.accounts.nicknames import (
 )
 from mathquest.features.accounts.schema import LoginResult, PlayerOut, RecoverResult, SignupResult
 from mathquest.features.accounts.service import (
-    check_nickname_available,
     load_recovery_words,
     login,
     logout,
     player_for_token,
     recover,
-    replace_credentials,
     seed_signup_word,
-    set_signup_word,
     signup,
-    signup_word_is_set,
 )
 
 __all__ = [
@@ -26,7 +22,6 @@ __all__ = [
     "PlayerOut",
     "RecoverResult",
     "SignupResult",
-    "check_nickname_available",
     "load_blocklist",
     "load_nickname_words",
     "load_recovery_words",
@@ -35,10 +30,7 @@ __all__ = [
     "nickname_allowed",
     "player_for_token",
     "recover",
-    "replace_credentials",
     "seed_signup_word",
-    "set_signup_word",
     "signup",
-    "signup_word_is_set",
     "suggest_nickname",
 ]

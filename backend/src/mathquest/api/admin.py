@@ -102,11 +102,10 @@ async def list_players(
     _: CurrentAdmin,
     db: Db,
     query: Annotated[str | None, Query(max_length=64)] = None,
-    search: Annotated[str | None, Query(max_length=64)] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=admin.MAX_PAGE)] = 50,
 ) -> list[admin.PlayerAdminOut]:
-    return await admin.list_players(db, query=query or search, offset=offset, limit=limit)
+    return await admin.list_players(db, query=query, offset=offset, limit=limit)
 
 
 @router.post("/players/{player_id}/hide")
