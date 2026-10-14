@@ -2,11 +2,16 @@
 # Scheduled PostgreSQL backup.
 #
 # Usage: pg-backup.sh [--once]
-#   (default)  loop: sleep until the next BACKUP_AT in TZ, dump, prune, repeat
-#   --once     take a single dump, prune, and exit
+#   (default)  loop: dump at start if the newest dump is older than 25 hours,
+#              then sleep until each BACKUP_AT in TZ, dump, prune, repeat. A
+#              failed dump is retried after RETRY_SECONDS, up to RETRY_MAX
+#              attempts, then waits for the next slot. The loop never exits on
+#              a dump failure.
+#   --once     take a single dump, prune, and exit (non-zero on failure)
 #
 # Environment: PGHOST, PGPORT (5432), PGUSER, PGDATABASE, PGPASSWORD_FILE,
-#   BACKUP_DIR (/backups), KEEP (14), BACKUP_AT (03:15), TZ (America/Chicago).
+#   BACKUP_DIR (/backups), KEEP (14), BACKUP_AT (03:15), TZ (UTC),
+#   RETRY_SECONDS (900), RETRY_MAX (4).
 # Needs GNU date (the official postgres image has it). Dumps are created mode 600.
 set -eu
 
@@ -18,7 +23,9 @@ script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 BACKUP_DIR="${BACKUP_DIR:-/backups}"
 KEEP="${KEEP:-14}"
 BACKUP_AT="${BACKUP_AT:-03:15}"
-TZ="${TZ:-America/Chicago}"
+RETRY_SECONDS="${RETRY_SECONDS:-900}"
+RETRY_MAX="${RETRY_MAX:-4}"
+TZ="${TZ:-UTC}"
 export TZ
 umask 077
 
@@ -33,6 +40,12 @@ die() {
 
 case "$KEEP" in
   '' | *[!0-9]* | 0*) die "KEEP must be a positive integer without leading zeros" ;;
+esac
+case "$RETRY_SECONDS" in
+  '' | *[!0-9]* | 0*) die "RETRY_SECONDS must be a positive integer without leading zeros" ;;
+esac
+case "$RETRY_MAX" in
+  '' | *[!0-9]* | 0*) die "RETRY_MAX must be a positive integer without leading zeros" ;;
 esac
 case "$BACKUP_AT" in
   [0-1][0-9]:[0-5][0-9] | 2[0-3]:[0-5][0-9]) ;;
@@ -101,7 +114,9 @@ run_backup() {
     child=""
     rm -f -- "$partial"
     partial=""
-    die "pg_dump failed"
+    printf '%s pg-backup: error: pg_dump failed
+' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2
+    return 1
   fi
   child=""
   sync "$partial" 2> /dev/null || sync
@@ -126,16 +141,42 @@ seconds_until_next() {
 find "$BACKUP_DIR" -maxdepth 1 -name 'math-quest-*.dump.partial' -mmin +360 -exec rm -f {} +
 
 if [ "$mode" = once ]; then
-  run_backup
+  run_backup || exit 1
   exit 0
+fi
+
+# Sleep without blocking signal handling.
+nap() {
+  sleep "$1" &
+  child=$!
+  wait "$child" || true
+  child=""
+}
+
+# Dump, retrying after a failure. Gives up after RETRY_MAX attempts; the caller
+# then waits for the next slot.
+backup_with_retry() {
+  attempt=1
+  while ! run_backup; do
+    if [ "$attempt" -ge "$RETRY_MAX" ]; then
+      log "giving up after ${attempt} attempts, waiting for the next slot"
+      return 0
+    fi
+    log "retrying in ${RETRY_SECONDS}s (attempt ${attempt} of ${RETRY_MAX} failed)"
+    nap "$RETRY_SECONDS"
+    attempt=$((attempt + 1))
+  done
+}
+
+# Catch up: a restart across the slot would otherwise skip a whole day.
+if [ -z "$(find "$BACKUP_DIR" -maxdepth 1 -name 'math-quest-*.dump' -mmin -1500 | head -n 1)" ]; then
+  log "no dump newer than 25 hours, dumping now"
+  backup_with_retry
 fi
 
 while :; do
   wait_s=$(seconds_until_next)
   log "next dump in ${wait_s}s (${BACKUP_AT} ${TZ})"
-  sleep "$wait_s" &
-  child=$!
-  wait "$child" || true
-  child=""
-  run_backup
+  nap "$wait_s"
+  backup_with_retry
 done

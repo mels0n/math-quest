@@ -21,27 +21,34 @@ Two POSIX shell scripts for PostgreSQL 16, meant to run in the official
 | `BACKUP_DIR` | `/backups` | Where dumps are written (a persistent volume) |
 | `KEEP` | `14` | Number of newest `math-quest-*.dump` files to keep |
 | `BACKUP_AT` | `03:15` | Daily run time, `HH:MM` 24 hour |
-| `TZ` | `America/Chicago` | Time zone for `BACKUP_AT` |
+| `TZ` | `UTC` | Time zone for `BACKUP_AT` |
+| `RETRY_SECONDS` | `900` | Wait before retrying a failed dump (loop mode) |
+| `RETRY_MAX` | `4` | Attempts per slot before waiting for the next `BACKUP_AT` (loop mode) |
 
 ## Run the backup
 
-Run as a long-lived service. It sleeps until the next `BACKUP_AT`, dumps,
-prunes, and repeats:
+Run as a long-lived service. At start, if no `math-quest-*.dump` is newer than
+25 hours, it dumps immediately (so a restart across the slot does not skip a
+day). Then it sleeps until each `BACKUP_AT`, dumps, prunes, and repeats. A
+failed dump does not stop the service: it is retried after `RETRY_SECONDS`, up
+to `RETRY_MAX` attempts, then the service waits for the next slot:
 
 ```sh
-sh /opt/backup/pg-backup.sh
+sh /scripts/pg-backup.sh
 ```
 
 Take a single dump and exit (useful for a manual backup or a test):
 
 ```sh
-sh /opt/backup/pg-backup.sh --once
+sh /scripts/pg-backup.sh --once
 ```
 
 A dump is written to `math-quest-YYYYMMDD-HHMMSS.dump.partial` and renamed to
-`.dump` only after `pg_dump` succeeds. On failure the partial file is removed,
-the error goes to stderr and the script exits non-zero, so a container
-orchestrator restarts it. Stale `.partial` files from an interrupted run are removed at startup. Dumps are created mode 600. Pruning only touches files named `math-quest-YYYYMMDD-HHMMSS.dump`, so hand-named copies are never counted or removed. Timestamps use the `TZ` zone.
+`.dump` only after `pg_dump` succeeds. On failure the partial file is removed and
+`pg_dump failed` goes to stderr. With `--once` the script then exits non-zero;
+in loop mode it retries as described above. Invalid settings (`KEEP`,
+`BACKUP_AT`, `RETRY_SECONDS`, `RETRY_MAX`, an unwritable `BACKUP_DIR`) make
+either mode exit non-zero at start. Stale `.partial` files from an interrupted run are removed at startup. Dumps are created mode 600. Pruning only touches files named `math-quest-YYYYMMDD-HHMMSS.dump`, so hand-named copies are never counted or removed. Timestamps use the `TZ` zone.
 
 ## Restore
 
@@ -51,7 +58,7 @@ orchestrator restarts it. Stale `.partial` files from an interrupted run are rem
 3. Restore. The interface is environment variables plus the dump path:
 
    ```sh
-   sh /opt/backup/pg-restore.sh /backups/math-quest-YYYYMMDD-HHMMSS.dump
+   sh /scripts/pg-restore.sh /backups/math-quest-YYYYMMDD-HHMMSS.dump
    ```
 
    The script refuses if the target already holds user objects (tables, views,
@@ -69,8 +76,11 @@ recreate the database first, then restore without `--force`:
 ```sh
 dropdb -h <db-host> -U <db-admin-user> <database>
 createdb -h <db-host> -U <db-admin-user> -O <app-role> <database>
-sh /opt/backup/pg-restore.sh /backups/math-quest-YYYYMMDD-HHMMSS.dump
+sh /scripts/pg-restore.sh /backups/math-quest-YYYYMMDD-HHMMSS.dump
 ```
+
+A dump taken from an older schema cannot be restored with `--force` over a
+newer schema. Use the drop and create path above.
 
 Restores use `--no-owner --no-privileges --exit-on-error`, so the restored
 objects belong to `PGUSER` and any error aborts the restore.

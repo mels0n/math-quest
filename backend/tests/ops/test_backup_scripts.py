@@ -11,6 +11,7 @@ import subprocess
 import time
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -264,3 +265,104 @@ def test_failed_forced_restore_rolls_back(source_db: str, target_db: str, tmp_pa
         )
     )
     assert constraints[0]["c"] == 1
+
+
+def _far_slot() -> str:
+    return (datetime.now(UTC) + timedelta(hours=6)).strftime("%H:%M")
+
+
+def _start_loop(env: dict[str, str], tmp_path: Path) -> tuple[subprocess.Popen[bytes], Path]:
+    err = tmp_path / "loop.err"
+    proc = subprocess.Popen(
+        ["sh", str(BACKUP)],
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=err.open("wb"),
+    )
+    return proc, err
+
+
+def _stop(proc: subprocess.Popen[bytes]) -> None:
+    if proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+
+
+def _wait_for(predicate: Any, seconds: float) -> bool:
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if predicate():
+            return True
+        time.sleep(0.2)
+    return bool(predicate())
+
+
+def test_loop_catches_up_when_no_recent_dump(source_db: str, tmp_path: Path) -> None:
+    pw = _write_password(tmp_path)
+    out = tmp_path / "backups"
+    out.mkdir()
+    proc, _ = _start_loop(_env(source_db, pw, out, BACKUP_AT=_far_slot()), tmp_path)
+    try:
+        assert _wait_for(lambda: len(_dumps(out)) == 1, 30)
+        assert proc.poll() is None
+    finally:
+        _stop(proc)
+
+
+def test_loop_skips_catch_up_when_dump_is_recent(source_db: str, tmp_path: Path) -> None:
+    pw = _write_password(tmp_path)
+    out = tmp_path / "backups"
+    out.mkdir()
+    recent = out / "math-quest-20200101-000000.dump"
+    recent.write_bytes(b"recent")
+    proc, _ = _start_loop(_env(source_db, pw, out, BACKUP_AT=_far_slot()), tmp_path)
+    try:
+        time.sleep(4)
+        assert proc.poll() is None
+        assert _dumps(out) == [recent]
+    finally:
+        _stop(proc)
+
+
+def test_loop_survives_a_failed_dump(source_db: str, tmp_path: Path) -> None:
+    pw = _write_password(tmp_path, "definitely-wrong-password")
+    out = tmp_path / "backups"
+    out.mkdir()
+    env = _env(source_db, pw, out, BACKUP_AT=_far_slot(), RETRY_SECONDS="60")
+    proc, err = _start_loop(env, tmp_path)
+    try:
+        assert _wait_for(lambda: "pg_dump failed" in err.read_text(), 30)
+        time.sleep(1)
+        assert proc.poll() is None
+        assert list(out.iterdir()) == []
+        assert "definitely-wrong-password" not in err.read_text()
+    finally:
+        _stop(proc)
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"KEEP": "0"},
+        {"KEEP": "abc"},
+        {"KEEP": "-1"},
+        {"BACKUP_AT": "25:00"},
+        {"BACKUP_AT": "3:15"},
+        {"RETRY_SECONDS": "0"},
+        {"RETRY_MAX": "abc"},
+    ],
+)
+def test_invalid_settings_exit_without_dumping(
+    bad: dict[str, str], source_db: str, tmp_path: Path
+) -> None:
+    pw = _write_password(tmp_path)
+    out = tmp_path / "backups"
+    out.mkdir()
+    result = _run(BACKUP, ["--once"], _env(source_db, pw, out, **bad))
+    assert result.returncode != 0
+    assert "error:" in result.stderr
+    assert list(out.iterdir()) == []
