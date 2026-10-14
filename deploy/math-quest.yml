@@ -66,8 +66,8 @@ services:
       DATABASE_URL_FILE: /run/secrets/mq_database_url
       INITIAL_SIGNUP_WORD_FILE: /run/secrets/mq_signup_word
       ADMIN_PASSWORD_FILE: /run/secrets/mq_admin_password
-      # Name only the proxy itself, never a range that includes LAN clients.
-      TRUSTED_PROXIES: <proxy-address>
+      # The dedicated edge network holds only the proxy and this app.
+      TRUSTED_PROXIES: <edge-subnet>
       COOKIE_SECURE: "true"
     secrets:
       - mq_database_url
@@ -75,7 +75,7 @@ services:
       - mq_admin_password
     networks:
       - math-quest_net
-      - <proxy-network>
+      - math-quest_edge
     deploy:
       replicas: 1
       update_config:
@@ -96,7 +96,7 @@ secrets:
 networks:
   math-quest_net:
     external: true
-  <proxy-network>:
+  math-quest_edge:
     external: true
 
 volumes:

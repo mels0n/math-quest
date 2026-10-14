@@ -11,10 +11,10 @@ Run the commands on a Swarm manager. Placeholders in angle brackets are yours to
 | Placeholder | Meaning |
 | --- | --- |
 | `<db-node>` | Swarm node that holds the database volume |
-| `<proxy-address>` | The proxy's own address on the shared overlay network, or the narrow range holding only it. Name only the proxy itself |
+| `<edge-subnet>` | Subnet of the dedicated edge network (step 2), a /28 or /27. Must not overlap your LAN or `ADMIN_ALLOWED_CIDRS` |
+| `<proxy-service>` | Name of the reverse proxy's Swarm service |
 | `<wan-target>` | Public address your existing DNS-only records point to |
 | `<registry-image-tag>` | The exact image, `ghcr.io/<owner>/math-quest:sha-<12 chars>` |
-| `<proxy-network>` | Existing overlay network the reverse proxy is attached to |
 | `<backups-path>` | Host directory for dumps (persistent storage) |
 | `<scripts-path>` | Host directory holding the three scripts from `deploy/backup/` |
 
@@ -28,7 +28,7 @@ shell history. Four are needed:
 - `mq_db_password`: the database password.
 - `mq_database_url`: the full URL, `postgresql+asyncpg://mathquest:<password>@math-quest-db:5432/mathquest`. Percent-encode the password in the URL if it has characters such as `@`, `/`, `:` or `%`.
 - `mq_signup_word`: the grown-up's secret word that new players must enter.
-- `mq_admin_password`: the admin password (optional, see below). Use a long random one, 24 or more random characters from a password manager. Logins are capped at 10 per client address per 10 minutes, so the length of the password is the main defence, not the cap.
+- `mq_admin_password`: the admin password (optional, see below). Use at least 16 characters (the app refuses to start with a shorter one) and preferably 24 or more random characters from a password manager. Logins are capped at 10 per client address and 30 across all clients per 10 minutes, so the length of the password is the main defence, not the cap.
 
 ```sh
 docker secret create mq_db_password ./db-password.txt
@@ -44,15 +44,22 @@ or empty stops the app from starting.
 
 Delete the local files afterwards.
 
-## 2. Create the network and label the database node
+## 2. Create the networks and label the database node
 
 ```sh
-docker network create --driver overlay --attachable math-quest_net
+docker network create --driver overlay math-quest_net
+docker network create --driver overlay --subnet <edge-subnet> math-quest_edge
 docker node update --label-add math-quest.db=true <db-node>
 ```
 
-The app also joins the overlay network the proxy uses (`<proxy-network>`). It
-must already exist.
+`math-quest_edge` is a dedicated network that holds only the proxy and the app. Do not
+make it attachable, and attach nothing else to it. Attach the proxy once:
+
+```sh
+docker service update --network-add math-quest_edge <proxy-service>
+```
+
+This restarts the proxy task, so expect a short interruption of every site it serves.
 
 ## 3. Create the database service
 
@@ -123,21 +130,25 @@ docker service rm math-quest-backup-once
 ```
 
 Do not continue until a dump exists. The [backup README](../../deploy/backup/README.md)
-lists the variables (`KEEP`, `BACKUP_AT`, `TZ`) and restore usage.
+lists the variables (`KEEP`, `BACKUP_AT`, `TZ`, `RETRY_SECONDS`, `RETRY_MAX`) and restore usage.
 
 ## 5. Create the app service
+
+The image must be public, or log in to the registry on the manager first
+(`docker login`) and add `--with-registry-auth` to the `docker service create`
+command below.
 
 ```sh
 docker service create --name math-quest \
   --network math-quest_net \
-  --network <proxy-network> \
+  --network math-quest_edge \
   --secret mq_database_url \
   --secret mq_signup_word \
   --secret mq_admin_password \
   --env DATABASE_URL_FILE=/run/secrets/mq_database_url \
   --env INITIAL_SIGNUP_WORD_FILE=/run/secrets/mq_signup_word \
   --env ADMIN_PASSWORD_FILE=/run/secrets/mq_admin_password \
-  --env TRUSTED_PROXIES=<proxy-address> \
+  --env TRUSTED_PROXIES=<edge-subnet> \
   --env COOKIE_SECURE=true \
   --replicas 1 \
   --update-order stop-first \
@@ -158,7 +169,11 @@ docker service logs math-quest
 
 The app trusts `X-Forwarded-For` only from the addresses in `TRUSTED_PROXIES`.
 
-- Name only the proxy itself: its overlay address, or the narrow range holding it.
+- Set `TRUSTED_PROXIES` to the dedicated edge subnet (`<edge-subnet>`). Every address
+  on that network can only be the proxy, the app, or Docker's own gateway and
+  virtual addresses, so the range survives proxy task restarts and admits no
+  neighbouring containers. Do not point it at a shared proxy network: any container
+  there could then forge `X-Forwarded-For`.
 - The proxy must see real client source addresses. Publish its ports in host mode
   (`mode=host`) so Swarm's ingress does not source-NAT connections to an internal
   address. Behind NAT every client looks like the same internal address, so the app
@@ -213,16 +228,18 @@ Then check that a forged forwarding header does not open admin, over both IPv4 a
 IPv6. Both must print `404`:
 
 ```sh
-curl -4 -s -o /dev/null -w '%{http_code}\n' -H 'X-Forwarded-For: 192.168.1.10' https://<your-host>/api/admin/me
-curl -6 -s -o /dev/null -w '%{http_code}\n' -H 'X-Forwarded-For: 192.168.1.10' https://<your-host>/api/admin/me
+curl -4 -s -o /dev/null -w '%{http_code}\n' -H 'X-Forwarded-For: 192.168.1.10' https://math.<your-domain>/api/admin/me
+curl -6 -s -o /dev/null -w '%{http_code}\n' -H 'X-Forwarded-For: 192.168.1.10' https://math.<your-domain>/api/admin/me
 ```
 
-If either prints anything else, stop: the proxy is passing a client-supplied header
+Run the `-6` line only if you published an AAAA record. Without one curl prints
+`000`, which is expected. If a line that can connect prints anything else, stop: the proxy is passing a client-supplied header
 through or hiding real source addresses. See "Trusted proxies and admin access".
 
 Then sign up with a throwaway account, play a few problems, and delete the account
 from the admin screen on the LAN. Check that `docker service logs math-quest` shows
-real client addresses, not the proxy's.
+real client addresses, not the proxy's. Rerun this whole step, including the
+log check, after any proxy restart.
 
 ## 9. Rehearse a restore
 

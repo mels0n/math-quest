@@ -25,7 +25,8 @@ would let outsiders probe which admin routes exist.
   denied. Admin is also disabled, with every route a 404, when no admin password is
   configured.
 - The password is read from a file, hashed once at boot with argon2id, and compared
-  by hash. Logins are capped at 10 per client address per 10 minutes.
+  by hash. It must be at least 16 characters. Logins are capped at 10 per client
+  address and 30 across all clients per 10 minutes.
 - A successful login creates a random session token. Only its SHA-256 is stored, with
   an expiry of 8 hours. The cookie is `HttpOnly`, `SameSite=Strict` and scoped to
   `/api/admin`, and state-changing requests need a custom header.
@@ -44,7 +45,12 @@ would let outsiders probe which admin routes exist.
 
 ## Consequences
 Admin works only from the home network. If the proxy does not see real client
-addresses, or its trusted range is too wide, admin stops working (404) rather than
-opening up. The deployment guide has a spoof check to run after every proxy change.
-The allowed networks are configuration, so a household on a different address range
-sets `ADMIN_ALLOWED_CIDRS`.
+addresses, admin stops working (404) rather than opening up. A trusted range that is
+too wide fails closed only when it covers the admin LAN. A range that covers other
+containers does not: it lets any of them forge `X-Forwarded-For` and pass as a LAN
+client. So the deployment gives the app and the proxy a dedicated edge network that
+holds nothing else, and `TRUSTED_PROXIES` is exactly that subnet. Every address on it
+is the proxy, the app, or Docker's own gateway and virtual addresses, so the range
+survives proxy restarts and admits no neighbours. The deployment guide has a spoof
+check to run after every proxy change. The allowed networks are configuration, so a
+household on a different address range sets `ADMIN_ALLOWED_CIDRS`.
