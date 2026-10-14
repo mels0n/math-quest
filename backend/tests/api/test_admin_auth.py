@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import re
 from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -102,6 +103,53 @@ async def test_off_lan_admin_is_indistinguishable_from_an_unknown_api_path(
                     r = await h.client.request(method, path, content=content, headers=headers)
                     assert _shape(r) == _shape(unknown), (method, path, content)
                     assert "mq_admin" not in r.headers.get("set-cookie", "")
+
+
+CASE_AND_ENCODING_VARIANTS = (
+    "/API/admin/me",
+    "/Api/Admin",
+    "/%2561pi/admin/me",
+    "/x/%252e%252e/api/admin/me",
+    "/%41pi/admin/me",
+    "/api/%2e%2e/api/admin/me",
+)
+
+
+def _control(path: str) -> str:
+    return re.sub(r"(?i)%(?:25)?61dmin|admin", "nope", path)
+
+
+async def test_off_lan_admin_variants_match_a_non_admin_control_with_static(
+    api: ApiFactory, password_file: Path, tmp_path: Path
+) -> None:
+    static = tmp_path / "static"
+    static.mkdir()
+    (static / "index.html").write_text("<html>SPA</html>", encoding="utf-8")
+    h = await api(peer="203.0.113.50", admin_password_file=password_file, static_dir=static)
+    for method in ("GET", "HEAD", "POST", "OPTIONS"):
+        for path in (*ADMIN_PATHS, *CASE_AND_ENCODING_VARIANTS):
+            h.client.cookies.clear()
+            admin = await h.client.request(method, path, headers=CSRF)
+            h.client.cookies.clear()
+            control = await h.client.request(method, _control(path), headers=CSRF)
+            assert control.status_code == 404, (method, _control(path))
+            assert _shape(admin) == _shape(control), (method, path)
+
+
+async def test_trusted_proxy_must_name_an_untrusted_client(
+    api: ApiFactory, password_file: Path
+) -> None:
+    h = await api(peer="10.0.0.2", trusted_proxies="10.0.0.2", admin_password_file=password_file)
+    for extra in (
+        {},
+        {"Forwarded": "for=192.168.1.77"},
+        {"X-Forwarded-For": "10.0.0.2"},
+        {"X-Forwarded-For": "garbage"},
+        {"X-Forwarded-For": "192.168.1.77, garbage"},
+    ):
+        r = await _login(h.client, headers={**CSRF, **extra})
+        assert r.status_code == 404, extra
+        assert r.json() == NOT_FOUND
 
 
 async def test_every_api_path_without_a_route_is_404_for_any_method(

@@ -5,41 +5,17 @@ is configured, gets the standard 404 for every method, so the routes cannot be t
 unknown paths.
 """
 
-from urllib.parse import unquote
-
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from mathquest.api.clientip import IPNetwork, client_ip, ip_in_networks
 from mathquest.api.errors import not_found_response
+from mathquest.api.pathnorm import scope_is_under
 
 _FORWARD_HEADERS = (b"x-forwarded-for", b"forwarded")
 
 
-def _segments(path: str) -> list[str]:
-    parts: list[str] = []
-    for seg in path.replace("\\", "/").split("/"):
-        if seg in ("", "."):
-            continue
-        if seg == "..":
-            if parts:
-                parts.pop()
-            continue
-        parts.append(seg.casefold())
-    return parts
-
-
 def is_admin_path(scope: Scope) -> bool:
-    """Whether the raw or the decoded path (once or twice decoded) names /api/admin or below."""
-    raw = scope.get("raw_path")
-    candidates = [scope.get("path", "")]
-    if isinstance(raw, bytes):
-        candidates.append(raw.decode("latin-1").split("?", 1)[0])
-    for candidate in candidates:
-        once = unquote(candidate)
-        for form in (candidate, once, unquote(once)):
-            if _segments(form)[:2] == ["api", "admin"]:
-                return True
-    return False
+    return scope_is_under(scope, ("api", "admin"))
 
 
 def _allowed(scope: Scope) -> bool:
@@ -57,7 +33,11 @@ def _allowed(scope: Scope) -> bool:
     carries_forwarding = any(name in _FORWARD_HEADERS for name, _ in scope["headers"])
     if carries_forwarding and (peer is None or not ip_in_networks(peer, trusted)):
         return False
-    return ip_in_networks(client_ip(peer, forwarded, trusted), networks)
+    resolved = client_ip(peer, forwarded, trusted)
+    if peer is not None and ip_in_networks(peer, trusted) and ip_in_networks(resolved, trusted):
+        # A proxy peer must name an untrusted client; falling back to the proxy itself is a deny.
+        return False
+    return ip_in_networks(resolved, networks)
 
 
 class AdminGate:

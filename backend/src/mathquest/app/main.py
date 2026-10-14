@@ -23,6 +23,7 @@ from mathquest.api.deps import (
     valid_device_key,
 )
 from mathquest.api.errors import install_error_handlers
+from mathquest.api.pathnorm import path_is_under, scope_is_under
 from mathquest.api.ratelimit import Clock, RateLimiter
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.skillgraph import load_pack
@@ -40,9 +41,8 @@ class SpaStaticFiles(StaticFiles):
     """Static files that answer unknown non-API paths with `index.html`."""
 
     async def get_response(self, path: str, scope: Scope) -> Response:
-        route = path.replace("\\", "/")
-        if route == "api" or route.startswith("api/"):
-            # Any method: a 405 from the static handler would reveal which API paths do not exist.
+        if scope_is_under(scope, ("api",)) or path_is_under(path, ("api",)):
+            # Any method: a different answer for API-like paths would reveal which exist.
             raise HTTPException(status_code=404)
         try:
             return await super().get_response(path, scope)
