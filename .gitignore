@@ -31,3 +31,16 @@ build/
 .hypothesis/
 test-results/
 playwright-report/
+
+# Public repo: tool config and strategy working docs stay local
+.claude/*.json
+.claude/
+.impeccable/
+/briefs/
+/strategy/
+ACTION-PLAN.md
+*AUDIT-REPORT*.md
+*BLOG_STRATEGY.md
+*CONTENT_STRATEGY.md
+*SEO_STRATEGY.md
+*MARKETING_STRATEGY.md
