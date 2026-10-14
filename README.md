@@ -36,6 +36,7 @@ Pushes and pull requests run the CI workflow in `.github/workflows/ci.yml`
 (lint, typecheck, import-boundary checks, tests, build). The application ships as a
 single container image tagged with the commit (`sha-<12 chars>`), never `:latest`.
 Run a single replica only; see "Deployment settings" in [AGENTS.md](AGENTS.md).
+Step-by-step Swarm instructions: [docs/how-to/deploy.md](docs/how-to/deploy.md).
 
 ## Where secrets live
 Configuration comes from environment variables read in one place,

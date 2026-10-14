@@ -1,0 +1,99 @@
+# Compose-format description of the three math-quest services.
+# This file documents them; it is not deployed as a stack. Create each service one at a
+# time with `docker service create` (see docs/how-to/deploy.md), never with `docker stack deploy`.
+# Secrets and networks are external: create them first, as the how-to describes.
+
+services:
+  math-quest-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: mathquest
+      POSTGRES_DB: mathquest
+      POSTGRES_PASSWORD_FILE: /run/secrets/mq_db_password
+    secrets:
+      - mq_db_password
+    volumes:
+      - math-quest-pgdata:/var/lib/postgresql/data
+    networks:
+      - math-quest_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mathquest"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.math-quest.db == true
+      restart_policy:
+        condition: on-failure
+
+  math-quest-backup:
+    image: postgres:16
+    command: ["/scripts/pg-backup.sh"]
+    environment:
+      PGHOST: math-quest-db
+      PGUSER: mathquest
+      PGDATABASE: mathquest
+      PGPASSWORD_FILE: /run/secrets/mq_db_password
+      BACKUP_DIR: /backups
+      KEEP: "14"
+      BACKUP_AT: "03:15"
+    secrets:
+      - mq_db_password
+    volumes:
+      - type: bind
+        source: <backups-path>
+        target: /backups
+      - type: bind
+        source: <scripts-path>
+        target: /scripts
+        read_only: true
+    networks:
+      - math-quest_net
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  math-quest:
+    image: <registry-image-tag>
+    environment:
+      DATABASE_URL_FILE: /run/secrets/mq_database_url
+      INITIAL_SIGNUP_WORD_FILE: /run/secrets/mq_signup_word
+      ADMIN_PASSWORD_FILE: /run/secrets/mq_admin_password
+      TRUSTED_PROXIES: <swag-overlay-cidr>
+      COOKIE_SECURE: "true"
+    secrets:
+      - mq_database_url
+      - mq_signup_word
+      - mq_admin_password
+    networks:
+      - math-quest_net
+      - swag_see_all
+    deploy:
+      replicas: 1
+      update_config:
+        order: stop-first
+      restart_policy:
+        condition: on-failure
+
+secrets:
+  mq_db_password:
+    external: true
+  mq_database_url:
+    external: true
+  mq_signup_word:
+    external: true
+  mq_admin_password:
+    external: true
+
+networks:
+  math-quest_net:
+    external: true
+  swag_see_all:
+    external: true
+
+volumes:
+  math-quest-pgdata:
