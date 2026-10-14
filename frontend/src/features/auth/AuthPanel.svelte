@@ -54,7 +54,7 @@
 				shownWord = reveal.word();
 			}
 		} catch (err) {
-			error = authErrorMessage(err);
+			error = authErrorMessage(err, mode);
 			pin = null;
 			pinKey += 1;
 		} finally {

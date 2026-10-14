@@ -1,4 +1,5 @@
 import { ApiError, commonErrorMessage } from '../../shared/api';
+import type { AuthMode } from './auth-flow';
 
 export const CODE_COPY = {
 	signup_word: "That secret word isn't right. Ask a grown-up for it.",
@@ -10,8 +11,11 @@ export const CODE_COPY = {
 	credential: "That didn't work. Check it and try again."
 } as const;
 
+export const RECOVER_UNAUTHORIZED = "That nickname and recovery word don't match. Try again.";
+
 /** Kid-facing text for a failed auth request. */
-export function authErrorMessage(err: unknown): string {
+export function authErrorMessage(err: unknown, mode?: AuthMode): string {
+	if (mode === 'recover' && err instanceof ApiError && err.status === 401) return RECOVER_UNAUTHORIZED;
 	if (err instanceof ApiError && err.status !== 429 && Object.hasOwn(CODE_COPY, err.code)) {
 		return CODE_COPY[err.code as keyof typeof CODE_COPY];
 	}
