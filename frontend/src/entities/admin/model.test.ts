@@ -1,0 +1,52 @@
+import { describe, expect, it } from 'vitest';
+import { ApiError } from '../../shared/api';
+import { adminErrorMessage, canDelete, isValidPin, isValidSignupWord } from './model';
+
+describe('canDelete', () => {
+	it('requires the exact nickname', () => {
+		expect(canDelete('Sam_7', 'Sam_7')).toBe(true);
+		expect(canDelete('Sam_7', 'sam_7')).toBe(false);
+		expect(canDelete('Sam_7', 'Sam_7 ')).toBe(false);
+		expect(canDelete('Sam_7', '')).toBe(false);
+	});
+});
+
+describe('input validation', () => {
+	it('accepts exactly 4 digits for a PIN', () => {
+		expect(isValidPin('0420')).toBe(true);
+		expect(isValidPin('123')).toBe(false);
+		expect(isValidPin('12345')).toBe(false);
+		expect(isValidPin('12a4')).toBe(false);
+	});
+
+	it('accepts 3 to 32 letters for a signup word', () => {
+		expect(isValidSignupWord('abc')).toBe(true);
+		expect(isValidSignupWord('ab')).toBe(false);
+		expect(isValidSignupWord('ab1')).toBe(false);
+		expect(isValidSignupWord('a'.repeat(33))).toBe(false);
+	});
+});
+
+describe('adminErrorMessage', () => {
+	const err = (status: number, code: string, retry: number | null = null) =>
+		new ApiError(status, code, retry);
+
+	it('maps known codes to plain copy without exposing the code', () => {
+		expect(adminErrorMessage(err(401, 'unauthorized'))).toMatch(/password|sign in/i);
+		expect(adminErrorMessage(err(409, 'nickname_taken'))).toMatch(/already/i);
+		expect(adminErrorMessage(err(404, 'not_found'))).toMatch(/no longer|not found/i);
+		expect(adminErrorMessage(err(422, 'invalid_request'))).toMatch(/check/i);
+		expect(adminErrorMessage(err(403, 'csrf'))).toMatch(/reload/i);
+		expect(adminErrorMessage(err(409, 'busy'))).toMatch(/busy|again/i);
+	});
+
+	it('includes the wait time for rate limits', () => {
+		expect(adminErrorMessage(err(429, 'rate_limited', 120))).toContain('2 minutes');
+	});
+
+	it('falls back for unknown failures and never leaks the raw code', () => {
+		const text = adminErrorMessage(err(500, 'weird_code_x'));
+		expect(text).not.toContain('weird_code_x');
+		expect(adminErrorMessage(new Error('x'))).toBeTruthy();
+	});
+});
