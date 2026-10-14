@@ -1,12 +1,13 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false, reportPrivateUsage=false
 import asyncio
+import sys
 import time
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
 import sympy
 
-from mathquest.engine.checker.bounded import CheckerPool
+from mathquest.engine.checker.bounded import CheckerPool, _mp_context
 from mathquest.engine.checker.check import CheckResult, Verdict, check
 from mathquest.engine.types import AnswerForm, Problem
 
@@ -125,3 +126,8 @@ async def test_warm_pool_checks_well_under_budget(pool: CheckerPool) -> None:
     result = await pool.check(problem_for(sympy.Integer(2)), "2")
     assert result.verdict is Verdict.CORRECT
     assert time.monotonic() - start < 1.0
+
+
+def test_workers_start_with_forkserver_on_posix_and_spawn_elsewhere() -> None:
+    expected = "spawn" if sys.platform == "win32" else "forkserver"
+    assert _mp_context().get_start_method() == expected

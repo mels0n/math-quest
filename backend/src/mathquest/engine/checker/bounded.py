@@ -8,6 +8,8 @@ cost never counts against the per-answer budget.
 
 import asyncio
 import logging
+import multiprocessing
+import multiprocessing.context
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
 from concurrent.futures.process import BrokenProcessPool
@@ -24,6 +26,13 @@ SHUTDOWN_MESSAGE = "after shutdown"
 log = logging.getLogger(__name__)
 
 Worker = Callable[[Problem, str], CheckResult]
+
+
+def _mp_context() -> multiprocessing.context.BaseContext:
+    """forkserver where available, so workers never fork a threaded server; spawn otherwise."""
+    if "forkserver" in multiprocessing.get_all_start_methods():
+        return multiprocessing.get_context("forkserver")
+    return multiprocessing.get_context("spawn")
 
 
 def _run_check(problem: Problem, latex: str) -> CheckResult:
@@ -82,7 +91,9 @@ class CheckerPool:
         """The current pool, created and warmed under the lock if absent."""
         async with self._lock:
             if self._pool is None:
-                pool = ProcessPoolExecutor(max_workers=MAX_WORKERS, initializer=_init_worker)
+                pool = ProcessPoolExecutor(
+                    max_workers=MAX_WORKERS, mp_context=_mp_context(), initializer=_init_worker
+                )
                 await self._warm(pool)
                 self._pool = pool
             return self._pool
