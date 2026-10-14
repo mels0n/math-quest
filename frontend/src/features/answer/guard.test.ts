@@ -18,7 +18,11 @@ describe('submitBlocker', () => {
 });
 
 describe('noticeAfterEdit', () => {
-	it('clears the empty-box notice after typing or a keypad tap', () => {
-		expect(noticeAfterEdit()).toBe('');
+	it('clears the empty-box notice', () => {
+		expect(noticeAfterEdit(EMPTY_BOX_MESSAGE)).toBe('');
+	});
+	it('leaves any other notice alone', () => {
+		expect(noticeAfterEdit('Something else')).toBe('Something else');
+		expect(noticeAfterEdit('')).toBe('');
 	});
 });

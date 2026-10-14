@@ -11,6 +11,13 @@ describe('waitText', () => {
 	it('counts minutes under an hour', () => {
 		expect(waitText(1800)).toBe('30 minutes');
 	});
+	it('says an hour, not 1 hours', () => {
+		expect(waitText(3600)).toBe('about an hour');
+		expect(waitText(5399)).toBe('about an hour');
+	});
+	it('rounds 90 minutes up to 2 hours', () => {
+		expect(waitText(5400)).toBe('about 2 hours');
+	});
 	it('counts hours under six hours', () => {
 		expect(waitText(7200)).toBe('about 2 hours');
 	});

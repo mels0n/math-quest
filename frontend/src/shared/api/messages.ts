@@ -10,7 +10,10 @@ export function waitText(seconds: number): string {
 	if (seconds < 60) return `${Math.max(1, seconds)} seconds`;
 	if (seconds < 120) return 'a minute or two';
 	if (seconds < 3600) return `${Math.ceil(seconds / 60)} minutes`;
-	if (seconds < 6 * 3600) return `about ${Math.round(seconds / 3600)} hours`;
+	if (seconds < 6 * 3600) {
+		const hours = Math.round(seconds / 3600);
+		return hours === 1 ? 'about an hour' : `about ${hours} hours`;
+	}
 	return 'until tomorrow';
 }
 
