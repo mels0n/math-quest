@@ -61,6 +61,7 @@ root_package = "mathquest"
 name = "Backend layers import downward only"
 type = "layers"
 layers = [
+    "mathquest.app",
     "mathquest.api",
     "mathquest.features",
     "mathquest.entities",
