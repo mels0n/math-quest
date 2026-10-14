@@ -193,6 +193,41 @@ def test_bad_password_fails_without_partial(source_db: str, tmp_path: Path) -> N
     assert "definitely-wrong-password" not in result.stdout + result.stderr
 
 
+def _failing_tool(directory: Path, name: str) -> str:
+    """Put a `name` that always fails first on PATH; everything else stays real."""
+    stubs = directory / "stubs"
+    stubs.mkdir(exist_ok=True)
+    stub = stubs / name
+    stub.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+    stub.chmod(0o755)
+    return f"{stubs}{os.pathsep}{os.environ['PATH']}"
+
+
+def test_once_fails_when_the_dump_cannot_be_moved_into_place(
+    source_db: str, tmp_path: Path
+) -> None:
+    pw = _write_password(tmp_path)
+    out = tmp_path / "backups"
+    out.mkdir()
+    path = _failing_tool(tmp_path, "mv")
+    result = _run(BACKUP, ["--once"], _env(source_db, pw, out, PATH=path))
+    assert result.returncode != 0
+    assert "could not move the finished dump into place" in result.stderr
+    assert "dump finished" not in result.stdout
+    assert list(out.iterdir()) == []
+
+
+def test_a_failed_size_read_does_not_fail_the_dump(source_db: str, tmp_path: Path) -> None:
+    pw = _write_password(tmp_path)
+    out = tmp_path / "backups"
+    out.mkdir()
+    path = _failing_tool(tmp_path, "wc")
+    result = _run(BACKUP, ["--once"], _env(source_db, pw, out, PATH=path))
+    assert result.returncode == 0, result.stderr
+    assert len(_dumps(out)) == 1
+    assert "unknown bytes" in result.stdout
+
+
 def test_restore_reproduces_row_counts(source_db: str, target_db: str, tmp_path: Path) -> None:
     pw = _write_password(tmp_path)
     out = tmp_path / "backups"

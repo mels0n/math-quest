@@ -45,7 +45,9 @@ sh /scripts/pg-backup.sh --once
 
 A dump is written to `math-quest-YYYYMMDD-HHMMSS.dump.partial` and renamed to
 `.dump` only after `pg_dump` succeeds. On failure the partial file is removed and
-`pg_dump failed` goes to stderr. With `--once` the script then exits non-zero;
+`pg_dump failed` goes to stderr. If the finished dump cannot be renamed, the
+partial file is removed too and `could not move the finished dump into place` goes
+to stderr. Either way the run counts as failed. With `--once` the script then exits non-zero;
 in loop mode it retries as described above. Invalid settings (`KEEP`,
 `BACKUP_AT`, `RETRY_SECONDS`, `RETRY_MAX`, an unwritable `BACKUP_DIR`) make
 either mode exit non-zero at start. Stale `.partial` files from an interrupted run are removed at startup. Dumps are created mode 600. Pruning only touches files named `math-quest-YYYYMMDD-HHMMSS.dump`, so hand-named copies are never counted or removed. Timestamps use the `TZ` zone.
