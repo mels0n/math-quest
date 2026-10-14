@@ -44,29 +44,23 @@ class Settings(BaseSettings):
     admin_password_file: Path | None = None
     # Clients outside these IPs or CIDRs get 404 on every /api/admin route; comma-separated in env.
     admin_allowed_cidrs: Annotated[list[str], NoDecode] = [
-        "10.0.0.0/8",
-        "172.16.0.0/12",
         "192.168.0.0/16",
         "127.0.0.1/32",
         "::1/128",
-        "fc00::/7",
     ]
 
     # Read only from `initial_signup_word_file`; deliberately not an env-settable field.
     _initial_signup_word: SecretStr | None = PrivateAttr(default=None)
-    # Read only from `admin_password_file`; dropped once the app has hashed it.
-    _admin_password: SecretStr | None = PrivateAttr(default=None)
 
     @property
     def initial_signup_word(self) -> SecretStr | None:
         return self._initial_signup_word
 
-    @property
-    def admin_password(self) -> SecretStr | None:
-        return self._admin_password
-
-    def discard_admin_password(self) -> None:
-        self._admin_password = None
+    def read_admin_password(self) -> SecretStr | None:
+        """The admin password, read from its file on each call and never stored on the settings."""
+        if self.admin_password_file is None:
+            return None
+        return SecretStr(_read_secret_file(self.admin_password_file, "admin password"))
 
     @field_validator("trusted_proxies", "admin_allowed_cidrs", mode="before")
     @classmethod
@@ -103,10 +97,7 @@ class Settings(BaseSettings):
             self._initial_signup_word = SecretStr(
                 _read_secret_file(self.initial_signup_word_file, "initial signup word")
             )
-        if self.admin_password_file is not None:
-            self._admin_password = SecretStr(
-                _read_secret_file(self.admin_password_file, "admin password")
-            )
+        self.read_admin_password()
         return self
 
 

@@ -97,7 +97,7 @@ def test_exposed_answers_require_insecure_cookies(tmp_path: Path) -> None:
     assert ok.dev_expose_answers is True
 
 
-def test_admin_password_file_is_read_and_defaults_cover_private_ranges(
+def test_admin_password_file_is_read_and_defaults_are_home_lan_and_loopback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _clear(monkeypatch)
@@ -106,17 +106,11 @@ def test_admin_password_file_is_read_and_defaults_cover_private_ranges(
     secret.write_bytes(b"\xef\xbb\xbfs3cret-value \r\n")
     monkeypatch.setenv("ADMIN_PASSWORD_FILE", str(secret))
     settings = Settings()
-    assert settings.admin_password is not None
-    assert settings.admin_password.get_secret_value() == "s3cret-value"
+    password = settings.read_admin_password()
+    assert password is not None
+    assert password.get_secret_value() == "s3cret-value"
     assert "s3cret-value" not in repr(settings)
-    assert set(settings.admin_allowed_cidrs) == {
-        "10.0.0.0/8",
-        "172.16.0.0/12",
-        "192.168.0.0/16",
-        "127.0.0.1/32",
-        "::1/128",
-        "fc00::/7",
-    }
+    assert set(settings.admin_allowed_cidrs) == {"192.168.0.0/16", "127.0.0.1/32", "::1/128"}
 
 
 def test_admin_allowed_cidrs_from_env_and_validation(monkeypatch: pytest.MonkeyPatch) -> None:

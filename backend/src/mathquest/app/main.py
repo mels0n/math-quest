@@ -13,6 +13,7 @@ from starlette.types import Scope
 
 from mathquest.api import admin as admin_api
 from mathquest.api import auth, health, play
+from mathquest.api.admingate import AdminGate
 from mathquest.api.clientip import parse_networks
 from mathquest.api.deps import (
     DEVICE_COOKIE,
@@ -39,11 +40,14 @@ class SpaStaticFiles(StaticFiles):
     """Static files that answer unknown non-API paths with `index.html`."""
 
     async def get_response(self, path: str, scope: Scope) -> Response:
+        route = path.replace("\\", "/")
+        if route == "api" or route.startswith("api/"):
+            # Any method: a 405 from the static handler would reveal which API paths do not exist.
+            raise HTTPException(status_code=404)
         try:
             return await super().get_response(path, scope)
         except HTTPException as err:
-            route = path.replace("\\", "/")
-            if err.status_code != 404 or route == "api" or route.startswith("api/"):
+            if err.status_code != 404:
                 raise
             return await super().get_response("index.html", scope)
 
@@ -80,7 +84,7 @@ def create_app(
             app.state.session_factory = factory
             app.state.trusted_networks = trusted
             app.state.admin_networks = admin_networks
-            admin_password = cfg.admin_password
+            admin_password = cfg.read_admin_password()
             if admin_password is None:
                 log.warning("admin password is not configured; /api/admin is disabled")
                 app.state.admin_password_hash = None
@@ -88,7 +92,6 @@ def create_app(
                 app.state.admin_password_hash = await admin.hash_password(
                     admin_password.get_secret_value()
                 )
-                cfg.discard_admin_password()
             app.state.rate_limiter = RateLimiter(clock) if clock else RateLimiter()
             app.state.blocklist = accounts.load_blocklist(cfg.content_dir)
             app.state.nickname_words = accounts.load_nickname_words(cfg.content_dir)
@@ -110,6 +113,7 @@ def create_app(
         openapi_url=None,
     )
     install_error_handlers(app)
+    app.add_middleware(AdminGate)
 
     @app.middleware("http")
     async def device_cookie(  # pyright: ignore[reportUnusedFunction]

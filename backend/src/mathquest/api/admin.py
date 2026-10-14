@@ -10,13 +10,12 @@ from mathquest.api.deps import (
     CurrentAdmin,
     Db,
     limit_admin_login,
-    require_lan,
 )
 from mathquest.features import admin
 from mathquest.shared.config import Settings
 from mathquest.shared.errors import Unauthorized
 
-router = APIRouter(prefix="/api/admin", dependencies=[Depends(require_lan)])
+router = APIRouter(prefix="/api/admin")
 
 
 class AdminLoginIn(BaseModel):

@@ -9,17 +9,16 @@ from fastapi import Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from mathquest.api import ratelimit
-from mathquest.api.clientip import IPNetwork, client_ip, ip_in_networks
+from mathquest.api.clientip import IPNetwork, client_ip
 from mathquest.features import admin
 from mathquest.features.accounts import PlayerOut, player_for_token
 from mathquest.shared.config import Settings
-from mathquest.shared.errors import Forbidden, NotFound, Unauthorized
+from mathquest.shared.errors import Forbidden, Unauthorized
 
 DEVICE_COOKIE = "mq_device"
 SESSION_COOKIE = "mq_session"
 ADMIN_COOKIE = "mq_admin"
 ADMIN_COOKIE_PATH = "/api/admin"
-ADMIN_PREFIX = "/api/admin"
 COOKIE_MAX_AGE_S = 400 * 24 * 3600
 CSRF_HEADER = "X-Requested-With"
 CSRF_VALUE = "mathquest"
@@ -82,28 +81,7 @@ async def get_device_key(request: Request) -> str:
     return key
 
 
-def _is_admin_path(path: str) -> bool:
-    return path == ADMIN_PREFIX or path.startswith(ADMIN_PREFIX + "/")
-
-
-async def require_lan(request: Request) -> None:
-    """Admin routes do not exist unless an admin password is set and the client is on the LAN.
-
-    Raises NotFound, which the error handler renders exactly like an unknown path.
-    """
-    allowed: tuple[IPNetwork, ...] = request.app.state.admin_networks
-    configured = request.app.state.admin_password_hash is not None
-    if not configured or not ip_in_networks(resolve_client_ip(request), allowed):
-        raise NotFound()
-
-
-async def _admin_gate(request: Request) -> None:
-    """Runs ahead of the CSRF check so an off-LAN admin request cannot be told apart by it."""
-    if _is_admin_path(request.url.path):
-        await require_lan(request)
-
-
-async def require_csrf(request: Request, _: Annotated[None, Depends(_admin_gate)]) -> None:
+async def require_csrf(request: Request) -> None:
     if request.method not in SAFE_METHODS and request.headers.get(CSRF_HEADER) != CSRF_VALUE:
         raise Forbidden("csrf")
 
@@ -147,19 +125,25 @@ CurrentPlayer = Annotated[PlayerOut, Depends(current_player)]
 
 
 async def limit_admin_login(request: Request) -> None:
+    """Admin login attempts are capped per client bucket and across all clients."""
     key = ratelimit.rate_bucket(resolve_client_ip(request))
-    _limiter(request).hit(
+    limiter = _limiter(request)
+    limiter.hit(
         "admin-login",
         key,
         limit=ratelimit.ADMIN_LOGIN_LIMIT,
         window_s=ratelimit.ADMIN_LOGIN_WINDOW_S,
     )
+    limiter.hit(
+        "admin-login-all",
+        "all",
+        limit=ratelimit.ADMIN_LOGIN_GLOBAL_LIMIT,
+        window_s=ratelimit.ADMIN_LOGIN_WINDOW_S,
+    )
 
 
-async def require_admin(
-    request: Request, _: Annotated[None, Depends(require_lan)], db: Db
-) -> admin.AdminSessionOut:
-    """LAN check first (404), then a live admin session (401)."""
+async def require_admin(request: Request, db: Db) -> admin.AdminSessionOut:
+    """A live admin session (401 otherwise). The LAN gate already ran as middleware."""
     token = request.cookies.get(ADMIN_COOKIE)
     if not token:
         raise Unauthorized()
