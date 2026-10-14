@@ -183,7 +183,7 @@ def test_content_files_have_expected_sizes() -> None:
     assert all(re.fullmatch(r"[a-z]{3,9}", w) for w in recovery)
     for path in default_content_dir().rglob("*"):
         if path.is_file():
-            assert "—" not in path.read_text(encoding="utf-8"), path
+            assert "\u2014" not in path.read_text(encoding="utf-8"), path
 
 
 async def test_signup_returns_token_and_recovery_word(seeded: AsyncSession) -> None:

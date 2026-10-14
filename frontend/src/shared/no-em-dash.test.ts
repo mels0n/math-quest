@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
 
-const EM_DASH = '—';
+const EM_DASH = '\u2014';
 const SRC = fileURLToPath(new URL('..', import.meta.url));
 
 function sources(dir: string): string[] {
