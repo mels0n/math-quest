@@ -287,3 +287,29 @@ def test_multivariable_equation_with_irrational_terms(
     start = time.perf_counter()
     assert verdict(make_problem(answer), latex) is expected
     assert time.perf_counter() - start < 1
+
+
+MATHLIVE_OUTPUT = [
+    (r"\frac34", sympy.Rational(3, 4), AnswerForm.LOWEST_TERMS, Verdict.CORRECT),
+    (r"2\frac34", sympy.Rational(11, 4), AnswerForm.MIXED_NUMBER, Verdict.CORRECT),
+    (r"1\,\frac{5}{12}", sympy.Rational(17, 12), AnswerForm.MIXED_NUMBER, Verdict.CORRECT),
+    (r"1\,\frac{5}{12}", sympy.Rational(7, 4), AnswerForm.MIXED_NUMBER, Verdict.INCORRECT),
+    (r"\frac{15}{12}", sympy.Rational(17, 12), AnswerForm.MIXED_NUMBER, Verdict.INCORRECT),
+    (r"\sqrt8", 2 * sympy.sqrt(2), AnswerForm.ANY, Verdict.CORRECT),
+    (r"\sqrt8", 2 * sympy.sqrt(2), AnswerForm.SIMPLIFIED_RADICAL, Verdict.WRONG_FORM),
+    (
+        r"\left(x+3\right)\left(x-2\right)",
+        x**2 + x - 6,
+        AnswerForm.FACTORED,
+        Verdict.CORRECT,
+    ),
+    (r"x^2", x**2, AnswerForm.ANY, Verdict.CORRECT),
+    (r"\frac{3}{\placeholder{}}", sympy.Rational(3, 4), AnswerForm.ANY, Verdict.UNREADABLE),
+]
+
+
+@pytest.mark.parametrize(("latex", "answer", "form", "expected"), MATHLIVE_OUTPUT)
+def test_real_mathlive_output(
+    latex: str, answer: sympy.Basic, form: AnswerForm, expected: Verdict
+) -> None:
+    assert verdict(make_problem(answer, form), latex) is expected

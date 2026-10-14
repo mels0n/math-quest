@@ -27,6 +27,7 @@ CASES: list[tuple[str, Node]] = [
     (r"\frac{6}{8}", Div(Num("6"), Num("8"), "frac")),
     (r"\dfrac{6}{8}", Div(Num("6"), Num("8"), "frac")),
     (r"1\frac{1}{2}", Mixed(Num("1"), Div(Num("1"), Num("2"), "frac"))),
+    (r"1\,\frac{5}{12}", Mixed(Num("1"), Div(Num("5"), Num("12"), "frac"))),
     (r"3/2", Div(Num("3"), Num("2"), "slash")),
     (r"6\div3", Div(Num("6"), Num("3"), "div")),
     (r"2\sqrt{2}", Mul((Num("2"), Sqrt(Num("2"), None)), implicit=True)),
