@@ -7,7 +7,13 @@ from mathquest.shared.config import Settings
 
 
 def _clear(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("DATABASE_URL", "DATABASE_URL_FILE", "INITIAL_SIGNUP_WORD_FILE"):
+    for name in (
+        "DATABASE_URL",
+        "DATABASE_URL_FILE",
+        "INITIAL_SIGNUP_WORD_FILE",
+        "ADMIN_PASSWORD_FILE",
+        "ADMIN_ALLOWED_CIDRS",
+    ):
         monkeypatch.delenv(name, raising=False)
 
 
@@ -89,3 +95,45 @@ def test_exposed_answers_require_insecure_cookies(tmp_path: Path) -> None:
         Settings(database_url_file=secret, dev_expose_answers=True, cookie_secure=True)  # pyright: ignore[reportCallIssue]
     ok = Settings(database_url_file=secret, dev_expose_answers=True, cookie_secure=False)  # pyright: ignore[reportCallIssue]
     assert ok.dev_expose_answers is True
+
+
+def test_admin_password_file_is_read_and_defaults_cover_private_ranges(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _clear(monkeypatch)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
+    secret = tmp_path / "admin"
+    secret.write_bytes(b"\xef\xbb\xbfs3cret-value \r\n")
+    monkeypatch.setenv("ADMIN_PASSWORD_FILE", str(secret))
+    settings = Settings()
+    assert settings.admin_password is not None
+    assert settings.admin_password.get_secret_value() == "s3cret-value"
+    assert "s3cret-value" not in repr(settings)
+    assert set(settings.admin_allowed_cidrs) == {
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+        "127.0.0.1/32",
+        "::1/128",
+        "fc00::/7",
+    }
+
+
+def test_admin_allowed_cidrs_from_env_and_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    _clear(monkeypatch)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
+    monkeypatch.setenv("ADMIN_ALLOWED_CIDRS", "10.1.0.0/16, 192.168.5.0/24")
+    assert Settings().admin_allowed_cidrs == ["10.1.0.0/16", "192.168.5.0/24"]
+    monkeypatch.setenv("ADMIN_ALLOWED_CIDRS", "not-a-network")
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_unreadable_admin_password_file_fails_without_echo(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _clear(monkeypatch)
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@h/db")
+    monkeypatch.setenv("ADMIN_PASSWORD_FILE", str(tmp_path / "missing"))
+    with pytest.raises(ValidationError):
+        Settings()

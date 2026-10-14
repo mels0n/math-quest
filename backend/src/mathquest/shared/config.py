@@ -41,29 +41,48 @@ class Settings(BaseSettings):
     dev_expose_answers: bool = False
     # IPs or CIDRs of reverse proxies whose X-Forwarded-For is believed; comma-separated in env.
     trusted_proxies: Annotated[list[str], NoDecode] = []
+    admin_password_file: Path | None = None
+    # Clients outside these IPs or CIDRs get 404 on every /api/admin route; comma-separated in env.
+    admin_allowed_cidrs: Annotated[list[str], NoDecode] = [
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+        "127.0.0.1/32",
+        "::1/128",
+        "fc00::/7",
+    ]
 
     # Read only from `initial_signup_word_file`; deliberately not an env-settable field.
     _initial_signup_word: SecretStr | None = PrivateAttr(default=None)
+    # Read only from `admin_password_file`; dropped once the app has hashed it.
+    _admin_password: SecretStr | None = PrivateAttr(default=None)
 
     @property
     def initial_signup_word(self) -> SecretStr | None:
         return self._initial_signup_word
 
-    @field_validator("trusted_proxies", mode="before")
+    @property
+    def admin_password(self) -> SecretStr | None:
+        return self._admin_password
+
+    def discard_admin_password(self) -> None:
+        self._admin_password = None
+
+    @field_validator("trusted_proxies", "admin_allowed_cidrs", mode="before")
     @classmethod
-    def _split_trusted_proxies(cls, value: object) -> object:
+    def _split_networks(cls, value: object) -> object:
         if isinstance(value, str):
             return [part.strip() for part in value.split(",") if part.strip()]
         return value
 
-    @field_validator("trusted_proxies")
+    @field_validator("trusted_proxies", "admin_allowed_cidrs")
     @classmethod
-    def _check_trusted_proxies(cls, value: list[str]) -> list[str]:
+    def _check_networks(cls, value: list[str]) -> list[str]:
         for entry in value:
             try:
                 ipaddress.ip_network(entry, strict=False)
             except ValueError:
-                raise ValueError("trusted_proxies holds an invalid IP or CIDR") from None
+                raise ValueError("network list holds an invalid IP or CIDR") from None
         return value
 
     @model_validator(mode="after")
@@ -83,6 +102,10 @@ class Settings(BaseSettings):
         if self.initial_signup_word_file is not None:
             self._initial_signup_word = SecretStr(
                 _read_secret_file(self.initial_signup_word_file, "initial signup word")
+            )
+        if self.admin_password_file is not None:
+            self._admin_password = SecretStr(
+                _read_secret_file(self.admin_password_file, "admin password")
             )
         return self
 

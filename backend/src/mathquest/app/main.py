@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
+from mathquest.api import admin as admin_api
 from mathquest.api import auth, health, play
 from mathquest.api.clientip import parse_networks
 from mathquest.api.deps import (
@@ -24,7 +25,7 @@ from mathquest.api.errors import install_error_handlers
 from mathquest.api.ratelimit import Clock, RateLimiter
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.skillgraph import load_pack
-from mathquest.features import accounts
+from mathquest.features import accounts, admin
 from mathquest.shared import db as database
 from mathquest.shared.config import Settings, get_settings
 from mathquest.shared.logging import configure_logging
@@ -57,6 +58,7 @@ def create_app(
     """Build the app. `engine`, `clock` and `checker_pool` replace the defaults (tests)."""
     cfg = settings or get_settings()
     trusted = parse_networks(cfg.trusted_proxies)
+    admin_networks = parse_networks(cfg.admin_allowed_cidrs)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -77,6 +79,16 @@ def create_app(
             app.state.settings = cfg
             app.state.session_factory = factory
             app.state.trusted_networks = trusted
+            app.state.admin_networks = admin_networks
+            admin_password = cfg.admin_password
+            if admin_password is None:
+                log.warning("admin password is not configured; /api/admin is disabled")
+                app.state.admin_password_hash = None
+            else:
+                app.state.admin_password_hash = await admin.hash_password(
+                    admin_password.get_secret_value()
+                )
+                cfg.discard_admin_password()
             app.state.rate_limiter = RateLimiter(clock) if clock else RateLimiter()
             app.state.blocklist = accounts.load_blocklist(cfg.content_dir)
             app.state.nickname_words = accounts.load_nickname_words(cfg.content_dir)
@@ -117,6 +129,7 @@ def create_app(
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(play.router)
+    app.include_router(admin_api.router)
 
     if cfg.static_dir is not None:
         static_dir: Path = cfg.static_dir

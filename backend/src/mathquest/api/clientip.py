@@ -29,6 +29,12 @@ def _trusted(address: IPAddress, networks: Sequence[IPNetwork]) -> bool:
     return any(address.version == net.version and address in net for net in networks)
 
 
+def ip_in_networks(ip: str, networks: Sequence[IPNetwork]) -> bool:
+    """Whether a resolved client address (as returned by `client_ip`) is inside any network."""
+    address = _parse(ip)
+    return address is not None and _trusted(address, networks)
+
+
 def client_ip(peer: str | None, forwarded: Sequence[str], trusted: Sequence[IPNetwork]) -> str:
     """The address to attribute a request to.
 
