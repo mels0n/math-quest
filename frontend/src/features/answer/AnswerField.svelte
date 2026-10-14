@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { MathfieldElement } from 'mathlive';
 	import type { KeypadProfile } from '../../entities/problem';
+	import { submitBlocker } from './guard';
 	import { layoutFor, type Key } from './keypad';
 
 	let {
@@ -18,9 +19,11 @@
 	let field = $state.raw<MathfieldElement | null>(null);
 	const layout = $derived(layoutFor(profile));
 	let ready = $state(false);
+	let notice = $state('');
 
 	export function clear() {
 		if (field) field.value = '';
+		notice = '';
 		field?.focus();
 	}
 
@@ -30,7 +33,14 @@
 
 	function submit() {
 		const latex = field?.value.trim() ?? '';
-		if (latex !== '' && !disabled) onSubmit(latex);
+		if (latex === '' || disabled) return;
+		const blocker = submitBlocker(latex);
+		if (blocker !== null) {
+			notice = blocker;
+			return;
+		}
+		notice = '';
+		onSubmit(latex);
 	}
 
 	function press(key: Key, event: MouseEvent) {
@@ -53,9 +63,14 @@
 			host.append(mf);
 			mf.mathVirtualKeyboardPolicy = 'manual';
 			mf.menuItems = [];
+			// Physical-keyboard spaces are dropped in math mode; keep them so "1 5/12" stays a mixed number.
+			mf.mathModeSpace = '\\,';
 			mf.setAttribute('inputmode', 'none');
 			mf.setAttribute('aria-label', 'Your answer');
 			mf.setAttribute('data-testid', 'math-field');
+			mf.addEventListener('input', () => {
+				notice = '';
+			});
 			mf.addEventListener('keydown', (event) => {
 				if (event.key === 'Enter') {
 					event.preventDefault();
@@ -80,6 +95,7 @@
 
 <div class="answer">
 	<div class="field" bind:this={host}></div>
+	<p class="notice" role="status" data-testid="answer-notice">{notice}</p>
 	<div class="pad" role="group" aria-label="Answer keypad" data-profile={profile}>
 		<div class="block digits">
 			{#each layout.digits as key (key.name)}
@@ -114,6 +130,12 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
+	}
+	.notice {
+		margin: 0;
+		min-height: 1.5rem;
+		font-weight: 700;
+		color: var(--mq-berry);
 	}
 	.field :global(math-field) {
 		display: block;

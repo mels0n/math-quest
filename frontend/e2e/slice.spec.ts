@@ -64,6 +64,23 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 		if (round === 0) {
 			await expect(page.getByTestId('math-field')).toBeVisible();
 			if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/task-11-play.png`, fullPage: true });
+			// Physical keyboard: the space must survive and "/" must not swallow the whole number.
+			const field = page.getByTestId('math-field');
+			await field.click();
+			await page.waitForFunction(
+				() => !!(document.querySelector('math-field') as HTMLElement).shadowRoot?.activeElement
+			);
+			await page.keyboard.type('1 5/12', { delay: 30 });
+			expect(((await field.evaluate((el) => (el as unknown as { value: string }).value)) ?? '').trim()).toBe(
+				String.raw`1\,\frac{5}{12}`
+			);
+			await field.evaluate((el) => {
+				(el as unknown as { value: string }).value = String.raw`\frac{3}{\placeholder{}}`;
+			});
+			await page.getByRole('button', { name: 'Go', exact: true }).click();
+			await expect(page.getByTestId('answer-notice')).toHaveText('Fill in the empty box first.');
+			await expect(page.getByTestId('feedback')).toHaveText('');
+
 			await typeAnswer(page, '12345');
 			await expect(page.getByTestId('feedback')).toHaveText('So close! Try again.');
 		}
