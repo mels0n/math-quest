@@ -8,6 +8,8 @@ from typing import Annotated, Self
 from pydantic import PrivateAttr, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+ADMIN_PASSWORD_MIN_LENGTH = 16
+
 
 def default_content_dir() -> Path:
     """The `content/` directory next to `src/` in the backend project."""
@@ -60,7 +62,12 @@ class Settings(BaseSettings):
         """The admin password, read from its file on each call and never stored on the settings."""
         if self.admin_password_file is None:
             return None
-        return SecretStr(_read_secret_file(self.admin_password_file, "admin password"))
+        value = _read_secret_file(self.admin_password_file, "admin password")
+        if len(value) < ADMIN_PASSWORD_MIN_LENGTH:
+            raise ValueError(
+                f"admin password must be at least {ADMIN_PASSWORD_MIN_LENGTH} characters"
+            )
+        return SecretStr(value)
 
     @field_validator("trusted_proxies", "admin_allowed_cidrs", mode="before")
     @classmethod

@@ -1,10 +1,10 @@
 """Admin password check and server-side admin sessions.
 
-The password is hashed once at boot with the same argon2 parameters as player credentials;
-only the hash is kept. Sessions are random 32-byte tokens stored as SHA-256 with an expiry.
+The password is hashed once at boot with the shared credential hasher; only the hash is kept.
+Booting also deletes every stored session, so rotating the password signs everyone out.
+Sessions are random 32-byte tokens stored as SHA-256 with an expiry.
 """
 
-import asyncio
 import logging
 import re
 import secrets
@@ -12,8 +12,6 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from argon2 import PasswordHasher
-from argon2.exceptions import InvalidHashError, VerificationError
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,11 +24,10 @@ SESSION_TTL = timedelta(hours=8)
 MAX_PAGE = 100
 DELETE_ATTEMPTS = 2
 DEADLOCK_DETECTED = "40P01"
+FOREIGN_KEY_VIOLATION = "23503"
 _SIGNUP_WORD_RE = re.compile(r"[A-Za-z]{3,32}")
 
 log = logging.getLogger(__name__)
-
-_hasher = PasswordHasher(memory_cost=19456, time_cost=2, parallelism=1)
 
 
 def utcnow() -> datetime:
@@ -38,28 +35,26 @@ def utcnow() -> datetime:
 
 
 async def hash_password(password: str) -> str:
-    return await asyncio.to_thread(_hasher.hash, password)
+    return await credentials.hash_secret(password)
 
 
-async def _verify(stored_hash: str, password: str) -> bool:
-    def check() -> bool:
-        try:
-            return _hasher.verify(stored_hash, password)
-        except (VerificationError, InvalidHashError):
-            return False
-
-    return await asyncio.to_thread(check)
+async def revoke_all_sessions(db: AsyncSession) -> None:
+    """Delete every admin session; run at boot so a rotated password ends old sessions."""
+    await admin.delete_all_sessions(db)
+    await db.commit()
 
 
-async def login(db: AsyncSession, *, stored_hash: str, password: str) -> AdminLogin:
+async def login(
+    db: AsyncSession, *, stored_hash: str, password: str, client: str = "unknown"
+) -> AdminLogin:
     """Verify the password and open a session; raises Unauthorized on any mismatch.
 
     A mismatch is audited (no password, no session) and logged before the error is raised.
     """
-    if not await _verify(stored_hash, password):
+    if not await credentials.verify_secret(stored_hash, password):
         await admin.audit(db, action="login_failed", admin_session_id=None)
         await db.commit()
-        log.warning("admin login failed")
+        log.warning("admin login failed from %s", client)
         raise Unauthorized()
     now = utcnow()
     await admin.delete_expired(db, now)
@@ -90,6 +85,15 @@ async def _player(db: AsyncSession, player_id: uuid.UUID) -> Player:
     player = await players.get_by_id(db, player_id)
     if player is None:
         raise NotFound()
+    return player
+
+
+async def _locked_player(db: AsyncSession, player_id: uuid.UUID) -> Player:
+    """The player with its row lock held; NotFound if it is gone (or deleted meanwhile)."""
+    player = await _player(db, player_id)
+    if not await lockouts.lock_player(db, player.id):
+        raise NotFound()
+    await db.refresh(player)
     return player
 
 
@@ -132,7 +136,7 @@ async def list_players(
 async def set_hidden(
     db: AsyncSession, session_id: uuid.UUID, player_id: uuid.UUID, hidden: bool
 ) -> None:
-    player = await _player(db, player_id)
+    player = await _locked_player(db, player_id)
     await players.set_hidden(db, player, hidden)
     await _audit(db, "hide" if hidden else "unhide", session_id, player)
     await db.commit()
@@ -147,7 +151,7 @@ async def rename(
     blocklist: frozenset[str] | None = None,
 ) -> None:
     """Apply the signup nickname rules; Conflict if another player holds the name."""
-    player = await _player(db, player_id)
+    player = await _locked_player(db, player_id)
     await credentials.check_nickname_available(db, nickname, blocklist=blocklist, owner=player.id)
     old_nickname = player.nickname
     try:
@@ -179,10 +183,7 @@ async def reset_pin(
     Holds the player's row lock like a login attempt does, so the stored recovery hash it
     compares against cannot change underneath it.
     """
-    player = await _player(db, player_id)
-    if not await lockouts.lock_player(db, player.id):
-        raise NotFound()
-    await db.refresh(player)
+    player = await _locked_player(db, player_id)
     word = await credentials.replace_credentials(
         db, player, pin=pin, picture=None, content_dir=content_dir
     )
@@ -216,7 +217,10 @@ async def delete_player(db: AsyncSession, session_id: uuid.UUID, player_id: uuid
                 await players.delete_player(db, player_id)
             break
         except DBAPIError as exc:
-            if getattr(exc.orig, "sqlstate", None) != DEADLOCK_DETECTED:
+            sqlstate = getattr(exc.orig, "sqlstate", None)
+            if sqlstate == FOREIGN_KEY_VIOLATION:
+                raise NotFound() from None
+            if sqlstate != DEADLOCK_DETECTED:
                 raise
             if attempt == DELETE_ATTEMPTS - 1:
                 raise Conflict("busy") from None

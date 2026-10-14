@@ -92,6 +92,8 @@ def create_app(
                 app.state.admin_password_hash = await admin.hash_password(
                     admin_password.get_secret_value()
                 )
+                async with factory() as session:
+                    await admin.revoke_all_sessions(session)
             app.state.rate_limiter = RateLimiter(clock) if clock else RateLimiter()
             app.state.blocklist = accounts.load_blocklist(cfg.content_dir)
             app.state.nickname_words = accounts.load_nickname_words(cfg.content_dir)

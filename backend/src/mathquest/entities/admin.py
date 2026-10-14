@@ -72,6 +72,10 @@ async def delete_session(db: AsyncSession, session_id: uuid.UUID) -> None:
     await db.execute(delete(AdminSession).where(AdminSession.id == session_id))
 
 
+async def delete_all_sessions(db: AsyncSession) -> None:
+    await db.execute(delete(AdminSession))
+
+
 async def delete_expired(db: AsyncSession, now: datetime) -> None:
     await db.execute(delete(AdminSession).where(AdminSession.expires_at <= now))
 

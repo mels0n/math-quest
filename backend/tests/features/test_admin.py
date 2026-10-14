@@ -431,10 +431,31 @@ async def test_delete_does_not_swallow_other_database_errors(
     s = await _signup(seeded, "Alpha")
 
     async def broken(db: AsyncSession, player_id: uuid.UUID) -> None:
-        raise _db_error("23503")
+        raise _db_error("XX000")
 
     monkeypatch.setattr(players, "delete_player", broken)
     with pytest.raises(DBAPIError):
+        await admin.delete_player(seeded, SESSION, s.player_id)
+
+
+async def test_delete_hitting_a_foreign_key_violation_is_not_found(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    s = await _signup(seeded, "Alpha")
+
+    async def racing(db: AsyncSession, player_id: uuid.UUID) -> None:
+        raise _db_error("23503")
+
+    monkeypatch.setattr(players, "delete_player", racing)
+    with pytest.raises(NotFound):
+        await admin.delete_player(seeded, SESSION, s.player_id)
+    assert await _audit_rows(seeded) == []
+
+
+async def test_deleting_twice_is_not_found(seeded: AsyncSession) -> None:
+    s = await _signup(seeded, "Alpha")
+    await admin.delete_player(seeded, SESSION, s.player_id)
+    with pytest.raises(NotFound):
         await admin.delete_player(seeded, SESSION, s.player_id)
 
 
@@ -492,3 +513,17 @@ async def test_reset_pin_on_a_player_deleted_before_the_lock_is_not_found(
     _delete_before_lock(monkeypatch)
     with pytest.raises(NotFound):
         await admin.reset_pin(seeded, SESSION, s.player_id, "4321")
+
+
+@pytest.mark.parametrize("action", ["hide", "rename"])
+async def test_hide_and_rename_on_a_player_deleted_before_the_lock_are_not_found(
+    seeded: AsyncSession, monkeypatch: pytest.MonkeyPatch, action: str
+) -> None:
+    s = await _signup(seeded, "Alpha")
+    _delete_before_lock(monkeypatch)
+    with pytest.raises(NotFound):
+        if action == "hide":
+            await admin.set_hidden(seeded, SESSION, s.player_id, True)
+        else:
+            await admin.rename(seeded, SESSION, s.player_id, "Bravo")
+    assert await _audit_rows(seeded) == []

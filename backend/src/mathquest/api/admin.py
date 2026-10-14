@@ -10,6 +10,7 @@ from mathquest.api.deps import (
     ADMIN_COOKIE,
     ADMIN_COOKIE_PATH,
     AppSettings,
+    ClientIp,
     CurrentAdmin,
     Db,
     limit_admin_login,
@@ -45,12 +46,17 @@ def _set_session_cookie(response: Response, settings: Settings, token: str) -> N
 
 @router.post("/login", dependencies=[Depends(limit_admin_login)])
 async def login(
-    body: AdminLoginIn, request: Request, response: Response, db: Db, settings: AppSettings
+    body: AdminLoginIn,
+    request: Request,
+    response: Response,
+    db: Db,
+    settings: AppSettings,
+    client: ClientIp,
 ) -> Done:
     stored_hash: str | None = request.app.state.admin_password_hash
     if stored_hash is None:
         raise Unauthorized()
-    result = await admin.login(db, stored_hash=stored_hash, password=body.password)
+    result = await admin.login(db, stored_hash=stored_hash, password=body.password, client=client)
     _set_session_cookie(response, settings, result.token)
     return Done()
 

@@ -407,3 +407,60 @@ async def test_two_boots_on_one_settings_both_enable_admin(
         app = create_app(settings, engine=bind, checker_pool=_NoWarmPool())
         async with app.router.lifespan_context(app):
             assert app.state.admin_password_hash.startswith("$argon2id$")
+
+
+async def test_boot_deletes_admin_sessions_so_old_cookies_stop_working(
+    api: ApiFactory, password_file: Path
+) -> None:
+    first = await _admin(api, password_file)
+    assert (await _login(first.client)).status_code == 200
+    assert (await first.client.get("/api/admin/me")).status_code == 200
+    settings = first.app.state.settings
+    bind = first.app.state.session_factory.kw["bind"]
+    async with first.app.state.session_factory() as session:
+        assert (await session.execute(select(AdminSession))).scalars().all()
+
+    app = create_app(settings, engine=bind, checker_pool=_NoWarmPool())
+    async with app.router.lifespan_context(app):
+        async with app.state.session_factory() as session:
+            assert (await session.execute(select(AdminSession))).scalars().all() == []
+        assert (await first.client.get("/api/admin/me")).status_code == 401
+
+
+async def test_login_purges_expired_sessions_and_keeps_live_ones(
+    api: ApiFactory, password_file: Path
+) -> None:
+    h = await _admin(api, password_file)
+    assert (await _login(h.client)).status_code == 200
+    assert (await _login(h.client)).status_code == 200
+    factory = h.app.state.session_factory
+    async with factory() as session:
+        rows = (
+            (await session.execute(select(AdminSession).order_by(AdminSession.created_at)))
+            .scalars()
+            .all()
+        )
+        assert len(rows) == 2
+        expired_id, live_id = rows[0].id, rows[1].id
+        rows[0].expires_at = datetime.now(UTC) - timedelta(minutes=1)
+        await session.commit()
+    assert (await _login(h.client)).status_code == 200
+    async with factory() as session:
+        ids = {r.id for r in (await session.execute(select(AdminSession))).scalars().all()}
+    assert expired_id not in ids
+    assert live_id in ids
+    assert len(ids) == 2
+
+
+async def test_failed_login_log_names_the_client_address(
+    api: ApiFactory, password_file: Path
+) -> None:
+    with captured_logs() as records:
+        h = await _admin(api, password_file)
+        assert (await _login(h.client, "wrong-guess")).status_code == 401
+    failed = [
+        r.getMessage()
+        for r in records
+        if r.levelno == logging.WARNING and "login" in r.getMessage()
+    ]
+    assert failed == [f"admin login failed from {LAN}"]
