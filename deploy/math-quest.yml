@@ -31,7 +31,7 @@ services:
 
   math-quest-backup:
     image: postgres:16
-    command: ["/scripts/pg-backup.sh"]
+    command: ["sh", "/scripts/pg-backup.sh"]
     environment:
       PGHOST: math-quest-db
       PGUSER: mathquest
@@ -54,6 +54,9 @@ services:
       - math-quest_net
     deploy:
       replicas: 1
+      placement:
+        constraints:
+          - node.labels.math-quest.db == true
       restart_policy:
         condition: on-failure
 
@@ -63,7 +66,8 @@ services:
       DATABASE_URL_FILE: /run/secrets/mq_database_url
       INITIAL_SIGNUP_WORD_FILE: /run/secrets/mq_signup_word
       ADMIN_PASSWORD_FILE: /run/secrets/mq_admin_password
-      TRUSTED_PROXIES: <swag-overlay-cidr>
+      # Name only the proxy itself, never a range that includes LAN clients.
+      TRUSTED_PROXIES: <proxy-address>
       COOKIE_SECURE: "true"
     secrets:
       - mq_database_url
