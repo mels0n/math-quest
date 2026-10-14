@@ -23,7 +23,7 @@ def _engine(url: str, schema: str | None, *, pooled: bool = False) -> AsyncEngin
     if schema is not None:
         connect_args["server_settings"] = {"search_path": schema}
     kwargs: dict[str, object] = {} if pooled else {"poolclass": NullPool}
-    return create_async_engine(url, connect_args=connect_args, **kwargs)  # pyright: ignore[reportArgumentType]
+    return create_async_engine(url, connect_args=connect_args, hide_parameters=True, **kwargs)  # pyright: ignore[reportArgumentType]
 
 
 async def _exec(url: str, statement: str) -> None:
