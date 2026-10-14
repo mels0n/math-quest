@@ -282,15 +282,9 @@ async def submit_answer(
     verdict = result.verdict
     misconception = result.misconception if verdict is Verdict.INCORRECT else None
     seconds = max(0.0, (received - instance.issued_at).total_seconds())
-    free_before = sum(1 for a in attempts if a.verdict in _FREE)
     tried = _tries_used(attempts)
     solved = verdict is Verdict.CORRECT
-    consumes = verdict is Verdict.INCORRECT or (
-        verdict.value in _FREE and free_before >= FREE_VERDICTS
-    )
-    used = tried + (1 if consumes else 0)
-    scored = solved or used >= MAX_ATTEMPTS
-    await problems.add_attempt(
+    attempt = await problems.add_attempt(
         db,
         problem_id=instance.id,
         player_id=player_id,
@@ -300,6 +294,8 @@ async def submit_answer(
         seconds=seconds,
         at=received,
     )
+    used = _tries_used([*attempts, attempt])
+    scored = solved or used >= MAX_ATTEMPTS
 
     if scored:
         row = await mastery.lock(db, player_id, skill_id, _start_rating(skill_id))
