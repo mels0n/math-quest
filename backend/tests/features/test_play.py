@@ -557,3 +557,43 @@ async def test_concurrent_submissions_two_devices(db_schema: str) -> None:
             await cleanup.execute(delete(Player).where(Player.nickname.like("Racer%")))
             await cleanup.commit()
         await engine.dispose()
+
+
+async def test_mastery_row_lock_makes_a_second_scorer_wait(db_schema: str) -> None:
+    """A held skill_mastery lock stalls scoring of another problem of the same skill."""
+    engine = create_async_engine(
+        _database_url(),
+        pool_size=10,
+        connect_args={"server_settings": {"search_path": db_schema}},
+    )
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with factory() as setup:
+            pid = await _player(setup, "Holder")
+            session = await service.start_session(setup, pid, "adventure")
+            inst = await _issue(setup, pid, session.session_id, seed=11)
+            await mastery.lock(setup, pid, "add_within_10", service._start_rating("add_within_10"))  # pyright: ignore[reportPrivateUsage]
+            await setup.commit()
+
+        async def submit() -> AnswerOut:
+            async with factory() as s:
+                return await service.submit_answer(s, POOL, GRAPH, pid, inst.id, _right(inst))
+
+        async with factory() as holder:
+            held = await mastery.lock(holder, pid, "add_within_10", 0.0)
+            waiting = asyncio.create_task(submit())
+            await asyncio.sleep(0.3)
+            assert not waiting.done()
+            held.attempts += 1
+            await holder.commit()
+        out = await asyncio.wait_for(waiting, timeout=5)
+        assert out.solved
+        async with factory() as check_session:
+            row = await mastery.get(check_session, pid, "add_within_10")
+            assert row is not None
+            assert row.attempts == 2
+    finally:
+        async with factory() as cleanup:
+            await cleanup.execute(delete(Player).where(Player.nickname.like("Holder%")))
+            await cleanup.commit()
+        await engine.dispose()
