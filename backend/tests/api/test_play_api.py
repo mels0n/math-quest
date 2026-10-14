@@ -140,6 +140,18 @@ async def test_bad_input_is_422(api: ApiFactory) -> None:
     assert not_uuid.status_code == 422
 
 
+async def test_nul_and_lone_surrogate_answers_are_422(api: ApiFactory) -> None:
+    h = await _api(api)
+    problem = (await _next(h.client, await _start(h.client))).json()
+    url = f"/api/play/problems/{problem['problem_id']}/answer"
+    for body in ('{"latex": "1\\u00002"}', '{"latex": "1\\ud8002"}'):
+        r = await h.client.post(
+            url, content=body, headers={**CSRF, "content-type": "application/json"}
+        )
+        assert r.status_code == 422, body
+        assert r.json() == {"error": "invalid_request"}
+
+
 async def test_answers_are_rate_limited_per_player(api: ApiFactory) -> None:
     h = await _api(api)
     missing = str(uuid.uuid4())

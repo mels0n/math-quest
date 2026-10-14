@@ -4,7 +4,7 @@ import uuid
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from mathquest.api.deps import (
     AppSettings,
@@ -34,6 +34,18 @@ class AnswerIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     latex: str = Field(max_length=MAX_BODY_LATEX)
+
+    @field_validator("latex")
+    @classmethod
+    def _storable(cls, value: str) -> str:
+        """Reject NUL and text that UTF-8 cannot encode; Postgres text cannot store either."""
+        if "\x00" in value:
+            raise ValueError("NUL is not allowed")
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise ValueError("not valid UTF-8 text") from None
+        return value
 
 
 @router.post("/sessions", dependencies=[Depends(limit_session)])
