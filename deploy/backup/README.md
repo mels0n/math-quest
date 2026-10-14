@@ -17,7 +17,7 @@ Two POSIX shell scripts for PostgreSQL 16, meant to run in the official
 | `PGPORT` | `5432` | Database port |
 | `PGUSER` | required | Database role |
 | `PGDATABASE` | required | Database to dump or restore into |
-| `PGPASSWORD_FILE` | unset | Path to a file holding the password (for example a Docker secret). If unset, the usual libpq lookup applies. |
+| `PGPASSWORD_FILE` | unset | Path to a file holding the password (for example a Docker secret). If unset, `PGPASSFILE` and `PGPASSWORD` from the environment are used as usual. |
 | `BACKUP_DIR` | `/backups` | Where dumps are written (a persistent volume) |
 | `KEEP` | `14` | Number of newest `math-quest-*.dump` files to keep |
 | `BACKUP_AT` | `03:15` | Daily run time, `HH:MM` 24 hour |
@@ -41,24 +41,36 @@ sh /opt/backup/pg-backup.sh --once
 A dump is written to `math-quest-YYYYMMDD-HHMMSS.dump.partial` and renamed to
 `.dump` only after `pg_dump` succeeds. On failure the partial file is removed,
 the error goes to stderr and the script exits non-zero, so a container
-orchestrator restarts it. Pruning only touches `math-quest-*.dump` files.
+orchestrator restarts it. Stale `.partial` files from an interrupted run are removed at startup. Dumps are created mode 600. Pruning only touches files named `math-quest-YYYYMMDD-HHMMSS.dump`, so hand-named copies are never counted or removed. Timestamps use the `TZ` zone.
 
 ## Restore
 
 1. Stop the application so nothing writes during the restore.
 2. Point the same environment variables at the target database. For a fresh
    database, create it first (`createdb`).
-3. Restore:
+3. Restore. The interface is environment variables plus the dump path:
 
    ```sh
    sh /opt/backup/pg-restore.sh /backups/math-quest-YYYYMMDD-HHMMSS.dump
    ```
 
-   The script refuses if the target has any table in schema `public`. To
-   overwrite an existing database, pass `--force`; objects in the dump are
-   dropped and recreated first.
+   The script refuses if the target already holds user objects (tables, views,
+   sequences or user types in any non-system schema). The restore runs in a
+   single transaction, so a failed restore leaves the target untouched.
 4. Check the printed row counts against what you expect, then start the
    application.
+
+### Overwriting a populated database
+
+`--force` drops and recreates only the objects that are present in the dump.
+Anything else already in the database stays. For a full rollback, drop and
+recreate the database first, then restore without `--force`:
+
+```sh
+dropdb -h <db-host> -U <db-admin-user> <database>
+createdb -h <db-host> -U <db-admin-user> -O <app-role> <database>
+sh /opt/backup/pg-restore.sh /backups/math-quest-YYYYMMDD-HHMMSS.dump
+```
 
 Restores use `--no-owner --no-privileges --exit-on-error`, so the restored
 objects belong to `PGUSER` and any error aborts the restore.

@@ -170,11 +170,13 @@ def test_prune_keeps_newest_and_ignores_other_files(source_db: str, tmp_path: Pa
     for day in range(1, 6):
         (out / f"math-quest-2020010{day}-000000.dump").write_bytes(b"old")
     (out / "notes.txt").write_text("keep me")
+    (out / "math-quest-manual-copy.dump").write_bytes(b"hand named")
     result = _run(BACKUP, ["--once"], _env(source_db, pw, out, KEEP="3"))
     assert result.returncode == 0, result.stderr
     names = [p.name for p in _dumps(out)]
-    assert len(names) == 3
+    assert len(names) == 4
     assert names[0:2] == ["math-quest-20200104-000000.dump", "math-quest-20200105-000000.dump"]
+    assert (out / "math-quest-manual-copy.dump").exists()
     assert (out / "notes.txt").read_text() == "keep me"
 
 
@@ -184,6 +186,7 @@ def test_bad_password_fails_without_partial(source_db: str, tmp_path: Path) -> N
     out.mkdir()
     result = _run(BACKUP, ["--once"], _env(source_db, pw, out))
     assert result.returncode != 0
+    assert "pg_dump failed" in result.stderr
     assert list(out.iterdir()) == []
     assert "definitely-wrong-password" not in result.stdout + result.stderr
 
@@ -219,3 +222,31 @@ def test_restore_into_non_empty_needs_force(source_db: str, target_db: str, tmp_
     forced = _run(RESTORE, ["--force", str(dump)], _env(target_db, pw, out))
     assert forced.returncode == 0, forced.stderr
     assert _counts(target_db) == _counts(source_db)
+
+
+def test_stale_partial_is_removed_at_startup(source_db: str, tmp_path: Path) -> None:
+    pw = _write_password(tmp_path)
+    out = tmp_path / "backups"
+    out.mkdir()
+    (out / "math-quest-20200101-000000.dump.partial").write_bytes(b"stale")
+    result = _run(BACKUP, ["--once"], _env(source_db, pw, out))
+    assert result.returncode == 0, result.stderr
+    assert list(out.glob("*.partial")) == []
+    assert len(_dumps(out)) == 1
+
+
+def test_failed_restore_leaves_target_empty(source_db: str, target_db: str, tmp_path: Path) -> None:
+    pw = _write_password(tmp_path)
+    out = tmp_path / "backups"
+    out.mkdir()
+    assert _run(BACKUP, ["--once"], _env(source_db, pw, out)).returncode == 0
+    dump = _dumps(out)[0]
+    data = dump.read_bytes()
+    broken = tmp_path / "broken.dump"
+    broken.write_bytes(data[: len(data) * 3 // 4])
+    result = _run(RESTORE, [str(broken)], _env(target_db, pw, out))
+    assert result.returncode != 0
+    rows = asyncio.run(
+        _run_sql(target_db, ["SELECT count(*) AS c FROM pg_tables WHERE schemaname = 'public'"])
+    )
+    assert rows[0]["c"] == 0

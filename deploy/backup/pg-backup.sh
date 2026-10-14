@@ -7,10 +7,11 @@
 #
 # Environment: PGHOST, PGPORT (5432), PGUSER, PGDATABASE, PGPASSWORD_FILE,
 #   BACKUP_DIR (/backups), KEEP (14), BACKUP_AT (03:15), TZ (America/Chicago).
-# Needs GNU date (the official postgres image has it).
+# Needs GNU date (the official postgres image has it). Dumps are created mode 600.
 set -eu
 
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck source-path=SCRIPTDIR
 # shellcheck source=pg-common.sh
 . "$script_dir/pg-common.sh"
 
@@ -19,6 +20,7 @@ KEEP="${KEEP:-14}"
 BACKUP_AT="${BACKUP_AT:-03:15}"
 TZ="${TZ:-America/Chicago}"
 export TZ
+umask 077
 
 log() {
   printf '%s pg-backup: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
@@ -30,7 +32,7 @@ die() {
 }
 
 case "$KEEP" in
-  '' | *[!0-9]* | 0) die "KEEP must be a positive integer" ;;
+  '' | *[!0-9]* | 0*) die "KEEP must be a positive integer without leading zeros" ;;
 esac
 case "$BACKUP_AT" in
   [0-1][0-9]:[0-5][0-9] | 2[0-3]:[0-5][0-9]) ;;
@@ -48,25 +50,30 @@ case "${1:-}" in
 esac
 
 partial=""
-sleeper=""
+child=""
 on_exit() {
-  if [ -n "$partial" ]; then
-    rm -f "$partial"
+  if [ -n "$child" ]; then
+    kill "$child" 2> /dev/null || true
+    wait "$child" 2> /dev/null || true
   fi
-  if [ -n "$sleeper" ]; then
-    kill "$sleeper" 2> /dev/null || true
+  if [ -n "$partial" ]; then
+    rm -f -- "$partial"
   fi
   mq_cleanup
 }
 trap on_exit EXIT
-trap 'exit 143' INT TERM
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 mq_setup_passfile
-[ -d "$BACKUP_DIR" ] && [ -w "$BACKUP_DIR" ] || die "BACKUP_DIR is not a writable directory"
+if [ ! -d "$BACKUP_DIR" ] || [ ! -w "$BACKUP_DIR" ]; then
+  die "BACKUP_DIR is not a writable directory"
+fi
 
+# Dump files are named math-quest-YYYYMMDD-HHMMSS.dump; nothing else matches.
 prune() {
   total=0
-  for f in "$BACKUP_DIR"/math-quest-*.dump; do
+  for f in "$BACKUP_DIR"/math-quest-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9].dump; do
     if [ -e "$f" ]; then
       total=$((total + 1))
     fi
@@ -75,7 +82,7 @@ prune() {
   excess=$((total - KEEP))
   if [ "$excess" -gt 0 ]; then
     # Timestamped names sort oldest first.
-    for f in "$BACKUP_DIR"/math-quest-*.dump; do
+    for f in "$BACKUP_DIR"/math-quest-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9].dump; do
       [ "$pruned" -lt "$excess" ] || break
       rm -f -- "$f"
       pruned=$((pruned + 1))
@@ -88,11 +95,15 @@ run_backup() {
   final="$BACKUP_DIR/math-quest-$stamp.dump"
   partial="$final.partial"
   log "dump started: $PGDATABASE"
-  if ! pg_dump -w -Fc -f "$partial" -d "$PGDATABASE"; then
-    rm -f "$partial"
+  pg_dump -w -Fc -f "$partial" -d "$PGDATABASE" &
+  child=$!
+  if ! wait "$child"; then
+    child=""
+    rm -f -- "$partial"
     partial=""
     die "pg_dump failed"
   fi
+  child=""
   sync "$partial" 2> /dev/null || sync
   mv -- "$partial" "$final"
   partial=""
@@ -110,6 +121,9 @@ seconds_until_next() {
   echo $((target - now))
 }
 
+# A partial file left by a killed run is never a usable dump.
+rm -f -- "$BACKUP_DIR"/math-quest-*.dump.partial
+
 if [ "$mode" = once ]; then
   run_backup
   exit 0
@@ -119,8 +133,8 @@ while :; do
   wait_s=$(seconds_until_next)
   log "next dump in ${wait_s}s (${BACKUP_AT} ${TZ})"
   sleep "$wait_s" &
-  sleeper=$!
-  wait "$sleeper" || true
-  sleeper=""
+  child=$!
+  wait "$child" || true
+  child=""
   run_backup
 done
