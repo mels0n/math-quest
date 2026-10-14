@@ -1,0 +1,63 @@
+# Skill pack. Each entry under `skills` has:
+#   id            unique snake_case identifier
+#   name          short, kid-facing display name
+#   region        map region the skill belongs to
+#   prerequisites ids that must be mastered first ([] for none)
+#   fluency       true for recall-speed skills, false for concept skills
+#   anchor        true for skills used as placement anchors
+# Order here breaks ties in the topological order.
+skills:
+  - id: add_within_10
+    name: Add to 10
+    region: number_meadows
+    prerequisites: []
+    fluency: true
+    anchor: false
+  - id: sub_within_10
+    name: Subtract from 10
+    region: number_meadows
+    prerequisites: []
+    fluency: true
+    anchor: false
+  - id: add_within_20
+    name: Add to 20
+    region: number_meadows
+    prerequisites: [add_within_10]
+    fluency: true
+    anchor: true
+  - id: sub_within_20
+    name: Subtract from 20
+    region: number_meadows
+    prerequisites: [sub_within_10, add_within_20]
+    fluency: true
+    anchor: false
+  - id: place_value_tens_ones
+    name: Tens and Ones
+    region: number_meadows
+    prerequisites: []
+    fluency: false
+    anchor: false
+  - id: add_2digit_no_regroup
+    name: Add Big Numbers
+    region: operation_canyon
+    prerequisites: [add_within_20, place_value_tens_ones]
+    fluency: false
+    anchor: false
+  - id: add_2digit_regroup
+    name: Add and Carry
+    region: operation_canyon
+    prerequisites: [add_2digit_no_regroup]
+    fluency: false
+    anchor: true
+  - id: equivalent_fractions
+    name: Same-Size Fractions
+    region: fraction_forest
+    prerequisites: []
+    fluency: false
+    anchor: false
+  - id: add_fractions_unlike
+    name: Add Fractions
+    region: fraction_forest
+    prerequisites: [equivalent_fractions]
+    fluency: false
+    anchor: true

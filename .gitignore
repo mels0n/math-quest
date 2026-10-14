@@ -14,3 +14,20 @@ MEMORY.md
 node_modules/
 __pycache__/
 .venv/
+
+# Local-only working files, never published with the project
+!.claude/*.json
+!.env.example
+!.env.sample
+!.env.template
+.dev.vars.*
+!.dev.vars.example
+
+# Build and tool output
+.svelte-kit/
+build/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+test-results/
+playwright-report/

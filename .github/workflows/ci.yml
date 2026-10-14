@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mathquest
+          POSTGRES_PASSWORD: mathquest
+          POSTGRES_DB: mathquest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mathquest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://mathquest:mathquest@localhost:5432/mathquest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run ruff check
+      - run: uv run pyright
+      - run: uv run lint-imports
+      - run: uv run pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run depcruise
+      - run: npm test
+      - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mathquest
+          POSTGRES_PASSWORD: mathquest
+          POSTGRES_DB: mathquest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mathquest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+asyncpg://mathquest:mathquest@localhost:5432/mathquest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+        working-directory: backend
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:e2e
+        working-directory: frontend
+
+  image:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mathquest
+          POSTGRES_PASSWORD: mathquest
+          POSTGRES_DB: mathquest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mathquest"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          push: false
+          tags: math-quest:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test the image
+        run: |
+          secrets_dir="$(mktemp -d)"
+          printf '%s' 'postgresql+asyncpg://mathquest:mathquest@127.0.0.1:5432/mathquest' > "$secrets_dir/db"
+          printf '%s' 'ci-smoke-word' > "$secrets_dir/word"
+          chmod 755 "$secrets_dir"
+          chmod 644 "$secrets_dir/db" "$secrets_dir/word"
+          docker run -d --name mq --network host \
+            -e COOKIE_SECURE=false \
+            -v "$secrets_dir/db:/run/secrets/mq_database_url:ro" \
+            -v "$secrets_dir/word:/run/secrets/mq_signup_word:ro" \
+            math-quest:ci
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/api/health | grep -q '"ok":true' || { docker logs mq; exit 1; }
+          curl -fsS http://127.0.0.1:8000/ | grep -qi '<html' || { docker logs mq; exit 1; }
+          test "$(docker exec mq id -u)" != "0"
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [backend, frontend, e2e, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Compute tag
+        run: echo "tag=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+        id: tag
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/mels0n/math-quest:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
