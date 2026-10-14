@@ -16,6 +16,7 @@ export {
 	adminErrorMessage,
 	canDelete,
 	isValidPin,
+	isValidNickname,
 	isValidSignupWord
 } from './model';
 export type { AdminPlayer, ListParams, PinReset, SignupWordState } from './model';

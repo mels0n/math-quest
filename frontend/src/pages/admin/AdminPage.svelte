@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { ApiError } from '../../shared/api';
 	import '../../shared/ui';
 	import {
@@ -11,6 +11,7 @@
 		canDelete,
 		deletePlayer,
 		hidePlayer,
+		isValidNickname,
 		isValidPin,
 		isValidSignupWord,
 		listPlayers,
@@ -46,21 +47,37 @@
 	let newWord = $state('');
 	let wordError = $state('');
 
-	/** Send the user to the right screen when the session is gone; true when it did. */
+	let refreshSeq = 0;
+	let playersHeading: HTMLElement | undefined = $state();
+	let recoveryCard: HTMLElement | undefined = $state();
+
+	/** Focus an element as soon as it is mounted. */
+	function focusOnMount(node: HTMLElement) {
+		node.focus();
+	}
+
+	/** Leave the dashboard when the session is gone or admin is off-LAN; true when it did. */
 	function leaveIfSessionLost(err: unknown): boolean {
-		if (err instanceof ApiError && err.status === 401) {
-			phase = 'login';
-			return true;
-		}
-		return false;
+		if (!(err instanceof ApiError) || (err.status !== 401 && err.status !== 404)) return false;
+		recovery = null;
+		notice = '';
+		panel = null;
+		players = [];
+		phase = err.status === 404 ? 'offlan' : 'login';
+		return true;
 	}
 
 	async function refresh() {
+		const seq = ++refreshSeq;
 		listError = '';
 		try {
-			players = await listPlayers({ query: query.trim() || undefined, limit: 100 });
-			wordSet = (await signupWordState()).set;
+			const list = await listPlayers({ query: query.trim() || undefined, limit: 100 });
+			const word = (await signupWordState()).set;
+			if (seq !== refreshSeq) return;
+			players = list;
+			wordSet = word;
 		} catch (err) {
+			if (seq !== refreshSeq) return;
 			if (!leaveIfSessionLost(err)) listError = adminErrorMessage(err);
 		}
 	}
@@ -105,6 +122,7 @@
 		}
 		players = [];
 		recovery = null;
+		notice = '';
 		phase = 'login';
 	}
 
@@ -148,6 +166,10 @@
 
 	async function submitRename(player: AdminPlayer) {
 		const nickname = renameTo.trim();
+		if (!isValidNickname(nickname)) {
+			panelError = 'Use 3 to 16 letters, numbers, spaces, - or _.';
+			return;
+		}
 		const ok = await run(
 			() => renamePlayer(player.id, nickname),
 			`Renamed to ${nickname}.`,
@@ -156,6 +178,8 @@
 		if (ok) {
 			closePanel();
 			await refresh();
+			await tick();
+			playersHeading?.focus();
 		}
 	}
 
@@ -176,6 +200,8 @@
 			recovery = { nickname: player.nickname, word };
 			copied = false;
 			closePanel();
+			await tick();
+			recoveryCard?.focus();
 		}
 	}
 
@@ -189,6 +215,8 @@
 		if (ok) {
 			closePanel();
 			await refresh();
+			await tick();
+			playersHeading?.focus();
 		}
 	}
 
@@ -229,199 +257,220 @@
 </svelte:head>
 
 <main class="admin">
-<div class="inner">
-	{#if phase === 'loading'}
-		<p>Loading...</p>
-	{:else if phase === 'offlan'}
-		<h1>Admin</h1>
-		<p>{NOT_ON_LAN}</p>
-	{:else if phase === 'login'}
-		<h1>Admin sign in</h1>
-		<form class="card stack" onsubmit={submitLogin}>
-			<label>
-				Password
-				<input type="password" autocomplete="current-password" bind:value={password} />
-			</label>
-			{#if loginError}<p class="error" role="alert">{loginError}</p>{/if}
-			<button type="submit" disabled={busy || password === ''}>Sign in</button>
-		</form>
-	{:else}
-		<header class="bar">
-			<h1>Math Quest admin</h1>
-			<button type="button" class="ghost" onclick={signOut}>Sign out</button>
-		</header>
+	<div class="inner">
+		{#if phase === 'loading'}
+			<p>Loading...</p>
+		{:else if phase === 'offlan'}
+			<h1>Admin</h1>
+			<p>{NOT_ON_LAN}</p>
+		{:else if phase === 'login'}
+			<h1>Admin sign in</h1>
+			<form class="card stack" onsubmit={submitLogin}>
+				<label>
+					Password
+					<input type="password" autocomplete="current-password" bind:value={password} />
+				</label>
+				{#if loginError}<p class="error" role="alert">{loginError}</p>{/if}
+				<button type="submit" disabled={busy || password === ''}>Sign in</button>
+			</form>
+		{:else}
+			<header class="bar">
+				<h1>Math Quest admin</h1>
+				<button type="button" class="ghost" onclick={signOut}>Sign out</button>
+			</header>
 
-		{#if notice}<p class="notice" role="status">{notice}</p>{/if}
+			{#if notice}<p class="notice" role="status">{notice}</p>{/if}
 
-		{#if recovery}
-			<section class="card recovery" aria-label="New recovery word">
-				<p>
-					New recovery word for <strong>{recovery.nickname}</strong>. It is shown only once.
+			{#if recovery}
+				<section
+					class="card recovery"
+					aria-label="New recovery word"
+					tabindex="-1"
+					bind:this={recoveryCard}
+				>
+					<p>
+						New recovery word for <strong>{recovery.nickname}</strong>. It is shown only once.
+					</p>
+					<p class="word">{recovery.word}</p>
+					<div class="row">
+						<button type="button" onclick={copyWord}>{copied ? 'Copied' : 'Copy'}</button>
+						<button type="button" class="ghost" onclick={() => (recovery = null)}>
+							I've noted it
+						</button>
+					</div>
+				</section>
+			{/if}
+
+			<section class="card stack" aria-label="Signup word">
+				<h2>Signup word</h2>
+				<p class="muted">
+					{wordSet === null ? '' : wordSet ? 'A signup word is set.' : 'No signup word is set yet.'}
 				</p>
-				<p class="word">{recovery.word}</p>
-				<div class="row">
-					<button type="button" onclick={copyWord}>{copied ? 'Copied' : 'Copy'}</button>
-					<button type="button" class="ghost" onclick={() => (recovery = null)}>
-						I've noted it
-					</button>
-				</div>
+				<form class="row" onsubmit={submitWord}>
+					<label class="grow">
+						New word
+						<input type="text" autocomplete="off" bind:value={newWord} maxlength="32" />
+					</label>
+					<button type="submit" disabled={busy || newWord === ''}>Save</button>
+				</form>
+				{#if wordError}<p class="error" role="alert">{wordError}</p>{/if}
 			</section>
-		{/if}
 
-		<section class="card stack" aria-label="Signup word">
-			<h2>Signup word</h2>
-			<p class="muted">
-				{wordSet === null ? '' : wordSet ? 'A signup word is set.' : 'No signup word is set yet.'}
-			</p>
-			<form class="row" onsubmit={submitWord}>
-				<label class="grow">
-					New word
-					<input type="text" autocomplete="off" bind:value={newWord} maxlength="32" />
-				</label>
-				<button type="submit" disabled={busy || newWord === ''}>Save</button>
-			</form>
-			{#if wordError}<p class="error" role="alert">{wordError}</p>{/if}
-		</section>
+			<section class="card stack" aria-label="Players">
+				<h2 tabindex="-1" bind:this={playersHeading}>Players</h2>
+				<form
+					class="row"
+					onsubmit={(e) => {
+						e.preventDefault();
+						void refresh();
+					}}
+				>
+					<label class="grow">
+						Search by nickname
+						<input type="search" bind:value={query} maxlength="64" />
+					</label>
+					<button type="submit">Search</button>
+				</form>
+				{#if listError}<p class="error" role="alert">{listError}</p>{/if}
 
-		<section class="card stack" aria-label="Players">
-			<h2>Players</h2>
-			<form
-				class="row"
-				onsubmit={(e) => {
-					e.preventDefault();
-					void refresh();
-				}}
-			>
-				<label class="grow">
-					Search by nickname
-					<input type="search" bind:value={query} maxlength="64" />
-				</label>
-				<button type="submit">Search</button>
-			</form>
-			{#if listError}<p class="error" role="alert">{listError}</p>{/if}
-
-			{#if players.length === 0}
-				<p class="muted">No players found.</p>
-			{:else}
-				<div class="scroll">
-					<table>
-						<thead>
-							<tr>
-								<th>Nickname</th>
-								<th>Joined</th>
-								<th>Last seen</th>
-								<th>Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each players as player (player.id)}
-								<tr class:hidden-row={player.hidden}>
-									<td data-label="Nickname">
-										{player.nickname}
-										{#if player.hidden}<span class="tag">hidden</span>{/if}
-									</td>
-									<td data-label="Joined">{formatDate(player.created_at)}</td>
-									<td data-label="Last seen">{formatDate(player.last_seen)}</td>
-									<td class="actions">
-										<button
-											type="button"
-											class="small"
-											onclick={() => toggleHidden(player)}
-											disabled={busy}
-										>
-											{player.hidden ? 'Unhide' : 'Hide'}
-										</button>
-										<button
-											type="button"
-											class="small"
-											onclick={() => openPanel(player.id, 'rename', player.nickname)}>Rename</button
-										>
-										<button
-											type="button"
-											class="small"
-											onclick={() => openPanel(player.id, 'pin', player.nickname)}>Reset PIN</button
-										>
-										<button
-											type="button"
-											class="small danger"
-											onclick={() => openPanel(player.id, 'delete', player.nickname)}>Delete</button
-										>
-									</td>
+				{#if players.length === 0}
+					<p class="muted">No players found.</p>
+				{:else}
+					<div class="scroll">
+						<table>
+							<thead>
+								<tr>
+									<th>Nickname</th>
+									<th>Joined</th>
+									<th>Last seen</th>
+									<th>Actions</th>
 								</tr>
-								{#if panel?.id === player.id}
-									<tr class="panel-row">
-										<td colspan="4">
-											{#if panel.kind === 'rename'}
-												<form
-													class="row"
-													onsubmit={(e) => {
-														e.preventDefault();
-														void submitRename(player);
-													}}
-												>
-													<label class="grow">
-														New nickname for {player.nickname}
-														<input type="text" bind:value={renameTo} maxlength="16" autocomplete="off" />
-													</label>
-													<button type="submit" disabled={busy || renameTo.trim() === ''}>Rename</button>
-													<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
-												</form>
-											{:else if panel.kind === 'pin'}
-												<form
-													class="row"
-													onsubmit={(e) => {
-														e.preventDefault();
-														void submitPin(player);
-													}}
-												>
-													<label class="grow">
-														New 4-digit PIN for {player.nickname}
-														<input
-															type="text"
-															inputmode="numeric"
-															pattern="[0-9]*"
-															maxlength="4"
-															autocomplete="off"
-															bind:value={newPin}
-														/>
-													</label>
-													<button type="submit" disabled={busy || !isValidPin(newPin)}>Reset PIN</button>
-													<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
-												</form>
-											{:else}
-												<form
-													class="row"
-													onsubmit={(e) => {
-														e.preventDefault();
-														void submitDelete(player);
-													}}
-												>
-													<label class="grow">
-														This cannot be undone. Type <strong>{player.nickname}</strong> to confirm.
-														<input type="text" bind:value={typedNickname} autocomplete="off" />
-													</label>
-													<button
-														type="submit"
-														class="danger"
-														disabled={busy || !canDelete(player.nickname, typedNickname)}
-													>
-														Delete
-													</button>
-													<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
-												</form>
-											{/if}
-											{#if panelError}<p class="error" role="alert">{panelError}</p>{/if}
+							</thead>
+							<tbody>
+								{#each players as player (player.id)}
+									<tr class:hidden-row={player.hidden}>
+										<td data-label="Nickname">
+											{player.nickname}
+											{#if player.hidden}<span class="tag">hidden</span>{/if}
+										</td>
+										<td data-label="Joined">{formatDate(player.created_at)}</td>
+										<td data-label="Last seen">{formatDate(player.last_seen)}</td>
+										<td class="actions">
+											<button
+												type="button"
+												class="small"
+												aria-label="{player.hidden ? 'Unhide' : 'Hide'} {player.nickname}"
+												onclick={() => toggleHidden(player)}
+												disabled={busy}
+											>
+												{player.hidden ? 'Unhide' : 'Hide'}
+											</button>
+											<button
+												type="button"
+												class="small"
+												aria-label="Rename {player.nickname}"
+												onclick={() => openPanel(player.id, 'rename', player.nickname)}>Rename</button
+											>
+											<button
+												type="button"
+												class="small"
+												aria-label="Reset PIN for {player.nickname}"
+												onclick={() => openPanel(player.id, 'pin', player.nickname)}>Reset PIN</button
+											>
+											<button
+												type="button"
+												class="small danger"
+												aria-label="Delete {player.nickname}"
+												onclick={() => openPanel(player.id, 'delete', player.nickname)}>Delete</button
+											>
 										</td>
 									</tr>
-								{/if}
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			{/if}
-		</section>
-	{/if}
-</div>
+									{#if panel?.id === player.id}
+										<tr class="panel-row">
+											<td colspan="4">
+												{#if panel.kind === 'rename'}
+													<form
+														class="row"
+														onsubmit={(e) => {
+															e.preventDefault();
+															void submitRename(player);
+														}}
+													>
+														<label class="grow">
+															New nickname for {player.nickname}
+															<input
+															type="text"
+															bind:value={renameTo}
+															maxlength="16"
+															autocomplete="off"
+															use:focusOnMount
+														/>
+														</label>
+														<button type="submit" disabled={busy || renameTo.trim() === ''}>Rename</button>
+														<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
+													</form>
+												{:else if panel.kind === 'pin'}
+													<form
+														class="row"
+														onsubmit={(e) => {
+															e.preventDefault();
+															void submitPin(player);
+														}}
+													>
+														<label class="grow">
+															New 4-digit PIN for {player.nickname}
+															<input
+																type="text"
+																inputmode="numeric"
+																pattern="[0-9]*"
+																maxlength="4"
+																autocomplete="off"
+																bind:value={newPin}
+																use:focusOnMount
+															/>
+														</label>
+														<button type="submit" disabled={busy || !isValidPin(newPin)}>Reset PIN</button>
+														<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
+													</form>
+												{:else}
+													<form
+														class="row"
+														onsubmit={(e) => {
+															e.preventDefault();
+															void submitDelete(player);
+														}}
+													>
+														<label class="grow">
+															This cannot be undone. Type <strong>{player.nickname}</strong> to confirm.
+															<input
+															type="text"
+															bind:value={typedNickname}
+															autocomplete="off"
+															use:focusOnMount
+														/>
+														</label>
+														<button
+															type="submit"
+															class="danger"
+															disabled={busy || !canDelete(player.nickname, typedNickname)}
+														>
+															Delete
+														</button>
+														<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
+													</form>
+												{/if}
+												{#if panelError}<p class="error" role="alert">{panelError}</p>{/if}
+											</td>
+										</tr>
+									{/if}
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			</section>
+		{/if}
+	</div>
 </main>
 
 <style>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../../shared/api';
-import { adminErrorMessage, canDelete, isValidPin, isValidSignupWord } from './model';
+import { adminErrorMessage, canDelete, isValidNickname, isValidPin, isValidSignupWord } from './model';
 
 describe('canDelete', () => {
 	it('requires the exact nickname', () => {
@@ -48,5 +48,24 @@ describe('adminErrorMessage', () => {
 		const text = adminErrorMessage(err(500, 'weird_code_x'));
 		expect(text).not.toContain('weird_code_x');
 		expect(adminErrorMessage(new Error('x'))).toBeTruthy();
+	});
+});
+
+describe('nickname rules', () => {
+	it('mirrors the backend pattern', () => {
+		expect(isValidNickname('Sam_7')).toBe(true);
+		expect(isValidNickname('a b-c')).toBe(true);
+		expect(isValidNickname('ab')).toBe(false);
+		expect(isValidNickname('a'.repeat(17))).toBe(false);
+		expect(isValidNickname('bad!name')).toBe(false);
+	});
+
+	it('maps nickname and signup_word 422 codes to specific copy', () => {
+		expect(adminErrorMessage(new ApiError(422, 'nickname', null))).toBe(
+			'Use 3 to 16 letters, numbers, spaces, - or _.'
+		);
+		expect(adminErrorMessage(new ApiError(422, 'signup_word', null))).toBe(
+			'Use 3 to 32 letters only.'
+		);
 	});
 });
