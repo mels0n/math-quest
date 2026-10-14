@@ -126,3 +126,17 @@ async def limit_answer(request: Request, player: CurrentPlayer) -> None:
     _limiter(request).hit(
         "answer", str(player.id), limit=ratelimit.ANSWER_LIMIT, window_s=ratelimit.ANSWER_WINDOW_S
     )
+
+
+async def limit_session(request: Request, player: CurrentPlayer) -> None:
+    """Session creation is limited per player."""
+    _limiter(request).hit(
+        "session", str(player.id), limit=ratelimit.PLAY_LIMIT, window_s=ratelimit.PLAY_WINDOW_S
+    )
+
+
+async def limit_next(request: Request, player: CurrentPlayer) -> None:
+    """Problem requests are limited per player."""
+    _limiter(request).hit(
+        "next", str(player.id), limit=ratelimit.PLAY_LIMIT, window_s=ratelimit.PLAY_WINDOW_S
+    )

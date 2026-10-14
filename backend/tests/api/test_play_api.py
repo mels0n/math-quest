@@ -163,3 +163,26 @@ async def test_answering_a_closed_problem_is_409(api: ApiFactory) -> None:
 
     assert r.status_code == 409
     assert r.json() == {"error": "problem_closed"}
+
+
+async def test_session_creation_is_limited_to_120_per_player_per_minute(api: ApiFactory) -> None:
+    h = await _api(api)
+    for _ in range(120):
+        assert (
+            await h.client.post("/api/play/sessions", json={"mode": "adventure"}, headers=CSRF)
+        ).status_code == 200
+    r = await h.client.post("/api/play/sessions", json={"mode": "adventure"}, headers=CSRF)
+    assert r.status_code == 429
+    assert int(r.headers["retry-after"]) > 0
+    h.clock.advance(61)
+    assert (await _start(h.client)) != ""
+
+
+async def test_next_problem_is_limited_to_120_per_player_per_minute(api: ApiFactory) -> None:
+    h = await _api(api)
+    session_id = await _start(h.client)
+    for _ in range(120):
+        assert (await _next(h.client, session_id)).status_code == 200
+    r = await _next(h.client, session_id)
+    assert r.status_code == 429
+    assert int(r.headers["retry-after"]) > 0

@@ -6,7 +6,14 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field
 
-from mathquest.api.deps import AppSettings, CurrentPlayer, Db, limit_answer
+from mathquest.api.deps import (
+    AppSettings,
+    CurrentPlayer,
+    Db,
+    limit_answer,
+    limit_next,
+    limit_session,
+)
 from mathquest.features import play
 from mathquest.features.play import AnswerOut, ProblemOut, SessionOut
 
@@ -29,12 +36,12 @@ class AnswerIn(BaseModel):
     latex: str = Field(max_length=MAX_BODY_LATEX)
 
 
-@router.post("/sessions")
+@router.post("/sessions", dependencies=[Depends(limit_session)])
 async def start_session(body: StartIn, player: CurrentPlayer, db: Db) -> SessionOut:
     return await play.start_session(db, player.id, body.mode)
 
 
-@router.post("/sessions/{session_id}/next")
+@router.post("/sessions/{session_id}/next", dependencies=[Depends(limit_next)])
 async def next_problem(
     session_id: uuid.UUID, request: Request, player: CurrentPlayer, db: Db, settings: AppSettings
 ) -> ProblemOut:
