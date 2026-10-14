@@ -202,6 +202,14 @@ EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
         ("add_fractions_unlike", t): {"added_denominators", "added_numerators_only"}
         for t in range(3)
     },
+    **{
+        ("equivalent_fractions", t): {
+            "added_instead_of_multiplied",
+            "copied_numerator",
+            "wrote_whole_fraction",
+        }
+        for t in range(3)
+    },
     ("place_value_tens_ones", 0): {"confused_tens_ones"},
     ("place_value_tens_ones", 1): {"confused_tens_ones", "confused_adjacent_place"},
     ("place_value_tens_ones", 2): {"confused_adjacent_place"},
@@ -219,3 +227,17 @@ def test_sub_within_20_no_borrow_tier_has_no_backwards_misconception() -> None:
     gen = get_generator("sub_within_20")
     keys = {m.key for seed in range(200) for m in gen.generate(seed, 0).misconceptions}
     assert "subtracted_backwards" not in keys
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_equivalent_fractions_takes_a_number_and_recognises_a_whole_fraction(
+    seed: int, tier: int
+) -> None:
+    problem = get_generator("equivalent_fractions").generate(seed, tier)
+    assert problem.keypad == "numbers"
+    a, b, _ = fractions("equivalent_fractions", seed, tier)
+    for latex in (rf"\frac{{{a}}}{{{b}}}", rf"\frac{{{2 * a}}}{{{2 * b}}}"):
+        result = check(problem, latex)
+        assert result.verdict is Verdict.INCORRECT
+        assert result.misconception == "wrote_whole_fraction"

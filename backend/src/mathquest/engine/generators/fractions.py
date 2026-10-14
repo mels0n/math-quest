@@ -27,6 +27,8 @@ def _build_equivalent(rng: random.Random, tier: int) -> Built:
         wrong=(
             ("added_instead_of_multiplied", sympy.Integer(a + d - b)),
             ("copied_numerator", sympy.Integer(a)),
+            # The whole fraction typed instead of the missing numerator.
+            ("wrote_whole_fraction", sympy.Rational(a, b)),
         ),
     )
 
@@ -65,7 +67,7 @@ def _build_add_unlike(rng: random.Random, tier: int) -> Built:
 def generators() -> list[SkillGenerator]:
     return [
         SkillGenerator(
-            "equivalent_fractions", 0.0, AnswerForm.INTEGER, "fractions", _build_equivalent
+            "equivalent_fractions", 0.0, AnswerForm.INTEGER, "numbers", _build_equivalent
         ),
         SkillGenerator(
             "add_fractions_unlike", 0.8, AnswerForm.LOWEST_TERMS, "fractions", _build_add_unlike
