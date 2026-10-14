@@ -33,6 +33,11 @@ log() {
   printf '%s pg-backup: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
 }
 
+warn() {
+  printf '%s pg-backup: error: %s
+' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
+}
+
 die() {
   printf '%s pg-backup: error: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
   exit 1
@@ -114,15 +119,22 @@ run_backup() {
     child=""
     rm -f -- "$partial"
     partial=""
-    printf '%s pg-backup: error: pg_dump failed
-' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2
+    warn "pg_dump failed"
     return 1
   fi
   child=""
   sync "$partial" 2> /dev/null || sync
-  mv -- "$partial" "$final"
+  if ! mv -- "$partial" "$final"; then
+    rm -f -- "$partial"
+    partial=""
+    warn "could not move the finished dump into place"
+    return 1
+  fi
   partial=""
-  size=$(wc -c < "$final" | tr -d ' ')
+  if ! size=$(wc -c < "$final" | tr -d ' '); then
+    warn "could not read the size of $(basename -- "$final")"
+    return 1
+  fi
   prune
   log "dump finished: $(basename -- "$final") ${size} bytes, pruned ${pruned}, kept up to ${KEEP}"
 }
