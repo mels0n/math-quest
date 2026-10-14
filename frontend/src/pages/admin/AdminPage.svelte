@@ -24,6 +24,8 @@
 	} from '../../entities/admin';
 	import type { AdminPlayer } from '../../entities/admin';
 
+	const LIST_LIMIT = 100;
+
 	type Phase = 'loading' | 'offlan' | 'login' | 'dashboard';
 	type Panel = { id: string; kind: 'rename' | 'pin' | 'delete' };
 
@@ -72,7 +74,7 @@
 		const seq = ++refreshSeq;
 		listError = '';
 		try {
-			const list = await listPlayers({ query: query.trim() || undefined, limit: 100 });
+			const list = await listPlayers({ query: query.trim() || undefined, limit: LIST_LIMIT });
 			const word = (await signupWordState()).set;
 			if (seq !== refreshSeq) return;
 			players = list;
@@ -491,6 +493,9 @@
 							</tbody>
 						</table>
 					</div>
+					{#if players.length >= LIST_LIMIT}
+						<p class="muted">Showing the first {LIST_LIMIT}. Search to narrow.</p>
+					{/if}
 				{/if}
 			</section>
 		{/if}
