@@ -234,3 +234,18 @@ async def test_unknown_api_path_is_404(api: ApiFactory) -> None:
     wrong = await c.post("/api/health", headers=CSRF)
     assert wrong.status_code == 405
     assert wrong.json() == {"error": "method_not_allowed"}
+
+
+async def test_lockout_covers_the_whole_ipv6_64(api: ApiFactory) -> None:
+    first = (await api(peer="2001:db8:1:2::1")).client
+    await _signup(first)
+    for _ in range(5):
+        assert (await _login(first, pin="0000")).status_code == 401
+    device = first.cookies.get("mq_device")
+    assert device
+    second = (await api(peer="2001:db8:1:2:aaaa:bbbb:cccc:dddd")).client
+    second.cookies.set("mq_device", device)
+    assert (await _login(second, pin="1234")).status_code == 429
+    elsewhere = (await api(peer="2001:db8:1:3::1")).client
+    elsewhere.cookies.set("mq_device", device)
+    assert (await _login(elsewhere, pin="1234")).status_code == 200

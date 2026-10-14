@@ -2,7 +2,10 @@
 
 Failed logins and recovery guesses share one counter per (player, device key, ip).
 Five failures within 60 seconds lock that triple for 30 minutes; other devices, other
-addresses and other players are unaffected.
+addresses and other players are unaffected. Addresses are the buckets the API passes in
+(IPv6 grouped by /64). Recovery guesses also count per player across every address: ten
+failures within a day disable recovery for that player for another day; PIN login is
+unaffected.
 """
 
 import asyncio
@@ -44,6 +47,10 @@ LOCK_DURATION = timedelta(minutes=30)
 IP_FAILURE_LIMIT = 15
 IP_FAILURE_WINDOW = timedelta(minutes=10)
 FAILURE_RETENTION = timedelta(hours=1)
+# Recovery is one word from a short list, so guesses are also capped per player.
+RECOVERY_FAILURE_LIMIT = 10
+RECOVERY_FAILURE_WINDOW = timedelta(hours=24)
+RECOVERY_LOCK_DURATION = timedelta(hours=24)
 PICTURE_COUNT = 12
 PICTURE_LENGTH = 4
 
@@ -179,12 +186,14 @@ async def _attempt(
     ip: str,
     now: Clock,
     verify: Callable[[], Awaitable[bool]],
+    recovery: bool = False,
 ) -> None:
     """Run one credential check under the lockouts.
 
     Everything happens while holding a row lock on the player, so parallel attempts
     queue up and each sees the failures recorded by the ones before it. Locks are
     per (player, device key, ip), plus one per (player, ip) across all device keys.
+    A recovery attempt is also refused while the player's recovery cap is in force.
     """
     if device_key == lockouts.ANY_DEVICE:
         raise Invalid("device_key")
@@ -196,14 +205,30 @@ async def _attempt(
         raise Unauthorized()
     moment = now()
     await lockouts.delete_failures_before(db, player.id, moment - FAILURE_RETENTION)
+    if recovery:
+        locked_until = player.recovery_locked_until
+        if locked_until is not None and locked_until > moment:
+            await db.commit()
+            raise Locked(max(1, math.ceil((locked_until - moment).total_seconds())))
+        await lockouts.clear_recovery_failures(db, player.id, moment - RECOVERY_FAILURE_WINDOW)
     until = await lockouts.active_lockout_until(db, player.id, device_key, ip, moment)
     if until is not None:
         await db.commit()
         raise Locked(max(1, math.ceil((until - moment).total_seconds())))
     if await verify():
         await lockouts.clear_failures(db, player.id, device_key, ip)
+        if recovery:
+            await lockouts.clear_recovery_failures(db, player.id)
         return
     await lockouts.record_failure(db, player.id, device_key, ip, moment)
+    if recovery:
+        await lockouts.record_recovery_failure(db, player.id, moment)
+        total = await lockouts.count_recovery_failures_since(
+            db, player.id, moment - RECOVERY_FAILURE_WINDOW
+        )
+        if total >= RECOVERY_FAILURE_LIMIT:
+            player.recovery_locked_until = moment + RECOVERY_LOCK_DURATION
+            await lockouts.clear_recovery_failures(db, player.id)
     recent = await lockouts.count_failures_since(
         db, player.id, device_key, ip, moment - FAILURE_WINDOW
     )
@@ -281,6 +306,7 @@ async def recover(
         ip=ip,
         now=now,
         verify=lambda: _verify(player.recovery_hash, secret),
+        recovery=True,
     )
     candidates = [
         w for w in load_recovery_words(content_dir or default_content_dir()) if w != secret

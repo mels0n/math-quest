@@ -1,4 +1,5 @@
 import random
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -178,7 +179,9 @@ def test_content_files_have_expected_sizes() -> None:
     assert len(words.adjectives) == 40
     assert len(words.animals) == 40
     recovery = service.load_recovery_words(default_content_dir())
-    assert 150 <= len(recovery) <= 300
+    assert len(recovery) >= 1000
+    assert len(set(recovery)) == len(recovery)
+    assert all(re.fullmatch(r"[a-z]{3,9}", w) for w in recovery)
     for path in default_content_dir().glob("*.*"):
         if path.is_file():
             assert "—" not in Path(path).read_text(encoding="utf-8")
@@ -534,3 +537,96 @@ async def test_seed_accepts_secret_str(db: AsyncSession) -> None:
         db, signup_word="sesame", nickname="SwiftOtter42", pin="1234", picture=None
     )
     assert result.player_id is not None
+
+
+async def _fail_recover(
+    db: AsyncSession, clock: Clock, *, device: str, ip: str = IP1, word: str = "zzzzzz"
+) -> None:
+    with pytest.raises(Unauthorized):
+        await service.recover(
+            db,
+            nickname="SwiftOtter42",
+            recovery_word=word,
+            new_pin="9876",
+            device_key=device,
+            ip=ip,
+            now=clock,
+        )
+
+
+async def test_ten_failed_recoveries_across_addresses_disable_recovery_for_a_day(
+    seeded: AsyncSession, clock: Clock
+) -> None:
+    signup = await _signup(seeded)
+    for i in range(10):
+        await _fail_recover(seeded, clock, device=f"dev-{i}", ip=f"10.0.1.{i}")
+        clock.advance(60)
+    with pytest.raises(Locked) as err:
+        await service.recover(
+            seeded,
+            nickname="SwiftOtter42",
+            recovery_word=signup.recovery_word,
+            new_pin="9876",
+            device_key="brand-new",
+            ip="10.0.9.9",
+            now=clock,
+        )
+    assert 86_300 <= err.value.retry_after_s <= 86_400
+    login = await service.login(
+        seeded,
+        nickname="SwiftOtter42",
+        pin="1234",
+        device_key="brand-new",
+        ip="10.0.9.9",
+        now=clock,
+    )
+    assert login.player_id == signup.player_id
+    clock.advance(86_400)
+    result = await service.recover(
+        seeded,
+        nickname="SwiftOtter42",
+        recovery_word=signup.recovery_word,
+        new_pin="9876",
+        device_key="brand-new",
+        ip="10.0.9.9",
+        now=clock,
+    )
+    assert result.player_id == signup.player_id
+
+
+async def test_nine_failed_recoveries_do_not_disable_recovery(
+    seeded: AsyncSession, clock: Clock
+) -> None:
+    signup = await _signup(seeded)
+    for i in range(9):
+        await _fail_recover(seeded, clock, device=f"dev-{i}", ip=f"10.0.1.{i}")
+    result = await service.recover(
+        seeded,
+        nickname="SwiftOtter42",
+        recovery_word=signup.recovery_word,
+        new_pin="9876",
+        device_key="brand-new",
+        ip="10.0.9.9",
+        now=clock,
+    )
+    assert result.player_id == signup.player_id
+
+
+async def test_failed_recoveries_older_than_a_day_do_not_count(
+    seeded: AsyncSession, clock: Clock
+) -> None:
+    signup = await _signup(seeded)
+    for i in range(9):
+        await _fail_recover(seeded, clock, device=f"dev-{i}", ip=f"10.0.1.{i}")
+    clock.advance(86_401)
+    await _fail_recover(seeded, clock, device="late", ip="10.0.2.1")
+    result = await service.recover(
+        seeded,
+        nickname="SwiftOtter42",
+        recovery_word=signup.recovery_word,
+        new_pin="9876",
+        device_key="brand-new",
+        ip="10.0.9.9",
+        now=clock,
+    )
+    assert result.player_id == signup.player_id

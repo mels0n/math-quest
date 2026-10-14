@@ -69,7 +69,8 @@ def resolve_client_ip(request: Request) -> str:
 
 
 async def get_client_ip(request: Request) -> str:
-    return resolve_client_ip(request)
+    """The address lockouts key on: the rate-limit bucket, so an IPv6 /64 counts as one."""
+    return ratelimit.rate_bucket(resolve_client_ip(request))
 
 
 async def get_device_key(request: Request) -> str:

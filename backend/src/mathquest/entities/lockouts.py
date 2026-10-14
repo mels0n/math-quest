@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mathquest.entities.models import AuthFailure, Lockout, Player
+from mathquest.entities.models import AuthFailure, Lockout, Player, RecoveryFailure
 from mathquest.shared.errors import Locked
 
 ANY_DEVICE = "*"
@@ -96,3 +96,30 @@ async def clear_failures(db: AsyncSession, player_id: uuid.UUID, device_key: str
             AuthFailure.ip == ip,
         )
     )
+
+
+async def record_recovery_failure(db: AsyncSession, player_id: uuid.UUID, at: datetime) -> None:
+    db.add(RecoveryFailure(player_id=player_id, at=at))
+    await db.flush()
+
+
+async def count_recovery_failures_since(
+    db: AsyncSession, player_id: uuid.UUID, since: datetime
+) -> int:
+    """Failed recovery guesses for the player from any address since a moment."""
+    result = await db.execute(
+        select(func.count())
+        .select_from(RecoveryFailure)
+        .where(RecoveryFailure.player_id == player_id, RecoveryFailure.at > since)
+    )
+    return result.scalar_one()
+
+
+async def clear_recovery_failures(
+    db: AsyncSession, player_id: uuid.UUID, before: datetime | None = None
+) -> None:
+    """Drop the player's recovery failures, or only those older than `before`."""
+    query = delete(RecoveryFailure).where(RecoveryFailure.player_id == player_id)
+    if before is not None:
+        query = query.where(RecoveryFailure.at < before)
+    await db.execute(query)

@@ -20,6 +20,9 @@ class Player(Base):
     picture_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
     recovery_hash: Mapped[str] = mapped_column(Text)
     hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    recovery_locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -46,6 +49,17 @@ class AuthFailure(Base):
     )
     device_key: Mapped[str] = mapped_column(Text)
     ip: Mapped[str] = mapped_column(INET)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class RecoveryFailure(Base):
+    __tablename__ = "recovery_failures"
+    __table_args__ = (Index("ix_recovery_failures_player_at", "player_id", "at"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE")
+    )
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
