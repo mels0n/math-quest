@@ -34,8 +34,7 @@ log() {
 }
 
 warn() {
-  printf '%s pg-backup: error: %s
-' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
+  printf '%s pg-backup: error: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2
 }
 
 die() {
