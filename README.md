@@ -37,6 +37,19 @@ single container image tagged with the commit (`sha-<12 chars>`), never `:latest
 
 ## Where secrets live
 Configuration comes from environment variables read in one place,
-`mathquest.shared.config`. Local values go in a gitignored `.env` file. In deployment, the database password
-and admin credential are supplied as container secrets. The Postgres credentials
-in `compose.dev.yml` are for local development only.
+`mathquest.shared.config`. The application does not read a `.env` file; export the
+variables in your shell or have your process manager set them.
+
+- `DATABASE_URL`: the async Postgres URL (`postgresql+asyncpg://...`). Alternatively
+  set `DATABASE_URL_FILE` to a file holding the URL, which suits container secrets.
+  One of the two is required.
+- `INITIAL_SIGNUP_WORD_FILE`: path to a file holding the grown-up's secret word that
+  new players must enter. It is hashed into the database on first start and never
+  overwritten afterwards.
+- `TRUSTED_PROXIES`: comma-separated IPs or CIDRs of reverse proxies whose
+  `X-Forwarded-For` header is believed. Leave it empty when the app is reached
+  directly.
+
+The tests need `TEST_DATABASE_URL`, the async URL of a throwaway Postgres they may
+create and drop schemas in. The Postgres credentials in `compose.dev.yml` are for
+local development only.
