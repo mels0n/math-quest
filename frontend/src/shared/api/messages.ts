@@ -7,8 +7,11 @@ export const ERROR_COPY = {
 } as const;
 
 export function waitText(seconds: number): string {
-	if (seconds < 90) return `${Math.max(1, seconds)} seconds`;
-	return `${Math.ceil(seconds / 60)} minutes`;
+	if (seconds < 60) return `${Math.max(1, seconds)} seconds`;
+	if (seconds < 120) return 'a minute or two';
+	if (seconds < 3600) return `${Math.ceil(seconds / 60)} minutes`;
+	if (seconds < 6 * 3600) return `about ${Math.round(seconds / 3600)} hours`;
+	return 'until tomorrow';
 }
 
 /** Kid-facing text for the failures every request can have (rate limit, network, anything else). */

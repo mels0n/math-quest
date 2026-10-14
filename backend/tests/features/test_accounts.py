@@ -629,3 +629,13 @@ async def test_failed_recoveries_older_than_a_day_do_not_count(
         now=clock,
     )
     assert result.player_id == signup.player_id
+
+
+def test_recovery_words_are_nickname_safe_and_have_no_plural_pairs() -> None:
+    recovery = service.load_recovery_words(default_content_dir())
+    blocklist = nicknames.load_blocklist(default_content_dir())
+    assert [w for w in recovery if not nicknames.nickname_allowed(w, blocklist)] == []
+    words = set(recovery)
+    assert sorted(w for w in recovery if w + "s" in words) == []
+    assert "cracker" not in words
+    assert "frisbee" not in words
