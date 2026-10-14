@@ -33,6 +33,7 @@ async def lock_player(db: AsyncSession, player_id: uuid.UUID) -> None:
             raise
         await db.rollback()
         raise Locked(LOCK_RETRY_AFTER_S) from None
+    await db.execute(text("SET LOCAL lock_timeout = DEFAULT"))
 
 
 async def active_lockout_until(
