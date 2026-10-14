@@ -131,6 +131,33 @@ async def seed_signup_word(db: AsyncSession, word: SecretStr | str | None) -> No
     await db.commit()
 
 
+async def check_nickname_available(
+    db: AsyncSession,
+    nickname: str,
+    *,
+    blocklist: frozenset[str] | None = None,
+    owner: uuid.UUID | None = None,
+) -> None:
+    """Raise unless `nickname` is well formed, allowed and free (or already `owner`'s)."""
+    if not nicknames.nickname_valid(nickname):
+        raise Invalid("nickname")
+    words = blocklist if blocklist is not None else nicknames.default_blocklist()
+    if not nicknames.nickname_allowed(nickname, words):
+        raise Invalid("nickname_blocked")
+    existing = await players.get_by_nickname(db, nickname)
+    if existing is not None and existing.id != owner:
+        raise Conflict("nickname_taken")
+
+
+async def set_signup_word(db: AsyncSession, word: str) -> None:
+    """Replace the stored signup word hash; takes effect on the next signup."""
+    await set_setting(db, SIGNUP_WORD_KEY, await _hash(word))
+
+
+async def signup_word_is_set(db: AsyncSession) -> bool:
+    return await get_setting(db, SIGNUP_WORD_KEY) is not None
+
+
 async def signup(
     db: AsyncSession,
     *,
@@ -144,13 +171,7 @@ async def signup(
     if not await _verify(await get_setting(db, SIGNUP_WORD_KEY), signup_word):
         raise Invalid("signup_word")
     _require_one_credential(pin, picture)
-    if not nicknames.nickname_valid(nickname):
-        raise Invalid("nickname")
-    words = blocklist if blocklist is not None else nicknames.default_blocklist()
-    if not nicknames.nickname_allowed(nickname, words):
-        raise Invalid("nickname_blocked")
-    if await players.get_by_nickname(db, nickname) is not None:
-        raise Conflict("nickname_taken")
+    await check_nickname_available(db, nickname, blocklist=blocklist)
 
     recovery_word = secrets.choice(load_recovery_words(content_dir or default_content_dir()))
     pin_hash = await _hash(pin) if pin is not None else None
@@ -281,6 +302,34 @@ async def login(
     return LoginResult(player_id=player.id, device_token=token)
 
 
+async def replace_credentials(
+    db: AsyncSession,
+    player: Player,
+    *,
+    pin: str | None,
+    picture: list[int] | None,
+    old_word: str | None = None,
+    content_dir: Path | None = None,
+) -> str:
+    """Set new credentials, rotate the recovery word and revoke every device.
+
+    Returns the new recovery word, which is never the old one. Does not commit.
+    """
+    _require_one_credential(pin, picture)
+    words = load_recovery_words(content_dir or default_content_dir())
+    if old_word is not None:
+        new_word = secrets.choice([w for w in words if w != old_word])
+    else:
+        new_word = secrets.choice(words)
+        while await _verify(player.recovery_hash, new_word):
+            new_word = secrets.choice(words)
+    player.pin_hash = await _hash(pin) if pin is not None else None
+    player.picture_hash = await _hash(_picture_secret(picture)) if picture is not None else None
+    player.recovery_hash = await _hash(new_word)
+    await devices.revoke_all(db, player.id)
+    return new_word
+
+
 async def recover(
     db: AsyncSession,
     *,
@@ -308,16 +357,14 @@ async def recover(
         verify=lambda: _verify(player.recovery_hash, secret),
         recovery=True,
     )
-    candidates = [
-        w for w in load_recovery_words(content_dir or default_content_dir()) if w != secret
-    ]
-    new_word = secrets.choice(candidates)
-    player.pin_hash = await _hash(new_pin) if new_pin is not None else None
-    player.picture_hash = (
-        await _hash(_picture_secret(new_picture)) if new_picture is not None else None
+    new_word = await replace_credentials(
+        db,
+        player,
+        pin=new_pin,
+        picture=new_picture,
+        old_word=secret,
+        content_dir=content_dir,
     )
-    player.recovery_hash = await _hash(new_word)
-    await devices.revoke_all(db, player.id)
     token = await _issue_token(db, player.id)
     await db.commit()
     return RecoverResult(player_id=player.id, device_token=token, recovery_word=new_word)

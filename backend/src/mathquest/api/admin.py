@@ -1,6 +1,9 @@
 """Admin login, logout and session check. LAN-only: off-LAN clients see 404 on every route."""
 
-from fastapi import APIRouter, Depends, Request, Response
+import uuid
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from mathquest.api.deps import (
@@ -69,4 +72,86 @@ async def logout(request: Request, response: Response, db: Db, settings: AppSett
 
 @router.get("/me")
 async def me(_: CurrentAdmin) -> Done:
+    return Done()
+
+
+class RenameIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    nickname: str = Field(max_length=64)
+
+
+class ResetPinIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pin: str = Field(pattern=r"^[0-9]{4}$")
+
+
+class SignupWordIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    word: str = Field(pattern=r"^[A-Za-z]{3,32}$")
+
+
+class SignupWordState(BaseModel):
+    set: bool
+
+
+@router.get("/players")
+async def list_players(
+    _: CurrentAdmin,
+    db: Db,
+    query: Annotated[str | None, Query(max_length=64)] = None,
+    search: Annotated[str | None, Query(max_length=64)] = None,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=admin.MAX_PAGE)] = 50,
+) -> list[admin.PlayerAdminOut]:
+    return await admin.list_players(db, query=query or search, offset=offset, limit=limit)
+
+
+@router.post("/players/{player_id}/hide")
+async def hide(player_id: uuid.UUID, session: CurrentAdmin, db: Db) -> Done:
+    await admin.set_hidden(db, session.id, player_id, True)
+    return Done()
+
+
+@router.post("/players/{player_id}/unhide")
+async def unhide(player_id: uuid.UUID, session: CurrentAdmin, db: Db) -> Done:
+    await admin.set_hidden(db, session.id, player_id, False)
+    return Done()
+
+
+@router.post("/players/{player_id}/rename")
+async def rename(
+    player_id: uuid.UUID, body: RenameIn, request: Request, session: CurrentAdmin, db: Db
+) -> Done:
+    await admin.rename(
+        db, session.id, player_id, body.nickname, blocklist=request.app.state.blocklist
+    )
+    return Done()
+
+
+@router.post("/players/{player_id}/reset-pin")
+async def reset_pin(
+    player_id: uuid.UUID, body: ResetPinIn, session: CurrentAdmin, db: Db, settings: AppSettings
+) -> admin.PinReset:
+    return await admin.reset_pin(
+        db, session.id, player_id, body.pin, content_dir=settings.content_dir
+    )
+
+
+@router.delete("/players/{player_id}")
+async def delete_player(player_id: uuid.UUID, session: CurrentAdmin, db: Db) -> Done:
+    await admin.delete_player(db, session.id, player_id)
+    return Done()
+
+
+@router.get("/signup-word")
+async def signup_word_state(_: CurrentAdmin, db: Db) -> SignupWordState:
+    return SignupWordState(set=await admin.signup_word_is_set(db))
+
+
+@router.put("/signup-word")
+async def set_signup_word(body: SignupWordIn, session: CurrentAdmin, db: Db) -> Done:
+    await admin.set_signup_word(db, session.id, body.word)
     return Done()
