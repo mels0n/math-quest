@@ -130,10 +130,8 @@ run_backup() {
     return 1
   fi
   partial=""
-  if ! size=$(wc -c < "$final" | tr -d ' '); then
-    warn "could not read the size of $(basename -- "$final")"
-    return 1
-  fi
+  size=$(wc -c < "$final" 2> /dev/null) || size=unknown
+  size=$(printf '%s' "$size" | tr -d ' ')
   prune
   log "dump finished: $(basename -- "$final") ${size} bytes, pruned ${pruned}, kept up to ${KEEP}"
 }
