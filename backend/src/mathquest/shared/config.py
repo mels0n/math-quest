@@ -67,6 +67,14 @@ class Settings(BaseSettings):
         return value
 
     @model_validator(mode="after")
+    def _answers_only_without_secure_cookies(self) -> Self:
+        if self.dev_expose_answers and self.cookie_secure:
+            raise ValueError(
+                "dev_expose_answers is test-only and cannot be used with secure cookies"
+            )
+        return self
+
+    @model_validator(mode="after")
     def _resolve_secret_files(self) -> Self:
         if self.database_url is None:
             if self.database_url_file is None:

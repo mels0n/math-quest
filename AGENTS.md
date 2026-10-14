@@ -65,6 +65,7 @@ Both checks fail CI.
 ## Deployment settings
 
 - `COOKIE_SECURE` (default true): sets the `Secure` flag on the session and device cookies.
+- `DEV_EXPOSE_ANSWERS` (default false): test-only; returns answers to the client. The app refuses to start with it set while `COOKIE_SECURE` is true.
 - `TRUSTED_PROXIES`: comma-separated IPs or CIDRs of the reverse proxy in front of the
   app. The client address comes from the socket peer. Only when the peer is in this
   list is the right-most address in `X-Forwarded-For` that is not itself a trusted

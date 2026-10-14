@@ -80,3 +80,12 @@ def test_trusted_proxies_split_from_env_and_validated(monkeypatch: pytest.Monkey
     monkeypatch.setenv("TRUSTED_PROXIES", "nonsense")
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_exposed_answers_require_insecure_cookies(tmp_path: Path) -> None:
+    secret = tmp_path / "db"
+    secret.write_text("postgresql+asyncpg://u:p@h/db", encoding="utf-8")
+    with pytest.raises(ValidationError, match="test-only"):
+        Settings(database_url_file=secret, dev_expose_answers=True, cookie_secure=True)  # pyright: ignore[reportCallIssue]
+    ok = Settings(database_url_file=secret, dev_expose_answers=True, cookie_secure=False)  # pyright: ignore[reportCallIssue]
+    assert ok.dev_expose_answers is True
