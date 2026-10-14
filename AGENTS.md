@@ -7,7 +7,8 @@ How to build, check and navigate the code.
 Backend (run in `backend/`; needs Python 3.13+ and uv):
 
 - Install: `uv sync`
-- Test: `uv run pytest` (database tests need `docker compose -f compose.dev.yml up -d`)
+- Test: `uv run pytest` (database tests need `docker compose -f compose.dev.yml up -d` and
+  `export TEST_DATABASE_URL=postgresql+asyncpg://mathquest:mathquest@localhost:5432/mathquest`)
 - Lint: `uv run ruff check`
 - Types: `uv run pyright`
 - Import boundaries: `uv run lint-imports`
@@ -38,7 +39,7 @@ backend/
 frontend/
   src/routes/   thin SvelteKit routes; import only from pages
   src/app, pages, widgets, features, entities, shared
-docs/           tutorials, how-to, reference, explanation, adr
+docs/           Diátaxis layout (adr/ today; see docs/README.md)
 ```
 
 Imports point downward only.

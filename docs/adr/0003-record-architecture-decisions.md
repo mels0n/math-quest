@@ -15,11 +15,11 @@ sequentially, using `TEMPLATE.md`. Accepted ADRs are immutable; a changed
 decision gets a new ADR that supersedes the old one rather than an edit.
 
 ## Alternatives rejected
-- **Document decisions in the README**, mixes reference with explanation, and
+- **Document decisions in the README**: it mixes reference with explanation, and
   the README is read for how-to-run, not why.
-- **Rely on commit messages and PR threads**, the reasoning is there but
+- **Rely on commit messages and PR threads**: the reasoning is there but
   unfindable months later, and never surfaces when a new contributor starts.
-- **No record**, the status quo that produced this ADR.
+- **No record**: the status quo that produced this ADR.
 
 ## Consequences
 A small per-decision cost, paid at the moment the reasoning is freshest. In

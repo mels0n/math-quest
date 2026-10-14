@@ -18,6 +18,7 @@ docker compose -f compose.dev.yml up -d   # Postgres 16 for development and test
 
 cd backend
 uv sync
+export TEST_DATABASE_URL=postgresql+asyncpg://mathquest:mathquest@localhost:5432/mathquest
 uv run pytest
 
 cd ../frontend
@@ -34,6 +35,7 @@ Checks run in CI and can be run locally:
 Pushes and pull requests run the CI workflow in `.github/workflows/ci.yml`
 (lint, typecheck, import-boundary checks, tests, build). The application ships as a
 single container image tagged with the commit (`sha-<12 chars>`), never `:latest`.
+Run a single replica only; see "Deployment settings" in [AGENTS.md](AGENTS.md).
 
 ## Where secrets live
 Configuration comes from environment variables read in one place,
