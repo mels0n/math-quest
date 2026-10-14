@@ -69,6 +69,15 @@ layers = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "Feature slices do not import each other"
+type = "independence"
+modules = [
+    "mathquest.features.accounts",
+    "mathquest.features.admin",
+    "mathquest.features.play",
+]
+
+[[tool.importlinter.contracts]]
 name = "Engine is independent of the application layers"
 type = "forbidden"
 source_modules = ["mathquest.engine"]

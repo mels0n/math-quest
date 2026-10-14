@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { MathfieldElement } from 'mathlive';
 	import type { KeypadProfile } from '../../entities/problem';
-	import { submitBlocker } from './guard';
+	import { noticeAfterEdit, submitBlocker } from './guard';
 	import { layoutFor, type Key } from './keypad';
 
 	let {
@@ -45,6 +45,7 @@
 
 	function press(key: Key, event: MouseEvent) {
 		if (!field || disabled) return;
+		notice = noticeAfterEdit(notice);
 		const { action } = key;
 		if (action.kind === 'go') submit();
 		else if (action.kind === 'insert') field.insert(action.latex);
@@ -69,7 +70,7 @@
 			mf.setAttribute('aria-label', 'Your answer');
 			mf.setAttribute('data-testid', 'math-field');
 			mf.addEventListener('input', () => {
-				notice = '';
+				notice = noticeAfterEdit(notice);
 			});
 			mf.addEventListener('keydown', (event) => {
 				if (event.key === 'Enter') {

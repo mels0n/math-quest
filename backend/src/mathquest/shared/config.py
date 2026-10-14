@@ -8,6 +8,8 @@ from typing import Annotated, Self
 from pydantic import PrivateAttr, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+ADMIN_PASSWORD_MIN_LENGTH = 16
+
 
 def default_content_dir() -> Path:
     """The `content/` directory next to `src/` in the backend project."""
@@ -41,6 +43,13 @@ class Settings(BaseSettings):
     dev_expose_answers: bool = False
     # IPs or CIDRs of reverse proxies whose X-Forwarded-For is believed; comma-separated in env.
     trusted_proxies: Annotated[list[str], NoDecode] = []
+    admin_password_file: Path | None = None
+    # Clients outside these IPs or CIDRs get 404 on every /api/admin route; comma-separated in env.
+    admin_allowed_cidrs: Annotated[list[str], NoDecode] = [
+        "192.168.0.0/16",
+        "127.0.0.1/32",
+        "::1/128",
+    ]
 
     # Read only from `initial_signup_word_file`; deliberately not an env-settable field.
     _initial_signup_word: SecretStr | None = PrivateAttr(default=None)
@@ -49,21 +58,32 @@ class Settings(BaseSettings):
     def initial_signup_word(self) -> SecretStr | None:
         return self._initial_signup_word
 
-    @field_validator("trusted_proxies", mode="before")
+    def read_admin_password(self) -> SecretStr | None:
+        """The admin password, read from its file on each call and never stored on the settings."""
+        if self.admin_password_file is None:
+            return None
+        value = _read_secret_file(self.admin_password_file, "admin password")
+        if len(value) < ADMIN_PASSWORD_MIN_LENGTH:
+            raise ValueError(
+                f"admin password must be at least {ADMIN_PASSWORD_MIN_LENGTH} characters"
+            )
+        return SecretStr(value)
+
+    @field_validator("trusted_proxies", "admin_allowed_cidrs", mode="before")
     @classmethod
-    def _split_trusted_proxies(cls, value: object) -> object:
+    def _split_networks(cls, value: object) -> object:
         if isinstance(value, str):
             return [part.strip() for part in value.split(",") if part.strip()]
         return value
 
-    @field_validator("trusted_proxies")
+    @field_validator("trusted_proxies", "admin_allowed_cidrs")
     @classmethod
-    def _check_trusted_proxies(cls, value: list[str]) -> list[str]:
+    def _check_networks(cls, value: list[str]) -> list[str]:
         for entry in value:
             try:
                 ipaddress.ip_network(entry, strict=False)
             except ValueError:
-                raise ValueError("trusted_proxies holds an invalid IP or CIDR") from None
+                raise ValueError("network list holds an invalid IP or CIDR") from None
         return value
 
     @model_validator(mode="after")
@@ -84,6 +104,7 @@ class Settings(BaseSettings):
             self._initial_signup_word = SecretStr(
                 _read_secret_file(self.initial_signup_word_file, "initial signup word")
             )
+        self.read_admin_password()
         return self
 
 

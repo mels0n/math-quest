@@ -17,23 +17,25 @@ LOCK_TIMEOUT = "3s"
 LOCK_RETRY_AFTER_S = 5
 
 
-async def lock_player(db: AsyncSession, player_id: uuid.UUID) -> None:
+async def lock_player(db: AsyncSession, player_id: uuid.UUID) -> bool:
     """Serialize auth attempts for one player until the transaction ends.
 
     Takes a non-key row lock so inserts into child tables are not blocked. Waiting
-    longer than the lock timeout raises Locked.
+    longer than the lock timeout raises Locked. Returns False when the player no longer exists.
     """
     await db.execute(text(f"SET LOCAL lock_timeout = '{LOCK_TIMEOUT}'"))
     try:
-        await db.execute(
+        result = await db.execute(
             select(Player.id).where(Player.id == player_id).with_for_update(key_share=True)
         )
+        locked = result.scalar_one_or_none() is not None
     except DBAPIError as exc:
         if getattr(exc.orig, "sqlstate", None) != LOCK_NOT_AVAILABLE:
             raise
         await db.rollback()
         raise Locked(LOCK_RETRY_AFTER_S) from None
     await db.execute(text("SET LOCAL lock_timeout = DEFAULT"))
+    return locked
 
 
 async def active_lockout_until(
@@ -124,3 +126,10 @@ async def clear_recovery_failures(
     if before is not None:
         query = query.where(RecoveryFailure.at < before)
     await db.execute(query)
+
+
+async def clear_all(db: AsyncSession, player_id: uuid.UUID) -> None:
+    """Drop every lockout, auth failure and recovery failure the player has."""
+    await db.execute(delete(Lockout).where(Lockout.player_id == player_id))
+    await db.execute(delete(AuthFailure).where(AuthFailure.player_id == player_id))
+    await db.execute(delete(RecoveryFailure).where(RecoveryFailure.player_id == player_id))

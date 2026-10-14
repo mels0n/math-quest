@@ -10,12 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from mathquest.api import ratelimit
 from mathquest.api.clientip import IPNetwork, client_ip
+from mathquest.features import admin
 from mathquest.features.accounts import PlayerOut, player_for_token
 from mathquest.shared.config import Settings
 from mathquest.shared.errors import Forbidden, Unauthorized
 
 DEVICE_COOKIE = "mq_device"
 SESSION_COOKIE = "mq_session"
+ADMIN_COOKIE = "mq_admin"
+ADMIN_COOKIE_PATH = "/api/admin"
 COOKIE_MAX_AGE_S = 400 * 24 * 3600
 CSRF_HEADER = "X-Requested-With"
 CSRF_VALUE = "mathquest"
@@ -119,6 +122,38 @@ async def current_player(request: Request, db: Db) -> PlayerOut:
 
 
 CurrentPlayer = Annotated[PlayerOut, Depends(current_player)]
+
+
+async def limit_admin_login(request: Request) -> None:
+    """Admin login attempts are capped per client bucket and across all clients."""
+    key = ratelimit.rate_bucket(resolve_client_ip(request))
+    limiter = _limiter(request)
+    limiter.hit(
+        "admin-login",
+        key,
+        limit=ratelimit.ADMIN_LOGIN_LIMIT,
+        window_s=ratelimit.ADMIN_LOGIN_WINDOW_S,
+    )
+    limiter.hit(
+        "admin-login-all",
+        "all",
+        limit=ratelimit.ADMIN_LOGIN_GLOBAL_LIMIT,
+        window_s=ratelimit.ADMIN_LOGIN_WINDOW_S,
+    )
+
+
+async def require_admin(request: Request, db: Db) -> admin.AdminSessionOut:
+    """A live admin session (401 otherwise). The LAN gate already ran as middleware."""
+    token = request.cookies.get(ADMIN_COOKIE)
+    if not token:
+        raise Unauthorized()
+    session = await admin.session_for_token(db, token)
+    if session is None:
+        raise Unauthorized()
+    return session
+
+
+CurrentAdmin = Annotated[admin.AdminSessionOut, Depends(require_admin)]
 
 
 async def limit_answer(request: Request, player: CurrentPlayer) -> None:

@@ -18,7 +18,7 @@ export class ApiError extends Error {
 }
 
 export interface ApiOptions {
-	method?: 'GET' | 'POST';
+	method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
 	body?: unknown;
 	fetchImpl?: typeof fetch;
 }

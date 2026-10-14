@@ -36,6 +36,7 @@ Pushes and pull requests run the CI workflow in `.github/workflows/ci.yml`
 (lint, typecheck, import-boundary checks, tests, build). The application ships as a
 single container image tagged with the commit (`sha-<12 chars>`), never `:latest`.
 Run a single replica only; see "Deployment settings" in [AGENTS.md](AGENTS.md).
+Step-by-step Swarm instructions: [docs/how-to/deploy.md](docs/how-to/deploy.md).
 
 ## Where secrets live
 Configuration comes from environment variables read in one place,
@@ -51,6 +52,12 @@ variables in your shell or have your process manager set them.
 - `TRUSTED_PROXIES`: comma-separated IPs or CIDRs of reverse proxies whose
   `X-Forwarded-For` header is believed. Leave it empty when the app is reached
   directly.
+- `ADMIN_PASSWORD_FILE`: path to a file holding the admin password. Optional. Unset,
+  the admin area is disabled and every `/api/admin` route answers 404. Set to a file
+  that is missing or empty, the app refuses to start.
+- `ADMIN_ALLOWED_CIDRS`: comma-separated networks allowed to reach `/api/admin`.
+  Default `192.168.0.0/16,127.0.0.1/32,::1/128`. Everyone else gets a 404 before the
+  password is checked; see [ADR-0009](docs/adr/0009-lan-only-admin.md).
 
 The tests need `TEST_DATABASE_URL`, the async URL of a throwaway Postgres they may
 create and drop schemas in. The Postgres credentials in `compose.dev.yml` are for

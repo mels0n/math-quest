@@ -157,5 +157,7 @@ async def api(db_schema: str, tmp_path: Path) -> AsyncIterator[ApiFactory]:
     finally:
         await stack.aclose()
         async with engine.begin() as conn:
-            await conn.execute(text("TRUNCATE players, app_settings CASCADE"))
+            await conn.execute(
+                text("TRUNCATE players, app_settings, admin_sessions, admin_audit CASCADE")
+            )
         await engine.dispose()

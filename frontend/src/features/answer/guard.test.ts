@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_BOX_MESSAGE, submitBlocker } from './guard';
+import { EMPTY_BOX_MESSAGE, noticeAfterEdit, submitBlocker } from './guard';
 
 describe('submitBlocker', () => {
 	it('blocks an answer that still has an empty box', () => {
@@ -14,5 +14,15 @@ describe('submitBlocker', () => {
 
 	it('uses kind copy without em dashes', () => {
 		expect(EMPTY_BOX_MESSAGE).not.toContain('—');
+	});
+});
+
+describe('noticeAfterEdit', () => {
+	it('clears the empty-box notice', () => {
+		expect(noticeAfterEdit(EMPTY_BOX_MESSAGE)).toBe('');
+	});
+	it('leaves any other notice alone', () => {
+		expect(noticeAfterEdit('Something else')).toBe('Something else');
+		expect(noticeAfterEdit('')).toBe('');
 	});
 });

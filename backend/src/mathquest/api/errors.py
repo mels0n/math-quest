@@ -25,6 +25,11 @@ def _body(code: str, status: int, retry_after_s: int | None = None) -> JSONRespo
     return JSONResponse({"error": code}, status_code=status, headers=headers)
 
 
+def not_found_response() -> JSONResponse:
+    """The one 404 body, used for unknown paths and for hidden admin routes alike."""
+    return _body("not_found", 404)
+
+
 async def _invalid(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, Invalid)
     return _body(exc.code, 422)
@@ -45,7 +50,7 @@ async def _unauthorized(_: Request, __: Exception) -> JSONResponse:
 
 
 async def _not_found(_: Request, __: Exception) -> JSONResponse:
-    return _body("not_found", 404)
+    return not_found_response()
 
 
 async def _locked(_: Request, exc: Exception) -> JSONResponse:

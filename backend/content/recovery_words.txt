@@ -357,7 +357,6 @@ cinnamon
 cocoa
 coconut
 corn
-cracker
 cranberry
 cream
 crepe
@@ -937,9 +936,7 @@ tag
 racing
 relay
 hopscotch
-checkers
 domino
-marbles
 riddle
 treasure
 adventure
@@ -1063,7 +1060,6 @@ noon
 sunday
 monday
 friday
-bubbles
 flicker
 gleam
 glimmer
@@ -1074,7 +1070,6 @@ shimmer
 sparkle
 twinkle
 boomerang
-frisbee
 gadget
 hoop
 mobile
@@ -1091,7 +1086,6 @@ yoyo
 cobble
 dewdrop
 driftwood
-fossils
 gemstone
 moonstone
 opal
