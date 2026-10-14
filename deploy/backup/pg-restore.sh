@@ -3,7 +3,7 @@
 #
 # Usage: pg-restore.sh [--force] <dump-file>
 #   Refuses when the target database already holds user objects (tables, views,
-#   sequences, user types in any non-system schema). With --force, objects that
+#   sequences, user types in any non-system schema, extension objects excluded). With --force, objects that
 #   are in the dump are dropped and recreated; objects not in the dump stay.
 #   The restore runs in one transaction, so a failure leaves the target as it was.
 #
@@ -54,7 +54,10 @@ SELECT
      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
     WHERE c.relkind IN ('r', 'v', 'm', 'S', 'f', 'p')
       AND n.nspname <> 'information_schema'
-      AND n.nspname NOT LIKE 'pg\_%')
+      AND n.nspname NOT LIKE 'pg\_%'
+      AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_depend d
+                       WHERE d.classid = 'pg_catalog.pg_class'::regclass
+                         AND d.objid = c.oid AND d.deptype = 'e'))
   +
   (SELECT count(*)
      FROM pg_catalog.pg_type t
@@ -62,7 +65,10 @@ SELECT
      LEFT JOIN pg_catalog.pg_class c ON c.oid = t.typrelid
     WHERE (t.typtype IN ('e', 'd', 'r', 'm') OR (t.typtype = 'c' AND c.relkind = 'c'))
       AND n.nspname <> 'information_schema'
-      AND n.nspname NOT LIKE 'pg\_%')")
+      AND n.nspname NOT LIKE 'pg\_%'
+      AND NOT EXISTS (SELECT 1 FROM pg_catalog.pg_depend d
+                       WHERE d.classid = 'pg_catalog.pg_type'::regclass
+                         AND d.objid = t.oid AND d.deptype = 'e'))")
 if [ "$existing" -gt 0 ] && [ "$force" -ne 1 ]; then
   echo "pg-restore: target database already has $existing user object(s); use --force to overwrite" >&2
   exit 1

@@ -121,8 +121,9 @@ seconds_until_next() {
   echo $((target - now))
 }
 
-# A partial file left by a killed run is never a usable dump.
-rm -f -- "$BACKUP_DIR"/math-quest-*.dump.partial
+# A partial file left by a killed run is never a usable dump. Recent ones may
+# belong to a run in progress, so only files older than 6 hours are removed.
+find "$BACKUP_DIR" -maxdepth 1 -name 'math-quest-*.dump.partial' -mmin +360 -exec rm -f {} +
 
 if [ "$mode" = once ]; then
   run_backup

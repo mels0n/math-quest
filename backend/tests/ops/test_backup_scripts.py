@@ -8,6 +8,7 @@ import asyncio
 import os
 import shutil
 import subprocess
+import time
 import uuid
 from collections.abc import Iterator
 from pathlib import Path
@@ -224,29 +225,34 @@ def test_restore_into_non_empty_needs_force(source_db: str, target_db: str, tmp_
     assert _counts(target_db) == _counts(source_db)
 
 
-def test_stale_partial_is_removed_at_startup(source_db: str, tmp_path: Path) -> None:
+def test_only_old_partials_are_removed_at_startup(source_db: str, tmp_path: Path) -> None:
     pw = _write_password(tmp_path)
     out = tmp_path / "backups"
     out.mkdir()
-    (out / "math-quest-20200101-000000.dump.partial").write_bytes(b"stale")
+    stale = out / "math-quest-20200101-000000.dump.partial"
+    fresh = out / "math-quest-20200102-000000.dump.partial"
+    stale.write_bytes(b"stale")
+    fresh.write_bytes(b"in progress elsewhere")
+    old = time.time() - 7 * 3600
+    os.utime(stale, (old, old))
     result = _run(BACKUP, ["--once"], _env(source_db, pw, out))
     assert result.returncode == 0, result.stderr
-    assert list(out.glob("*.partial")) == []
+    assert not stale.exists()
+    assert fresh.exists()
     assert len(_dumps(out)) == 1
 
 
-def test_failed_restore_leaves_target_empty(source_db: str, target_db: str, tmp_path: Path) -> None:
+def test_failed_forced_restore_rolls_back(source_db: str, target_db: str, tmp_path: Path) -> None:
     pw = _write_password(tmp_path)
     out = tmp_path / "backups"
     out.mkdir()
     assert _run(BACKUP, ["--once"], _env(source_db, pw, out)).returncode == 0
     dump = _dumps(out)[0]
-    data = dump.read_bytes()
-    broken = tmp_path / "broken.dump"
-    broken.write_bytes(data[: len(data) * 3 // 4])
-    result = _run(RESTORE, [str(broken)], _env(target_db, pw, out))
+    assert _run(RESTORE, [str(dump)], _env(target_db, pw, out)).returncode == 0
+    # An object outside the dump that depends on a dumped table makes the
+    # forced DROP of that table fail after earlier drops have already run.
+    asyncio.run(_run_sql(target_db, ["CREATE TABLE extra (pid int REFERENCES players(id))"]))
+
+    result = _run(RESTORE, ["--force", str(dump)], _env(target_db, pw, out))
     assert result.returncode != 0
-    rows = asyncio.run(
-        _run_sql(target_db, ["SELECT count(*) AS c FROM pg_tables WHERE schemaname = 'public'"])
-    )
-    assert rows[0]["c"] == 0
+    assert _counts(target_db) == _counts(source_db)
