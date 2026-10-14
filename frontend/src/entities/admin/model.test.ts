@@ -47,6 +47,12 @@ describe('adminErrorMessage', () => {
 		expect(adminErrorMessage(err(409, 'busy'))).toMatch(/busy|again/i);
 	});
 
+	it('shows the busy copy, not the kid copy, for a locked admin action', () => {
+		const text = adminErrorMessage(err(429, 'locked', 30));
+		expect(text).toMatch(/busy/i);
+		expect(text).not.toMatch(/too many tries/i);
+	});
+
 	it('includes the wait time for rate limits', () => {
 		expect(adminErrorMessage(err(429, 'rate_limited', 120))).toContain('2 minutes');
 	});

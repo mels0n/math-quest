@@ -53,8 +53,11 @@ const CODE_COPY: Record<string, string> = {
 
 /** Plain-language text for a failed admin request; never shows the raw error code. */
 export function adminErrorMessage(err: unknown): string {
-	if (err instanceof ApiError && err.status !== 429 && Object.hasOwn(CODE_COPY, err.code)) {
-		return CODE_COPY[err.code] as string;
+	if (err instanceof ApiError) {
+		if (err.status === 429 && err.code === 'locked') return CODE_COPY.busy as string;
+		if (err.status !== 429 && Object.hasOwn(CODE_COPY, err.code)) {
+			return CODE_COPY[err.code] as string;
+		}
 	}
 	return commonErrorMessage(err, 'Too many tries.');
 }
