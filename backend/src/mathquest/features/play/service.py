@@ -95,7 +95,16 @@ Skill state machine, applied when a problem is scored:
   alone. If the new rating no longer satisfies `is_mastered`, the skill returns to
   LEARNING and its schedule is cleared.
 - REVIEW_DUE is never stored. It is derived on read: a MASTERED row whose
-  `review_due_at` has passed. The scheduler's mastered set is MASTERED plus REVIEW_DUE.
+  `review_due_at` has passed. The scheduler's mastered set is MASTERED plus REVIEW_DUE
+  plus PROVISIONAL.
+- PROVISIONAL is written by placement (docs/adr/0015-placement.md): the skill counts as
+  mastered and is due for review a day later. Its first scored problem decides it: a
+  correct answer makes it MASTERED with `placed` set and the normal first review
+  interval; a wrong one makes it LEARNING. Its lesson is never offered before that
+  review, since placement found the learner already knows it.
+- A `placed` MASTERED skill stays mastered on a correct answer even while
+  `is_mastered` does not yet hold (the rating has few attempts behind it); once it does,
+  `placed` is cleared. A wrong answer is judged by `is_mastered` like any mastered skill.
 
 Row locks are always taken problem instance first, then skill_mastery, so concurrent
 submissions cannot deadlock; the skill_mastery row is created with ON CONFLICT DO
@@ -152,6 +161,7 @@ from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 
 FREE_VERDICTS = 3
+_COUNTS_AS_MASTERED = (SkillState.MASTERED, SkillState.PROVISIONAL)
 CHOICE_PREFIX = "choice:"
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
 
@@ -199,14 +209,16 @@ def _mastery_out(
     catalog: Catalog, skill_id: str, row: SkillMastery | None, now: datetime
 ) -> MasteryOut:
     top = _top_difficulty(catalog, skill_id)
-    if row is None or row.attempts == 0:
+    if row is not None and row.state == SkillState.PROVISIONAL:
+        state = SkillState.PROVISIONAL
+    elif row is None or row.attempts == 0:
         state = SkillState.READY
     elif row.state == SkillState.MASTERED:
         due = row.review_due_at is not None and row.review_due_at <= now
         state = SkillState.REVIEW_DUE if due else SkillState.MASTERED
     else:
         state = SkillState.LEARNING
-    if state in (SkillState.MASTERED, SkillState.REVIEW_DUE):
+    if state in (SkillState.MASTERED, SkillState.REVIEW_DUE, SkillState.PROVISIONAL):
         progress = 1.0
     else:
         rating = _rating(catalog, row, skill_id).rating
@@ -239,10 +251,11 @@ async def _lesson_due(
     skill_id: str,
     row: SkillMastery | None,
 ) -> bool:
-    """The skill has a lesson the player has not seen, and no problem of it is scored yet."""
+    """The skill has a lesson the player has not seen, no problem of it is scored yet,
+    and placement has not marked it provisionally mastered."""
     if skill_id not in catalog.pack.lessons:
         return False
-    if row is not None and row.attempts > 0:
+    if row is not None and (row.attempts > 0 or row.state == SkillState.PROVISIONAL):
         return False
     return not await lessons.has_seen(db, player_id, skill_id)
 
@@ -267,7 +280,7 @@ async def next_problem(
     by_skill = {r.skill_id: r for r in rows}
     graph = catalog.graph
     ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
-    mastered = {r.skill_id for r in rows if r.state == SkillState.MASTERED}
+    mastered = {r.skill_id for r in rows if r.state in _COUNTS_AS_MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
     history = [
         Played(skill_id=sid, correct=correct, stuck=stuck, warmup_for=warmup_for)
@@ -334,14 +347,23 @@ def _apply_score(
     top = _top_difficulty(catalog, skill_id)
     after = update(_rating(catalog, row, skill_id), difficulty, outcome, top)
     was_mastered = row.state == SkillState.MASTERED
+    was_provisional = row.state == SkillState.PROVISIONAL
     review_due = was_mastered and row.review_due_at is not None and row.review_due_at <= now
     row.rating = after.rating
     row.attempts = after.attempts
     row.recent = [[int(correct), tier] for correct, tier in after.recent]
     row.updated_at = now
-    mastered = is_mastered(after, top, _top_tier(catalog, skill_id))
-    if not mastered or (not was_mastered and not outcome.correct):
+    by_rating = is_mastered(after, top, _top_tier(catalog, skill_id))
+    if was_provisional:
+        # The first scored review after placement confirms or reverts the mark.
+        mastered = outcome.correct
+        row.placed = outcome.correct and not by_rating
+    else:
+        mastered = by_rating or (was_mastered and row.placed and outcome.correct)
+        row.placed = row.placed and mastered and not by_rating
+    if not mastered or (not was_mastered and not was_provisional and not outcome.correct):
         row.state = SkillState.LEARNING
+        row.placed = False
         row.review_interval_days = None
         row.review_due_at = None
         return

@@ -979,3 +979,118 @@ async def test_a_stored_seed_above_the_new_limit_still_regenerates(db: AsyncSess
     inst = await _issue(db, pid, session.session_id, seed=2**62 - 1)
     out = await _submit(db, pid, inst.id, _right(inst))
     assert out.solved
+
+
+async def _mark_provisional(
+    db: AsyncSession, pid: uuid.UUID, *skill_ids: str, due_in: timedelta = timedelta(days=1)
+) -> datetime:
+    now = datetime.now(UTC)
+    ratings = {
+        sid: service._start_rating(CATALOG, sid)  # pyright: ignore[reportPrivateUsage]
+        for sid in skill_ids
+    }
+    await mastery.mark_provisional(db, pid, ratings, review_due_at=now + due_in, now=now)
+    return now
+
+
+async def test_provisional_skills_count_as_mastered_for_the_ready_set(db: AsyncSession) -> None:
+    pid = await _player(db, lessons_seen=False)
+    await _mark_provisional(db, pid, "add_within_10", "sub_within_10", "place_value_tens_ones")
+    session = await service.start_session(db, pid, "adventure")
+
+    out = await service.next_problem(db, CATALOG, pid, session.session_id)
+
+    # Not yet due, so not reviewed: play moves on to what they unlock.
+    assert out.skill_id not in {"add_within_10", "sub_within_10", "place_value_tens_ones"}
+    assert out.skill_id in GRAPH.ready({"add_within_10", "sub_within_10", "place_value_tens_ones"})
+
+
+async def test_a_due_provisional_skill_is_reviewed_without_its_lesson(db: AsyncSession) -> None:
+    pid = await _player(db, lessons_seen=False)
+    await _mark_provisional(db, pid, "add_within_10", due_in=timedelta(hours=-1))
+    session = await service.start_session(db, pid, "adventure")
+    await db.execute(
+        update(PlaySession).where(PlaySession.id == session.session_id).values(problem_count=4)
+    )
+
+    out = await service.next_problem(db, CATALOG, pid, session.session_id)
+
+    assert isinstance(out, ProblemOut)
+    assert out.skill_id == "add_within_10"
+
+
+async def test_a_correct_review_confirms_a_provisional_skill(db: AsyncSession) -> None:
+    pid = await _player(db)
+    now = await _mark_provisional(db, pid, "add_within_10", due_in=timedelta(hours=-1))
+    session = await service.start_session(db, pid, "adventure")
+
+    inst = await _issue(db, pid, session.session_id, tier=1, seed=31)
+    out = await _submit(db, pid, inst.id, _right(inst))
+
+    assert out.mastery.state is SkillState.MASTERED
+    row = await _row(db, pid, "add_within_10")
+    assert row.state == "mastered"
+    assert row.placed is True
+    assert row.review_interval_days == 1
+    assert row.review_due_at is not None and row.review_due_at > now + timedelta(hours=23)
+
+    # Later correct reviews keep it mastered while the rating has few attempts behind it.
+    for seed in (32, 33):
+        await db.execute(
+            update(SkillMastery)
+            .where(SkillMastery.player_id == pid, SkillMastery.skill_id == "add_within_10")
+            .values(review_due_at=datetime.now(UTC) - timedelta(hours=1))
+        )
+        inst = await _issue(db, pid, session.session_id, tier=1, seed=seed)
+        out = await _submit(db, pid, inst.id, _right(inst))
+        assert out.mastery.state is SkillState.MASTERED
+    row = await _row(db, pid, "add_within_10")
+    assert row.state == "mastered"
+    assert row.review_interval_days == 7
+
+
+async def test_a_missed_review_reverts_a_provisional_skill(db: AsyncSession) -> None:
+    pid = await _player(db)
+    await _mark_provisional(db, pid, "add_within_10")
+    session = await service.start_session(db, pid, "adventure")
+
+    inst = await _issue(db, pid, session.session_id, tier=1, seed=41)
+    for k in range(2):
+        await _submit(db, pid, inst.id, _wrong(inst, k))
+    out = await _submit(db, pid, inst.id, _wrong(inst, 2))
+
+    assert out.mastery.state is SkillState.LEARNING
+    row = await _row(db, pid, "add_within_10")
+    assert row.state == "learning"
+    assert row.placed is False
+    assert row.review_due_at is None
+    assert row.attempts == 1
+
+
+async def test_a_confirmed_skill_missed_later_is_judged_by_its_rating(db: AsyncSession) -> None:
+    pid = await _player(db)
+    await _mark_provisional(db, pid, "add_within_10", due_in=timedelta(hours=-1))
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, tier=1, seed=51)
+    await _submit(db, pid, inst.id, _right(inst))
+    assert (await _row(db, pid, "add_within_10")).placed is True
+
+    inst = await _issue(db, pid, session.session_id, tier=1, seed=52)
+    for k in range(2):
+        await _submit(db, pid, inst.id, _wrong(inst, k))
+    out = await _submit(db, pid, inst.id, _wrong(inst, 2))
+
+    assert out.mastery.state is SkillState.LEARNING
+    row = await _row(db, pid, "add_within_10")
+    assert (row.state, row.placed) == ("learning", False)
+
+
+async def test_a_provisional_skill_reads_as_provisional(db: AsyncSession) -> None:
+    pid = await _player(db)
+    await _mark_provisional(db, pid, "add_within_10")
+    row = await _row(db, pid, "add_within_10")
+    out = service._mastery_out(  # pyright: ignore[reportPrivateUsage]
+        CATALOG, "add_within_10", row, datetime.now(UTC) + timedelta(days=3)
+    )
+    assert out.state is SkillState.PROVISIONAL
+    assert out.progress == pytest.approx(1.0)

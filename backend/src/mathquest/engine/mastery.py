@@ -29,6 +29,13 @@ class SkillState(StrEnum):
     LEARNING = "learning"
     MASTERED = "mastered"
     REVIEW_DUE = "review_due"
+    PROVISIONAL = "provisional"
+    """Placement says the learner knows it; counts as mastered until its first scored
+    review confirms it (MASTERED) or not (LEARNING). See docs/adr/0015-placement.md."""
+
+
+PROVISIONAL_REVIEW_DAYS = 1
+"""A provisional skill comes up for review this many days after placement."""
 
 
 @dataclass(frozen=True)
