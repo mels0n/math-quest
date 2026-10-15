@@ -11,7 +11,7 @@
 
 	let returning = $state<Player | null>(null);
 	let checked = $state(false);
-	/** A new player answers the grade question before the placement warm-up. */
+	/** A new player answers the grade question before the placement round. */
 	let newPlayer = $state(false);
 
 	onMount(async () => {

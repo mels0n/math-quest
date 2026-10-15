@@ -29,13 +29,13 @@ async function typeAnswer(page: Page, latex: string) {
 
 const fits = () => document.documentElement.scrollWidth <= window.innerWidth;
 
-/** Answers every warm-up question, right when `right` says so, until the round ends. */
-async function warmUp(page: Page, first: Step, right: (step: Step) => boolean): Promise<Step> {
+/** Answers every placement round question, right when `right` says so, until the round ends. */
+async function playRound(page: Page, first: Step, right: (step: Step) => boolean): Promise<Step> {
 	let step = first;
 	for (let asked = 1; !step.done; asked += 1) {
 		expect(asked).toBeLessThanOrEqual(15);
-		await expect(page.getByTestId('placement-count')).toHaveText(new RegExp(`^Question ${asked} `));
-		// No hearts, no hints in the warm-up, and the answer never reaches the page.
+		await expect(page.getByTestId('placement-count')).toHaveText(`Puzzle ${asked}`);
+		// No hearts, no hints in the placement round, and the answer never reaches the page.
 		await expect(page.getByRole('img', { name: /tries left/ })).toHaveCount(0);
 		await expect(page.getByRole('button', { name: /hint/i })).toHaveCount(0);
 		expect(await page.content()).not.toContain('dev_answer');
@@ -48,7 +48,7 @@ async function warmUp(page: Page, first: Step, right: (step: Step) => boolean): 
 	return step;
 }
 
-test('a new player names a grade, takes the warm-up, starts ahead, and can retake it', async ({ page }) => {
+test('a new player names a grade, takes the placement round, starts ahead, and can retake it', async ({ page }) => {
 	const signupWord = process.env.E2E_SIGNUP_WORD ?? '';
 	expect(signupWord).not.toBe('');
 	await page.setViewportSize({ width: 320, height: 740 });
@@ -62,7 +62,7 @@ test('a new player names a grade, takes the warm-up, starts ahead, and can retak
 	await expect(page.getByTestId('recovery-word')).toBeVisible();
 	await page.getByRole('button', { name: 'I wrote it down' }).click();
 
-	// The grade question only picks the first warm-up puzzle; no age is asked.
+	// The grade question only picks the first placement round puzzle; no age is asked.
 	await expect(page.getByRole('heading', { name: 'What grade are you in?' })).toBeVisible();
 	expect(await page.evaluate(fits)).toBe(true);
 	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/placement-grade.png`, fullPage: true });
@@ -83,15 +83,16 @@ test('a new player names a grade, takes the warm-up, starts ahead, and can retak
 	await expect(page.getByTestId('feedback')).toContainText("couldn't read");
 
 	// Everything but fractions: placed past two-digit addition.
-	const done = await warmUp(page, again, (s) => s.problem?.skill_id !== 'add_fractions_unlike');
+	const done = await playRound(page, again, (s) => s.problem?.skill_id !== 'add_fractions_unlike');
 	const result = page.getByTestId('placement-done');
 	await expect(result).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'ALL SET!' })).toBeFocused();
 	await expect(result).toContainText(`You already know ${done.provisional?.length ?? 0} skills!`);
 	await expect(result).toContainText('Operation Canyon');
 	expect(await page.evaluate(fits)).toBe(true);
 	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/placement-done.png`, fullPage: true });
 
-	// Play starts past the skills the warm-up found.
+	// Play starts past the skills the placement round found.
 	const next = page.waitForResponse((r) => r.url().includes('/next') && r.request().method() === 'POST');
 	await page.getByRole('button', { name: 'Start adventure' }).click();
 	await expect(page).toHaveURL(/\/play$/);
@@ -99,21 +100,18 @@ test('a new player names a grade, takes the warm-up, starts ahead, and can retak
 	expect(done.provisional).not.toContain(firstPlay.skill_id);
 	await expect(page.getByTestId('solved')).toContainText('0');
 
-	// Retake from settings: a fresh round from the grade question.
+	// Finding the level again is offered from settings, but not straight after a round:
+	// a friendly line says to come back later (the retake round itself is covered by the
+	// backend tests, which can move the clock).
 	await page.getByRole('button', { name: 'Settings', exact: true }).click();
 	await expect(page).toHaveURL(/\/settings$/);
 	expect(await page.evaluate(fits)).toBe(true);
-	await page.getByRole('button', { name: 'Retake warm-up' }).click();
+	await page.getByRole('button', { name: 'Find my level again' }).click();
 	await expect(page).toHaveURL(/\/placement\?retake=1$/);
 	await expect(page.getByRole('heading', { name: 'What grade are you in?' })).toBeVisible();
-	const restarted = page.waitForResponse(isPlacement);
 	await page.getByRole('button', { name: 'Kindergarten' }).click();
-	const retake = (await (await restarted).json()) as Step;
-	expect(retake.problem?.skill_id).toBe('add_within_10');
-	const second = await warmUp(page, retake, () => false);
-	expect(second.provisional).toEqual([]);
-	await expect(page.getByTestId('placement-done')).toContainText('beginning of the map');
-	await page.getByRole('button', { name: 'Start adventure' }).click();
+	await expect(page.getByRole('alert')).toContainText('Come back in a few minutes');
+	await page.getByRole('button', { name: 'Back to play' }).click();
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(page.getByTestId('prompt').or(page.getByTestId('lesson'))).toBeVisible();
 });

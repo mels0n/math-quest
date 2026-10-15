@@ -33,7 +33,7 @@ async function typeAnswer(page: Page, latex: string, viaKeypad = false) {
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
 }
 
-test('sign up, miss the warm-up, take the first lesson, get help on a miss, answer three problems, log back in', async ({ page }) => {
+test('sign up, miss the placement round, take the first lesson, get help on a miss, answer three problems, log back in', async ({ page }) => {
 	const signupWord = process.env.E2E_SIGNUP_WORD ?? '';
 	expect(signupWord).not.toBe('');
 
@@ -54,8 +54,8 @@ test('sign up, miss the warm-up, take the first lesson, get help on a miss, answ
 	const firstWord = (await word.innerText()).trim();
 	expect(firstWord.length).toBeGreaterThan(2);
 
-	// A new player is asked their grade, then takes the placement warm-up. Missing
-	// every warm-up puzzle starts them at the beginning of the map.
+	// A new player is asked their grade, then takes the placement round. Missing
+	// every placement puzzle starts them at the beginning of the map.
 	await page.getByRole('button', { name: 'I wrote it down' }).click();
 	await expect(page.getByRole('heading', { name: 'What grade are you in?' })).toBeVisible();
 	await page.getByRole('button', { name: 'Skip', exact: true }).click();
@@ -63,7 +63,7 @@ test('sign up, miss the warm-up, take the first lesson, get help on a miss, answ
 	const done = page.getByTestId('placement-done');
 	for (let asked = 1, finished = false; !finished; asked += 1) {
 		expect(asked).toBeLessThanOrEqual(15);
-		await expect(page.getByTestId('placement-count')).toHaveText(new RegExp(`^Question ${asked} `));
+		await expect(page.getByTestId('placement-count')).toHaveText(`Puzzle ${asked}`);
 		const answered = page.waitForResponse(isPlacementAnswer);
 		await typeAnswer(page, '99999');
 		finished = ((await (await answered).json()) as { done: boolean }).done;

@@ -13,7 +13,7 @@
 <section class="grade" aria-labelledby="grade-question">
 	<h2 id="grade-question" class="mq-pixel">{GRADE_COPY.question}</h2>
 	<p>{GRADE_COPY.why}</p>
-	<div class="grid" role="group" aria-label={GRADE_COPY.question}>
+	<div class="grid" role="group" aria-labelledby="grade-question">
 		{#each GRADE_HINTS as grade (grade)}
 			<PixelButton variant="gold" label={gradeLabel(grade)} {disabled} onclick={() => onPick(grade)}>
 				{grade}

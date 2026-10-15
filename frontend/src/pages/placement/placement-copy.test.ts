@@ -24,7 +24,7 @@ describe('placement copy', () => {
 	});
 
 	it('shows progress and why an answer was not counted', () => {
-		expect(progressLabel({ question: 3, max_questions: 15 })).toBe('Question 3 of up to 15');
+		expect(progressLabel({ question: 3 })).toBe('Puzzle 3');
 		expect(retryLine(null)).toBeNull();
 		expect(retryLine('unreadable')).toContain("couldn't read");
 		expect(retryLine('wrong_form')).toBe('Try writing it the way the question asks.');

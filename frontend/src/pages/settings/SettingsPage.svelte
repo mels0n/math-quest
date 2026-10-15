@@ -15,13 +15,18 @@
 
 <PixelFrame title="SETTINGS">
 	<section class="item">
+		<h2 class="mq-pixel">PRACTICE</h2>
+		<p>Pick any skill you have unlocked and practice it. No timer here.</p>
+		<PixelButton variant="mint" onclick={() => void goto('/practice')}>Practice a skill</PixelButton>
+	</section>
+	<section class="item">
 		<h2 class="mq-pixel">STARTING SPOT</h2>
 		<p>
-			Puzzles too easy or too hard? Take the warm-up again to find a better starting spot. Skills
-			you have mastered stay mastered.
+			Puzzles too easy or too hard? Find your level again for a better starting spot. Skills you
+			have mastered stay mastered.
 		</p>
 		<PixelButton variant="gold" onclick={() => void goto('/placement?retake=1')}>
-			Retake warm-up
+			Find my level again
 		</PixelButton>
 	</section>
 	<section class="item">

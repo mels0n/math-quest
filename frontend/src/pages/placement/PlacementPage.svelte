@@ -21,6 +21,12 @@
 	let retake = $state(false);
 
 	const lines = $derived(done ? outcomeLines(done) : null);
+	let doneHeading: HTMLHeadingElement | undefined = $state();
+
+	// Move focus to the result once it is on screen, so it is read out.
+	$effect(() => {
+		if (phase === 'done' && doneHeading) doneHeading.focus();
+	});
 
 	function fail(err: unknown, retry: () => void) {
 		if (err instanceof ApiError && err.status === 401) {
@@ -29,6 +35,10 @@
 		}
 		if (err instanceof ApiError && err.code === 'placement_closed') {
 			notice = { text: PLACEMENT_COPY.closed, label: PLACEMENT_COPY.again, action: restart };
+			return;
+		}
+		if (err instanceof ApiError && err.code === 'retake_too_soon') {
+			notice = { text: PLACEMENT_COPY.tooSoon, label: PLACEMENT_COPY.back, action: () => void goto('/play') };
 			return;
 		}
 		notice = { text: commonErrorMessage(err), label: 'Try again', action: retry };
@@ -105,7 +115,10 @@
 		<GradePicker disabled={busy} onPick={(grade) => void begin(grade)} />
 	{:else if phase === 'probe' && step}
 		{#if step.question === 1}<p class="lead">{PLACEMENT_COPY.intro}</p>{/if}
-		<ProgressBar value={step.question / step.max_questions} label={progressLabel(step)} />
+		<!-- The visible count says it; the bar is decoration for screen readers. -->
+		<div aria-hidden="true">
+			<ProgressBar value={step.question / step.max_questions} label={progressLabel(step)} />
+		</div>
 		<p class="count" data-testid="placement-count">{progressLabel(step)}</p>
 		<MathCard
 			problem={step.problem}
@@ -121,7 +134,7 @@
 		/>
 	{:else if phase === 'done' && done && lines}
 		<section class="done" data-testid="placement-done">
-			<h2 class="mq-pixel">{PLACEMENT_COPY.doneTitle}</h2>
+			<h2 class="mq-pixel" tabindex="-1" bind:this={doneHeading}>{PLACEMENT_COPY.doneTitle}</h2>
 			<p>{lines.known}</p>
 			<p>{lines.places}</p>
 			<PixelButton variant="mint" onclick={() => void goto('/play')}>{PLACEMENT_COPY.start}</PixelButton>
@@ -165,6 +178,9 @@
 		background: var(--mq-navy);
 		border: 4px solid var(--mq-gold);
 		text-align: center;
+	}
+	.done h2:focus:not(:focus-visible) {
+		outline: none;
 	}
 	.done h2 {
 		margin: 0;
