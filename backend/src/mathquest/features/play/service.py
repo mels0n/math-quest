@@ -208,7 +208,7 @@ async def next_problem(
         skill_id=skill_id,
         skill_name=graph.skills[skill_id].name,
         prompt=_prompt_out(problem.prompt),
-        keypad=problem.keypad,
+        keypad=graph.skills[skill_id].keypad,
         dev_answer_latex=sympy.latex(problem.answer) if expose_answers else None,
     )
     await db.commit()

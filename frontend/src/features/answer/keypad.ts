@@ -44,19 +44,37 @@ const RIGHT: Key = {
 };
 
 const FRACTION = insert('⁄', 'Fraction', '\\frac{#0}{#?}');
+const MIXED = insert('▢⁄', 'Mixed number', '#?\\frac{#?}{#?}');
+const MINUS = insert('−', 'Minus', '-');
+const PLUS = insert('+', 'Plus', '+');
+const POINT = insert('.', 'Decimal point', '.');
+const POWER = insert('^', 'Power', '^{#?}');
+const ROOT = insert('√', 'Square root', String.raw`\sqrt{#0}`);
+const OPEN = insert('(', 'Open bracket', '(');
+const CLOSE = insert(')', 'Close bracket', ')');
 
-const EXTRAS: Record<KeypadProfile, Key[]> = {
-	numbers: [],
-	fractions: [FRACTION, LEFT, RIGHT],
+/**
+ * Every profile's extra keys, beside the digits. `choice` has no keypad at all: its
+ * answers are buttons. Each key emits only LaTeX the checker's parser reads; the
+ * shared samples in testdata/keypad-samples.json pin that on both sides.
+ */
+const EXTRAS: Record<Exclude<KeypadProfile, 'choice'>, Key[]> = {
+	numpad: [],
+	numpad_neg: [MINUS],
+	fraction: [FRACTION, LEFT, RIGHT],
+	mixed: [MIXED, FRACTION, LEFT, RIGHT],
+	decimal: [POINT, MINUS],
+	exponent: [POWER, ROOT, MINUS, OPEN, CLOSE, LEFT, RIGHT],
 	algebra: [
 		insert('x', 'x', 'x'),
-		insert('+', 'Plus', '+'),
-		insert('−', 'Minus', '-'),
+		insert('y', 'y', 'y'),
+		PLUS,
+		MINUS,
 		insert('=', 'Equals', '='),
-		insert('^', 'Power', '^{#?}'),
-		insert('√', 'Square root', String.raw`\sqrt{#0}`),
-		insert('(', 'Open bracket', '('),
-		insert(')', 'Close bracket', ')'),
+		POWER,
+		ROOT,
+		OPEN,
+		CLOSE,
 		FRACTION,
 		LEFT,
 		RIGHT
@@ -71,11 +89,15 @@ export interface KeypadLayout {
 	go: Key;
 }
 
-export function layoutFor(profile: KeypadProfile): KeypadLayout {
+/** The keypad for a profile, or null for `choice`, which has no keypad. */
+export function layoutFor(profile: KeypadProfile): KeypadLayout | null {
+	if (profile === 'choice') return null;
 	return { digits: [...DIGITS, BACKSPACE], extras: EXTRAS[profile], go: GO };
 }
 
+/** Every key of a profile's keypad; none for `choice`. */
 export function keysFor(profile: KeypadProfile): Key[] {
-	const { digits, extras, go } = layoutFor(profile);
-	return [...digits, ...extras, go];
+	const layout = layoutFor(profile);
+	if (!layout) return [];
+	return [...layout.digits, ...layout.extras, layout.go];
 }

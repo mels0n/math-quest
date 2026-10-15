@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from mathquest.engine.checker.check import Verdict
 from mathquest.engine.mastery import SkillState
+from mathquest.engine.types import KeypadProfile
 
 
 class _Frozen(BaseModel):
@@ -33,7 +34,7 @@ class ProblemOut(_Frozen):
     skill_id: str
     skill_name: str
     prompt: list[PromptPartOut]
-    keypad: str
+    keypad: KeypadProfile
     dev_answer_latex: str | None = None
 
 

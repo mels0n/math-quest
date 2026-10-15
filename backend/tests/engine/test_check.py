@@ -26,7 +26,6 @@ def make_problem(
         form=form,
         misconceptions=misconceptions,
         difficulty=0.5,
-        keypad="numbers",
     )
 
 
@@ -151,6 +150,33 @@ def test_huge_radicand_is_fast() -> None:
 
 def test_to_sympy_decimals_are_exact() -> None:
     assert to_sympy(parse("0.75")) == sympy.Rational(3, 4)
+    assert to_sympy(parse(".5")) == sympy.Rational(1, 2)
+    assert to_sympy(parse("-.25")) == sympy.Rational(-1, 4)
+
+
+@pytest.mark.parametrize(
+    ("answer", "latex", "expected"),
+    [
+        (sympy.Rational(13, 4), "3.25", Verdict.CORRECT),
+        (sympy.Rational(13, 4), "3.250", Verdict.CORRECT),
+        (sympy.Rational(1, 10), "0.1", Verdict.CORRECT),
+        (sympy.Rational(1, 2), ".5", Verdict.CORRECT),
+        (sympy.Rational(-3, 4), "-0.75", Verdict.CORRECT),
+        # A decimal is the exact rational it spells: no rounding tolerance.
+        (sympy.Rational(13, 4), "3.2500001", Verdict.INCORRECT),
+        (sympy.Rational(1, 3), "0.333", Verdict.INCORRECT),
+        (sympy.Rational(1, 3), "0.3333333333333333", Verdict.INCORRECT),
+    ],
+)
+def test_decimal_answers_compare_as_exact_rationals(
+    answer: sympy.Expr, latex: str, expected: Verdict
+) -> None:
+    assert verdict(make_problem(answer), latex) is expected
+
+
+@pytest.mark.parametrize("latex", [".", "5.", "1..2", "..5", "1.2.3"])
+def test_malformed_decimals_are_unreadable(latex: str) -> None:
+    assert verdict(make_problem(sympy.Integer(1)), latex) is Verdict.UNREADABLE
 
 
 def test_to_sympy_mixed_and_division_by_zero() -> None:

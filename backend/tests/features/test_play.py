@@ -281,6 +281,7 @@ async def test_new_player_starts_on_ready_skills(db: AsyncSession) -> None:
     assert problem.skill_id in GRAPH.ready(set())
     assert problem.prompt
     assert problem.skill_name == GRAPH.skills[problem.skill_id].name
+    assert problem.keypad == GRAPH.skills[problem.skill_id].keypad
     assert problem.dev_answer_latex is None
     count = await db.scalar(
         select(func.count()).select_from(ProblemInstance).where(ProblemInstance.player_id == pid)

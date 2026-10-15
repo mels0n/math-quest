@@ -77,13 +77,11 @@ class SkillGenerator:
         skill_id: str,
         base_difficulty: float,
         form: AnswerForm,
-        keypad: str,
         build: Builder,
     ) -> None:
         self.skill_id = skill_id
         self.tier_difficulties = tier_difficulties(base_difficulty)
         self._form = form
-        self._keypad = keypad
         self._build = build
 
     def generate(
@@ -112,6 +110,5 @@ class SkillGenerator:
             form=self._form,
             misconceptions=distinct_misconceptions(built.answer, built.wrong),
             difficulty=self.tier_difficulties[tier],
-            keypad=self._keypad,
             values=dict(built.values),
         )

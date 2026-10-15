@@ -55,7 +55,6 @@ def _warm_task() -> bool:
         form=AnswerForm.ANY,
         misconceptions=(),
         difficulty=0.0,
-        keypad="numbers",
     )
     return check(problem, "2").verdict is Verdict.CORRECT
 

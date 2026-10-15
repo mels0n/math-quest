@@ -2,7 +2,18 @@
 
 export type Verdict = 'correct' | 'incorrect' | 'wrong_form' | 'unreadable';
 export type SkillState = 'locked' | 'ready' | 'learning' | 'mastered' | 'review_due';
-export type KeypadProfile = 'numbers' | 'fractions' | 'algebra';
+/** Keypad profiles a skill can ask for; `choice` means answer buttons, no keypad. */
+export const KEYPAD_PROFILES = [
+	'numpad',
+	'numpad_neg',
+	'fraction',
+	'mixed',
+	'decimal',
+	'exponent',
+	'algebra',
+	'choice'
+] as const;
+export type KeypadProfile = (typeof KEYPAD_PROFILES)[number];
 
 export interface Session {
 	session_id: string;
@@ -22,7 +33,7 @@ export interface Problem {
 	skill_id: string;
 	skill_name: string;
 	prompt: PromptPart[];
-	keypad: string;
+	keypad: KeypadProfile;
 }
 
 export interface Mastery {
@@ -44,6 +55,9 @@ export interface AnswerResult {
 
 export const MAX_ATTEMPTS = 3;
 
+/** The profile named by `value`; anything unknown gets the plain number pad. */
 export function keypadProfile(value: string): KeypadProfile {
-	return value === 'fractions' || value === 'algebra' ? value : 'numbers';
+	return (KEYPAD_PROFILES as readonly string[]).includes(value)
+		? (value as KeypadProfile)
+		: 'numpad';
 }

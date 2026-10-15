@@ -5,10 +5,11 @@ Turns the LaTeX a MathLive editor emits into a tree that keeps the written form
 later code can check both value and form. Nothing is evaluated here, and this
 module imports no algebra library.
 
-Supported: digits, decimals, single-letter variables, ``+ - =``, parentheses
-(also ``\\left( \\right)``), ``\\cdot \\times \\div /``, ``^{...}`` and a single
-character ``^d``, ``\\frac``, ``\\dfrac``, ``\\sqrt``, ``\\sqrt[n]{x}``, ``\\pi``,
-the unicode minus, whitespace and the ``\\,`` and ``\\ `` spacing commands.
+Supported: digits, decimals (``3.25``; ``.5`` reads as ``0.5``), single-letter
+variables, ``+ - =``, parentheses (also ``\\left( \\right)``),
+``\\cdot \\times \\div /``, ``^{...}`` and a single character ``^d``, ``\\frac``,
+``\\dfrac``, ``\\sqrt``, ``\\sqrt[n]{x}``, ``\\pi``, the unicode minus, whitespace and
+the ``\\,`` and ``\\ `` spacing commands.
 ``\\frac`` and ``\\sqrt`` arguments may be braced or a single token (one digit,
 letter or ``\\pi``), so ``\\frac12`` and ``\\sqrt2`` work.
 Anything else raises ``Unreadable``.
@@ -114,7 +115,7 @@ type Node = Num | Var | Const | Neg | Add | Mul | Div | Pow | Sqrt | Mixed | Eq 
 
 # Token kinds: NUM, VAR, PI, FRAC, SQRT, CDOT (\cdot, \times), DIV (\div), and
 # the literal characters + - = / ^ ( ) { } [ ].
-_NUM_RE = re.compile(r"\d+(?:\.\d+)?")
+_NUM_RE = re.compile(r"\d+(?:\.\d+)?|\.\d+")
 _CMD_RE = re.compile(r"\\([A-Za-z]+)")
 _SINGLE = set("+-=/^(){}[]")
 
@@ -139,10 +140,12 @@ def _tokenize(src: str) -> list[_Tok]:
         elif c in _SINGLE:
             toks.append(_Tok(c, c))
             i += 1
-        elif c.isascii() and c.isdigit():
+        elif (c.isascii() and c.isdigit()) or (c == "." and src[i + 1 : i + 2].isdigit()):
             m = _NUM_RE.match(src, i)
             assert m is not None
-            toks.append(_Tok("NUM", m.group()))
+            text = m.group()
+            # A decimal typed point first (".5") is the same number as "0.5".
+            toks.append(_Tok("NUM", "0" + text if text.startswith(".") else text))
             i = m.end()
         elif c.isascii() and c.isalpha():
             toks.append(_Tok("VAR", c))

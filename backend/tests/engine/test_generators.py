@@ -284,7 +284,6 @@ def test_equivalent_fractions_takes_a_number_and_recognises_a_whole_fraction(
     seed: int, tier: int
 ) -> None:
     problem = get_generator("equivalent_fractions").generate(seed, tier)
-    assert problem.keypad == "numbers"
     a, b, _ = fractions("equivalent_fractions", seed, tier)
     for latex in (rf"\frac{{{a}}}{{{b}}}", rf"\frac{{{2 * a}}}{{{2 * b}}}"):
         result = check(problem, latex)

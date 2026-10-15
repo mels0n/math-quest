@@ -1,0 +1,44 @@
+{
+	"about": "Answers as each keypad profile types them. keys: key names tapped in order; latex: what the answer field then holds; value: the exact value the checker reads (a whole number or p/q), at the point given by 'at' when the answer has letters, or of left minus right side for an equation.",
+	"profiles": {
+		"numpad": [
+			{ "keys": ["1", "2"], "latex": "12", "value": "12" },
+			{ "keys": ["1", "0", "0", "0"], "latex": "1000", "value": "1000" }
+		],
+		"numpad_neg": [
+			{ "keys": ["Minus", "4"], "latex": "-4", "value": "-4" },
+			{ "keys": ["Minus", "1", "5"], "latex": "-15", "value": "-15" },
+			{ "keys": ["7"], "latex": "7", "value": "7" }
+		],
+		"fraction": [
+			{ "keys": ["Fraction", "3", "Move right", "4"], "latex": "\\frac34", "value": "3/4" },
+			{ "keys": ["Fraction", "1", "2", "Move right", "5"], "latex": "\\frac{12}{5}", "value": "12/5" }
+		],
+		"mixed": [
+			{ "keys": ["2", "Fraction", "1", "Move right", "3"], "latex": "2\\frac13", "value": "7/3" },
+			{ "keys": ["Mixed number", "1", "Move right", "5", "Move right", "1", "2"], "latex": "1\\frac{5}{12}", "value": "17/12" },
+			{ "keys": ["Fraction", "7", "Move right", "3"], "latex": "\\frac73", "value": "7/3" }
+		],
+		"decimal": [
+			{ "keys": ["3", "Decimal point", "2", "5"], "latex": "3.25", "value": "13/4" },
+			{ "keys": ["0", "Decimal point", "5"], "latex": "0.5", "value": "1/2" },
+			{ "keys": ["Decimal point", "5"], "latex": ".5", "value": "1/2" },
+			{ "keys": ["Minus", "0", "Decimal point", "7", "5"], "latex": "-0.75", "value": "-3/4" }
+		],
+		"exponent": [
+			{ "keys": ["2", "Power", "3"], "latex": "2^3", "value": "8" },
+			{ "keys": ["Square root", "4", "9"], "latex": "\\sqrt{49}", "value": "7" },
+			{ "keys": ["1", "0", "Power", "Minus", "2"], "latex": "10^{-2}", "value": "1/100" },
+			{ "keys": ["Open bracket", "Minus", "2", "Close bracket", "Power", "2"], "latex": "(-2)^2", "value": "4" }
+		],
+		"algebra": [
+			{ "keys": ["3", "x", "Plus", "2", "y"], "latex": "3x+2y", "at": { "x": 2, "y": 3 }, "value": "12" },
+			{ "keys": ["x", "Power", "2"], "latex": "x^2", "at": { "x": 5 }, "value": "25" },
+			{ "keys": ["x", "Equals", "Minus", "4"], "latex": "x=-4", "at": { "x": 1 }, "value": "5" },
+			{ "keys": ["Square root", "x"], "latex": "\\sqrt{x}", "at": { "x": 9 }, "value": "3" },
+			{ "keys": ["Fraction", "y", "Move right", "2"], "latex": "\\frac{y}{2}", "at": { "y": 3 }, "value": "3/2" },
+			{ "keys": ["2", "Open bracket", "x", "Minus", "1", "Close bracket"], "latex": "2(x-1)", "at": { "x": 4 }, "value": "6" }
+		],
+		"choice": []
+	}
+}

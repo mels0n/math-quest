@@ -68,10 +68,6 @@ def _build_add_unlike(rng: random.Random, tier: int) -> Built:
 
 def generators() -> list[SkillGenerator]:
     return [
-        SkillGenerator(
-            "equivalent_fractions", 0.0, AnswerForm.INTEGER, "numbers", _build_equivalent
-        ),
-        SkillGenerator(
-            "add_fractions_unlike", 0.8, AnswerForm.LOWEST_TERMS, "fractions", _build_add_unlike
-        ),
+        SkillGenerator("equivalent_fractions", 0.0, AnswerForm.INTEGER, _build_equivalent),
+        SkillGenerator("add_fractions_unlike", 0.8, AnswerForm.LOWEST_TERMS, _build_add_unlike),
     ]

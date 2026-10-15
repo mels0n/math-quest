@@ -8,6 +8,8 @@ from typing import Any
 
 import yaml
 
+from mathquest.engine.types import KEYPAD_PROFILES, KeypadProfile
+
 
 class ContentError(Exception):
     """Raised when a content pack is malformed or internally inconsistent."""
@@ -21,6 +23,7 @@ class Skill:
     prerequisites: tuple[str, ...]
     fluency: bool
     anchor: bool
+    keypad: KeypadProfile = "numpad"
 
 
 class SkillGraph:
@@ -70,6 +73,13 @@ class SkillGraph:
         ]
 
 
+def _keypad(raw: object, skill_id: str) -> KeypadProfile:
+    for profile in KEYPAD_PROFILES:
+        if profile == raw:
+            return profile
+    raise ContentError(f"skill {skill_id}: unknown keypad profile: {raw}")
+
+
 def _parse_skill(raw: Any) -> Skill:
     if not isinstance(raw, dict):
         raise ContentError("each skill entry must be a mapping")
@@ -78,6 +88,7 @@ def _parse_skill(raw: Any) -> Skill:
         prereqs = entry.get("prerequisites", [])
         if not isinstance(prereqs, list):
             raise ContentError(f"skill {entry['id']}: prerequisites must be a list")
+        keypad = _keypad(entry["keypad"], str(entry["id"]))
         return Skill(
             id=str(entry["id"]),
             name=str(entry["name"]),
@@ -85,6 +96,7 @@ def _parse_skill(raw: Any) -> Skill:
             prerequisites=tuple(str(p) for p in prereqs),  # pyright: ignore[reportUnknownVariableType, reportUnknownArgumentType]
             fluency=bool(entry.get("fluency", False)),
             anchor=bool(entry.get("anchor", False)),
+            keypad=keypad,
         )
     except KeyError as exc:
         raise ContentError(f"skill entry missing field: {exc.args[0]}") from exc

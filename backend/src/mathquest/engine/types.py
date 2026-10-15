@@ -69,7 +69,6 @@ class Problem:
     form: AnswerForm
     misconceptions: tuple[Misconception, ...]
     difficulty: float
-    keypad: str
     values: Mapping[str, int | str] = field(default_factory=dict[str, int | str], hash=False)
     variant: Variant = "bare"
     template_id: str | None = None

@@ -77,6 +77,7 @@ async def test_next_problem_hides_answer(api: ApiFactory) -> None:
         assert set(part) == {"kind", "value"}
         assert part["kind"] in ("text", "math")
         assert part["value"]
+    assert body["keypad"] in ("numpad", "fraction")
     assert body["dev_answer_latex"] is None
 
 

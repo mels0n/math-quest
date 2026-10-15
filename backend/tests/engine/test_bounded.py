@@ -35,7 +35,6 @@ def problem_for(answer: sympy.Basic) -> Problem:
         form=AnswerForm.ANY,
         misconceptions=(),
         difficulty=0.5,
-        keypad="numbers",
     )
 
 
