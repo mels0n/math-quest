@@ -204,6 +204,37 @@ def test_feedback_is_rendered_for_each_misconception(tmp_path: Path) -> None:
     assert finding.path == "misconceptions.subtracted_instead"
 
 
+# --- reveal: hints before the last and mistake feedback keep the answer back ---
+
+
+def test_an_early_hint_stating_the_answer_is_an_error(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "hints/alpha.yaml",
+        lambda h: h["levels"][1].update(
+            {"text_template": r"Count on: \({a} + {b} = {{= a + b }}\)."}
+        ),
+    )
+    (finding,) = _rule(_lint(load(tmp_path, files)), "reveal")
+    assert (finding.level, finding.file, finding.path) == ("error", "hints/alpha.yaml", "levels[1]")
+
+
+def test_feedback_stating_the_answer_is_an_error(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "explanations/alpha.yaml",
+        lambda e: e["misconceptions"].update(
+            {"counted_start": r"Start at {big}. So \({a}+{b}={{= a + b }}\)."}
+        ),
+    )
+    (finding,) = _rule(_lint(load(tmp_path, files)), "reveal")
+    assert finding.path == "misconceptions.counted_start"
+
+
+def test_the_last_hint_may_state_the_answer(tmp_path: Path) -> None:
+    assert _rule(_lint(load(tmp_path, base())), "reveal") == []
+
+
 # --- rule 6: duplicates ---
 
 

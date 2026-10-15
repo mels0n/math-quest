@@ -31,6 +31,11 @@ warning naming the pack file, the path inside it and the rule. The rules:
     Hints, explanations and misconception feedback render for ``TEACHING_SEEDS`` seeds
     at every tier, so every ``{{= expr }}`` in them computes. Lessons and worked
     examples render once with no values, so their computed numbers use only literals.
+``reveal``
+    Hint levels 1 and 2 and every piece of mistake feedback, rendered for
+    ``TEACHING_SEEDS`` seeds at every tier, never write the answer as the result of an
+    equation (a math part ending in ``= <answer>``). Only hint level 3, the worked
+    example, may.
 ``duplicate``
     Two word templates, two bank items or two explanation approaches whose normalized
     word sequences match above ``DUPLICATE_SIMILARITY`` (``difflib`` ratio; words in
@@ -67,7 +72,7 @@ import sympy
 from mathquest.engine.catalog import SkillSource, check_binding
 from mathquest.engine.checker.check import Verdict, check
 from mathquest.engine.content.coverage import skill_coverage
-from mathquest.engine.content.schema import GRADE_BANDS, Pack, Part, Skill, Slots
+from mathquest.engine.content.schema import GRADE_BANDS, HintLadder, Pack, Part, Skill, Slots
 from mathquest.engine.teaching import (
     render_explanations,
     render_feedback,
@@ -75,7 +80,15 @@ from mathquest.engine.teaching import (
     render_lesson,
 )
 from mathquest.engine.templates import TemplateError, article, expression_names, names, plain
-from mathquest.engine.types import AnswerForm, Generator, Problem, TextPart, Variant
+from mathquest.engine.types import (
+    AnswerForm,
+    Generator,
+    MathPart,
+    Problem,
+    Prompt,
+    TextPart,
+    Variant,
+)
 
 Level = Literal["error", "warning"]
 
@@ -140,6 +153,7 @@ def lint(
     out += _slots(pack, sources)
     out += _answers(pack, sources, _plurals(slots))
     out += _computed(pack, sources)
+    out += _reveals(pack, sources)
     texts = list(_kid_texts(pack))
     out += _duplicates(pack)
     out += _reading(texts, words)
@@ -433,6 +447,57 @@ def _render_teaching(
                 run(source.generate(seed, tier))
             except TemplateError as err:
                 yield Finding("error", file, at, "computed", f"seed {seed} tier {tier}: {err}")
+                return
+
+
+# --- rule: hints before the last and mistake feedback never give the answer -----
+
+
+def _states(prompt: Prompt, answer: str) -> bool:
+    """Some math part of ``prompt`` ends in ``= answer`` (spaces ignored)."""
+    target = "=" + answer.replace(" ", "")
+    return any(
+        isinstance(part, MathPart) and part.latex.replace(" ", "").endswith(target)
+        for part in prompt
+    )
+
+
+def _reveals(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Finding]:
+    for sid, source in sources.items():
+        checks: list[tuple[str, str, Callable[[Problem], Prompt | None]]] = []
+        ladder = pack.hints.get(sid)
+        if ladder is not None:
+            for i in range(len(ladder.levels) - 1):
+                checks.append((f"hints/{sid}.yaml", f"levels[{i}]", partial(_hint, ladder, i)))
+        explanations = pack.explanations.get(sid)
+        if explanations is not None:
+            for key in explanations.misconceptions:
+                feedback = partial(render_feedback, explanations, key=key)
+                checks.append((f"explanations/{sid}.yaml", f"misconceptions.{key}", feedback))
+        for file, at, run in checks:
+            yield from _reveal_one(file, at, source, run)
+
+
+def _hint(ladder: HintLadder, level: int, problem: Problem) -> Prompt:
+    return render_hints(ladder, problem)[level]
+
+
+def _reveal_one(
+    file: str, at: str, source: SkillSource, run: Callable[[Problem], Prompt | None]
+) -> Iterator[Finding]:
+    """Report the first (seed, tier) where the text states the answer."""
+    for tier in range(len(source.tier_difficulties)):
+        for seed in range(TEACHING_SEEDS):
+            problem = source.generate(seed, tier)
+            try:
+                shown = run(problem)
+            except TemplateError:
+                return  # reported by the computed rule
+            if shown is not None and _states(shown, _answer_latex(problem.answer)):
+                yield Finding(
+                    "error", file, at, "reveal",
+                    f"seed {seed} tier {tier}: states the answer; only the last hint may",
+                )  # fmt: skip
                 return
 
 

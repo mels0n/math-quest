@@ -127,9 +127,14 @@ before merging.
   recomputes them. Never type a sum by hand.
 - **Mistake feedback names the mistake kindly and points to the fix.** Say what the
   child probably did ("It looks like you took away."), then what to do instead ("The
-  plus sign means put them together."). Never say "wrong".
+  plus sign means put them together."). Never say "wrong", and never give the answer:
+  the child still has to find it. The lint fails feedback that writes the answer as the
+  result of an equation.
 - **Ask a clear question.** Say whose things are counted ("How many shells does Mia
   have?", not "How many shells?"), keep numbers realistic for the story, and do not
   start a sentence with a number ("There are 6 birds", not "6 birds").
 - **Hints climb.** The first is a nudge, the second the next step, the third the whole
-  answer worked out.
+  answer worked out. Only the third may state the answer; the lint checks the first two.
+- **Explanations are different ways in.** Each approach (visual, steps, story, worked)
+  should make sense on its own: a child who asks again gets the next one, and a child
+  who has seen them all and still misses is logged as stuck for review.
