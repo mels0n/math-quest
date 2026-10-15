@@ -49,6 +49,16 @@
       }
     ]
   },
+  "add_within_20-word": {
+    "tier": 0,
+    "seed": 95,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Malik has 10 puzzle pieces. Eli has 4 puzzle pieces. How many puzzle pieces do they have together?"
+      }
+    ]
+  },
   "equivalent_fractions": {
     "tier": 0,
     "seed": 0,

@@ -55,6 +55,7 @@ skills:
       - {id: 2, label: Totals 15 to 20}
     grade_band: "1"
     keypad: numpad
+    word_problems_fit: true
   - id: sub_within_20
     name: Subtract from 20
     region: number_meadows

@@ -1,0 +1,10 @@
+# Three hints, gentlest first: a nudge, the next step, then the whole answer worked out.
+skill: add_within_20
+levels:
+  - text_template: >-
+      You are putting {a} and {b} together. The answer is bigger than both.
+  - text_template: >-
+      Start at {a}. Count on {b} more, one jump at a time.
+  - text_template: >-
+      Start at {a} and count on {b}. You land on {{= a + b }}.
+      So \({a} + {b} = {{= a + b }}\).
