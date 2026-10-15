@@ -175,8 +175,9 @@ async def attempts_for(db: AsyncSession, problem_id: uuid.UUID) -> list[Attempt]
     return list(result.scalars().all())
 
 
-HISTORY_LIMIT = 1000
-"""The most problems of one session read back for the scheduler's teaching rules."""
+HISTORY_LIMIT = 50
+"""The most problems of one session read back for the scheduler: enough for a run, the
+reviews inside it, a warm-up and the misses that trigger one."""
 
 
 async def session_history(

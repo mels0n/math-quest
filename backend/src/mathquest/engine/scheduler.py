@@ -151,15 +151,20 @@ def weakest_prerequisite(
     return min(prereqs, key=lambda sid: ratings.get(sid, SkillRating()).rating)
 
 
-def _warmup_tail(history: Sequence[Played]) -> list[Played]:
-    """The warm-up problems at the end of ``history`` for one skill, oldest first."""
-    if not history or history[-1].warmup_for is None:
-        return []
-    target = history[-1].warmup_for
+def _warmup_tail(history: Sequence[Played], problem_index: int) -> list[Played]:
+    """The warm-up problems at the end of ``history`` for one skill, oldest first.
+
+    A review given on a review slot during a warm-up is skipped, so it neither ends nor
+    counts toward the warm-up. ``history`` is the session's latest problems, newest last,
+    so ``history[-1]`` was problem ``problem_index - 1``."""
     tail: list[Played] = []
-    for played in reversed(history):
-        if played.warmup_for != target:
+    target: str | None = None
+    for back, played in enumerate(reversed(history)):
+        if played.warmup_for is None and _review_slot(problem_index - 1 - back):
+            continue
+        if played.warmup_for is None or (target is not None and played.warmup_for != target):
             break
+        target = played.warmup_for
         tail.append(played)
     return list(reversed(tail))
 
@@ -172,18 +177,26 @@ def plan_next(
     problem_index: int,
     history: Sequence[Played],
 ) -> Pick:
-    """The next skill: a warm-up in progress continues until it has WARMUP_PROBLEMS
-    problems and then play returns to the skill it was for; otherwise `pick_skill`
-    chooses, and a skill the learner is struggling with (`struggling`) starts a warm-up
-    on its weakest prerequisite instead. ``history`` is the whole session, newest last.
+    """The next skill.
+
+    A review slot with a review due takes it first, so a warm-up never pushes a review
+    back (the warm-up carries on after it). A warm-up in progress continues until it has
+    WARMUP_PROBLEMS problems; then play returns to the skill it was for if that skill is
+    still ready or due for review, and otherwise chooses normally. Otherwise `pick_skill`
+    chooses, and a skill the learner is struggling with (`struggling`) starts a warm-up on
+    its weakest prerequisite instead. ``history`` is the session's latest problems
+    (newest last, none left out) and ``problem_index`` the true index of the problem
+    being picked, which may be larger than ``len(history)`` when the history is capped.
     """
-    tail = _warmup_tail(history)
+    if due_reviews and _review_slot(problem_index):
+        return Pick(due_reviews[0])
+    tail = _warmup_tail(history, problem_index)
     if tail:
         target = tail[-1].warmup_for
         assert target is not None
         if len(tail) < WARMUP_PROBLEMS:
             return Pick(tail[-1].skill_id, target)
-        if target in graph.skills:
+        if target in graph.skills and (target in graph.ready(mastered) or target in due_reviews):
             return Pick(target)
     recent = [p.skill_id for p in history]
     skill = pick_skill(graph, ratings, mastered, due_reviews, problem_index, recent)
