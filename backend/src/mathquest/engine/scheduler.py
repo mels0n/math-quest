@@ -237,7 +237,7 @@ def plan_practice(
     """
     skills = [sid for sid in focus if sid in graph.skills]
     if not skills:
-        raise ValueError("no skills to practise")
+        raise ValueError("no skills to practice")
     tail = _warmup_tail(history, len(history), reviews=False)
     if tail:
         target = tail[-1].warmup_for

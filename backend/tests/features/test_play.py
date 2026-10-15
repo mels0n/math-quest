@@ -324,7 +324,7 @@ async def test_a_new_skill_with_a_lesson_starts_with_the_lesson(db: AsyncSession
     assert row is not None and row.problem_count == 0
 
 
-async def test_a_skill_already_practised_gets_no_lesson(db: AsyncSession) -> None:
+async def test_a_skill_already_practiced_gets_no_lesson(db: AsyncSession) -> None:
     pid = await _player(db, lessons_seen=False)
     row = await mastery.lock(db, pid, "add_within_10", -10.0)
     row.attempts = 4

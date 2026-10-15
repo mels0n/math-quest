@@ -10,7 +10,7 @@ describe('play target', () => {
 		expect(parse('weak=yes')).toEqual({ practice: null, lesson: false });
 	});
 
-	it('practises one skill, with its lesson first when asked', () => {
+	it('practices one skill, with its lesson first when asked', () => {
 		expect(parse('skill=add_within_10')).toEqual({
 			practice: { skill_id: 'add_within_10' },
 			lesson: false
@@ -21,7 +21,7 @@ describe('play target', () => {
 		});
 	});
 
-	it('practises weak spots', () => {
+	it('practices weak spots', () => {
 		expect(parse('weak=1')).toEqual({ practice: { weak_spots: true }, lesson: false });
 	});
 });

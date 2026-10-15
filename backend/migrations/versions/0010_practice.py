@@ -3,7 +3,7 @@
 play_sessions gains ``focus`` (a practice session's skills) and ``mastered_at_start``
 (those of them mastered when it started). problem_instances gains
 ``newly_mastered`` (scoring it made its skill mastered, for the session summary).
-revisit_events records a mastered skill practised again, once per session and skill.
+revisit_events records a mastered skill practiced again, once per session and skill.
 The session mode "practice" needs no schema change (mode is free text).
 
 Revision ID: 0010

@@ -19,7 +19,7 @@ export function parsePlayTarget(params: URLSearchParams): PlayTarget {
 	return { practice: null, lesson: false };
 }
 
-/** Where the picker sends a player to practise one skill, or to read its lesson first. */
+/** Where the picker sends a player to practice one skill, or to read its lesson first. */
 export function practiceHref(skillId: string, lesson = false): string {
 	return `/play?skill=${encodeURIComponent(skillId)}${lesson ? '&lesson=1' : ''}`;
 }

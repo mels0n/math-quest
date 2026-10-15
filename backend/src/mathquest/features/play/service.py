@@ -65,7 +65,7 @@ Before the first problem of a skill that has a lesson, `next` returns a lesson t
 cannot show one gets the problem)
 instead of a problem (the skill and its name, no problem issued, the session's count
 unchanged) until the player has marked that lesson seen (`lessons_seen`, written by the
-teaching slice). A skill with a scored problem never gets one, so a player who practised
+teaching slice). A skill with a scored problem never gets one, so a player who practiced
 it before lessons existed is not interrupted. Skill choice depends only on stored
 state, so the `next` after the lesson picks the same skill and issues its problem.
 

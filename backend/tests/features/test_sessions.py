@@ -175,7 +175,7 @@ async def _revisits(db: AsyncSession, pid: uuid.UUID) -> list[str]:
     return list(rows.scalars().all())
 
 
-async def test_practising_a_mastered_skill_records_one_revisit_per_session(
+async def test_practicing_a_mastered_skill_records_one_revisit_per_session(
     db: AsyncSession,
 ) -> None:
     pid = await _player(db)
