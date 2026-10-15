@@ -101,24 +101,41 @@ async def mark_provisional(
     review_due_at: datetime,
     now: datetime,
 ) -> list[str]:
-    """Mark each skill provisionally mastered, due for review at ``review_due_at``.
+    """Mark each skill provisionally mastered, due for review at ``review_due_at``, in one
+    statement.
 
-    A missing row is created at its initial rating. A mastered skill is left alone, so
-    real mastery is never replaced; a learning one keeps its rating and attempts.
-    Returns the skills that were marked."""
-    marked: list[str] = []
-    for skill_id, rating in initial_ratings.items():
-        row = await lock(db, player_id, skill_id, rating)
-        if row.state == MASTERED:
-            continue
-        row.state = PROVISIONAL
-        row.placed = False
-        row.review_interval_days = None
-        row.review_due_at = review_due_at
-        row.updated_at = now
-        marked.append(skill_id)
-    await db.flush()
-    return marked
+    A missing row is created at its initial rating. A row with real progress is left
+    alone: a mastered skill keeps its mastery, and a skill being learned (any scored
+    attempt) keeps its state, so a retake never hides real work behind a provisional
+    mark. Returns the skills that were marked, in the order given."""
+    if not initial_ratings:
+        return []
+    insert = pg_insert(SkillMastery).values(
+        [
+            {
+                "player_id": player_id,
+                "skill_id": skill_id,
+                "rating": rating,
+                "state": PROVISIONAL,
+                "review_due_at": review_due_at,
+                "updated_at": now,
+            }
+            for skill_id, rating in initial_ratings.items()
+        ]
+    )
+    statement = insert.on_conflict_do_update(
+        index_elements=["player_id", "skill_id"],
+        set_={
+            "state": PROVISIONAL,
+            "placed": False,
+            "review_interval_days": None,
+            "review_due_at": review_due_at,
+            "updated_at": now,
+        },
+        where=(SkillMastery.state != MASTERED) & (SkillMastery.attempts == 0),
+    ).returning(SkillMastery.skill_id)
+    marked = set((await db.execute(statement)).scalars().all())
+    return [skill_id for skill_id in initial_ratings if skill_id in marked]
 
 
 async def revert_provisional(db: AsyncSession, player_id: uuid.UUID) -> None:

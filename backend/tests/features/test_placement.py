@@ -250,16 +250,21 @@ async def test_retake_resets_unconfirmed_marks_and_keeps_real_mastery(db: AsyncS
     assert await _state(db, pid, "add_within_20") is None
 
 
-async def test_a_learning_skill_keeps_its_rating_when_marked(db: AsyncSession) -> None:
+async def test_a_learning_skill_is_never_marked(db: AsyncSession) -> None:
+    """Real progress is not hidden behind a provisional mark, on a first round or a retake."""
     pid = await _player(db)
     row = await mastery.lock(db, pid, "add_within_10", 0.0)
     row.rating = 1.25
     row.attempts = 3
     row.recent = [[1, 1], [0, 2], [1, 2]]
     await db.commit()
-    await _round(db, pid, level=1)
+    row.state = "learning"
+    await db.commit()
+    done, _ = await _round(db, pid, level=1)
     after = await mastery.get(db, pid, "add_within_10")
     assert after is not None
     await db.refresh(after)
-    assert after.state == SkillState.PROVISIONAL
+    assert after.state == SkillState.LEARNING
     assert (after.rating, after.attempts) == (1.25, 3)
+    assert "add_within_10" not in done.provisional
+    assert "add_within_20" in done.provisional
