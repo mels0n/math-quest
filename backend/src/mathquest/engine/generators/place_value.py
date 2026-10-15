@@ -40,4 +40,12 @@ def _build_place_value(rng: random.Random, tier: int) -> Built:
 
 
 def generators() -> list[SkillGenerator]:
-    return [SkillGenerator("place_value_tens_ones", -1.0, AnswerForm.INTEGER, _build_place_value)]
+    return [
+        SkillGenerator(
+            "place_value_tens_ones",
+            -1.0,
+            AnswerForm.INTEGER,
+            _build_place_value,
+            ("confused_tens_ones", "confused_adjacent_place"),
+        )
+    ]

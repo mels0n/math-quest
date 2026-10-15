@@ -81,8 +81,9 @@ class Generator(Protocol):
     template the generator cannot produce falls back to the bare variant.
     """
 
-    skill_id: str
+    generator_id: str
     tier_difficulties: tuple[float, ...]
+    misconception_keys: tuple[str, ...]
 
     def generate(
         self,

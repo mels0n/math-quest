@@ -61,9 +61,9 @@ from typing import Literal
 import sympy
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from mathquest.engine.catalog import Catalog
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict
-from mathquest.engine.generators import get_generator
 from mathquest.engine.mastery import (
     MASTERY_PREDICT,
     Outcome,
@@ -77,7 +77,6 @@ from mathquest.engine.mastery import (
     update,
 )
 from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
-from mathquest.engine.skillgraph import SkillGraph
 from mathquest.engine.types import VARIANTS, Problem, Prompt, TextPart, Variant
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
@@ -104,23 +103,23 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _start_rating(skill_id: str) -> float:
-    return initial_rating(get_generator(skill_id).tier_difficulties)
+def _start_rating(catalog: Catalog, skill_id: str) -> float:
+    return initial_rating(catalog.source(skill_id).tier_difficulties)
 
 
-def _rating(row: SkillMastery | None, skill_id: str) -> SkillRating:
+def _rating(catalog: Catalog, row: SkillMastery | None, skill_id: str) -> SkillRating:
     if row is None:
-        return SkillRating(rating=_start_rating(skill_id))
+        return SkillRating(rating=_start_rating(catalog, skill_id))
     recent = tuple((bool(e[0]), int(e[1])) for e in row.recent)
     return SkillRating(row.rating, row.attempts, recent)
 
 
-def _top_difficulty(skill_id: str) -> float:
-    return max(get_generator(skill_id).tier_difficulties)
+def _top_difficulty(catalog: Catalog, skill_id: str) -> float:
+    return max(catalog.source(skill_id).tier_difficulties)
 
 
-def _top_tier(skill_id: str) -> int:
-    return len(get_generator(skill_id).tier_difficulties) - 1
+def _top_tier(catalog: Catalog, skill_id: str) -> int:
+    return len(catalog.source(skill_id).tier_difficulties) - 1
 
 
 def _prompt_out(prompt: Prompt) -> list[PromptPartOut]:
@@ -132,8 +131,10 @@ def _prompt_out(prompt: Prompt) -> list[PromptPartOut]:
     ]
 
 
-def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> MasteryOut:
-    top = _top_difficulty(skill_id)
+def _mastery_out(
+    catalog: Catalog, skill_id: str, row: SkillMastery | None, now: datetime
+) -> MasteryOut:
+    top = _top_difficulty(catalog, skill_id)
     if row is None or row.attempts == 0:
         state = SkillState.READY
     elif row.state == SkillState.MASTERED:
@@ -144,7 +145,8 @@ def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> Mast
     if state in (SkillState.MASTERED, SkillState.REVIEW_DUE):
         progress = 1.0
     else:
-        progress = min(1.0, max(0.0, predict(_rating(row, skill_id).rating, top) / MASTERY_PREDICT))
+        rating = _rating(catalog, row, skill_id).rating
+        progress = min(1.0, max(0.0, predict(rating, top) / MASTERY_PREDICT))
     return MasteryOut(skill_id=skill_id, state=state, progress=progress)
 
 
@@ -168,7 +170,7 @@ async def start_session(
 
 async def next_problem(
     db: AsyncSession,
-    graph: SkillGraph,
+    catalog: Catalog,
     player_id: uuid.UUID,
     session_id: uuid.UUID,
     *,
@@ -181,15 +183,16 @@ async def next_problem(
     await problems.close_open(db, session_id, now)
     rows = await mastery.list_for_player(db, player_id)
     by_skill = {r.skill_id: r for r in rows}
-    ratings = {sid: _rating(by_skill.get(sid), sid) for sid in graph.skills}
+    graph = catalog.graph
+    ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
     mastered = {r.skill_id for r in rows if r.state == SkillState.MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
     recent = await problems.recent_skill_ids(db, session_id, limit=RECENT_LOOKBACK)
     skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count, recent)
-    generator = get_generator(skill_id)
-    tier = choose_tier(ratings[skill_id], generator.tier_difficulties)
+    source = catalog.source(skill_id)
+    tier = choose_tier(ratings[skill_id], source.tier_difficulties)
     seed = secrets.randbelow(_SEED_LIMIT)
-    problem = generator.generate(seed, tier, "bare")
+    problem = source.generate(seed, tier, "bare")
     instance = await problems.add_problem(
         db,
         session_id=session_id,
@@ -216,17 +219,22 @@ async def next_problem(
 
 
 def _apply_score(
-    row: SkillMastery, skill_id: str, difficulty: float, outcome: Outcome, now: datetime
+    catalog: Catalog,
+    row: SkillMastery,
+    skill_id: str,
+    difficulty: float,
+    outcome: Outcome,
+    now: datetime,
 ) -> None:
-    top = _top_difficulty(skill_id)
-    after = update(_rating(row, skill_id), difficulty, outcome, top)
+    top = _top_difficulty(catalog, skill_id)
+    after = update(_rating(catalog, row, skill_id), difficulty, outcome, top)
     was_mastered = row.state == SkillState.MASTERED
     review_due = was_mastered and row.review_due_at is not None and row.review_due_at <= now
     row.rating = after.rating
     row.attempts = after.attempts
     row.recent = [[int(correct), tier] for correct, tier in after.recent]
     row.updated_at = now
-    mastered = is_mastered(after, top, _top_tier(skill_id))
+    mastered = is_mastered(after, top, _top_tier(catalog, skill_id))
     if not mastered or (not was_mastered and not outcome.correct):
         row.state = SkillState.LEARNING
         row.review_interval_days = None
@@ -243,14 +251,14 @@ def _apply_score(
     row.review_due_at = now + timedelta(days=interval)
 
 
-def regenerate(instance: ProblemInstance) -> Problem:
+def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
     """The issued problem again, from its stored seed, tier, variant and template."""
     variant: Variant = "bare"
     for known in VARIANTS:
         if known == instance.variant:
             variant = known
-    generator = get_generator(instance.skill_id)
-    return generator.generate(instance.seed, instance.tier, variant, instance.template_id)
+    source = catalog.source(instance.skill_id)
+    return source.generate(instance.seed, instance.tier, variant, instance.template_id)
 
 
 def _tries_used(attempts: list[Attempt]) -> int:
@@ -273,6 +281,7 @@ async def _load(
 
 async def _stored(
     db: AsyncSession,
+    catalog: Catalog,
     instance: ProblemInstance,
     attempts: list[Attempt],
     answer_latex: str | None,
@@ -287,7 +296,7 @@ async def _stored(
         misconception=last.misconception,
         solved=bool(instance.correct),
         attempts_left=max(0, MAX_ATTEMPTS - used),
-        mastery=_mastery_out(instance.skill_id, row, now),
+        mastery=_mastery_out(catalog, instance.skill_id, row, now),
         answer_latex=answer_latex,
         total_solved=await problems.count_solved(db, instance.player_id),
     )
@@ -306,7 +315,7 @@ def _repeat_of_last_wrong(attempts: list[Attempt], latex: str) -> bool:
 async def submit_answer(
     db: AsyncSession,
     pool: CheckerPool,
-    graph: SkillGraph,
+    catalog: Catalog,
     player_id: uuid.UUID,
     problem_id: uuid.UUID,
     latex: str,
@@ -314,12 +323,12 @@ async def submit_answer(
     received = _now()
     instance, attempts = await _load(db, player_id, problem_id)
     skill_id = instance.skill_id
-    problem = regenerate(instance)
+    problem = regenerate(catalog, instance)
     answer_latex = str(sympy.latex(problem.answer))
     if instance.answered_at is not None:
-        return await _stored(db, instance, attempts, answer_latex, received)
+        return await _stored(db, catalog, instance, attempts, answer_latex, received)
     if _repeat_of_last_wrong(attempts, latex):
-        return await _stored(db, instance, attempts, None, received)
+        return await _stored(db, catalog, instance, attempts, None, received)
     await db.commit()
 
     if len(latex) > STORED_LATEX_MAX:
@@ -329,9 +338,9 @@ async def submit_answer(
 
     instance, attempts = await _load(db, player_id, problem_id)
     if instance.answered_at is not None:
-        return await _stored(db, instance, attempts, answer_latex, received)
+        return await _stored(db, catalog, instance, attempts, answer_latex, received)
     if _repeat_of_last_wrong(attempts, latex):
-        return await _stored(db, instance, attempts, None, received)
+        return await _stored(db, catalog, instance, attempts, None, received)
 
     verdict = result.verdict
     misconception = result.misconception if verdict is Verdict.INCORRECT else None
@@ -352,15 +361,15 @@ async def submit_answer(
     scored = solved or used >= MAX_ATTEMPTS
 
     if scored:
-        row = await mastery.lock(db, player_id, skill_id, _start_rating(skill_id))
+        row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
         outcome = Outcome(
             correct=solved,
             hints_used=tried,
             seconds=seconds,
-            fluency=graph.skills[skill_id].fluency,
+            fluency=catalog.graph.skills[skill_id].fluency,
             tier=instance.tier,
         )
-        _apply_score(row, skill_id, instance.difficulty, outcome, received)
+        _apply_score(catalog, row, skill_id, instance.difficulty, outcome, received)
         instance.answered_at = received
         instance.correct = solved
     else:
@@ -371,7 +380,7 @@ async def submit_answer(
         misconception=misconception,
         solved=solved,
         attempts_left=MAX_ATTEMPTS - used,
-        mastery=_mastery_out(skill_id, row, received),
+        mastery=_mastery_out(catalog, skill_id, row, received),
         answer_latex=answer_latex if scored else None,
         total_solved=await problems.count_solved(db, player_id),
     )

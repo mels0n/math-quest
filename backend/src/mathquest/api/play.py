@@ -59,7 +59,7 @@ async def next_problem(
 ) -> ProblemOut:
     return await play.next_problem(
         db,
-        request.app.state.skill_graph,
+        request.app.state.catalog,
         player.id,
         session_id,
         expose_answers=settings.dev_expose_answers,
@@ -73,7 +73,7 @@ async def answer(
     return await play.submit_answer(
         db,
         request.app.state.checker_pool,
-        request.app.state.skill_graph,
+        request.app.state.catalog,
         player.id,
         problem_id,
         body.latex,

@@ -9,8 +9,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from mathquest.engine.checker.check import Verdict, check
+from mathquest.engine.content import load_pack
 from mathquest.engine.generators import all_generators, get_generator
-from mathquest.engine.skillgraph import load_pack
 from mathquest.engine.types import Generator, MathPart, Problem, TextPart
 
 PACK = Path(__file__).resolve().parents[2] / "content" / "packs" / "k8-core"
@@ -74,7 +74,7 @@ def test_misconceptions_fail_and_match(gen: Generator, seed: int, tier: int) -> 
 @given(gen=gens, seed=seeds, tier=tiers)
 def test_problem_metadata(gen: Generator, seed: int, tier: int) -> None:
     problem = gen.generate(seed, tier)
-    assert problem.skill_id == gen.skill_id
+    assert problem.skill_id == gen.generator_id
     assert (problem.tier, problem.seed) == (tier, seed)
     assert problem.difficulty == gen.tier_difficulties[tier]
     flat = flatten(problem)
@@ -93,12 +93,12 @@ def test_within_range(seed: int, tier: int) -> None:
     assert 0 <= sub20.answer <= 19
 
 
-@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.skill_id)
+@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.generator_id)
 def test_prompts_are_well_formed_parts(gen: Generator) -> None:
     for tier in range(len(gen.tier_difficulties)):
         for seed in range(500):
             problem = gen.generate(seed, tier)
-            assert problem.prompt, (gen.skill_id, tier, seed)
+            assert problem.prompt, (gen.generator_id, tier, seed)
             for part in problem.prompt:
                 if isinstance(part, MathPart):
                     assert part.latex.strip()
@@ -111,7 +111,7 @@ def test_prompts_are_well_formed_parts(gen: Generator) -> None:
             assert problem.values
 
 
-@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.skill_id)
+@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.generator_id)
 def test_unknown_variant_or_template_falls_back_to_bare(gen: Generator) -> None:
     bare = gen.generate(7, 1)
     assert gen.generate(7, 1, "word", "gone_template") == bare
@@ -137,6 +137,8 @@ def test_place_value_prompt_is_text_math_text() -> None:
 
 def test_registry_covers_pack() -> None:
     assert set(PACK_SKILLS) <= set(all_generators())
+    for gen_id, gen in all_generators().items():
+        assert gen.generator_id == gen_id
     assert len(all_generators()) == 9
 
 
@@ -145,16 +147,16 @@ def test_unknown_skill_is_keyerror() -> None:
         get_generator("nope")
 
 
-@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.skill_id)
+@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.generator_id)
 def test_tier_difficulties_use_declared_base(gen: Generator) -> None:
-    base = BASES[gen.skill_id]
+    base = BASES[gen.generator_id]
     assert gen.tier_difficulties == (base - 1.0, base, base + 1.0)
 
 
 def test_seeds_vary_problems() -> None:
     for gen in GENERATORS:
         prompts = {gen.generate(seed, 1).prompt for seed in range(40)}
-        assert len(prompts) > 3, gen.skill_id
+        assert len(prompts) > 3, gen.generator_id
 
 
 def prompt(skill: str, seed: int, tier: int) -> str:
@@ -289,3 +291,14 @@ def test_equivalent_fractions_takes_a_number_and_recognises_a_whole_fraction(
         result = check(problem, latex)
         assert result.verdict is Verdict.INCORRECT
         assert result.misconception == "wrote_whole_fraction"
+
+
+@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.generator_id)
+def test_declared_misconception_keys_match_what_is_produced(gen: Generator) -> None:
+    produced = {
+        m.key
+        for tier in range(len(gen.tier_difficulties))
+        for seed in range(300)
+        for m in gen.generate(seed, tier).misconceptions
+    }
+    assert produced == set(gen.misconception_keys)

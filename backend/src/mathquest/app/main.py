@@ -25,8 +25,8 @@ from mathquest.api.deps import (
 from mathquest.api.errors import install_error_handlers
 from mathquest.api.pathnorm import path_is_under, scope_is_under
 from mathquest.api.ratelimit import Clock, RateLimiter
+from mathquest.engine.catalog import load_catalog
 from mathquest.engine.checker.bounded import CheckerPool
-from mathquest.engine.skillgraph import load_pack
 from mathquest.features import accounts, admin
 from mathquest.shared import db as database
 from mathquest.shared.config import Settings, get_settings
@@ -98,7 +98,8 @@ def create_app(
             app.state.blocklist = accounts.load_blocklist(cfg.content_dir)
             app.state.nickname_words = accounts.load_nickname_words(cfg.content_dir)
             accounts.load_recovery_words(cfg.content_dir)
-            app.state.skill_graph = load_pack(cfg.content_dir / "packs" / CONTENT_PACK)
+            # Fails boot when the pack is invalid or does not match the generators.
+            app.state.catalog = load_catalog(cfg.content_dir, CONTENT_PACK)
             await pool.warm()
             app.state.checker_pool = pool
             yield

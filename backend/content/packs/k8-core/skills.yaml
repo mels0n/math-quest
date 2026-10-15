@@ -1,12 +1,19 @@
 # Skill pack. Each entry under `skills` has:
-#   id            unique snake_case identifier
-#   name          short, kid-facing display name
-#   region        map region the skill belongs to
-#   prerequisites ids that must be mastered first ([] for none)
-#   fluency       true for recall-speed skills, false for concept skills
-#   anchor        true for skills used as placement anchors
-#   keypad        answer keypad: numpad, numpad_neg, fraction, mixed, decimal,
-#                 exponent, algebra, or choice (answer buttons, no keypad)
+#   id                 unique snake_case identifier
+#   name               short, kid-facing display name
+#   region             map region the skill belongs to (an id from world.yaml)
+#   prerequisites      ids that must be mastered first ([] for none)
+#   fluency            true for recall-speed skills, false for concept skills
+#   anchor             true for skills used as placement anchors
+#   generator          problem generator id (existing skills use their own id)
+#   tiers              one {id, label} per generator tier, ids 0, 1, 2 ... in order
+#   grade_band         K, 1 to 8, A1 or A2
+#   keypad             answer keypad: numpad, numpad_neg, fraction, mixed, decimal,
+#                      exponent, algebra, or choice (answer buttons, no keypad)
+#   word_problems_fit  true when word problems suit the skill (default false)
+#   word_share         share of problems shown as word problems (default 0.4)
+#   banked             true when the skill also draws from bank items (default false)
+#   bank_share         share of problems taken from the bank (default 0.25)
 # Order here breaks ties in the topological order.
 skills:
   - id: add_within_10
@@ -15,6 +22,12 @@ skills:
     prerequisites: []
     fluency: true
     anchor: false
+    generator: add_within_10
+    tiers:
+      - {id: 0, label: Totals up to 5}
+      - {id: 1, label: Totals 6 to 8}
+      - {id: 2, label: Totals 9 and 10}
+    grade_band: "K"
     keypad: numpad
   - id: sub_within_10
     name: Subtract from 10
@@ -22,6 +35,12 @@ skills:
     prerequisites: []
     fluency: true
     anchor: false
+    generator: sub_within_10
+    tiers:
+      - {id: 0, label: Start from 5 or less}
+      - {id: 1, label: Start from 6 to 8}
+      - {id: 2, label: Start from 9 or 10}
+    grade_band: "K"
     keypad: numpad
   - id: add_within_20
     name: Add to 20
@@ -29,6 +48,12 @@ skills:
     prerequisites: [add_within_10]
     fluency: true
     anchor: true
+    generator: add_within_20
+    tiers:
+      - {id: 0, label: Totals 10 to 14}
+      - {id: 1, label: Totals 12 to 17}
+      - {id: 2, label: Totals 15 to 20}
+    grade_band: "1"
     keypad: numpad
   - id: sub_within_20
     name: Subtract from 20
@@ -36,6 +61,12 @@ skills:
     prerequisites: [sub_within_10, add_within_20]
     fluency: true
     anchor: false
+    generator: sub_within_20
+    tiers:
+      - {id: 0, label: No crossing ten}
+      - {id: 1, label: Crossing ten}
+      - {id: 2, label: Big jumps across ten}
+    grade_band: "1"
     keypad: numpad
   - id: place_value_tens_ones
     name: Tens and Ones
@@ -43,6 +74,12 @@ skills:
     prerequisites: []
     fluency: false
     anchor: false
+    generator: place_value_tens_ones
+    tiers:
+      - {id: 0, label: Two-digit numbers}
+      - {id: 1, label: Three-digit numbers}
+      - {id: 2, label: Four-digit numbers}
+    grade_band: "1"
     keypad: numpad
   - id: add_2digit_no_regroup
     name: Add Big Numbers
@@ -50,6 +87,12 @@ skills:
     prerequisites: [add_within_20, place_value_tens_ones]
     fluency: false
     anchor: false
+    generator: add_2digit_no_regroup
+    tiers:
+      - {id: 0, label: Add whole tens}
+      - {id: 1, label: Small sums}
+      - {id: 2, label: Bigger sums}
+    grade_band: "2"
     keypad: numpad
   - id: add_2digit_regroup
     name: Add and Carry
@@ -57,6 +100,12 @@ skills:
     prerequisites: [add_2digit_no_regroup]
     fluency: false
     anchor: true
+    generator: add_2digit_regroup
+    tiers:
+      - {id: 0, label: Small numbers}
+      - {id: 1, label: Sums under 100}
+      - {id: 2, label: Sums over 100}
+    grade_band: "2"
     keypad: numpad
   - id: equivalent_fractions
     name: Same-Size Fractions
@@ -64,6 +113,12 @@ skills:
     prerequisites: []
     fluency: false
     anchor: false
+    generator: equivalent_fractions
+    tiers:
+      - {id: 0, label: Times 2 or 3}
+      - {id: 1, label: Times 4 to 6}
+      - {id: 2, label: Times 7 to 10}
+    grade_band: "3"
     keypad: numpad
   - id: add_fractions_unlike
     name: Add Fractions
@@ -71,4 +126,10 @@ skills:
     prerequisites: [equivalent_fractions]
     fluency: false
     anchor: true
+    generator: add_fractions_unlike
+    tiers:
+      - {id: 0, label: One denominator divides the other}
+      - {id: 1, label: No shared factor}
+      - {id: 2, label: A shared factor}
+    grade_band: "5"
     keypad: fraction

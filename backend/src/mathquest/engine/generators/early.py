@@ -119,10 +119,22 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
 def generators() -> list[SkillGenerator]:
     form = AnswerForm.INTEGER
     return [
-        SkillGenerator("add_within_10", -2.0, form, _build_add_within_10),
-        SkillGenerator("sub_within_10", -1.8, form, _build_sub_within_10),
-        SkillGenerator("add_within_20", -1.2, form, _build_add_within_20),
-        SkillGenerator("sub_within_20", -1.0, form, _build_sub_within_20),
+        SkillGenerator("add_within_10", -2.0, form, _build_add_within_10, ("subtracted_instead",)),
+        SkillGenerator("sub_within_10", -1.8, form, _build_sub_within_10, ("added_instead",)),
+        SkillGenerator("add_within_20", -1.2, form, _build_add_within_20, ("subtracted_instead",)),
+        SkillGenerator(
+            "sub_within_20",
+            -1.0,
+            form,
+            _build_sub_within_20,
+            ("subtracted_backwards", "added_instead"),
+        ),
         SkillGenerator("add_2digit_no_regroup", -0.5, form, _build_add_2digit_no_regroup),
-        SkillGenerator("add_2digit_regroup", 0.0, form, _build_add_2digit_regroup),
+        SkillGenerator(
+            "add_2digit_regroup",
+            0.0,
+            form,
+            _build_add_2digit_regroup,
+            ("forgot_carry", "added_carry_twice"),
+        ),
     ]

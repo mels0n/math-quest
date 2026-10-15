@@ -1,12 +1,24 @@
 import pytest
 
+from mathquest.engine.content import Skill
 from mathquest.engine.mastery import SkillRating
 from mathquest.engine.scheduler import RUN_LENGTH, current_run, pick_skill
-from mathquest.engine.skillgraph import Skill, SkillGraph
+from mathquest.engine.skillgraph import SkillGraph
 
 
 def _skill(sid: str, *prereqs: str) -> Skill:
-    return Skill(id=sid, name=sid, region="r", prerequisites=prereqs, fluency=False, anchor=False)
+    return Skill(
+        id=sid,
+        name=sid,
+        region="r",
+        prerequisites=prereqs,
+        fluency=False,
+        anchor=False,
+        generator=sid,
+        tiers=({"id": 0, "label": "only"},),  # pyright: ignore[reportArgumentType]
+        grade_band="K",
+        keypad="numpad",
+    )
 
 
 def _graph() -> SkillGraph:
