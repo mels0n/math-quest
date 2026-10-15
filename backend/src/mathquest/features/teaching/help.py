@@ -24,7 +24,7 @@ that skill scored wrong records a stuck event (play slice). Explanations cost no
 
 Stuck log. The admin export lists stuck events as ``StuckProblemOut``: skill, generator,
 tier, seed and wrong answers, the exact shape ``content-report --stuck`` reads, with no
-player id, nickname or time.
+player id, nickname or time. See docs/adr/0014-teaching-flow.md.
 """
 
 import csv

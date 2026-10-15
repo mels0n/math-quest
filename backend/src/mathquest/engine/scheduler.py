@@ -13,7 +13,7 @@ the session's history (passed in, newest last):
   (never below tier 0).
 
 Both rules are pure: the caller reads the history and stores which problems are
-warm-ups.
+warm-ups. See docs/adr/0014-teaching-flow.md.
 """
 
 from collections.abc import Mapping, Sequence
