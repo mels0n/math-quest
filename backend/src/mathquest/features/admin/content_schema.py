@@ -4,16 +4,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, JsonValue
 
+from mathquest.engine.transport import PromptPartOut
 from mathquest.engine.types import KeypadProfile
 
 
 class _Frozen(BaseModel):
     model_config = ConfigDict(frozen=True)
-
-
-class PromptPartOut(_Frozen):
-    kind: Literal["text", "math"]
-    value: str
 
 
 type PromptOut = list[PromptPartOut]

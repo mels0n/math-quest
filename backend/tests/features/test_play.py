@@ -22,6 +22,7 @@ from mathquest.engine.content import load_pack
 from mathquest.engine.content.schema import Bank, WordProblems, WordTemplate
 from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
 from mathquest.engine.scheduler import RUN_LENGTH
+from mathquest.engine.transport import prompt_out
 from mathquest.engine.types import Problem
 from mathquest.entities import mastery, players, problems
 from mathquest.entities.mastery import SkillMastery
@@ -311,7 +312,7 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
     regenerated = service.regenerate(CATALOG, inst)
-    assert service._prompt_out(regenerated.prompt) == problem.prompt  # pyright: ignore[reportPrivateUsage]
+    assert prompt_out(regenerated.prompt) == problem.prompt
     assert inst.difficulty == regenerated.difficulty
     again = await service.next_problem(db, CATALOG, pid, session.session_id)
     assert again.problem_id != problem.problem_id
@@ -753,7 +754,7 @@ async def test_variant_and_template_are_drawn_from_the_seed_and_stored(db: Async
         assert inst.variant == choose_variant(source, inst.seed)
         expected = service.regenerate(FIXTURE, inst)
         assert inst.template_id == expected.template_id
-        assert service._prompt_out(expected.prompt) == problem.prompt  # pyright: ignore[reportPrivateUsage]
+        assert prompt_out(expected.prompt) == problem.prompt
         assert problem.choices is None and problem.keypad == "numpad"
         seen.add(inst.variant)
     assert "word" in seen
@@ -916,7 +917,7 @@ async def test_a_variant_that_fails_to_render_is_issued_bare(
             (expected, "halves") if expected == "word" else ("bare", None)
         )
         regenerated = service.regenerate(catalog, inst)
-        assert service._prompt_out(regenerated.prompt) == problem.prompt  # pyright: ignore[reportPrivateUsage]
+        assert prompt_out(regenerated.prompt) == problem.prompt
         variants.add(inst.variant)
     assert variants == {"word", "bare"}
 

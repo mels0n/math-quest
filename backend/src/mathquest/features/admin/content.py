@@ -8,8 +8,6 @@ same seed and tier, plus the answers.
 
 from collections.abc import Callable
 
-import sympy
-
 from mathquest.engine.catalog import Catalog, SkillSource
 from mathquest.engine.content.coverage import SkillCoverage, pack_coverage, skill_coverage
 from mathquest.engine.content.schema import Explanations, Visual
@@ -20,7 +18,8 @@ from mathquest.engine.teaching import (
     render_lesson,
 )
 from mathquest.engine.templates import TemplateError
-from mathquest.engine.types import Generator, Problem, Prompt, TextPart, Variant
+from mathquest.engine.transport import answer_latex, latex, prompt_out
+from mathquest.engine.types import Generator, Problem, Variant
 from mathquest.features.admin.content_schema import (
     ApproachOut,
     BankItemOut,
@@ -31,8 +30,6 @@ from mathquest.features.admin.content_schema import (
     MisconceptionOut,
     PackOut,
     ProblemPreview,
-    PromptOut,
-    PromptPartOut,
     RegionCoverageOut,
     SkillCoverageOut,
     SkillPreview,
@@ -43,19 +40,6 @@ from mathquest.shared.errors import Invalid, NotFound
 
 SAMPLE_SEEDS = (1, 2, 3)
 """Seeds shown when the admin does not pick one."""
-
-
-def _prompt(prompt: Prompt) -> PromptOut:
-    return [
-        PromptPartOut(kind="text", value=p.text)
-        if isinstance(p, TextPart)
-        else PromptPartOut(kind="math", value=p.latex)
-        for p in prompt
-    ]
-
-
-def _latex(value: sympy.Expr) -> str:
-    return str(sympy.latex(value))  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
 
 
 def _visual(visual: Visual | None) -> VisualOut | None:
@@ -137,16 +121,16 @@ def _problem(problem: Problem, explanations: Explanations | None) -> ProblemPrev
         misconceptions.append(
             MisconceptionOut(
                 key=m.key,
-                answer_latex=_latex(m.answer),
-                feedback=None if feedback is None else _prompt(feedback),
+                answer_latex=latex(m.answer),
+                feedback=None if feedback is None else prompt_out(feedback),
             )
         )
     return ProblemPreview(
         seed=problem.seed,
         tier=problem.tier,
-        prompt=_prompt(problem.prompt),
-        answer_latex=None if problem.choices is not None else _latex(problem.answer),
-        choices=None if problem.choices is None else [_prompt(c) for c in problem.choices],
+        prompt=prompt_out(problem.prompt),
+        answer_latex=answer_latex(problem),
+        choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
         correct_choice=problem.correct_choice,
         misconceptions=misconceptions,
     )
@@ -192,11 +176,13 @@ def skill_preview(
         if rendered is not None:
             lesson = LessonOut(
                 screens=[
-                    LessonScreenOut(title=s.title, body=_prompt(s.body), visual=_visual(s.visual))
+                    LessonScreenOut(
+                        title=s.title, body=prompt_out(s.body), visual=_visual(s.visual)
+                    )
                     for s in rendered.screens
                 ],
-                worked_prompt=_prompt(rendered.worked_prompt),
-                worked_steps=[_prompt(step) for step in rendered.worked_steps],
+                worked_prompt=prompt_out(rendered.worked_prompt),
+                worked_steps=[prompt_out(step) for step in rendered.worked_steps],
                 try_it_tier=rendered.try_it_tier,
                 try_it_seed=rendered.try_it_seed,
             )
@@ -204,7 +190,7 @@ def skill_preview(
     hints = None
     if (ladder := pack.hints.get(skill_id)) is not None:
         levels = _section("hints", errors, lambda: render_hints(ladder, focus))
-        hints = None if levels is None else [_prompt(level) for level in levels]
+        hints = None if levels is None else [prompt_out(level) for level in levels]
 
     approaches = None
     if explanations is not None:
@@ -213,7 +199,7 @@ def skill_preview(
         )
         if rendered_approaches is not None:
             approaches = [
-                ApproachOut(style=a.style, body=_prompt(a.body), visual=_visual(a.visual))
+                ApproachOut(style=a.style, body=prompt_out(a.body), visual=_visual(a.visual))
                 for a in rendered_approaches
             ]
 

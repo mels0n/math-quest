@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from mathquest.engine.checker.check import Verdict
 from mathquest.engine.mastery import SkillState
+from mathquest.engine.transport import PromptPartOut
 from mathquest.engine.types import KeypadProfile
 
 
@@ -20,13 +21,6 @@ class SessionOut(_Frozen):
     mode: Literal["adventure"]
     started_at: datetime
     problem_count: int
-
-
-class PromptPartOut(_Frozen):
-    """One part of a prompt: words shown as text, or a math expression as LaTeX."""
-
-    kind: Literal["text", "math"]
-    value: str
 
 
 class ProblemOut(_Frozen):

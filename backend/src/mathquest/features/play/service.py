@@ -78,7 +78,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-import sympy
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mathquest.engine.catalog import Catalog
@@ -98,17 +97,12 @@ from mathquest.engine.mastery import (
 )
 from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
 from mathquest.engine.templates import TemplateError
-from mathquest.engine.types import VARIANTS, KeypadProfile, Problem, Prompt, TextPart, Variant
+from mathquest.engine.transport import answer_latex, prompt_out
+from mathquest.engine.types import VARIANTS, KeypadProfile, Problem, Variant
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, ProblemInstance
-from mathquest.features.play.schema import (
-    AnswerOut,
-    MasteryOut,
-    ProblemOut,
-    PromptPartOut,
-    SessionOut,
-)
+from mathquest.features.play.schema import AnswerOut, MasteryOut, ProblemOut, SessionOut
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 
@@ -150,23 +144,9 @@ def _top_tier(catalog: Catalog, skill_id: str) -> int:
     return len(catalog.source(skill_id).tier_difficulties) - 1
 
 
-def _prompt_out(prompt: Prompt) -> list[PromptPartOut]:
-    return [
-        PromptPartOut(kind="text", value=part.text)
-        if isinstance(part, TextPart)
-        else PromptPartOut(kind="math", value=part.latex)
-        for part in prompt
-    ]
-
-
 def _keypad(problem: Problem, declared: KeypadProfile) -> KeypadProfile:
     """Choice buttons for a choice problem, else the skill's own keypad."""
     return "choice" if problem.choices is not None else declared
-
-
-def _answer_latex(problem: Problem) -> str | None:
-    """The answer as LaTeX; None for a choice problem, whose answer is an index."""
-    return None if problem.choices is not None else str(sympy.latex(problem.answer))
 
 
 @dataclass(frozen=True)
@@ -263,10 +243,10 @@ async def next_problem(
         problem_id=instance.id,
         skill_id=skill_id,
         skill_name=graph.skills[skill_id].name,
-        prompt=_prompt_out(problem.prompt),
+        prompt=prompt_out(problem.prompt),
         keypad=_keypad(problem, graph.skills[skill_id].keypad),
-        choices=None if problem.choices is None else [_prompt_out(c) for c in problem.choices],
-        dev_answer_latex=_answer_latex(problem) if expose_answers else None,
+        choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
+        dev_answer_latex=answer_latex(problem) if expose_answers else None,
         dev_answer_choice=problem.correct_choice if expose_answers else None,
     )
     await db.commit()
@@ -412,7 +392,7 @@ async def submit_answer(
             await db.commit()
         raise Conflict("problem_closed")
     given = _given(problem, latex, choice)
-    reveal = _Reveal(_answer_latex(problem), problem.correct_choice)
+    reveal = _Reveal(answer_latex(problem), problem.correct_choice)
     allowed = _allowed(problem)
     if instance.answered_at is not None:
         return await _stored(db, catalog, instance, attempts, reveal, received, allowed)
