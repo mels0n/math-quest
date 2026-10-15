@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
+import { fetchProblem } from './problems';
 
 /**
  * Taps each keypad profile's sample key sequences and checks the LaTeX the answer
@@ -39,8 +40,7 @@ async function signUp(page: Page) {
 async function serveKeypad(page: Page, keypad: string) {
 	await page.unroute('**/api/play/sessions/*/next');
 	await page.route('**/api/play/sessions/*/next', async (route) => {
-		const response = await route.fetch();
-		const body = (await response.json()) as Record<string, unknown>;
+		const { response, body } = await fetchProblem(page, route);
 		await route.fulfill({ response, json: { ...body, keypad } });
 	});
 }

@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { fetchProblem } from './problems';
 
 /**
  * Multiple-choice problems: answer buttons instead of a keypad. The real backend issues
@@ -35,8 +36,7 @@ async function signUp(page: Page) {
 async function serveChoices(page: Page) {
 	await page.unroute('**/api/play/sessions/*/next');
 	await page.route('**/api/play/sessions/*/next', async (route) => {
-		const response = await route.fetch();
-		const body = (await response.json()) as Record<string, unknown>;
+		const { response, body } = await fetchProblem(page, route);
 		await route.fulfill({
 			response,
 			json: { ...body, prompt: PROMPT, keypad: 'choice', choices: CHOICES }

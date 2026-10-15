@@ -29,6 +29,7 @@ export interface PromptPart {
 }
 
 export interface Problem {
+	type: 'problem';
 	problem_id: string;
 	skill_id: string;
 	skill_name: string;
@@ -36,7 +37,19 @@ export interface Problem {
 	keypad: KeypadProfile;
 	/** Set only for a multiple-choice problem, which is answered with a choice index. */
 	choices: PromptPart[][] | null;
+	/** The skill has a lesson the learner can replay. */
+	has_lesson: boolean;
 }
+
+/** Shown instead of a problem before the first problem of a skill with an unseen lesson. */
+export interface LessonDue {
+	type: 'lesson';
+	skill_id: string;
+	skill_name: string;
+}
+
+/** What asking for the next problem returns. */
+export type NextItem = Problem | LessonDue;
 
 /** What the learner sends: typed LaTeX, or the index of a choice. */
 export type Answer = { latex: string } | { choice: number };

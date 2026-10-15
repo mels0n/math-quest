@@ -23,5 +23,6 @@ export const PLAY_COPY = {
 	loading: 'Getting your quest ready',
 	rateLimited: 'Whoa, slow down!',
 	retry: 'Try again',
-	ok: 'OK'
+	ok: 'OK',
+	replayLesson: 'See the lesson again'
 } as const;

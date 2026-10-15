@@ -8,6 +8,7 @@ interface NextBody {
 }
 
 const isNext = (r: Response) => r.url().includes('/next') && r.request().method() === 'POST';
+const isTry = (r: Response) => r.url().endsWith('/try') && r.request().method() === 'POST';
 
 async function tapPin(page: Page, pin: string) {
 	for (const d of pin) {
@@ -52,10 +53,43 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 	expect(firstWord.length).toBeGreaterThan(2);
 
 	const firstNext = page.waitForResponse(isNext);
+	const firstTry = page.waitForResponse(isTry);
 	await page.getByRole('button', { name: 'I wrote it down' }).click();
 	await expect(page).toHaveURL(/\/play$/);
 
-	let next = (await (await firstNext).json()) as NextBody;
+	// A new player meets the first skill's lesson before its first problem.
+	expect(((await (await firstNext).json()) as { type: string }).type).toBe('lesson');
+	const lesson = page.getByTestId('lesson');
+	await expect(lesson).toBeVisible();
+	const dots = lesson.getByRole('list', { name: /^Page \d+ of \d+$/ });
+	const pages = Number((await dots.getAttribute('aria-label'))?.split(' of ')[1]);
+	expect(pages).toBeGreaterThanOrEqual(4);
+	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/lesson-first.png`, fullPage: true });
+	for (let i = 1; i <= pages - 2; i += 1) {
+		await expect(dots).toHaveAttribute('aria-label', `Page ${i} of ${pages}`);
+		await expect(lesson.getByTestId('lesson-body')).toBeVisible();
+		await lesson.getByRole('button', { name: 'Next', exact: true }).click();
+	}
+	// The worked example shows one step at a time.
+	const steps = lesson.getByTestId('worked-steps').locator('li');
+	await expect(steps).toHaveCount(1);
+	const show = lesson.getByRole('button', { name: 'Show the next step' });
+	for (let shown = 1; await show.isVisible(); shown += 1) {
+		await show.click();
+		await expect(steps).toHaveCount(shown + 1);
+	}
+	await lesson.getByRole('button', { name: 'Next', exact: true }).click();
+	await expect(dots).toHaveAttribute('aria-label', `Page ${pages} of ${pages}`);
+	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/lesson-try.png`, fullPage: true });
+	const practice = (await (await firstTry).json()) as { dev_answer_latex: string };
+	await typeAnswer(page, practice.dev_answer_latex);
+	await expect(page.getByTestId('feedback')).toHaveText("That's right!");
+	// The try-it is not a solved problem.
+	await expect(page.getByTestId('solved')).toContainText('0');
+
+	const afterLesson = page.waitForResponse(isNext);
+	await page.getByRole('button', { name: 'Start playing' }).click();
+	let next = (await (await afterLesson).json()) as NextBody;
 	for (let round = 0; round < 3; round += 1) {
 		expect(next.dev_answer_latex).toBeTruthy();
 		const answer = next.dev_answer_latex as string;
@@ -106,7 +140,8 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 	await tapPin(page, '1234');
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
 	await expect(page).toHaveURL(/\/play$/);
-	await expect(page.getByTestId('prompt')).toBeVisible();
+	// The next skill may open with its own lesson.
+	await expect(page.getByTestId('prompt').or(page.getByTestId('lesson'))).toBeVisible();
 	// The star total is the saved one, not a per-page counter.
 	await expect(page.getByTestId('solved')).toHaveText(/\b3$/);
 
@@ -123,5 +158,5 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 	expect((await newWord.innerText()).trim()).not.toBe(firstWord);
 	await page.getByRole('button', { name: 'I wrote it down' }).click();
 	await expect(page).toHaveURL(/\/play$/);
-	await expect(page.getByTestId('prompt')).toBeVisible();
+	await expect(page.getByTestId('prompt').or(page.getByTestId('lesson'))).toBeVisible();
 });

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
+import { fetchProblem } from './problems';
 
 /**
  * Long prompts must wrap and fit the card at phone and desktop widths, with no
@@ -70,8 +71,9 @@ async function signUp(page: Page) {
 async function servePrompts(page: Page, prompts: PromptPart[][], answers: string[]) {
 	await page.unroute('**/api/play/sessions/*/next');
 	await page.route('**/api/play/sessions/*/next', async (route) => {
-		const response = await route.fetch();
-		const body = (await response.json()) as NextBody;
+		const fetched = await fetchProblem(page, route);
+		const response = fetched.response;
+		const body = fetched.body as unknown as NextBody;
 		answers.push(body.dev_answer_latex ?? '');
 		const prompt = prompts.shift();
 		await route.fulfill({ response, json: prompt ? { ...body, prompt } : body });
