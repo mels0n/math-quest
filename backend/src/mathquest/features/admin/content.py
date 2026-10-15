@@ -9,7 +9,12 @@ same seed and tier, plus the answers.
 from collections.abc import Callable
 
 from mathquest.engine.catalog import Catalog, SkillSource
-from mathquest.engine.content.coverage import SkillCoverage, pack_coverage, skill_coverage
+from mathquest.engine.content.coverage import (
+    TARGETS,
+    SkillCoverage,
+    pack_coverage,
+    skill_coverage,
+)
 from mathquest.engine.content.schema import Explanations, Visual
 from mathquest.engine.teaching import (
     render_explanations,
@@ -52,6 +57,7 @@ def _coverage(coverage: SkillCoverage) -> SkillCoverageOut:
         name=coverage.name,
         tiers=coverage.tiers,
         misconceptions=coverage.misconceptions,
+        feedback=coverage.feedback,
         word_templates=coverage.word_templates,
         bank_items=coverage.bank_items,
         lesson=coverage.lesson,
@@ -70,6 +76,7 @@ def overview(catalog: Catalog) -> ContentOverview:
     pack = catalog.pack
     coverage = pack_coverage(pack, _registry(catalog))
     return ContentOverview(
+        targets=dict(TARGETS),
         packs=[
             PackOut(
                 id=pack.id,
@@ -87,7 +94,7 @@ def overview(catalog: Catalog) -> ContentOverview:
                     for r in coverage.regions
                 ],
             )
-        ]
+        ],
     )
 
 

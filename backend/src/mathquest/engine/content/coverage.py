@@ -1,8 +1,9 @@
 """How much content each skill has, against the per-skill targets.
 
-Targets per skill: a generator with at least 3 tiers and at least 2 misconceptions; at
-least 15 word templates when word problems fit the skill; at least 30 bank items when
-the skill is banked; one lesson; three hints; three or four explanations.
+Targets per skill: a generator with at least 3 tiers and at least 2 misconceptions,
+with feedback written for every misconception it names; at least 15 word templates when
+word problems fit the skill; at least 30 bank items when the skill is banked; one
+lesson; three hints; three or four explanations.
 
 The numbers are the same everywhere they are shown: the coverage report, the content
 lint (where gaps in a complete region are errors) and the admin preview. The generator
@@ -21,6 +22,18 @@ MIN_WORD_TEMPLATES = 15
 MIN_BANK_ITEMS = 30
 HINT_LEVELS = 3
 MIN_EXPLANATIONS = 3
+MAX_EXPLANATIONS = 4
+
+TARGETS = {
+    "tiers": f"{MIN_TIERS}+",
+    "misconceptions": f"{MIN_MISCONCEPTIONS}+",
+    "word templates": f"{MIN_WORD_TEMPLATES}+",
+    "bank items": f"{MIN_BANK_ITEMS}+",
+    "lesson": "1",
+    "hints": str(HINT_LEVELS),
+    "explanations": f"{MIN_EXPLANATIONS}-{MAX_EXPLANATIONS}",
+}
+"""Each target as shown to people; misconception feedback is one per misconception."""
 
 
 @dataclass(frozen=True)
@@ -42,6 +55,8 @@ class SkillCoverage:
     region: str
     tiers: int
     misconceptions: int
+    feedback: int
+    """Misconceptions of the generator that have feedback written."""
     word_templates: int | None
     """None when word problems do not fit the skill."""
     bank_items: int | None
@@ -78,7 +93,8 @@ class PackCoverage:
 
 def skill_coverage(pack: Pack, skill: Skill, generator: Generator | None) -> SkillCoverage:
     tiers = len(skill.tiers) if generator is None else len(generator.tier_difficulties)
-    misconceptions = 0 if generator is None else len(generator.misconception_keys)
+    keys = () if generator is None else generator.misconception_keys
+    misconceptions = len(keys)
     word = pack.word_problems.get(skill.id)
     bank = pack.bank.get(skill.id)
     hints = pack.hints.get(skill.id)
@@ -98,6 +114,9 @@ def skill_coverage(pack: Pack, skill: Skill, generator: Generator | None) -> Ski
     lesson = skill.id in pack.lessons
     hint_count = 0 if hints is None else len(hints.levels)
     explanation_count = 0 if explanations is None else len(explanations.approaches)
+    written = {} if explanations is None else explanations.misconceptions
+    feedback = sum(1 for key in keys if key in written)
+    counts["misconception feedback"] = (feedback, misconceptions)
     counts["lesson"] = (int(lesson), 1)
     counts["hints"] = (hint_count, HINT_LEVELS)
     counts["explanations"] = (explanation_count, MIN_EXPLANATIONS)
@@ -107,6 +126,7 @@ def skill_coverage(pack: Pack, skill: Skill, generator: Generator | None) -> Ski
         region=skill.region,
         tiers=tiers,
         misconceptions=misconceptions,
+        feedback=feedback,
         word_templates=word_templates,
         bank_items=bank_items,
         lesson=lesson,

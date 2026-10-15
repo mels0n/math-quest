@@ -17,11 +17,10 @@ def test_coverage_counts_and_gaps(tmp_path: Path) -> None:
     (region,) = coverage.regions
     assert (region.region_id, region.complete) == ("meadow", False)
     (skill,) = region.skills
-    assert (skill.tiers, skill.misconceptions) == (3, 1)
+    assert (skill.tiers, skill.misconceptions, skill.feedback) == (3, 2, 2)
     assert (skill.word_templates, skill.bank_items) == (3, 2)
     assert (skill.lesson, skill.hints, skill.explanations) == (True, 3, 3)
     assert skill.gaps == (
-        Gap("misconceptions", 1, 2),
         Gap("word templates", 3, 15),
         Gap("bank items", 2, 30),
     )
@@ -33,7 +32,15 @@ def test_coverage_leaves_out_word_and_bank_targets_when_flags_are_off(tmp_path: 
     del files["word_problems/alpha.yaml"], files["bank/alpha.yaml"]
     (skill,) = pack_coverage(load(tmp_path, files), all_generators()).skills()
     assert (skill.word_templates, skill.bank_items) == (None, None)
-    assert [g.field for g in skill.gaps] == ["misconceptions"]
+    assert skill.gaps == ()
+
+
+def test_a_mistake_without_feedback_is_a_gap(tmp_path: Path) -> None:
+    files = base()
+    del files["explanations/alpha.yaml"]["misconceptions"]["counted_start"]
+    (skill,) = pack_coverage(load(tmp_path, files), all_generators()).skills()
+    assert skill.feedback == 1
+    assert Gap("misconception feedback", 1, 2) in skill.gaps
 
 
 def test_missing_teaching_is_a_gap(tmp_path: Path) -> None:
@@ -47,8 +54,8 @@ def test_report_markdown_for_the_real_pack(capsys: pytest.CaptureFixture[str]) -
     assert content_report.main([str(CONTENT / "packs" / "k8-core")]) == 0
     out = capsys.readouterr().out
     assert "## Number Meadows (in progress)" in out
-    assert "| `add_within_20` | 3/3 |" in out
-    assert "15/15" in out
+    row = "| 3 / 3+ | 2 / 2+ | 2 / 2 | 15 / 15+ | n/a | yes | 3 / 3 | 4 / 3-4 | done |"
+    assert f"| `add_within_20` {row}" in out
     assert "## Totals" in out
     assert "Stuck" not in out
 

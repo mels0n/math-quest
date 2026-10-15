@@ -24,12 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from mathquest.cli.content_lint import pack_dirs
 from mathquest.engine.content import ContentError, load_pack
 from mathquest.engine.content.coverage import (
-    HINT_LEVELS,
-    MIN_BANK_ITEMS,
-    MIN_EXPLANATIONS,
-    MIN_MISCONCEPTIONS,
-    MIN_TIERS,
-    MIN_WORD_TEMPLATES,
+    TARGETS,
     PackCoverage,
     SkillCoverage,
     pack_coverage,
@@ -58,21 +53,24 @@ def read_stuck(path: Path) -> Counter[str]:
     return Counter(entry.skill for entry in entries)
 
 
-def _have(have: int, want: int) -> str:
-    mark = "" if have >= want else " ⚠"
-    return f"{have}/{want}{mark}"
+def _cell(skill: SkillCoverage, field: str, have: int | None, target: str) -> str:
+    if have is None:
+        return "n/a"
+    short = any(g.field == field for g in skill.gaps)
+    return f"{have} / {target}" + (" ⚠" if short else "")
 
 
 def _row(skill: SkillCoverage, stuck: Counter[str] | None) -> str:
     cells = [
         f"`{skill.skill_id}`",
-        _have(skill.tiers, MIN_TIERS),
-        _have(skill.misconceptions, MIN_MISCONCEPTIONS),
-        "n/a" if skill.word_templates is None else _have(skill.word_templates, MIN_WORD_TEMPLATES),
-        "n/a" if skill.bank_items is None else _have(skill.bank_items, MIN_BANK_ITEMS),
+        _cell(skill, "tiers", skill.tiers, TARGETS["tiers"]),
+        _cell(skill, "misconceptions", skill.misconceptions, TARGETS["misconceptions"]),
+        _cell(skill, "misconception feedback", skill.feedback, str(skill.misconceptions)),
+        _cell(skill, "word templates", skill.word_templates, TARGETS["word templates"]),
+        _cell(skill, "bank items", skill.bank_items, TARGETS["bank items"]),
         "yes" if skill.lesson else "no ⚠",
-        _have(skill.hints, HINT_LEVELS),
-        _have(skill.explanations, MIN_EXPLANATIONS),
+        _cell(skill, "hints", skill.hints, TARGETS["hints"]),
+        _cell(skill, "explanations", skill.explanations, TARGETS["explanations"]),
     ]
     if stuck is not None:
         cells.append(str(stuck.get(skill.skill_id, 0)))
@@ -82,7 +80,10 @@ def _row(skill: SkillCoverage, stuck: Counter[str] | None) -> str:
 
 
 def markdown(coverage: PackCoverage, stuck: Counter[str] | None = None) -> str:
-    head = ["Skill", "Tiers", "Misconceptions", "Word", "Bank", "Lesson", "Hints", "Explanations"]
+    head = [
+        "Skill", "Tiers", "Mistakes", "Feedback", "Word", "Bank", "Lesson", "Hints",
+        "Explanations",
+    ]  # fmt: skip
     if stuck is not None:
         head.append("Stuck")
     head.append("Status")

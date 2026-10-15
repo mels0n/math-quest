@@ -26,6 +26,7 @@ class SkillCoverageOut(_Frozen):
     name: str
     tiers: int
     misconceptions: int
+    feedback: int
     word_templates: int | None
     bank_items: int | None
     lesson: bool
@@ -53,6 +54,8 @@ class PackOut(_Frozen):
 
 class ContentOverview(_Frozen):
     packs: list[PackOut]
+    targets: dict[str, str]
+    """Each coverage target as shown, such as "3-4" for explanations."""
 
 
 class VisualOut(_Frozen):
