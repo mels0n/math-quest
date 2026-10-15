@@ -163,7 +163,12 @@ Answer = Callable[[random.Random, int, int], bool]
 
 
 def _play(
-    answer: Answer, problems: int, seed: int = 0, base: float = 0.0
+    answer: Answer,
+    problems: int,
+    seed: int = 0,
+    base: float = 0.0,
+    seconds: Callable[[int], float] = lambda n: 1.0,
+    fluency: bool = True,
 ) -> tuple[list[int], int | None]:
     """Play one skill with the engine choosing tiers; returns the tiers shown and the
     problem number on which the skill was first mastered (None if never)."""
@@ -175,7 +180,7 @@ def _play(
     for n in range(1, problems + 1):
         tier = choose_tier(r, tiers)
         correct = answer(rng, tier, n)
-        r = update(r, tiers[tier], Outcome(correct, 0, 1.0, True, tier), tiers[2])
+        r = update(r, tiers[tier], Outcome(correct, 0, seconds(n), fluency, tier), tiers[2])
         shown.append(tier)
         if mastered_on is None and is_mastered(r, tiers[2]):
             mastered_on = n
@@ -198,9 +203,26 @@ def test_perfect_learner_reaches_top_tier_by_4_and_masters_by_6_to_8(base: float
     assert 6 <= mastered_on <= 8
 
 
-@pytest.mark.parametrize("streak", [4, 10, 20])
-def test_one_top_tier_miss_drops_a_tier_after_any_streak(streak: int) -> None:
-    shown, _ = _play(lambda rng, tier, n: n <= streak, streak + 2)
+def _fast(n: int) -> float:
+    return 1.0
+
+
+def _slow_after_4(n: int) -> float:
+    # Answering slowly from the start holds a fluency skill on the middle tier (a slow
+    # answer scores 0.75), so the top tier is reached fast and then answered slowly.
+    return 1.0 if n <= 4 else 9.0
+
+
+@pytest.mark.parametrize("streak", [4, 10, 20, 60])
+@pytest.mark.parametrize(
+    ("seconds", "fluency"),
+    [(_fast, True), (_slow_after_4, True), (_slow_after_4, False)],
+    ids=["fast-fluency", "slow-fluency", "slow-concept"],
+)
+def test_one_top_tier_miss_drops_a_tier_after_any_streak(
+    streak: int, seconds: Callable[[int], float], fluency: bool
+) -> None:
+    shown, _ = _play(lambda rng, tier, n: n <= streak, streak + 2, seconds=seconds, fluency=fluency)
     assert shown[streak] == 2  # the missed problem was on the top tier
     assert shown[streak + 1] < 2
 
@@ -231,15 +253,16 @@ def _mastery_rate(accuracy: float, seeds: int = 1000) -> float:
 
 @pytest.mark.parametrize(
     ("accuracy", "bound"),
-    # Measured over 4000 seeds: 0.024, 0.059 and 0.140.
-    [(0.60, 0.05), (0.65, 0.10), (0.70, 0.20)],
+    # Measured: 0.027, 0.056 and 0.137 over these 1000 seeds (0.024, 0.059 and 0.140
+    # over 4000).
+    [(0.60, 0.04), (0.65, 0.08), (0.70, 0.16)],
 )
 def test_mixed_accuracy_rarely_masters(accuracy: float, bound: float) -> None:
     assert _mastery_rate(accuracy) <= bound
 
 
 def test_ninety_percent_accuracy_masters_almost_always() -> None:
-    # Measured over 4000 seeds: 0.979.
+    # Measured: 0.983 over these 1000 seeds (0.979 over 4000).
     assert _mastery_rate(0.90) >= 0.90
 
 
