@@ -188,14 +188,14 @@ export interface PreviewParams {
 	tier?: number;
 }
 
-/** Largest seed the preview accepts. */
-export const MAX_PREVIEW_SEED = 2 ** 31 - 1;
+/** Largest seed the preview accepts: the largest integer a JavaScript number holds exactly. */
+export const MAX_PREVIEW_SEED = Number.MAX_SAFE_INTEGER;
 
 /** A seed typed by the admin: a whole number in range, or undefined for the sample seeds. */
 export function parseSeed(raw: string): number | undefined | null {
 	const trimmed = raw.trim();
 	if (trimmed === '') return undefined;
-	if (!/^[0-9]{1,10}$/.test(trimmed)) return null;
+	if (!/^[0-9]{1,16}$/.test(trimmed)) return null;
 	const seed = Number(trimmed);
 	return seed <= MAX_PREVIEW_SEED ? seed : null;
 }

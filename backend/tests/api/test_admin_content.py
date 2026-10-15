@@ -90,6 +90,8 @@ async def test_skill_preview_renders_every_item_with_answers(
         assert sample["answer_latex"] == problem["answer_latex"]
         assert all("{" not in part["value"] for part in sample["prompt"])
     assert data["bank_items"] == []
+    top = await h.client.get("/api/admin/content/skills/add_within_20", params={"seed": 2**53 - 1})
+    assert top.status_code == 200 and top.json()["seeds"] == [2**53 - 1]
 
 
 async def test_skill_preview_defaults_to_sample_seeds(api: ApiFactory, password_file: Path) -> None:
@@ -115,6 +117,7 @@ async def test_skill_without_teaching_content(api: ApiFactory, password_file: Pa
         ("/api/admin/content/skills/add_within_20", {"tier": 3}, 422),
         ("/api/admin/content/skills/add_within_20", {"tier": -1}, 422),
         ("/api/admin/content/skills/add_within_20", {"seed": -1}, 422),
+        ("/api/admin/content/skills/add_within_20", {"seed": 2**53}, 422),
         ("/api/admin/content/skills/Bad-Id", {}, 422),
     ],
 )

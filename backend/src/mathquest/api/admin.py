@@ -163,7 +163,7 @@ async def set_signup_word(body: SignupWordIn, session: CurrentAdmin, db: Db) -> 
     return Done()
 
 
-MAX_SEED = 2**31 - 1
+MAX_SEED = 2**53 - 1  # the largest seed a browser can hold exactly
 MAX_TIER = 20
 
 

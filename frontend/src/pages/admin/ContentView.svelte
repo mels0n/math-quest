@@ -3,6 +3,7 @@
 	import { ApiError } from '../../shared/api';
 	import { MathStatic, PromptView, RichText } from '../../shared/ui';
 	import {
+		MAX_PREVIEW_SEED,
 		adminErrorMessage,
 		coverageCell,
 		getContent,
@@ -44,7 +45,7 @@
 	async function open(skillId: string, focus = false) {
 		const seed = parseSeed(seedText);
 		if (seed === null) {
-			previewError = 'The seed is a whole number from 0 to 2147483647, or blank.';
+			previewError = `The seed is a whole number from 0 to ${MAX_PREVIEW_SEED}, or blank.`;
 			return;
 		}
 		const mine = ++seq;
@@ -222,7 +223,7 @@
 				</label>
 				<label class="grow">
 					Seed (blank for samples)
-					<input type="text" inputmode="numeric" maxlength="10" bind:value={seedText} />
+					<input type="text" inputmode="numeric" maxlength="16" bind:value={seedText} />
 				</label>
 				<button type="submit" disabled={previewBusy}>Show</button>
 				<button type="button" class="ghost" disabled={previewBusy} onclick={resample}

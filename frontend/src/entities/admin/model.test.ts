@@ -107,8 +107,10 @@ describe('content preview helpers', () => {
 		expect(parseSeed('')).toBeUndefined();
 		expect(parseSeed(' 42 ')).toBe(42);
 		expect(parseSeed('0')).toBe(0);
-		expect(parseSeed('2147483647')).toBe(2147483647);
-		expect(parseSeed('2147483648')).toBeNull();
+		expect(parseSeed('2147483648')).toBe(2147483648);
+		expect(parseSeed('9007199254740991')).toBe(9007199254740991);
+		expect(parseSeed('9007199254740992')).toBeNull();
+		expect(parseSeed('12345678901234567')).toBeNull();
 		expect(parseSeed('-1')).toBeNull();
 		expect(parseSeed('1e3')).toBeNull();
 	});
