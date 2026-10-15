@@ -72,7 +72,7 @@ from mathquest.engine.mastery import (
     predict,
     update,
 )
-from mathquest.engine.scheduler import pick_skill
+from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
 from mathquest.engine.skillgraph import SkillGraph
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
@@ -83,6 +83,8 @@ from mathquest.shared.errors import Conflict, NotFound
 MAX_ATTEMPTS = 3
 FREE_VERDICTS = 3
 STORED_LATEX_MAX = 200
+# Room for a whole run plus the reviews (every fifth problem) that can sit inside it.
+RECENT_LOOKBACK = RUN_LENGTH * 2 + 2
 _SEED_LIMIT = 2**62
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
 
@@ -162,7 +164,8 @@ async def next_problem(
     ratings = {sid: _rating(by_skill.get(sid), sid) for sid in graph.skills}
     mastered = {r.skill_id for r in rows if r.state == SkillState.MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
-    skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count)
+    recent = await problems.recent_skill_ids(db, session_id, limit=RECENT_LOOKBACK)
+    skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count, recent)
     generator = get_generator(skill_id)
     tier = choose_tier(ratings[skill_id], generator.tier_difficulties)
     seed = secrets.randbelow(_SEED_LIMIT)

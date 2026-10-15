@@ -309,6 +309,24 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
     assert again.problem_id != problem.problem_id
 
 
+async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    skills: list[str] = []
+    for _ in range(4):
+        problem = await service.next_problem(
+            db, GRAPH, pid, session.session_id, expose_answers=True
+        )
+        skills.append(problem.skill_id)
+        await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+
+    assert skills[0] == skills[1] == skills[2]
+    assert skills[3] != skills[0]
+    recent = await problems.recent_skill_ids(db, session.session_id, limit=3)
+    assert recent == skills[1:]
+    assert service.RECENT_LOOKBACK == 8
+
+
 async def _master(db: AsyncSession, pid: uuid.UUID, session_id: uuid.UUID, skill_id: str) -> int:
     """Answer correctly at the engine's chosen tier until mastered; returns the answer count."""
     tiers = get_generator(skill_id).tier_difficulties

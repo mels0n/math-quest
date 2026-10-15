@@ -162,6 +162,17 @@ async def attempts_for(db: AsyncSession, problem_id: uuid.UUID) -> list[Attempt]
     return list(result.scalars().all())
 
 
+async def recent_skill_ids(db: AsyncSession, session_id: uuid.UUID, *, limit: int) -> list[str]:
+    """Skill ids of the session's last `limit` problems, newest last."""
+    result = await db.execute(
+        select(ProblemInstance.skill_id)
+        .where(ProblemInstance.session_id == session_id)
+        .order_by(ProblemInstance.issued_at.desc())
+        .limit(limit)
+    )
+    return list(reversed(result.scalars().all()))
+
+
 async def close_open(db: AsyncSession, session_id: uuid.UUID, at: datetime) -> None:
     """Close the session's unanswered problems: answered_at set, correct left NULL."""
     await db.execute(
