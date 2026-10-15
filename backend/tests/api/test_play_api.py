@@ -1,11 +1,14 @@
 """Play routes. Most tests swap in an in-process checker; one uses the real worker pool."""
 
 import uuid
+from pathlib import Path
 
 import httpx
 
+from mathquest.engine.catalog import build_catalog
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, check
+from mathquest.engine.content import load_pack, load_slots
 from mathquest.engine.types import Problem
 from tests.conftest import SIGNUP_WORD, Api, ApiFactory
 
@@ -70,7 +73,9 @@ async def test_next_problem_hides_answer(api: ApiFactory) -> None:
         "skill_name",
         "prompt",
         "keypad",
+        "choices",
         "dev_answer_latex",
+        "dev_answer_choice",
     }
     assert body["prompt"]
     for part in body["prompt"]:
@@ -79,6 +84,7 @@ async def test_next_problem_hides_answer(api: ApiFactory) -> None:
         assert part["value"]
     assert body["keypad"] in ("numpad", "fraction")
     assert body["dev_answer_latex"] is None
+    assert body["dev_answer_choice"] is None
 
 
 async def test_dev_answers_off_by_default(api: ApiFactory) -> None:
@@ -209,3 +215,64 @@ async def test_next_problem_is_limited_to_120_per_player_per_minute(api: ApiFact
     r = await _next(h.client, session_id)
     assert r.status_code == 429
     assert int(r.headers["retry-after"]) > 0
+
+
+FIXTURE = build_catalog(
+    load_pack(Path(__file__).resolve().parents[1] / "fixtures" / "packs" / "test-pack"),
+    load_slots(Path(__file__).resolve().parents[2] / "content" / "slots.yaml"),
+)
+
+
+async def _choose(client: httpx.AsyncClient, problem_id: str, body: object) -> httpx.Response:
+    return await client.post(f"/api/play/problems/{problem_id}/answer", json=body, headers=CSRF)
+
+
+async def test_choice_answer_round_trip(api: ApiFactory) -> None:
+    h = await _api(api, dev_expose_answers=True)
+    h.app.state.catalog = FIXTURE  # every problem of this pack starts as a choice item
+    problem = (await _next(h.client, await _start(h.client))).json()
+    assert problem["keypad"] == "choice"
+    assert problem["dev_answer_latex"] is None
+    choices = problem["choices"]
+    assert len(choices) >= 2
+    assert all(part["kind"] in ("text", "math") for choice in choices for part in choice)
+    right = problem["dev_answer_choice"]
+    wrong = (right + 1) % len(choices)
+    pid = problem["problem_id"]
+
+    for bad in (
+        {"choice": len(choices)},
+        {"choice": -1},
+        {"choice": True},
+        {"choice": "1"},
+        {"latex": "1"},
+        {"latex": "1", "choice": right},
+        {},
+    ):
+        r = await _choose(h.client, pid, bad)
+        assert r.status_code == 422, bad
+
+    miss = (await _choose(h.client, pid, {"choice": wrong})).json()
+    assert miss["verdict"] == "incorrect"
+    assert miss["attempts_left"] == 2
+    assert miss["answer_choice"] is None
+
+    hit = (await _choose(h.client, pid, {"choice": right})).json()
+    assert hit["verdict"] == "correct"
+    assert hit["solved"] is True
+    assert hit["answer_choice"] == right
+    assert hit["answer_latex"] is None
+
+    again = await _choose(h.client, pid, {"choice": right})
+    assert again.status_code == 200
+    assert again.json()["solved"] is True
+    assert again.json()["total_solved"] == 1
+
+
+async def test_a_choice_for_a_typed_problem_is_422(api: ApiFactory) -> None:
+    h = await _api(api)
+    problem = (await _next(h.client, await _start(h.client))).json()
+    assert problem["choices"] is None
+    r = await _choose(h.client, problem["problem_id"], {"choice": 0})
+    assert r.status_code == 422
+    assert r.json() == {"error": "latex_expected"}

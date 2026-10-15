@@ -30,12 +30,17 @@ class PromptPartOut(_Frozen):
 
 
 class ProblemOut(_Frozen):
+    """An issued problem. ``choices`` is set (and ``keypad`` is "choice") only for a
+    multiple-choice problem, which is answered with a choice index."""
+
     problem_id: uuid.UUID
     skill_id: str
     skill_name: str
     prompt: list[PromptPartOut]
     keypad: KeypadProfile
+    choices: list[list[PromptPartOut]] | None = None
     dev_answer_latex: str | None = None
+    dev_answer_choice: int | None = None
 
 
 class MasteryOut(_Frozen):
@@ -51,4 +56,5 @@ class AnswerOut(_Frozen):
     attempts_left: int
     mastery: MasteryOut
     answer_latex: str | None = None
+    answer_choice: int | None = None
     total_solved: int

@@ -147,3 +147,12 @@ def check(problem: Problem, latex: str) -> CheckResult:
         return CheckResult(Verdict.INCORRECT)
     except Exception:
         return CheckResult(Verdict.UNREADABLE)
+
+
+def check_choice(problem: Problem, choice: int) -> CheckResult:
+    """Judge a multiple-choice answer by its index. Nothing is parsed."""
+    if problem.correct_choice is None:
+        return CheckResult(Verdict.UNREADABLE)
+    if choice == problem.correct_choice:
+        return CheckResult(Verdict.CORRECT)
+    return CheckResult(Verdict.INCORRECT)

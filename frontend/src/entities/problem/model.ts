@@ -34,7 +34,12 @@ export interface Problem {
 	skill_name: string;
 	prompt: PromptPart[];
 	keypad: KeypadProfile;
+	/** Set only for a multiple-choice problem, which is answered with a choice index. */
+	choices: PromptPart[][] | null;
 }
+
+/** What the learner sends: typed LaTeX, or the index of a choice. */
+export type Answer = { latex: string } | { choice: number };
 
 export interface Mastery {
 	skill_id: string;
@@ -49,6 +54,8 @@ export interface AnswerResult {
 	attempts_left: number;
 	mastery: Mastery;
 	answer_latex: string | null;
+	/** The right choice's index, revealed once a choice problem is scored. */
+	answer_choice: number | null;
 	/** The player's saved count of solved problems after this answer. */
 	total_solved: number;
 }

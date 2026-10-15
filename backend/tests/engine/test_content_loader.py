@@ -449,3 +449,12 @@ def test_repeated_name_rejected(tmp_path: Path) -> None:
     path.write_text(yaml.safe_dump(data), encoding="utf-8")
     with pytest.raises(ContentError, match="duplicate name"):
         load_slots(path)
+
+
+def test_bank_answer_must_be_in_the_skill_form(tmp_path: Path) -> None:
+    files = _mutated(["bank/beta.yaml", "items", 1, "answer", "value"], r"\frac{8}{2}")
+    pack = _load(tmp_path, files)
+    with pytest.raises(
+        ContentError, match=r"^bank/beta\.yaml: items\[1\]\.answer\.value: not in the skill's"
+    ):
+        build_catalog(pack, SLOTS)

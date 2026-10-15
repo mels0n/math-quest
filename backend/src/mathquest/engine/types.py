@@ -57,8 +57,13 @@ class Problem:
     """A generated problem.
 
     ``values`` holds the named numbers the generator chose (for hint and word-problem
-    templates). ``variant`` and ``template_id`` say how the prompt is presented: today
-    every problem is the "bare" variant with no template.
+    templates). ``variant`` and ``template_id`` say how the prompt is presented: the
+    bare generator prompt, a word-problem template, or a bank item (``template_id`` is
+    then the item id).
+
+    A multiple-choice bank item carries ``choices`` (each a prompt) and
+    ``correct_choice``, the index of the right one in the order shown; its ``answer``
+    is that index as an Integer and is never compared as math.
     """
 
     skill_id: str
@@ -72,6 +77,8 @@ class Problem:
     values: Mapping[str, int | str] = field(default_factory=dict[str, int | str], hash=False)
     variant: Variant = "bare"
     template_id: str | None = None
+    choices: tuple[Prompt, ...] | None = None
+    correct_choice: int | None = None
 
 
 class Generator(Protocol):

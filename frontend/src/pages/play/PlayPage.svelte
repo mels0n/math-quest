@@ -9,7 +9,7 @@
 		startSession,
 		submitAnswer
 	} from '../../entities/problem';
-	import type { Mastery, Problem } from '../../entities/problem';
+	import type { Answer, Mastery, Problem } from '../../entities/problem';
 	import { fetchMe, logout } from '../../entities/player';
 	import type { Player } from '../../entities/player';
 	import { ERROR_COPY } from '../../shared/api';
@@ -25,6 +25,7 @@
 	let feedback = $state<CardFeedback | null>(null);
 	let mastery = $state<Mastery | null>(null);
 	let revealedLatex = $state<string | null>(null);
+	let revealedChoice = $state<number | null>(null);
 	let finished = $state(false);
 	let busy = $state(false);
 	/** The saved total from the server, the same on every device. */
@@ -61,6 +62,7 @@
 			feedback = null;
 			mastery = null;
 			revealedLatex = null;
+			revealedChoice = null;
 			finished = false;
 			notice = null;
 		} catch (err) {
@@ -84,11 +86,11 @@
 		await loadNext();
 	}
 
-	async function submit(latex: string) {
+	async function submit(answer: Answer) {
 		if (!problem || busy) return;
 		busy = true;
 		try {
-			const result = await submitAnswer(problem.problem_id, latex);
+			const result = await submitAnswer(problem.problem_id, answer);
 			notice = null;
 			mastery = result.mastery;
 			attemptsLeft = result.attempts_left;
@@ -96,9 +98,10 @@
 			if (result.solved) {
 				feedback = { tone: 'good', text: feedbackMessage(result.verdict, result.misconception) };
 				finished = true;
-			} else if (result.answer_latex !== null) {
+			} else if (result.answer_latex !== null || result.answer_choice !== null) {
 				feedback = { tone: 'info', text: PLAY_COPY.revealed };
 				revealedLatex = result.answer_latex;
+				revealedChoice = result.answer_choice;
 				finished = true;
 			} else {
 				const verdict = result.verdict;
@@ -158,6 +161,7 @@
 			{feedback}
 			{mastery}
 			{revealedLatex}
+			{revealedChoice}
 			{finished}
 			{busy}
 			onSubmit={submit}

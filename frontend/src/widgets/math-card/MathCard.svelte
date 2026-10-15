@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { AnswerField } from '../../features/answer';
+	import { AnswerField, ChoiceField } from '../../features/answer';
 	import { MAX_ATTEMPTS, keypadProfile } from '../../entities/problem';
-	import type { Mastery, Problem } from '../../entities/problem';
+	import type { Answer, Mastery, Problem } from '../../entities/problem';
 	import { MathStatic, PixelButton, PromptView, ProgressBar } from '../../shared/ui';
 	import type { CardFeedback } from './card-feedback';
 
@@ -11,6 +11,7 @@
 		feedback,
 		mastery,
 		revealedLatex,
+		revealedChoice = null,
 		finished,
 		busy,
 		onSubmit,
@@ -21,17 +22,36 @@
 		feedback: CardFeedback | null;
 		mastery: Mastery | null;
 		revealedLatex: string | null;
+		revealedChoice?: number | null;
 		finished: boolean;
 		busy: boolean;
-		onSubmit: (latex: string) => void;
+		onSubmit: (answer: Answer) => void;
 		onNext: () => void;
 	} = $props();
 
 	let answer: ReturnType<typeof AnswerField> | undefined = $state();
+	/** Choices of this problem answered wrong so far, and the one awaiting a verdict. */
+	let wrongChoices = $state<number[]>([]);
+	let pendingChoice: number | null = null;
 
-	/** Empties the input after a miss so the next try starts clean. */
+	$effect(() => {
+		void problem.problem_id;
+		wrongChoices = [];
+		pendingChoice = null;
+	});
+
+	function choose(index: number) {
+		pendingChoice = index;
+		onSubmit({ choice: index });
+	}
+
+	/** After a miss: empties typed input, or turns off the choice just tried. */
 	export function resetInput() {
 		answer?.clear();
+		if (pendingChoice !== null && !wrongChoices.includes(pendingChoice)) {
+			wrongChoices = [...wrongChoices, pendingChoice];
+		}
+		pendingChoice = null;
 	}
 </script>
 
@@ -67,19 +87,31 @@
 		<p class="reveal">
 			The answer is <MathStatic latex={revealedLatex} />
 		</p>
+	{:else if revealedChoice !== null && problem.choices?.[revealedChoice]}
+		<div class="reveal choice-reveal" data-testid="revealed-choice">
+			<span>The answer is</span>
+			<PromptView parts={problem.choices[revealedChoice]} />
+		</div>
 	{/if}
 
 	{#if finished}
 		<div class="next">
 			<PixelButton variant="mint" onclick={onNext}>Next</PixelButton>
 		</div>
+	{:else if problem.choices && problem.choices.length > 0}
+		<ChoiceField
+			choices={problem.choices}
+			wrong={wrongChoices}
+			disabled={busy}
+			onChoose={choose}
+		/>
 	{:else}
 		{#key problem.problem_id}
 			<AnswerField
 				bind:this={answer}
 				profile={keypadProfile(problem.keypad)}
 				disabled={busy}
-				{onSubmit}
+				onSubmit={(latex) => onSubmit({ latex })}
 			/>
 		{/key}
 	{/if}
@@ -157,6 +189,16 @@
 	.reveal {
 		margin: 0;
 		font-size: 1.4rem;
+	}
+	.choice-reveal {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.4rem;
+	}
+	.choice-reveal :global(.runs) {
+		width: auto;
+		min-width: 0;
 	}
 	.next {
 		display: flex;

@@ -3,8 +3,10 @@
 The content package is pure data and never imports generators; this module joins the
 two and checks what only the registry can answer: every skill's generator exists, its
 tier count matches the skill's declared tiers, and every misconception key that the
-skill's explanations give feedback for is one the generator declares. The app builds a
-Catalog at boot, so a pack that fails any of these stops the app from starting.
+skill's explanations give feedback for is one the generator declares, and every typed
+bank answer is in the answer form the skill's generator asks for (an integer skill
+cannot bank a fraction answer). The app builds a Catalog at boot, so a pack that fails
+any of these stops the app from starting.
 """
 
 import dataclasses
@@ -13,18 +15,33 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 
+from mathquest.engine.bank import expr_answer, find_item, pick_item, render_bank
+from mathquest.engine.checker.forms import satisfies_form
+from mathquest.engine.checker.latex import parse
 from mathquest.engine.content import ContentError, Pack, Skill, Slots, load_pack, load_slots
+from mathquest.engine.content.schema import Bank, WordProblems
 from mathquest.engine.generators import all_generators
 from mathquest.engine.skillgraph import SkillGraph
 from mathquest.engine.types import Generator, Problem, Variant
+from mathquest.engine.wordproblems import find_template, pick_template, render_word
 
 
 @dataclass(frozen=True)
 class SkillSource:
-    """Problems for one skill: its generator, presented as the skill."""
+    """Problems for one skill: its generator's, retold by its word problems and bank.
+
+    ``generate(seed, tier, variant, template_id)`` is deterministic. For ``word`` and
+    ``bank`` a ``template_id`` of None picks a template or item by seed; the chosen id
+    is on the returned problem, and passing it back regenerates the same problem. A
+    variant the skill has no content for, or an id that no longer exists, falls back
+    to the bare problem.
+    """
 
     skill: Skill
     generator: Generator
+    slots: Slots
+    word_problems: WordProblems | None = None
+    bank: Bank | None = None
 
     @property
     def skill_id(self) -> str:
@@ -41,8 +58,25 @@ class SkillSource:
         variant: Variant = "bare",
         template_id: str | None = None,
     ) -> Problem:
-        problem = self.generator.generate(seed, tier, variant, template_id)
-        return dataclasses.replace(problem, skill_id=self.skill.id)
+        bare = self.generator.generate(seed, tier)
+        problem = dataclasses.replace(bare, skill_id=self.skill.id)
+        if variant == "word" and self.word_problems is not None:
+            template = (
+                pick_template(self.word_problems, seed)
+                if template_id is None
+                else find_template(self.word_problems, template_id)
+            )
+            if template is not None:
+                return render_word(template, problem, self.slots)
+        if variant == "bank" and self.bank is not None:
+            item = (
+                pick_item(self.bank, seed)
+                if template_id is None
+                else find_item(self.bank, template_id)
+            )
+            if item is not None:
+                return render_bank(item, problem)
+        return problem
 
 
 @dataclass(frozen=True)
@@ -74,7 +108,13 @@ def build_catalog(
                 f"{where}.tiers: {len(skill.tiers)} tiers declared but generator "
                 f"{skill.generator} has {have}"
             )
-        sources[skill.id] = SkillSource(skill=skill, generator=generator)
+        sources[skill.id] = SkillSource(
+            skill=skill,
+            generator=generator,
+            slots=slots,
+            word_problems=pack.word_problems.get(skill.id),
+            bank=pack.bank.get(skill.id),
+        )
     for sid, explanations in pack.explanations.items():
         generator = sources[sid].generator
         for key in explanations.misconceptions:
@@ -82,6 +122,17 @@ def build_catalog(
                 raise ContentError(
                     f"explanations/{sid}.yaml: misconceptions.{key}: generator "
                     f"{generator.generator_id} never produces this misconception"
+                )
+    for sid, bank in pack.bank.items():
+        form = sources[sid].generate(0, 0).form
+        for i, item in enumerate(bank.items):
+            if item.answer.kind != "expr":
+                continue
+            node = parse(str(item.answer.value))
+            if not satisfies_form(node, expr_answer(item), form):
+                raise ContentError(
+                    f"bank/{sid}.yaml: items[{i}].answer.value: not in the skill's "
+                    f"answer form ({form.value})"
                 )
     return Catalog(
         pack=pack,

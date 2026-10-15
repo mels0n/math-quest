@@ -15,9 +15,10 @@ import sympy
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from mathquest.engine.catalog import Catalog, load_catalog
+from mathquest.engine.catalog import Catalog, build_catalog, load_catalog
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check
+from mathquest.engine.content import load_pack
 from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
 from mathquest.engine.scheduler import RUN_LENGTH
 from mathquest.engine.types import Problem
@@ -26,8 +27,9 @@ from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.models import Player
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance, add_problem
 from mathquest.features.play import service
-from mathquest.features.play.schema import AnswerOut
-from mathquest.shared.errors import Conflict, NotFound
+from mathquest.features.play.schema import AnswerOut, ProblemOut
+from mathquest.features.play.variants import choose_variant
+from mathquest.shared.errors import Conflict, Invalid, NotFound
 from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
 
 CATALOG = load_catalog(Path(__file__).resolve().parents[2] / "content", "k8-core")
@@ -307,14 +309,14 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
 
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
-    regenerated = CATALOG.source(inst.skill_id).generate(inst.seed, inst.tier)
+    regenerated = service.regenerate(CATALOG, inst)
     assert service._prompt_out(regenerated.prompt) == problem.prompt  # pyright: ignore[reportPrivateUsage]
     assert inst.difficulty == regenerated.difficulty
     again = await service.next_problem(db, CATALOG, pid, session.session_id)
     assert again.problem_id != problem.problem_id
 
 
-async def test_next_problem_stores_the_bare_variant(db: AsyncSession) -> None:
+async def test_a_skill_without_word_or_bank_content_stays_bare(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
@@ -727,3 +729,101 @@ async def test_mastery_row_lock_makes_a_second_scorer_wait(db_schema: str) -> No
             await cleanup.execute(delete(Player).where(Player.nickname.like("Holder%")))
             await cleanup.commit()
         await engine.dispose()
+
+
+FIXTURE = build_catalog(
+    load_pack(Path(__file__).resolve().parents[1] / "fixtures" / "packs" / "test-pack"),
+    CATALOG.slots,
+)
+
+
+async def test_variant_and_template_are_drawn_from_the_seed_and_stored(db: AsyncSession) -> None:
+    pid = await _player(db)
+    row = await mastery.lock(db, pid, "pick", 0.0)
+    row.state = SkillState.MASTERED
+    await db.commit()
+    session = await service.start_session(db, pid, "adventure")
+    source = FIXTURE.source("story")
+    seen: set[str] = set()
+    for _ in range(16):
+        problem = await service.next_problem(db, FIXTURE, pid, session.session_id)
+        inst = await db.get(ProblemInstance, problem.problem_id)
+        assert inst is not None and inst.skill_id == "story"
+        assert inst.variant == choose_variant(source, inst.seed)
+        expected = service.regenerate(FIXTURE, inst)
+        assert inst.template_id == expected.template_id
+        assert service._prompt_out(expected.prompt) == problem.prompt  # pyright: ignore[reportPrivateUsage]
+        assert problem.choices is None and problem.keypad == "numpad"
+        seen.add(inst.variant)
+    assert "word" in seen
+
+
+async def _choice_problem(db: AsyncSession) -> tuple[uuid.UUID, ProblemOut]:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    problem = await service.next_problem(db, FIXTURE, pid, session.session_id, expose_answers=True)
+    return pid, problem
+
+
+async def test_a_choice_problem_is_answered_by_index(db: AsyncSession) -> None:
+    pid, problem = await _choice_problem(db)
+    assert problem.skill_id == "pick" and problem.keypad == "choice"
+    assert problem.choices and problem.dev_answer_choice is not None
+    assert problem.dev_answer_latex is None
+    right = problem.dev_answer_choice
+    wrong = (right + 1) % len(problem.choices)
+
+    miss = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
+    assert (miss.verdict, miss.attempts_left, miss.answer_choice) == (Verdict.INCORRECT, 2, None)
+    again = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
+    assert again.attempts_left == 2
+
+    hit = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=right)
+    assert hit.verdict is Verdict.CORRECT and hit.solved
+    assert (hit.answer_choice, hit.answer_latex) == (right, None)
+    stored = (
+        (
+            await db.execute(
+                select(Attempt.latex)
+                .where(Attempt.problem_id == problem.problem_id)
+                .order_by(Attempt.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert stored == [f"choice:{wrong}", f"choice:{right}"]
+    replay = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
+    assert replay.solved and replay.answer_choice == right
+
+
+@pytest.mark.parametrize(
+    ("latex", "choice", "code"),
+    [
+        ("1", None, "choice_expected"),
+        (None, 99, "choice_out_of_range"),
+        (None, -1, "choice_out_of_range"),
+    ],
+)
+async def test_bad_choice_answers_are_invalid_and_record_nothing(
+    db: AsyncSession, latex: str | None, choice: int | None, code: str
+) -> None:
+    pid, problem = await _choice_problem(db)
+    with pytest.raises(Invalid) as exc:
+        await service.submit_answer(
+            db, POOL, FIXTURE, pid, problem.problem_id, latex, choice=choice
+        )
+    assert exc.value.code == code
+    await db.rollback()
+    count = await db.scalar(
+        select(func.count()).select_from(Attempt).where(Attempt.problem_id == problem.problem_id)
+    )
+    assert count == 0
+
+
+async def test_a_choice_for_a_typed_problem_is_invalid(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id)
+    with pytest.raises(Invalid, match="latex_expected"):
+        await service.submit_answer(db, POOL, CATALOG, pid, inst.id, choice=0)

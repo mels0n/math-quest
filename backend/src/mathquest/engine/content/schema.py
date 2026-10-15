@@ -11,6 +11,7 @@ in ``mathquest.engine.catalog``.
 from typing import Annotated, Literal, Self
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     BeforeValidator,
     ConfigDict,
@@ -22,6 +23,7 @@ from pydantic import (
 )
 
 from mathquest.engine.checker.latex import Unreadable, parse
+from mathquest.engine.templates import check_expression, check_template
 from mathquest.engine.types import KeypadProfile
 
 
@@ -32,8 +34,9 @@ class _Model(BaseModel):
 Id = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_]*$")]
 PackId = Annotated[str, StringConstraints(pattern=r"^[a-z][a-z0-9_-]*$")]
 Text = Annotated[str, StringConstraints(min_length=1)]
-Template = Text
+Template = Annotated[str, StringConstraints(min_length=1), AfterValidator(check_template)]
 """Kid-facing text in the template language of ``mathquest.engine.templates``."""
+Expression = Annotated[str, StringConstraints(min_length=1), AfterValidator(check_expression)]
 
 GRADE_BANDS = ("K", "1", "2", "3", "4", "5", "6", "7", "8", "A1", "A2")
 
@@ -169,7 +172,7 @@ class WordTemplate(_Model):
     text_template: Template
     slots: dict[Id, SlotType] = Field(default_factory=dict[str, SlotType])
     answer_from: Literal["generator_answer", "expression"] = "generator_answer"
-    expression: Text | None = None
+    expression: Expression | None = None
     grade_band: GradeBand
 
     @model_validator(mode="after")
