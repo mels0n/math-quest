@@ -68,11 +68,15 @@ async def test_next_problem_hides_answer(api: ApiFactory) -> None:
         "problem_id",
         "skill_id",
         "skill_name",
-        "prompt_latex",
+        "prompt",
         "keypad",
         "dev_answer_latex",
     }
-    assert body["prompt_latex"]
+    assert body["prompt"]
+    for part in body["prompt"]:
+        assert set(part) == {"kind", "value"}
+        assert part["kind"] in ("text", "math")
+        assert part["value"]
     assert body["dev_answer_latex"] is None
 
 

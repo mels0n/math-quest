@@ -73,10 +73,17 @@ from mathquest.engine.mastery import (
 )
 from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
 from mathquest.engine.skillgraph import SkillGraph
+from mathquest.engine.types import Prompt, TextPart
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, ProblemInstance
-from mathquest.features.play.schema import AnswerOut, MasteryOut, ProblemOut, SessionOut
+from mathquest.features.play.schema import (
+    AnswerOut,
+    MasteryOut,
+    ProblemOut,
+    PromptPartOut,
+    SessionOut,
+)
 from mathquest.shared.errors import Conflict, NotFound
 
 MAX_ATTEMPTS = 3
@@ -109,6 +116,15 @@ def _top_difficulty(skill_id: str) -> float:
 
 def _top_tier(skill_id: str) -> int:
     return len(get_generator(skill_id).tier_difficulties) - 1
+
+
+def _prompt_out(prompt: Prompt) -> list[PromptPartOut]:
+    return [
+        PromptPartOut(kind="text", value=part.text)
+        if isinstance(part, TextPart)
+        else PromptPartOut(kind="math", value=part.latex)
+        for part in prompt
+    ]
 
 
 def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> MasteryOut:
@@ -184,7 +200,7 @@ async def next_problem(
         problem_id=instance.id,
         skill_id=skill_id,
         skill_name=graph.skills[skill_id].name,
-        prompt_latex=problem.prompt_latex,
+        prompt=_prompt_out(problem.prompt),
         keypad=problem.keypad,
         dev_answer_latex=sympy.latex(problem.answer) if expose_answers else None,
     )

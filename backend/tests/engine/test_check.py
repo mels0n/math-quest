@@ -21,7 +21,7 @@ def make_problem(
         skill_id="test",
         tier=1,
         seed=0,
-        prompt_latex="",
+        prompt=(),
         answer=answer,  # pyright: ignore[reportArgumentType]
         form=form,
         misconceptions=misconceptions,

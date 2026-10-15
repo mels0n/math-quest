@@ -46,7 +46,7 @@
 	</div>
 
 	<div class="prompt" data-testid="prompt">
-		<PromptView latex={problem.prompt_latex} />
+		<PromptView parts={problem.prompt} />
 	</div>
 
 	{#if mastery}

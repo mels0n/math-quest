@@ -2,21 +2,50 @@
 """Shared scaffolding for skill generators."""
 
 import random
-from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass, field
 
 import sympy
 
-from mathquest.engine.types import AnswerForm, Misconception, Problem
+from mathquest.engine.types import (
+    AnswerForm,
+    MathPart,
+    Misconception,
+    Problem,
+    Prompt,
+    TextPart,
+    Variant,
+)
 
 
 @dataclass(frozen=True)
 class Built:
-    """What a skill's builder returns for one (rng, tier)."""
+    """What a skill's builder returns for one (rng, tier).
 
-    prompt_latex: str
+    ``values`` names the numbers the builder chose, for hint and word-problem templates.
+    """
+
+    prompt: Prompt
     answer: sympy.Expr
     wrong: tuple[tuple[str, sympy.Expr], ...] = ()
+    values: Mapping[str, int | str] = field(default_factory=dict[str, int | str], hash=False)
+
+
+def text(words: str) -> TextPart:
+    if not words.strip():
+        raise ValueError("a text part needs words")
+    return TextPart(words)
+
+
+def math(latex: str) -> MathPart:
+    if r"\text" in latex:
+        raise ValueError("words belong in a text part, not in math")
+    return MathPart(latex)
+
+
+def math_prompt(latex: str) -> Prompt:
+    """A prompt that is one math expression."""
+    return (math(latex),)
 
 
 Builder = Callable[[random.Random, int], Built]
@@ -57,7 +86,19 @@ class SkillGenerator:
         self._keypad = keypad
         self._build = build
 
-    def generate(self, seed: int, tier: int) -> Problem:
+    def generate(
+        self,
+        seed: int,
+        tier: int,
+        variant: Variant = "bare",
+        template_id: str | None = None,
+    ) -> Problem:
+        """Build the problem for (seed, tier).
+
+        Only the bare variant exists so far; any other variant or template falls back
+        to it. The answer never depends on the variant.
+        """
+        del variant, template_id
         if not 0 <= tier < len(self.tier_difficulties):
             raise ValueError(f"tier {tier} out of range for {self.skill_id}")
         rng = random.Random(seed)
@@ -66,10 +107,11 @@ class SkillGenerator:
             skill_id=self.skill_id,
             tier=tier,
             seed=seed,
-            prompt_latex=built.prompt_latex,
+            prompt=built.prompt,
             answer=built.answer,
             form=self._form,
             misconceptions=distinct_misconceptions(built.answer, built.wrong),
             difficulty=self.tier_difficulties[tier],
             keypad=self._keypad,
+            values=dict(built.values),
         )

@@ -11,11 +11,17 @@ export interface Session {
 	problem_count: number;
 }
 
+/** One part of a prompt: words shown as wrapping text, or a math expression in LaTeX. */
+export interface PromptPart {
+	kind: 'text' | 'math';
+	value: string;
+}
+
 export interface Problem {
 	problem_id: string;
 	skill_id: string;
 	skill_name: string;
-	prompt_latex: string;
+	prompt: PromptPart[];
 	keypad: string;
 }
 

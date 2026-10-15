@@ -11,7 +11,7 @@ from hypothesis import strategies as st
 from mathquest.engine.checker.check import Verdict, check
 from mathquest.engine.generators import all_generators, get_generator
 from mathquest.engine.skillgraph import load_pack
-from mathquest.engine.types import Generator
+from mathquest.engine.types import Generator, MathPart, Problem, TextPart
 
 PACK = Path(__file__).resolve().parents[2] / "content" / "packs" / "k8-core"
 PACK_SKILLS = tuple(load_pack(PACK).skills)
@@ -32,6 +32,11 @@ seeds = st.integers(0, 2**32 - 1)
 tiers = st.integers(0, 2)
 gens = st.sampled_from(GENERATORS)
 prop = settings(max_examples=300, deadline=None)
+
+
+def flatten(problem: Problem) -> str:
+    """The prompt as one string, for tests that read numbers out of it."""
+    return "".join(p.text if isinstance(p, TextPart) else p.latex for p in problem.prompt)
 
 
 def render(value: sympy.Basic) -> str:
@@ -72,8 +77,10 @@ def test_problem_metadata(gen: Generator, seed: int, tier: int) -> None:
     assert problem.skill_id == gen.skill_id
     assert (problem.tier, problem.seed) == (tier, seed)
     assert problem.difficulty == gen.tier_difficulties[tier]
-    assert "—" not in problem.prompt_latex
-    assert problem.prompt_latex.isprintable()
+    flat = flatten(problem)
+    assert "\N{EM DASH}" not in flat
+    assert "\N{EN DASH}" not in flat
+    assert flat.isprintable()
     assert problem.answer >= 0  # pyright: ignore[reportOperatorIssue]
 
 
@@ -84,6 +91,48 @@ def test_within_range(seed: int, tier: int) -> None:
         assert get_generator(skill).generate(seed, tier).answer <= limit
     sub20 = get_generator("sub_within_20").generate(seed, tier)
     assert 0 <= sub20.answer <= 19
+
+
+@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.skill_id)
+def test_prompts_are_well_formed_parts(gen: Generator) -> None:
+    for tier in range(len(gen.tier_difficulties)):
+        for seed in range(500):
+            problem = gen.generate(seed, tier)
+            assert problem.prompt, (gen.skill_id, tier, seed)
+            for part in problem.prompt:
+                if isinstance(part, MathPart):
+                    assert part.latex.strip()
+                    assert "\\text" not in part.latex
+                else:
+                    assert part.text.strip()
+            assert problem == gen.generate(seed, tier)
+            assert problem.variant == "bare"
+            assert problem.template_id is None
+            assert problem.values
+
+
+@pytest.mark.parametrize("gen", GENERATORS, ids=lambda g: g.skill_id)
+def test_unknown_variant_or_template_falls_back_to_bare(gen: Generator) -> None:
+    bare = gen.generate(7, 1)
+    assert gen.generate(7, 1, "word", "gone_template") == bare
+    assert gen.generate(7, 1, "bank", None) == bare
+
+
+def test_values_name_the_chosen_numbers() -> None:
+    problem = get_generator("add_within_10").generate(3, 1)
+    a, b = problem.values["a"], problem.values["b"]
+    assert isinstance(a, int) and isinstance(b, int)
+    assert problem.answer == a + b
+    assert flatten(problem) == f"{a} + {b} = ?"
+    place = get_generator("place_value_tens_ones").generate(3, 1)
+    assert str(place.values["number"]) in flatten(place)
+    assert f"the {place.values['place']} place" in flatten(place)
+
+
+def test_place_value_prompt_is_text_math_text() -> None:
+    problem = get_generator("place_value_tens_ones").generate(11, 2)
+    kinds = [type(p) for p in problem.prompt]
+    assert kinds == [TextPart, MathPart, TextPart]
 
 
 def test_registry_covers_pack() -> None:
@@ -104,12 +153,12 @@ def test_tier_difficulties_use_declared_base(gen: Generator) -> None:
 
 def test_seeds_vary_problems() -> None:
     for gen in GENERATORS:
-        prompts = {gen.generate(seed, 1).prompt_latex for seed in range(40)}
+        prompts = {gen.generate(seed, 1).prompt for seed in range(40)}
         assert len(prompts) > 3, gen.skill_id
 
 
 def prompt(skill: str, seed: int, tier: int) -> str:
-    return get_generator(skill).generate(seed, tier).prompt_latex
+    return flatten(get_generator(skill).generate(seed, tier))
 
 
 def addends(skill: str, seed: int, tier: int) -> tuple[int, int]:

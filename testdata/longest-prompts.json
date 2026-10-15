@@ -1,0 +1,100 @@
+{
+  "add_2digit_no_regroup": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "71 + 20 = ?"
+      }
+    ]
+  },
+  "add_2digit_regroup": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "27 + 19 = ?"
+      }
+    ]
+  },
+  "add_fractions_unlike": {
+    "tier": 0,
+    "seed": 116,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "\\frac{1}{4} + \\frac{11}{12} = ?"
+      }
+    ]
+  },
+  "add_within_10": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "4 + 1 = ?"
+      }
+    ]
+  },
+  "add_within_20": {
+    "tier": 0,
+    "seed": 6,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "3 + 11 = ?"
+      }
+    ]
+  },
+  "equivalent_fractions": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "\\frac{1}{5} = \\frac{?}{15}"
+      }
+    ]
+  },
+  "place_value_tens_ones": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Which digit is in the thousands place of "
+      },
+      {
+        "kind": "math",
+        "value": "7604"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "sub_within_10": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "10 - 7 = ?"
+      }
+    ]
+  },
+  "sub_within_20": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "17 - 7 = ?"
+      }
+    ]
+  }
+}

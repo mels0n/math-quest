@@ -21,11 +21,18 @@ class SessionOut(_Frozen):
     problem_count: int
 
 
+class PromptPartOut(_Frozen):
+    """One part of a prompt: words shown as text, or a math expression as LaTeX."""
+
+    kind: Literal["text", "math"]
+    value: str
+
+
 class ProblemOut(_Frozen):
     problem_id: uuid.UUID
     skill_id: str
     skill_name: str
-    prompt_latex: str
+    prompt: list[PromptPartOut]
     keypad: str
     dev_answer_latex: str | None = None
 

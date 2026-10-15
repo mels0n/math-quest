@@ -6,6 +6,7 @@ export type {
 	KeypadProfile,
 	Mastery,
 	Problem,
+	PromptPart,
 	Session,
 	SkillState,
 	Verdict

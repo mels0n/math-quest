@@ -5,7 +5,7 @@ import random
 
 import sympy
 
-from mathquest.engine.generators._util import Built, SkillGenerator
+from mathquest.engine.generators._util import Built, SkillGenerator, math_prompt
 from mathquest.engine.types import AnswerForm
 
 _Int = sympy.Integer
@@ -15,11 +15,16 @@ _ADD20_TOTALS = ((10, 14), (12, 17), (15, 20))
 _SUB10_TOP = ((2, 5), (6, 8), (9, 10))
 
 
+def _sum(a: int, b: int) -> Built:
+    return Built(prompt=math_prompt(f"{a} + {b} = ?"), answer=_Int(a + b), values={"a": a, "b": b})
+
+
 def _add(a: int, b: int) -> Built:
     return Built(
-        prompt_latex=f"{a} + {b} = ?",
+        prompt=math_prompt(f"{a} + {b} = ?"),
         answer=_Int(a + b),
         wrong=(("subtracted_instead", _Int(abs(a - b))),),
+        values={"a": a, "b": b},
     )
 
 
@@ -42,9 +47,10 @@ def _build_sub_within_10(rng: random.Random, tier: int) -> Built:
     a = rng.randint(lo, hi)
     b = rng.randint(1, a - 1)
     return Built(
-        prompt_latex=f"{a} - {b} = ?",
+        prompt=math_prompt(f"{a} - {b} = ?"),
         answer=_Int(a - b),
         wrong=(("added_instead", _Int(a + b)),),
+        values={"a": a, "b": b},
     )
 
 
@@ -61,12 +67,13 @@ def _build_sub_within_20(rng: random.Random, tier: int) -> Built:
     # Column-wise "smaller minus larger" error: ones digits subtracted the wrong way round.
     ones_apart = abs(a % 10 - b)
     return Built(
-        prompt_latex=f"{a} - {b} = ?",
+        prompt=math_prompt(f"{a} - {b} = ?"),
         answer=_Int(a - b),
         wrong=(
             ("subtracted_backwards", _Int(a // 10 * 10 + ones_apart)),
             ("added_instead", _Int(a + b)),
         ),
+        values={"a": a, "b": b},
     )
 
 
@@ -82,7 +89,7 @@ def _build_add_2digit_no_regroup(rng: random.Random, tier: int) -> Built:
         a_ones = rng.randint(0, 9)
         b_ones = rng.randint(0, 9 - a_ones)
         a, b = a_tens * 10 + a_ones, b_tens * 10 + b_ones
-    return Built(prompt_latex=f"{a} + {b} = ?", answer=_Int(a + b))
+    return _sum(a, b)
 
 
 def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
@@ -99,12 +106,13 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
     a, b = a_tens * 10 + a_ones, b_tens * 10 + b_ones
     total = a + b
     return Built(
-        prompt_latex=f"{a} + {b} = ?",
+        prompt=math_prompt(f"{a} + {b} = ?"),
         answer=_Int(total),
         wrong=(
             ("forgot_carry", _Int(total - 10)),
             ("added_carry_twice", _Int(total + 10)),
         ),
+        values={"a": a, "b": b},
     )
 
 

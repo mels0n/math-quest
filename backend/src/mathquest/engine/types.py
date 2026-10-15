@@ -1,8 +1,9 @@
 """Core engine types: problems, generators and answer forms."""
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Protocol
+from typing import Literal, Protocol, get_args
 
 import sympy
 
@@ -26,24 +27,68 @@ class Misconception:
 
 
 @dataclass(frozen=True)
+class TextPart:
+    """Words of a prompt, shown as wrapping text. Carries its own spacing."""
+
+    text: str
+
+
+@dataclass(frozen=True)
+class MathPart:
+    """A math expression of a prompt, as LaTeX. Never contains ``\\text``."""
+
+    latex: str
+
+
+type PromptPart = TextPart | MathPart
+type Prompt = tuple[PromptPart, ...]
+
+Variant = Literal["bare", "word", "bank"]
+VARIANTS: tuple[Variant, ...] = get_args(Variant)
+
+KeypadProfile = Literal[
+    "numpad", "numpad_neg", "fraction", "mixed", "decimal", "exponent", "algebra", "choice"
+]
+KEYPAD_PROFILES: tuple[KeypadProfile, ...] = get_args(KeypadProfile)
+
+
+@dataclass(frozen=True)
 class Problem:
-    """A generated problem. `keypad` is one of "numbers", "fractions", "algebra"."""
+    """A generated problem.
+
+    ``values`` holds the named numbers the generator chose (for hint and word-problem
+    templates). ``variant`` and ``template_id`` say how the prompt is presented: today
+    every problem is the "bare" variant with no template.
+    """
 
     skill_id: str
     tier: int
     seed: int
-    prompt_latex: str
+    prompt: Prompt
     answer: sympy.Expr
     form: AnswerForm
     misconceptions: tuple[Misconception, ...]
     difficulty: float
     keypad: str
+    values: Mapping[str, int | str] = field(default_factory=dict[str, int | str], hash=False)
+    variant: Variant = "bare"
+    template_id: str | None = None
 
 
 class Generator(Protocol):
-    """Deterministic problem source: the same (seed, tier) yields the same Problem."""
+    """Deterministic problem source.
+
+    The same (seed, tier, variant, template_id) yields the same Problem. A variant or
+    template the generator cannot produce falls back to the bare variant.
+    """
 
     skill_id: str
     tier_difficulties: tuple[float, ...]
 
-    def generate(self, seed: int, tier: int) -> Problem: ...
+    def generate(
+        self,
+        seed: int,
+        tier: int,
+        variant: Variant = "bare",
+        template_id: str | None = None,
+    ) -> Problem: ...

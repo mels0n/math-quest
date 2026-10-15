@@ -6,7 +6,7 @@ import random
 
 import sympy
 
-from mathquest.engine.generators._util import Built, SkillGenerator
+from mathquest.engine.generators._util import Built, SkillGenerator, math_prompt
 from mathquest.engine.types import AnswerForm
 
 _MULTIPLIERS = ((2, 3), (4, 6), (7, 10))
@@ -22,7 +22,7 @@ def _build_equivalent(rng: random.Random, tier: int) -> Built:
     a = rng.randint(1, b - 1)
     d = b * k
     return Built(
-        prompt_latex=rf"\frac{{{a}}}{{{b}}} = \frac{{?}}{{{d}}}",
+        prompt=math_prompt(rf"\frac{{{a}}}{{{b}}} = \frac{{?}}{{{d}}}"),
         answer=sympy.Integer(a * k),
         wrong=(
             ("added_instead_of_multiplied", sympy.Integer(a + d - b)),
@@ -30,6 +30,7 @@ def _build_equivalent(rng: random.Random, tier: int) -> Built:
             # The whole fraction typed instead of the missing numerator.
             ("wrote_whole_fraction", sympy.Rational(a, b)),
         ),
+        values={"a": a, "b": b, "d": d, "k": k},
     )
 
 
@@ -54,13 +55,14 @@ def _build_add_unlike(rng: random.Random, tier: int) -> Built:
             break
     common = math.lcm(b, d)
     return Built(
-        prompt_latex=rf"\frac{{{a}}}{{{b}}} + \frac{{{c}}}{{{d}}} = ?",
+        prompt=math_prompt(rf"\frac{{{a}}}{{{b}}} + \frac{{{c}}}{{{d}}} = ?"),
         answer=total,
         wrong=(
             ("added_denominators", sympy.Rational(a + c, b + d)),
             # Common denominator found, numerators added without rescaling.
             ("added_numerators_only", sympy.Rational(a + c, common)),
         ),
+        values={"a": a, "b": b, "c": c, "d": d},
     )
 
 

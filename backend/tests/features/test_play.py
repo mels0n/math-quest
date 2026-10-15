@@ -275,7 +275,7 @@ async def test_new_player_starts_on_ready_skills(db: AsyncSession) -> None:
     problem = await service.next_problem(db, GRAPH, pid, session.session_id)
 
     assert problem.skill_id in GRAPH.ready(set())
-    assert problem.prompt_latex
+    assert problem.prompt
     assert problem.skill_name == GRAPH.skills[problem.skill_id].name
     assert problem.dev_answer_latex is None
     count = await db.scalar(
@@ -304,7 +304,7 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
     regenerated = get_generator(inst.skill_id).generate(inst.seed, inst.tier)
-    assert regenerated.prompt_latex == problem.prompt_latex
+    assert service._prompt_out(regenerated.prompt) == problem.prompt  # pyright: ignore[reportPrivateUsage]
     assert inst.difficulty == regenerated.difficulty
     again = await service.next_problem(db, GRAPH, pid, session.session_id)
     assert again.problem_id != problem.problem_id

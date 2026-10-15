@@ -5,7 +5,7 @@ import random
 
 import sympy
 
-from mathquest.engine.generators._util import Built, SkillGenerator
+from mathquest.engine.generators._util import Built, SkillGenerator, math, text
 from mathquest.engine.types import AnswerForm
 
 _PLACES = ("ones", "tens", "hundreds", "thousands")
@@ -27,11 +27,15 @@ def _build_place_value(rng: random.Random, tier: int) -> Built:
     else:
         below = digits[size - place]
         wrong = (("confused_adjacent_place", sympy.Integer(below)),)
-    question = rf"\text{{Which digit is in the {_PLACES[place]} place of }}"
     return Built(
-        prompt_latex=rf"{question} {number}\text{{?}}",
+        prompt=(
+            text(f"Which digit is in the {_PLACES[place]} place of "),
+            math(str(number)),
+            text("?"),
+        ),
         answer=sympy.Integer(answer),
         wrong=wrong,
+        values={"number": number, "place": _PLACES[place]},
     )
 
 

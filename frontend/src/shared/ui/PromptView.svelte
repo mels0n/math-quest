@@ -1,29 +1,34 @@
+<script module lang="ts">
+	/** One part of a prompt: words, or a math expression in LaTeX. */
+	export interface PromptRun {
+		kind: 'text' | 'math';
+		value: string;
+	}
+</script>
+
 <script lang="ts">
 	import MathStatic from './MathStatic.svelte';
 	import { MATH_RUN_CLASS, watchFit } from './fit-to-width';
-	import { splitPrompt } from './split-prompt';
 
 	/** A problem prompt: words wrap as plain text, math is set inline and shrinks to fit. */
-	let { latex }: { latex: string } = $props();
-
-	const runs = $derived(splitPrompt(latex));
+	let { parts }: { parts: readonly PromptRun[] } = $props();
 
 	let container: HTMLElement | undefined = $state();
 
 	// Effects run after the DOM update, so a new prompt is measured with its new markup.
 	$effect(() => {
-		void runs;
+		void parts;
 		if (!container) return;
 		return watchFit(container);
 	});
 </script>
 
 <div class="runs" bind:this={container}>
-	{#each runs as run, i (i)}
-		{#if run.kind === 'text'}
-			<span class="run text">{run.value}</span>
+	{#each parts as part, i (i)}
+		{#if part.kind === 'text'}
+			<span class="run text">{part.value}</span>
 		{:else}
-			<MathStatic latex={run.value} class="run {MATH_RUN_CLASS}" />
+			<MathStatic latex={part.value} class="run {MATH_RUN_CLASS}" />
 		{/if}
 	{/each}
 </div>
