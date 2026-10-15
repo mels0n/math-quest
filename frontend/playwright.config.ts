@@ -4,6 +4,8 @@ export default defineConfig({
 	testDir: 'e2e',
 	testMatch: '**/*.spec.ts',
 	workers: 1,
+	// On CI, failures also become check annotations so they are readable without the log.
+	reporter: process.env.CI ? [['github'], ['list']] : 'list',
 	timeout: 60_000,
 	globalSetup: './e2e/global-setup.ts',
 	use: {
