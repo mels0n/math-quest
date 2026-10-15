@@ -10,7 +10,11 @@ Syntax:
   ``values``), or a filled word-problem slot. Names are letters, digits and
   underscores, starting with a letter or underscore.
 - ``{obj}`` inserts an object or unit slot in the plural, ``{obj.one}`` in the
-  singular.
+  singular and ``{obj.a}`` in the singular after its article ("an apple", "a pear").
+  The article is the noun's own ``article`` when the slot list gives one, else "an"
+  before a vowel letter and "a" otherwise, with the exceptions in ``article``.
+- ``{n obj}`` inserts a number and a countable that agrees with it: "1 rock",
+  "5 rocks". ``n`` is a number value and ``obj`` an object or unit slot.
 - ``{{= expr }}`` inserts a computed number. ``expr`` is written in the LaTeX subset
   the answer checker reads (``a + b``, ``a - b``, ``a \cdot b``, ``\frac{a}{b}``,
   ``(a + b) / 2`` ...). Each name in it is replaced by its value and the result is
@@ -52,13 +56,31 @@ class TemplateError(ValueError):
 
 
 class Countable(Protocol):
-    """An object or unit slot: singular and plural words."""
+    """An object or unit slot: singular and plural words, and an optional article."""
 
     @property
     def one(self) -> str: ...
 
     @property
     def many(self) -> str: ...
+
+    @property
+    def article(self) -> str | None: ...
+
+
+# A vowel letter that sounds like a consonant ("a unicorn"), and the reverse ("an hour").
+_A_BEFORE = ("uni", "use", "usu", "uten", "eu", "ewe", "one", "once", "ukulele")
+_AN_BEFORE = ("hour", "honest", "honor", "heir")
+
+
+def article(word: str) -> str:
+    """ "a" or "an" for ``word`` by its first sound, from its spelling."""
+    lower = word.lower()
+    if lower.startswith(_AN_BEFORE):
+        return "an"
+    if lower.startswith(_A_BEFORE):
+        return "a"
+    return "an" if lower[:1] in ("a", "e", "i", "o", "u") else "a"
 
 
 type Value = int | str | Countable
@@ -72,7 +94,10 @@ class _Lit:
 @dataclass(frozen=True)
 class _Slot:
     name: str
-    one: bool
+    form: str = ""
+    """"" for the plain value, "one" for a singular, "a" for a singular with article."""
+    count: str | None = None
+    """For ``{n obj}``: the number value that ``name`` agrees with."""
 
 
 @dataclass(frozen=True)
@@ -91,7 +116,8 @@ class _Run:
 
 _TOKEN = re.compile(
     r"\{\{=(?P<calc>.*?)\}\}"
-    r"|\{(?P<name>[A-Za-z_][A-Za-z0-9_]*)(?P<one>\.one)?\}"
+    r"|\{(?:(?P<count>[A-Za-z_][A-Za-z0-9_]*) )?(?P<name>[A-Za-z_][A-Za-z0-9_]*)"
+    r"(?:\.(?P<form>one|a))?\}"
     r"|(?P<open>\\\()|(?P<close>\\\))|(?P<brace>[{}])",
     re.DOTALL,
 )
@@ -178,7 +204,12 @@ def _parse(template: str) -> tuple[_Run, ...]:
             before = "".join(p.text for p in pieces if isinstance(p, _Lit)).rstrip()
             if math and before.endswith(_ARGUMENT_BEFORE):
                 raise TemplateError(f"write {{{{{name}}}}} to use {name} as a LaTeX argument")
-            pieces.append(_Slot(name, bool(match.group("one"))))
+            count, form = match.group("count"), match.group("form") or ""
+            if count is not None and form:
+                raise TemplateError(f"{{{count} {name}}} picks the form itself; drop .{form}")
+            if count is not None and math:
+                raise TemplateError(f"words cannot go in a math part: {count} {name}")
+            pieces.append(_Slot(name, form, count))
         else:
             pieces.append(_Calc(check_expression(match.group("calc"))))
     if math:
@@ -202,6 +233,8 @@ def names(template: str) -> frozenset[str]:
         for piece in run.pieces:
             if isinstance(piece, _Slot):
                 found.add(piece.name)
+                if piece.count is not None:
+                    found.add(piece.count)
             elif isinstance(piece, _Calc):
                 found.update(_names_in(piece.source))
     return frozenset(found)
@@ -231,17 +264,35 @@ def _fill(piece: _Piece, values: Mapping[str, Value], math: bool) -> str:
     if piece.name not in values:
         raise TemplateError(f"unknown name: {piece.name}")
     value = values[piece.name]
+    if piece.count is not None:
+        return _counted(piece, values)
     if isinstance(value, int):
-        if piece.one:
-            raise TemplateError(f"{piece.name} is a number; .one is for objects and units")
+        if piece.form:
+            raise TemplateError(f"{piece.name} is a number; .{piece.form} is for objects and units")
         return str(value)
     if math:
         raise TemplateError(f"words cannot go in a math part: {piece.name}")
     if isinstance(value, str):
-        if piece.one:
-            raise TemplateError(f"{piece.name} is a word; .one is for objects and units")
+        if piece.form:
+            raise TemplateError(f"{piece.name} is a word; .{piece.form} is for objects and units")
         return value
-    return value.one if piece.one else value.many
+    if piece.form == "one":
+        return value.one
+    if piece.form == "a":
+        return f"{value.article or article(value.one)} {value.one}"
+    return value.many
+
+
+def _counted(piece: _Slot, values: Mapping[str, Value]) -> str:
+    assert piece.count is not None
+    if piece.count not in values:
+        raise TemplateError(f"unknown name: {piece.count}")
+    number, noun = values[piece.count], values[piece.name]
+    if not isinstance(number, int):
+        raise TemplateError(f"{piece.count} is not a number, so it cannot count {piece.name}")
+    if isinstance(noun, (int, str)):
+        raise TemplateError(f"{piece.name} is not an object or unit, so it cannot be counted")
+    return f"{number} {noun.one if number == 1 else noun.many}"
 
 
 def render(template: str, values: Mapping[str, Value]) -> Prompt:

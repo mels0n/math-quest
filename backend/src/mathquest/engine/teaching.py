@@ -4,9 +4,15 @@ Lessons are static: their text is rendered with no values, so a computed number 
 lesson (``{{= 9 + 6 }}``) can only use literal numbers. Hints, explanations and
 misconception feedback are rendered for a problem, with the generator's values.
 Every function is pure and returns prompts (text and math parts) ready to send.
+A visual's string parameters are templates too, rendered with the same values; one that
+renders to a whole number becomes that number.
 """
 
+import re
+from collections.abc import Mapping
 from dataclasses import dataclass
+
+from pydantic import JsonValue
 
 from mathquest.engine.bank import to_prompt
 from mathquest.engine.content.schema import (
@@ -16,7 +22,7 @@ from mathquest.engine.content.schema import (
     Lesson,
     Visual,
 )
-from mathquest.engine.templates import render
+from mathquest.engine.templates import Value, plain, render
 from mathquest.engine.types import Problem, Prompt
 
 
@@ -44,11 +50,34 @@ class RenderedApproach:
     visual: Visual | None
 
 
+_WHOLE = re.compile(r"-?\d+")
+
+
+def _param(value: JsonValue, values: Mapping[str, Value]) -> JsonValue:
+    if isinstance(value, str):
+        shown = plain(render(value, values)).strip()
+        return int(shown) if _WHOLE.fullmatch(shown) else shown
+    if isinstance(value, list):
+        return [_param(item, values) for item in value]
+    if isinstance(value, dict):
+        return {k: _param(item, values) for k, item in value.items()}
+    return value
+
+
+def render_visual(visual: Visual | None, values: Mapping[str, Value]) -> Visual | None:
+    """``visual`` with its template parameters filled in from ``values``."""
+    if visual is None:
+        return None
+    params = {k: _param(v, values) for k, v in visual.params.items()}
+    return visual.model_copy(update={"params": params})
+
+
 def render_lesson(lesson: Lesson) -> RenderedLesson:
     return RenderedLesson(
         skill_id=lesson.skill,
         screens=tuple(
-            LessonScreen(s.title, render(s.body_md, {}), s.visual) for s in lesson.screens
+            LessonScreen(s.title, render(s.body_md, {}), render_visual(s.visual, {}))
+            for s in lesson.screens
         ),
         worked_prompt=to_prompt(lesson.worked_example.prompt),
         worked_steps=tuple(render(step, {}) for step in lesson.worked_example.steps),
@@ -66,7 +95,9 @@ def render_explanations(
     explanations: Explanations, problem: Problem
 ) -> tuple[RenderedApproach, ...]:
     return tuple(
-        RenderedApproach(a.style, render(a.body_md, problem.values), a.visual)
+        RenderedApproach(
+            a.style, render(a.body_md, problem.values), render_visual(a.visual, problem.values)
+        )
         for a in explanations.approaches
     )
 

@@ -18,7 +18,7 @@ names:
   - Amara
   - Zara
   - Leila
-  - Ines
+  - Inés
   - Hana
   - Maya
   - Rosa
@@ -47,7 +47,7 @@ names:
   - Noah
   - Eli
   - Malik
-  - Tomas
+  - Tomás
   - Kai
   - Ali
   - Jin
@@ -97,22 +97,22 @@ objects:
   - {one: boat, many: boats}
   - {one: bucket, many: buckets}
   - {one: pinecone, many: pinecones}
-units:
-  - {one: centimeter, many: centimeters}
-  - {one: meter, many: meters}
-  - {one: kilometer, many: kilometers}
+# Units in typed pools, so a template asks for the kind it can use ("{unit}" from
+# length_units for a walk). Only units taught by grade 2 for now; mass and volume
+# pools come with the grade 3 content.
+length_units:
   - {one: inch, many: inches}
   - {one: foot, many: feet}
-  - {one: mile, many: miles}
-  - {one: gram, many: grams}
-  - {one: kilogram, many: kilograms}
-  - {one: pound, many: pounds}
-  - {one: cup, many: cups}
-  - {one: liter, many: liters}
+  - {one: centimeter, many: centimeters}
+  - {one: meter, many: meters}
+time_units:
   - {one: minute, many: minutes}
-  - {one: hour, many: hours}
+  - {one: hour, many: hours, article: an}
   - {one: day, many: days}
   - {one: week, many: weeks}
+money_units:
+  - {one: cent, many: cents}
+  - {one: dollar, many: dollars}
 contexts:
   - at the park
   - at school

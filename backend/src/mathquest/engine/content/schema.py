@@ -57,7 +57,9 @@ VisualKind = Literal[
     "number_line", "base_ten", "fraction_bars", "area_model", "algebra_tiles", "array", "clock",
     "money",
 ]  # fmt: skip
-SlotType = Literal["names", "objects", "units", "contexts", "number"]
+SlotType = Literal[
+    "names", "objects", "length_units", "time_units", "money_units", "contexts", "number"
+]  # fmt: skip
 ApproachStyle = Literal["visual", "steps", "story", "worked"]
 
 
@@ -119,9 +121,29 @@ class Skill(_Model):
         return self
 
 
+def _check_params(value: JsonValue) -> None:
+    if isinstance(value, str):
+        check_template(value)
+    elif isinstance(value, list):
+        for item in value:
+            _check_params(item)
+    elif isinstance(value, dict):
+        for item in value.values():
+            _check_params(item)
+
+
 class Visual(_Model):
+    """A picture drawn next to text. A string parameter is a template, so a visual can
+    show the problem's own numbers: ``start: "{big}"``, ``end: "{{= a + b }}"``."""
+
     kind: VisualKind
     params: dict[str, JsonValue] = Field(default_factory=dict[str, JsonValue])
+
+    @model_validator(mode="after")
+    def _templates(self) -> Self:
+        for value in self.params.values():
+            _check_params(value)
+        return self
 
 
 class Screen(_Model):
@@ -278,10 +300,14 @@ class SkillList(_Model):
 
 
 class Noun(_Model):
-    """A countable thing: ``{obj.one}`` is the singular, ``{obj}`` the plural."""
+    """A countable thing: ``{obj.one}`` is the singular, ``{obj}`` the plural.
+
+    ``article`` overrides the article ``{obj.a}`` would otherwise pick from spelling.
+    """
 
     one: Text
     many: Text
+    article: Literal["a", "an"] | None = None
 
 
 class Slots(_Model):
@@ -289,14 +315,16 @@ class Slots(_Model):
 
     names: Annotated[tuple[Text, ...], Field(min_length=40)]
     objects: Annotated[tuple[Noun, ...], Field(min_length=40)]
-    units: Annotated[tuple[Noun, ...], Field(min_length=1)]
+    length_units: Annotated[tuple[Noun, ...], Field(min_length=1)]
+    time_units: Annotated[tuple[Noun, ...], Field(min_length=1)]
+    money_units: Annotated[tuple[Noun, ...], Field(min_length=1)]
     contexts: Annotated[tuple[Text, ...], Field(min_length=1)]
 
     @model_validator(mode="after")
     def _no_repeats(self) -> Self:
         _unique(list(self.names), "name")
         _unique([o.many for o in self.objects], "object")
-        _unique([u.many for u in self.units], "unit")
+        _unique([u.many for u in (*self.length_units, *self.time_units, *self.money_units)], "unit")
         _unique(list(self.contexts), "context")
         return self
 

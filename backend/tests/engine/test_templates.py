@@ -5,6 +5,7 @@ import pytest
 from mathquest.engine.content.schema import Noun
 from mathquest.engine.templates import (
     TemplateError,
+    article,
     check_expression,
     check_template,
     names,
@@ -108,3 +109,48 @@ def test_expression_check() -> None:
     assert check_expression(r"\frac{a + b}{2}") == r"\frac{a + b}{2}"
     with pytest.raises(TemplateError):
         check_expression("a +")
+
+
+@pytest.mark.parametrize(
+    ("word", "expected"),
+    [
+        ("apple", "an"), ("pear", "a"), ("egg", "an"), ("unicorn", "a"), ("umbrella", "an"),
+        ("hour", "an"), ("hat", "a"), ("one", "a"), ("ukulele", "a"), ("ice cube", "an"),
+    ],
+)  # fmt: skip
+def test_article_follows_the_first_sound(word: str, expected: str) -> None:
+    assert article(word) == expected
+
+
+def test_article_form_and_override() -> None:
+    apple = Noun(one="apple", many="apples")
+    herb = Noun(one="herb", many="herbs", article="an")
+    assert render("{o.a} and {h.a}", {"o": apple, "h": herb}) == (TextPart("an apple and an herb"),)
+
+
+def test_count_form_agrees_with_the_number() -> None:
+    rock = Noun(one="rock", many="rocks")
+    assert render("{n o}, {m o}", {"n": 1, "m": 5, "o": rock}) == (TextPart("1 rock, 5 rocks"),)
+    assert names("{n o} and {o.a}") == {"n", "o"}
+
+
+@pytest.mark.parametrize(
+    ("template", "values", "message"),
+    [
+        ("{n o}", {"n": "two", "o": Noun(one="rock", many="rocks")}, "not a number"),
+        ("{n o}", {"n": 2, "o": "rock"}, "cannot be counted"),
+        ("{n.a}", {"n": 2}, "is a number"),
+        ("{w.a}", {"w": "word"}, "is a word"),
+    ],
+)
+def test_count_and_article_errors(template: str, values: dict[str, object], message: str) -> None:
+    with pytest.raises(TemplateError, match=message):
+        render(template, values)  # pyright: ignore[reportArgumentType]
+
+
+@pytest.mark.parametrize(
+    ("template", "message"), [("{n o.one}", "drop .one"), (r"\({n o}\)", "math part")]
+)
+def test_count_form_is_text_only_and_picks_its_own_form(template: str, message: str) -> None:
+    with pytest.raises(TemplateError, match=message):
+        check_template(template)

@@ -10,7 +10,7 @@ templates:
     grade_band: 1
   - id: walk
     text_template: "{name} walks {a} {unit} {place}, then {b} more. How far?"
-    slots: {name: names, unit: units, place: contexts}
+    slots: {name: names, unit: length_units, place: contexts}
     grade_band: 2
   - id: as_math
     text_template: 'Find the sum: \({a} + {b} = ?\)'

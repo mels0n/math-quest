@@ -15,6 +15,7 @@ different answer and are dropped.
 import dataclasses
 import random
 from collections.abc import Mapping
+from typing import get_args
 
 from mathquest.engine.content.schema import Slots, SlotType, WordProblems, WordTemplate
 from mathquest.engine.templates import TemplateError, Value, evaluate, render
@@ -39,11 +40,13 @@ def fill_slots(
     pools: dict[SlotType, tuple[Value, ...]] = {
         "names": lists.names,
         "objects": lists.objects,
-        "units": lists.units,
+        "length_units": lists.length_units,
+        "time_units": lists.time_units,
+        "money_units": lists.money_units,
         "contexts": lists.contexts,
     }
     filled: dict[str, Value] = {}
-    for kind in ("names", "objects", "units", "contexts", "number"):
+    for kind in get_args(SlotType):
         slots = sorted(name for name, k in declared.items() if k == kind)
         if not slots:
             continue

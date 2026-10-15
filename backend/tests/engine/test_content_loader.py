@@ -192,7 +192,7 @@ def test_real_pack_loads_and_binds() -> None:
 def test_slot_lists_are_big_enough() -> None:
     assert len(SLOTS.names) >= 40
     assert len(SLOTS.objects) >= 40
-    assert SLOTS.units and SLOTS.contexts
+    assert SLOTS.length_units and SLOTS.time_units and SLOTS.money_units and SLOTS.contexts
 
 
 def _mutated(path: list[str | int], value: Any) -> dict[str, Any]:
@@ -284,6 +284,11 @@ INVALID: list[tuple[str, dict[str, Any], str]] = [
         "choice index out of range",
         _mutated(["bank/beta.yaml", "items", 0, "answer", "value"], 3),
         "bank/beta.yaml: items[0]: Value error, choice index 3 is out of range",
+    ),
+    (
+        "visual parameter that is not a template",
+        _mutated(["lessons/alpha.yaml", "screens", 1, "visual", "params", "start"], "{oops"),
+        "lessons/alpha.yaml: screens[1].visual: Value error, stray '{' in text",
     ),
     (
         "only two choices",
