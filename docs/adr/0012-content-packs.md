@@ -31,7 +31,8 @@ content/packs/<pack>/
   world.yaml           regions in map order
   lessons/<skill>.yaml  hints/<skill>.yaml  explanations/<skill>.yaml
   word_problems/<skill>.yaml  bank/<skill>.yaml
-content/slots.yaml     shared names, objects, units and contexts for word problems
+content/slots.yaml     shared names, objects, typed units (length, time, money) and
+                       contexts for word problems
 ```
 
 Every file is parsed by a frozen pydantic model that rejects unknown fields. The loader
@@ -63,6 +64,13 @@ rational prints as `\frac{p}{q}` and is only allowed inside a math part. A missi
 name, a stray brace in text, a fraction in text or a non-rational result is an error.
 Writing numbers in examples as `{{= 9 + 6 }}` lets the tests recompute them.
 
+Two forms keep English grammar right whatever the numbers and nouns are: `{obj.a}` gives
+the singular with its article ("an apple", "a pear"; from the noun's `article` in
+`slots.yaml` when given, else from its first letter with a short list of exceptions such
+as "a unicorn" and "an hour"), and `{n obj}` gives a number with a noun that agrees with
+it ("1 rock", "5 rocks"). A visual's string parameters are templates too, so a number
+line can start at the problem's own number (`start: "{big}"`).
+
 **Word problems and bank items are variants of a generated problem.** A word problem
 template is picked by seed; its slots are filled from `slots.yaml` with a random
 generator seeded by the seed and template id, without repeating an entry of the same
@@ -76,8 +84,11 @@ index, an expression item is checked like typed input.
 a random generator seeded by the problem seed picks `bank` with the skill's
 `bank_share`, `word` with its `word_share`, else `bare`; a share counts only when the
 skill has that content. The variant and template or item id are stored with the seed,
-so regeneration needs no other state. A removed template or item falls back to the bare
-problem.
+so regeneration needs no other state. A removed template falls back to the bare
+problem; a removed bank item closes the problem (below). If a variant fails to render
+when a problem is issued (a template that breaks for one seed), the failure is logged
+and the bare problem is issued and stored instead. Seeds are drawn below 2^53 so the
+browser holds them exactly.
 
 **Choice answers are indexes.** The answer route takes exactly one of `latex` or
 `choice`. A choice problem accepts only a choice within its shown range, and every

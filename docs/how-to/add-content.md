@@ -47,6 +47,21 @@ and the design (template language, variants, complete regions) is in
 Bump `version` in `pack.yaml` with every content change, so the admin page shows which
 version is live.
 
+A bank item that has shipped is never edited in place: changing its meaning, its
+choices (even their order) or its answer means adding a new item with a new `id` and
+removing the old one. Open problems store only the id, so an edited item would be
+checked against an answer the learner never saw. A choice item needs at least three
+choices.
+
+Template forms beyond `{a}` and `{{= expr }}`:
+
+- `{obj.a}` writes the singular with its article: "an apple", "a pear". Give a noun an
+  `article` in `slots.yaml` when its spelling misleads.
+- `{n obj}` writes a number with a noun that agrees: "1 rock", "5 rocks".
+- Unit slots come from typed pools: `length_units`, `time_units`, `money_units`.
+- A visual's string parameters are templates: `start: "{big}"` starts a number line at
+  this problem's bigger number.
+
 A region listed in `complete_regions` must meet every target for every skill in it.
 Add a region there only when the report shows it done.
 
@@ -61,6 +76,10 @@ them. Read every warning: an unknown word may be fine (add it to the skill's
 `vocabulary` in `skills.yaml` if the skill needs it), a near duplicate across skills
 may be worth rewording. The rules and their reasons are in
 [ADR-0013](../adr/0013-content-lint-and-review.md).
+
+The lint does not know what a story means. Whether a story's action matches the skill
+(a "gives away" story on an adding skill) is for you and the reviewer to check in the
+preview.
 
 ## 5. Read every item in the preview
 
@@ -82,15 +101,20 @@ before merging.
   one word each). One idea per sentence. Prefer common words; the lint lists any word
   outside the early-reader list.
 - **Warm and direct.** Talk to the child as "you". Encourage effort, never speed.
-- **No em dashes or en dashes,** and no `--`. Use a full stop or a comma instead.
+- **No em dashes or en dashes,** no `--` and no spaced hyphen (" - ") as a dash. Use a
+  full stop or a comma instead.
 - **Vary names and contexts.** Use name, object and context slots (`{name}`, `{obj}`)
   rather than writing names in, and spread templates across home, school, nature, food
-  and games. Two templates that read nearly the same fail the lint.
+  and games. Two templates that read nearly the same fail the lint, even with one noun
+  or verb swapped. Use `{obj.a}` and `{n obj}` so articles and plurals stay right.
 - **Let numbers compute.** Write any number that depends on other numbers as
   `{{= a + b }}`, and numbers in worked examples as `{{= 9 + 6 }}`, so the lint
   recomputes them. Never type a sum by hand.
 - **Mistake feedback names the mistake kindly and points to the fix.** Say what the
   child probably did ("It looks like you took away."), then what to do instead ("The
   plus sign means put them together."). Never say "wrong".
+- **Ask a clear question.** Say whose things are counted ("How many shells does Mia
+  have?", not "How many shells?"), keep numbers realistic for the story, and do not
+  start a sentence with a number ("There are 6 birds", not "6 birds").
 - **Hints climb.** The first is a nudge, the second the next step, the third the whole
   answer worked out.

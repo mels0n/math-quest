@@ -23,22 +23,32 @@ finished.
   explanation and piece of mistake feedback for 50 seeds at every tier. Each rendered
   answer must be accepted by the answer checker in the skill's answer form. Lessons
   render once with no values, so their computed numbers use literals only.
-- **Findings are errors or warnings.** Errors: broken graph or generator binding,
-  unrenderable text, an answer the checker refuses, unknown or unused template slots,
-  em dashes, en dashes and `--` in kid-facing text, sentences over 12 words in K to 2
-  text, and near duplicates within one skill. Warnings: teaching content missing outside
-  a complete region, a word outside the early-reader list, a template that never shows
-  one of the generator's numbers, and near duplicates across skills.
+- **Findings are errors or warnings.** Errors: a pack that does not bind to the
+  generators, unrenderable text, an answer the checker refuses, unknown or unused
+  template slots, "1" before a plural or the wrong "a"/"an" in rendered text, em
+  dashes, en dashes, `--` and a spaced hyphen used as a dash in kid-facing text (and
+  any dash in the slot lists or word list), sentences over 12 words in K to 2 text
+  (wrapped lines joined first), and near duplicates within one skill. Warnings:
+  teaching content or mistake feedback missing outside a complete region, a word
+  outside the early-reader list, a template that never shows one of the generator's
+  numbers, a sentence that starts with a digit, and near duplicates across skills.
+  The prerequisite graph is not linted again: a pack whose graph has a cycle or an
+  unknown skill does not load.
+- **The lint does not judge the story.** Whether a story's action matches the skill's
+  operation (a "gives away" story on an adding skill) is checked by the reviewer in the
+  preview, not by the lint.
 - **Readability is two simple measures.** Sentence length in words (math, slots and
   computed numbers count as one word each) and a list of a little over two thousand
   common early-reader words, with plain inflections (`-s`, `-ed`, `-ing`, ...)
   accepted. A skill lists its own math words in `vocabulary` in `skills.yaml`. Only
   length is an error, because the word list can never be complete.
-- **Near duplicates are found by token sets.** Text is lower-cased, digits and slot
-  names are collapsed and punctuation dropped; two items whose token sets have a
-  Jaccard similarity above 0.85 are flagged.
+- **Near duplicates are found by word order.** Text is lower-cased, digits and slot
+  names are collapsed and punctuation dropped; two items whose word sequences match
+  above 0.75 (`difflib` ratio) are flagged. Order matters, so a copy with one noun or
+  verb swapped still matches; the real `add_within_20` templates peak at about 0.71.
 - **Coverage targets per skill:** a generator with 3 or more tiers and 2 or more
-  mistakes it can name, 15 word templates where word problems fit, 30 bank items where
+  mistakes it can name, feedback written for every mistake it names, 15 word templates
+  where word problems fit, 30 bank items where
   the skill is banked, one lesson, three hints, three or four explanations. A coverage
   report shows them for every skill and runs in CI as a non-blocking artifact. In a
   region listed in `complete_regions`, any shortfall is a lint error.
@@ -57,6 +67,9 @@ finished.
 - **Make unknown words errors.** Every new context word ("kayak", "pumpkin") would break
   CI until the list caught up; the warning still shows in review.
 - **Check duplicates by exact text.** Swapping one name or number would hide a copy.
+- **Check duplicates by word sets (Jaccard).** Swapping one noun changes few words in a
+  short template, but a set comparison also misses it once the shared words are common
+  ones; word order separates copies from different stories better.
 - **Sample a few seeds per template.** Slot clashes and fractions in text show up only
   for some values; 200 seeds per tier runs in about a second for a full skill.
 - **Preview content in a separate static site.** It would need its own build and could
