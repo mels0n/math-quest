@@ -129,8 +129,10 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 		await expect(page.getByTestId('region-fraction_forest')).toContainText('1 more to unlock');
 		expect(await page.evaluate(fits)).toBe(true);
 		if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/practice-picker.png`, fullPage: true });
-		// Compact enough for a phone: the whole picker in about a screen and a half.
-		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(1050);
+		// Compact enough for a phone: about a screen and a half (roughly 1030 px today; the
+		// old one-card-per-row picker was over 2200). The margin absorbs font differences
+		// between machines.
+		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(1200);
 
 		const started = page.waitForResponse(isStart);
 		const first = page.waitForResponse(isNext);
