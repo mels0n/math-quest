@@ -6,7 +6,13 @@ from typing import Literal, Self
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 
-from mathquest.api.deps import AppSettings, CurrentPlayer, Db, limit_answer, limit_session
+from mathquest.api.deps import (
+    AppSettings,
+    CurrentPlayer,
+    Db,
+    limit_answer,
+    limit_placement_start,
+)
 from mathquest.features import placement
 from mathquest.features.placement import PlacementDoneOut, PlacementStepOut
 
@@ -57,7 +63,7 @@ class AnswerIn(BaseModel):
         return value
 
 
-@router.post("/start", dependencies=[Depends(limit_session)])
+@router.post("/start", dependencies=[Depends(limit_placement_start)])
 async def start(
     body: StartIn, request: Request, player: CurrentPlayer, db: Db, settings: AppSettings
 ) -> PlacementStepOut:

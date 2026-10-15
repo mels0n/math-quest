@@ -1,13 +1,14 @@
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false
 """Placement service tests, against the real content pack and an in-process checker."""
 
+import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from mathquest.engine.catalog import load_catalog
 from mathquest.engine.checker.bounded import CheckerPool
@@ -21,6 +22,7 @@ from mathquest.entities.problems import ProblemInstance
 from mathquest.features.placement import FREE_RETRIES, service
 from mathquest.features.placement.schema import PlacementDoneOut, PlacementStepOut
 from mathquest.shared.errors import Conflict, Invalid, NotFound
+from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
 
 CATALOG = load_catalog(Path(__file__).resolve().parents[2] / "content", "k8-core")
 ANCHORS = spine(CATALOG.graph)
@@ -77,6 +79,16 @@ async def _round(
             return out, asked
         step = out
     raise AssertionError("placement did not finish")
+
+
+async def _age_rounds(db: AsyncSession, pid: uuid.UUID) -> None:
+    """Move the player's finished rounds past the retake cooldown."""
+    await db.execute(
+        update(PlacementRun)
+        .where(PlacementRun.player_id == pid, PlacementRun.finished_at.is_not(None))
+        .values(finished_at=PlacementRun.finished_at - service.RETAKE_COOLDOWN)
+    )
+    await db.commit()
 
 
 async def _state(db: AsyncSession, pid: uuid.UUID, skill_id: str) -> str | None:
@@ -238,6 +250,7 @@ async def test_retake_resets_unconfirmed_marks_and_keeps_real_mastery(db: AsyncS
     learning.state = SkillState.LEARNING
     learning.attempts = 2
     await db.commit()
+    await _age_rounds(db, pid)
 
     second, _ = await _round(db, pid, level=0)
 
@@ -268,3 +281,41 @@ async def test_a_learning_skill_is_never_marked(db: AsyncSession) -> None:
     assert (after.rating, after.attempts) == (1.25, 3)
     assert "add_within_10" not in done.provisional
     assert "add_within_20" in done.provisional
+
+
+async def test_a_finished_round_cannot_be_retaken_straight_away(db: AsyncSession) -> None:
+    pid = await _player(db)
+    await _round(db, pid, level=1)
+    with pytest.raises(Conflict) as err:
+        await _start(db, pid)
+    assert err.value.code == "retake_too_soon"
+    await _age_rounds(db, pid)
+    assert (await _start(db, pid)).question == 1
+
+
+async def test_two_starts_at_once_leave_one_round_open(db_schema: str) -> None:
+    engine = create_async_engine(
+        _database_url(),
+        pool_size=5,
+        connect_args={"server_settings": {"search_path": db_schema}},
+    )
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    try:
+        async with factory() as setup:
+            pid = await _player(setup)
+            await setup.commit()
+
+        async def start_one() -> None:
+            async with factory() as session:
+                await service.start(session, CATALOG, pid, None)
+
+        await asyncio.gather(start_one(), start_one(), start_one())
+        async with factory() as check:
+            open_rounds = await check.scalar(
+                select(func.count())
+                .select_from(PlacementRun)
+                .where(PlacementRun.player_id == pid, PlacementRun.finished_at.is_(None))
+            )
+        assert open_rounds == 1
+    finally:
+        await engine.dispose()

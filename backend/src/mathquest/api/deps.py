@@ -170,6 +170,16 @@ async def limit_session(request: Request, player: CurrentPlayer) -> None:
     )
 
 
+async def limit_placement_start(request: Request, player: CurrentPlayer) -> None:
+    """Placement rounds started (first rounds and retakes) are limited per player."""
+    _limiter(request).hit(
+        "placement-start",
+        str(player.id),
+        limit=ratelimit.PLACEMENT_START_LIMIT,
+        window_s=ratelimit.PLACEMENT_START_WINDOW_S,
+    )
+
+
 async def limit_next(request: Request, player: CurrentPlayer) -> None:
     """Problem requests are limited per player."""
     _limiter(request).hit(

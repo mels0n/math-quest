@@ -17,7 +17,10 @@ never enter a session's history.
 When the round ends, provisional marks left by an earlier round that no review has
 confirmed are undone, and the new outcome's skills are marked provisionally mastered
 (never touching a skill already mastered), due for review a day later. Starting a round
-ends the player's unfinished one; answering an ended round is a Conflict.
+ends the player's unfinished one (under a lock on the player's row, so two starts at
+once cannot both stay open); answering an ended round is a Conflict. A round cannot be
+started within RETAKE_COOLDOWN of the player's last completed one
+(Conflict("retake_too_soon")).
 
 The checker runs with no transaction open, like play: read the run and commit, check,
 then lock the run and re-read it. If the open probe changed in between (a second
@@ -60,6 +63,9 @@ from mathquest.shared.errors import Conflict, Invalid, NotFound
 
 FREE_RETRIES = 3
 """Unreadable or wrong-form answers asked again before one counts as a miss."""
+RETAKE_COOLDOWN = timedelta(minutes=10)
+"""A finished round cannot be retaken sooner; repeated retakes would only reshuffle
+provisional marks."""
 
 Probe = dict[str, Any]
 
@@ -189,6 +195,11 @@ async def start(
     if not anchors:
         raise Conflict("placement_unavailable")
     now = _now()
+    await placement.lock_player(db, player_id)
+    last = await placement.last_completed_at(db, player_id)
+    if last is not None and now - last < RETAKE_COOLDOWN:
+        await db.rollback()
+        raise Conflict("retake_too_soon")
     await placement.abandon_open(db, player_id, now)
     first = start_anchor(graph, anchors, grade_hint)
     state = {

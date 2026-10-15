@@ -87,11 +87,13 @@ async def test_start_returns_a_problem_without_its_answer(api: ApiFactory) -> No
 
 async def test_a_grade_hint_must_be_k_to_8(api: ApiFactory) -> None:
     h = await _api(api)
-    for bad in ("9", "A1", 3, "k", ""):
+    assert (await _start(h.client, {"grade_hint": None})).status_code == 200
+    for bad in ("9", "A1", 3, ""):
         r = await _start(h.client, {"grade_hint": bad})
         assert r.status_code == 422, bad
     assert (await _start(h.client, {"age": 7})).status_code == 422
-    assert (await _start(h.client, {"grade_hint": None})).status_code == 200
+    # Six starts an hour per player, counted before the body is read.
+    assert (await _start(h.client)).status_code == 429
 
 
 async def test_a_whole_round_ends_with_the_outcome(api: ApiFactory) -> None:

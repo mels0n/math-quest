@@ -11,11 +11,12 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Text, select, update
+from sqlalchemy import DateTime, ForeignKey, Text, func, select, update
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
+from mathquest.entities.models import Player
 from mathquest.shared.db import Base
 
 
@@ -49,8 +50,23 @@ async def add_run(
     return row
 
 
+async def lock_player(db: AsyncSession, player_id: uuid.UUID) -> None:
+    """Lock the player's row, so two rounds cannot start at once for one player."""
+    await db.execute(select(Player.id).where(Player.id == player_id).with_for_update())
+
+
+async def last_completed_at(db: AsyncSession, player_id: uuid.UUID) -> datetime | None:
+    """When the player's newest completed round (one with an outcome) finished."""
+    return await db.scalar(
+        select(func.max(PlacementRun.finished_at)).where(
+            PlacementRun.player_id == player_id, PlacementRun.result.is_not(None)
+        )
+    )
+
+
 async def abandon_open(db: AsyncSession, player_id: uuid.UUID, at: datetime) -> None:
-    """End the player's unfinished runs without a result."""
+    """End the player's unfinished runs without a result. Call `lock_player` first in
+    the same transaction, so a concurrent start waits and cannot leave two runs open."""
     await db.execute(
         update(PlacementRun)
         .where(PlacementRun.player_id == player_id, PlacementRun.finished_at.is_(None))
