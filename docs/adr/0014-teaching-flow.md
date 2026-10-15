@@ -23,34 +23,52 @@ the player has already practised (any scored problem) never gets one, so a playe
 learned a skill before its lesson existed is not sent back to the start. A lesson can be
 replayed from any problem of its skill at any time.
 
+`next` offers the lesson only to a client that says it can show one, with the header
+`X-MathQuest-Client: 2`. A page loaded before lessons shipped does not send it and keeps
+getting problems instead of a response it cannot draw. The header check is removed one
+release after lessons ship, once no such page can still be open.
+
+**Examples never give a problem away.** A lesson can be replayed while a problem is on
+screen, so every fixed example in a lesson or an explanation uses numbers the skill never
+asks (sums past 10 in Add to 10, starts above 10 in Subtract from 10). The content lint
+fails any fixed example equal to a problem the skill's generator can produce.
+
 **The try-it costs nothing.** A lesson ends with a real generated problem at the
 lesson's tier, checked by the same checker. It is stored in its own table,
 `lesson_tries`, not as a flagged row in `problem_instances`. Mastery, the solved count,
 the scheduler's session history and the stuck log all read `problem_instances`; a
 separate table cannot leak into any of them, where a `practice_only` flag would have to
-be remembered in every one of those queries, today and in every future one.
+be remembered in every one of those queries, today and in every future one. A wrong
+answer on the try-it gets the same mistake feedback as play. Asking for the try-it again
+(a replayed lesson) returns the open one instead of starting another.
 
 **A hint ladder with a price.** `POST /api/play/problems/{id}/hint` returns the next of
 the skill's three levels (a nudge, the next step, the whole method worked on this
 problem's numbers), rendered from the problem's own values. The count is kept on the
 problem (`hints_used`) under the same row lock the answer route takes. A fourth request
 is a 409 (`no_more_hints`) and changes nothing; a hint on a scored problem is a 409
-(`problem_scored`), on a closed one `problem_closed`. A correct answer is credited as if
-it took `min(3, wrong tries before it + hint levels viewed)` hints, so the score is
-`max(0.25, 1 - 0.25 * help)`: every wrong try and every hint costs a quarter, and a solve
-after the worked example still counts as a hinted solve worth a quarter. Only the third
-level may state the answer; the content lint fails a first or second hint that writes
-the answer as the result of an equation.
+(`problem_scored`), on a closed one `problem_closed`. The client treats the first two as
+nothing to do. A correct answer is credited as if it took `min(3, wrong tries before it
++ hint levels viewed + explanations viewed)` hints, so the score is
+`max(0.25, 1 - 0.25 * help)`: every wrong try, hint and explanation costs a quarter, and
+a solve after the worked example still counts as a hinted solve worth a quarter.
+
+Only the third level may state the answer. The content lint renders the first two
+levels, every piece of mistake feedback and every explanation with its picture for many
+problems, and fails any number in them (text, math or picture parameter, on either side
+of an equals sign) equal to that problem's answer, unless the prompt shows that number
+itself (as in `7 - 0`). It says when the number comes from a fixed example.
 
 **Feedback on a wrong answer.** An incorrect answer returns `feedback`. If the checker
 matched a known mistake, it is that mistake's feedback from the skill's content, with
 the problem's numbers (`misconception`). Otherwise, while the problem is open, a short
-generic line: `hint` when a hint is left ("Tap Hint for a clue"), else `retry`. A
+generic line: `hint` when a hint is left ("Not quite. Try a hint."), else `retry`. A
 problem just scored wrong with no matched mistake gets none, because its answer is
-revealed. Feedback never states the answer; the lint checks written feedback the same
-way as hints. The generic lines live in one table in the engine next to the rule that
-picks them; the verdict line above the answer ("So close! Try again.") stays in the
-client's copy table.
+revealed. Feedback never states the answer; the lint checks it like hints. Feedback
+shows right under the prompt, above the answer field, in place of the client's generic
+verdict line, so it is on screen without scrolling on a small phone. The generic
+feedback lines live in one table in the engine next to the rule that picks them; the
+verdict lines ("That's right!") stay in the client's copy table.
 
 **Help only where the content fits.** Hints, explanations and feedback are written over
 the generator's values. A bank item or a word problem that computes its own answer has
@@ -61,25 +79,34 @@ a different answer, so those problems offer none of them (`hint_levels: 0`,
 skill's approaches. The order is a rotation per player: it starts at a place drawn from
 a hash of the player and skill, so different players meet a different approach first,
 and moves on by one with every explanation that player has seen for that skill, across
-problems and sessions. The client offers it once the learner has missed or used every
-hint. Explanations cost no credit. Each one shown is recorded with its session.
+problems and sessions. It is available only after the learner has missed the problem at
+least once (a 409 `explain_after_a_try` before that), because it is for a learner who
+is stuck. Each one costs credit like a hint level and is recorded with its session.
+Explanation pictures show where to start and how to move (a number line's start and
+jumps), never the landing point or the total: the learner still counts.
 
 **Stuck log, without identity.** A problem scored wrong after every approach of its
 skill was shown in the same session records a stuck event: skill, generator, tier, seed
-and the wrong answers. The admin export (`GET /api/admin/stuck-log`, JSON or
-`?format=csv`, optional `since`) contains exactly those five fields, the shape
+and the wrong answers. Only a problem that shows the generator's numbers records one, so
+(generator, tier, seed) always rebuilds the problem the learner saw. The admin export
+(`GET /api/admin/stuck-log`, JSON or `?format=csv`, optional `since`, at most `limit`
+events, 5000 by default and 20000 at most, oldest first) contains exactly those five
+fields, the shape
 `content-report --stuck` reads, and nothing about who was stuck or when. The row keeps
 the player id for the warm-up rule below and so that deleting a player deletes it; that
 column is never exported. In CSV the wrong answers are one cell holding a JSON list, so
 commas survive and no cell can start with a spreadsheet formula character.
 
-**Warm-up on repeated struggle.** In a session, a skill with 2 stuck events or 5 problems
-scored wrong (counted since its last warm-up) gets 2 problems of its weakest prerequisite
-(lowest rating among its prerequisites, first listed on a tie), then play returns to the
-skill. A skill with no prerequisites gets no warm-up. The count restarts after each
-warm-up, so a learner who keeps struggling gets another one after 5 more misses, not on
-every problem. Warm-up problems are ordinary problems, stored with `warmup_for` naming
-the skill they serve, and count for the prerequisite's mastery.
+**Warm-up on repeated struggle.** In a session, a skill with 2 stuck events or 5
+problems scored wrong (counted since its last warm-up) gets 2 problems of its weakest
+prerequisite (lowest rating among its prerequisites, first listed on a tie), then play
+returns to the skill if it is still ready or due for review (otherwise the scheduler
+chooses as usual). A skill with no prerequisites gets no warm-up. A due review on its
+slot (every fifth problem) comes before a warm-up in progress; the warm-up carries on
+after it. The count restarts after each warm-up, so a learner who keeps struggling gets
+another one after 5 more misses, not on every problem. Warm-up problems are ordinary
+problems, stored with `warmup_for` naming the skill they serve, and count for the
+prerequisite's mastery.
 
 **Frustration guard.** After 3 problems in a row of one skill scored wrong in the
 session, that skill's next problem is one tier lower than the tier the rating picks
@@ -87,7 +114,9 @@ session, that skill's next problem is one tier lower than the tier the rating pi
 break the run; a correct answer ends it.
 
 Both rules are pure functions in `engine/scheduler.py` over the session's history,
-which play reads from the database and passes in.
+which play reads from the database and passes in: the latest 50 problems, enough for a
+run, the reviews inside it, a warm-up and the misses that trigger one. Review slots
+always come from the session's true problem count, not the length of that window.
 
 **Slices stay apart.** The teaching slice serves lessons, try-its, hints, explanations
 and the stuck log; the play slice issues and scores problems. They share no code: what
@@ -104,6 +133,8 @@ the teaching slice.
 - **Try-it as a `practice_only` problem instance.** One table and one answer route, but
   every reader of `problem_instances` (solved count, mastery, history, stuck log) would
   have to filter it, and forgetting once corrupts a learner's record.
+- **Explanations free, or available before any try.** A learner could read every way of
+  solving the problem first and be credited with a clean solve.
 - **Hints free, or only wrong tries cost.** A learner could read the worked example
   every time and be credited with a clean solve; mastery would then claim more than the
   learner can do alone.
