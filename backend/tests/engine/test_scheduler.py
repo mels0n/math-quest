@@ -40,13 +40,19 @@ def test_pick_skill_empty_graph_raises() -> None:
         pick_skill(SkillGraph([]), {}, set(), [], 0)
 
 
-def test_current_run_counts_the_newest_ready_skill_and_skips_reviews() -> None:
+def test_current_run_counts_the_newest_skill_and_skips_reviews() -> None:
     ready = ["a", "b"]
-    assert current_run([], ready) == (None, 0)
-    assert current_run(["b", "a", "a"], ready) == ("a", 2)
-    assert current_run(["a", "a", "r", "a"], ready) == ("a", 3)
-    assert current_run(["a", "r"], ready) == ("a", 1)
-    assert current_run(["r"], ready) == (None, 0)
+    assert current_run([], ready, 0) == (None, 0)
+    assert current_run(["b", "a", "a"], ready, 3) == ("a", 2)
+    # Problem 4 was a review of the mastered skill "r".
+    assert current_run(["a", "a", "a", "a", "r", "a"], ready, 6) == ("a", 5)
+    assert current_run(["a", "a", "a", "a", "r"], ready, 5) == ("a", 4)
+    assert current_run(["r"], ready, 5) == (None, 0)
+
+
+def test_current_run_ends_when_the_newest_skill_is_no_longer_ready() -> None:
+    # "r" was played on ordinary slots and has just been mastered.
+    assert current_run(["a", "r", "r"], ["a", "b"], 3) == (None, 0)
 
 
 def test_pick_skill_stays_on_a_skill_for_a_short_run() -> None:
@@ -77,3 +83,10 @@ def test_a_run_ends_when_its_skill_is_no_longer_ready() -> None:
     ratings = {"b": SkillRating(rating=1.0), "c": SkillRating(rating=0.5)}
     # "a" was just mastered: its run is over and the lowest-rated ready skill is picked.
     assert pick_skill(g, ratings, {"a"}, [], 2, ["a", "a"]) == "c"
+
+
+def test_a_just_mastered_skill_does_not_hand_its_run_to_an_older_skill() -> None:
+    g = SkillGraph([_skill("x"), _skill("y"), _skill("z")])
+    ratings = {"x": SkillRating(rating=1.0), "y": SkillRating(rating=-1.0)}
+    # "z" was mastered on problem 2; "x" from problem 0 must not resume a run.
+    assert pick_skill(g, ratings, {"z"}, [], 3, ["x", "z", "z"]) == "y"

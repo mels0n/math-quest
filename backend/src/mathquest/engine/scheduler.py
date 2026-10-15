@@ -9,20 +9,31 @@ REVIEW_EVERY = 5
 RUN_LENGTH = 3
 
 
-def current_run(recent: Sequence[str], ready: Sequence[str]) -> tuple[str | None, int]:
+def _review_slot(index: int) -> bool:
+    return index % REVIEW_EVERY == REVIEW_EVERY - 1
+
+
+def current_run(
+    recent: Sequence[str], ready: Sequence[str], problem_index: int
+) -> tuple[str | None, int]:
     """The skill of the run in progress and how many problems it has had so far.
 
-    `recent` is the session's skill ids, newest last. Entries for skills that are not
-    ready (reviews of mastered skills) are skipped, so a review inside a run does not
-    end it. Returns (None, 0) when no recent skill is ready.
+    `recent` is the session's latest skill ids, newest last, and `problem_index` the
+    index of the problem about to be picked, so `recent[-1]` was problem
+    `problem_index - 1`. An entry is a review when it sat on a review slot and its skill
+    is not ready (it is mastered); reviews are skipped, so one inside a run neither
+    counts nor ends it. The run belongs to the newest entry that is not a review. If that
+    skill is no longer ready (it was just mastered), there is no run: (None, 0).
     """
     ready_set = set(ready)
     skill: str | None = None
     length = 0
-    for sid in reversed(recent):
-        if sid not in ready_set:
+    for back, sid in enumerate(reversed(recent)):
+        if _review_slot(problem_index - 1 - back) and sid not in ready_set:
             continue
         if skill is None:
+            if sid not in ready_set:
+                return None, 0
             skill = sid
         elif sid != skill:
             break
@@ -43,9 +54,10 @@ def pick_skill(
     `due_reviews` must already be ordered oldest review first. `recent` holds the
     session's last skill ids, newest last.
     Every fifth problem (problem_index % 5 == 4) takes the first due review.
-    Otherwise, when the newest ready skill in `recent` has had fewer than RUN_LENGTH
-    problems in a row (reviews in between do not count or break the run), it is picked
-    again, so a short run on one skill shows progress before the scheduler rotates.
+    Otherwise, when the skill of the newest problem that was not a review is still
+    ready and has had fewer than RUN_LENGTH problems in a row (see `current_run`), it is
+    picked again, so a short run on one skill shows progress before the scheduler
+    rotates. `recent` must be the session's latest problems with none left out.
     Otherwise the ready skill with the lowest rating wins; ties go to the earlier skill
     in topological order. Ratings come from `ratings`: the caller passes the start
     rating (`initial_rating`) for skills not yet played, and a skill missing from the
@@ -56,7 +68,7 @@ def pick_skill(
         return due_reviews[0]
     ready = graph.ready(mastered)
     if ready:
-        skill, length = current_run(recent, ready)
+        skill, length = current_run(recent, ready, problem_index)
         if skill is not None and length < RUN_LENGTH:
             return skill
         return min(ready, key=lambda sid: ratings.get(sid, SkillRating()).rating)
