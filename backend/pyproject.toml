@@ -16,6 +16,9 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
+[project.scripts]
+content-lint = "mathquest.cli.content_lint:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3",

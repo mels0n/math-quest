@@ -102,6 +102,9 @@ class Skill(_Model):
     word_share: Annotated[float, Field(ge=0.0, le=1.0)] = 0.4
     banked: bool = False
     bank_share: Annotated[float, Field(ge=0.0, le=1.0)] = 0.25
+    vocabulary: tuple[Annotated[str, StringConstraints(pattern=r"^[a-z][a-z']*$")], ...] = ()
+    """Words the content lint accepts in this skill's early-reader text beyond the
+    shared simple word list (lowercase, one word each)."""
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:

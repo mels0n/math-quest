@@ -36,6 +36,8 @@ jobs:
       - run: uv run ruff check
       - run: uv run pyright
       - run: uv run lint-imports
+      - name: Content lint
+        run: uv run content-lint content/packs/*
       - name: Install PostgreSQL client tools
         run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
         working-directory: .

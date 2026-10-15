@@ -14,6 +14,8 @@
 #   word_share         share of problems shown as word problems (default 0.4)
 #   banked             true when the skill also draws from bank items (default false)
 #   bank_share         share of problems taken from the bank (default 0.25)
+#   vocabulary         extra words the content lint accepts in this skill's K to 2
+#                      text beyond content/lint/k2_words.txt (lowercase; default [])
 # Order here breaks ties in the topological order.
 skills:
   - id: add_within_10

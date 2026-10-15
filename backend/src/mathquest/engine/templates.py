@@ -126,6 +126,11 @@ def evaluate(source: str, numbers: Mapping[str, int]) -> sympy.Expr:
     return value
 
 
+def expression_names(source: str) -> frozenset[str]:
+    """Every value name used in expression ``source`` (LaTeX commands are not names)."""
+    return frozenset(_names_in(source))
+
+
 def check_expression(source: str) -> str:
     """Raise ``TemplateError`` unless ``source`` is an expression the parser reads."""
     if not source.strip():
