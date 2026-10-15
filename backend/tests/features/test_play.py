@@ -18,10 +18,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check
 from mathquest.engine.generators import get_generator
-from mathquest.engine.mastery import SkillState, choose_tier
+from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
+from mathquest.engine.scheduler import RUN_LENGTH
 from mathquest.engine.skillgraph import SkillGraph, load_pack
 from mathquest.engine.types import Problem
-from mathquest.entities import mastery, players
+from mathquest.entities import mastery, players, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.models import Player
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance, add_problem
@@ -109,7 +110,7 @@ async def test_correct_answer_updates_mastery_once(db: AsyncSession) -> None:
 
     assert out.verdict is Verdict.CORRECT
     assert out.solved is True
-    assert out.attempts_left == 2
+    assert out.attempts_left == 3
     assert out.answer_latex == _right(inst)
     assert out.mastery.skill_id == "add_within_10"
     assert out.mastery.state is SkillState.LEARNING
@@ -131,6 +132,7 @@ async def test_double_submit_idempotent(db: AsyncSession) -> None:
 
     assert second == first
     assert third == first
+    assert (first.total_solved, second.total_solved, third.total_solved) == (1, 1, 1)
     row = await _row(db, pid, "add_within_10")
     assert row.attempts == 1
     assert row.rating == rating
@@ -159,7 +161,7 @@ async def test_wrong_form_does_not_consume_attempt(db: AsyncSession) -> None:
 
     ok = await _submit(db, pid, inst.id, _right(inst))
     assert ok.verdict is Verdict.CORRECT
-    assert ok.attempts_left == 2
+    assert ok.attempts_left == 3
     row = await _row(db, pid, "add_fractions_unlike")
     assert row.attempts == 1
     assert row.recent == [[1, 0]]
@@ -191,6 +193,21 @@ async def test_three_misses_reveals_answer_and_scores_incorrect(db: AsyncSession
     assert (await _row(db, pid, "add_within_10")).attempts == 1
 
 
+async def test_wrong_then_right_leaves_exactly_one_grey_heart(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id)
+
+    miss = await _submit(db, pid, inst.id, _wrong(inst))
+    hit = await _submit(db, pid, inst.id, _right(inst))
+
+    assert miss.attempts_left == 2
+    assert hit.solved is True
+    assert hit.attempts_left == 2
+    replay = await _submit(db, pid, inst.id, _right(inst))
+    assert replay.attempts_left == 2
+
+
 async def test_correct_after_misses_uses_hints_penalty(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
@@ -205,6 +222,35 @@ async def test_correct_after_misses_uses_hints_penalty(db: AsyncSession) -> None
     assert (await _row(db, pid, "add_within_10")).rating < (
         await _row(db, pid, "sub_within_10")
     ).rating
+
+
+async def test_solved_total_is_per_player_and_counts_only_solved(db: AsyncSession) -> None:
+    me = await _player(db, "Me")
+    other = await _player(db, "Other")
+    mine = await service.start_session(db, me, "adventure")
+    theirs = await service.start_session(db, other, "adventure")
+    solved = await _issue(db, me, mine.session_id, seed=1)
+    missed = await _issue(db, me, mine.session_id, seed=2)
+    pending = await _issue(db, me, mine.session_id, seed=3)
+    elsewhere = await _issue(db, other, theirs.session_id, seed=4)
+
+    assert await service.total_solved(db, me) == 0
+    first = await _submit(db, me, solved.id, _right(solved))
+    assert first.total_solved == 1
+    for k in range(3):
+        out = await _submit(db, me, missed.id, _wrong(missed, k))
+        assert out.total_solved == 1
+    tried = await _submit(db, me, pending.id, _wrong(pending))
+    assert tried.total_solved == 1
+    theirs_out = await _submit(db, other, elsewhere.id, _right(elsewhere))
+    assert theirs_out.total_solved == 1
+
+    assert await problems.count_solved(db, me) == 1
+    assert await problems.count_solved(db, other) == 1
+    assert await service.total_solved(db, me) == 1
+    again = await _issue(db, me, mine.session_id, seed=5)
+    assert (await _submit(db, me, again.id, _right(again))).total_solved == 2
+    assert await service.total_solved(db, other) == 1
 
 
 async def test_other_player_problem_404(db: AsyncSession) -> None:
@@ -262,6 +308,24 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
     assert inst.difficulty == regenerated.difficulty
     again = await service.next_problem(db, GRAPH, pid, session.session_id)
     assert again.problem_id != problem.problem_id
+
+
+async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    skills: list[str] = []
+    for _ in range(4):
+        problem = await service.next_problem(
+            db, GRAPH, pid, session.session_id, expose_answers=True
+        )
+        skills.append(problem.skill_id)
+        await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+
+    assert skills[0] == skills[1] == skills[2]
+    assert skills[3] != skills[0]
+    recent = await problems.recent_skill_ids(db, session.session_id, limit=3)
+    assert recent == skills[1:]
+    assert service.RECENT_LOOKBACK == RUN_LENGTH * 2 + 2
 
 
 async def _master(db: AsyncSession, pid: uuid.UUID, session_id: uuid.UUID, skill_id: str) -> int:
@@ -332,6 +396,40 @@ async def test_mastered_skill_review_schedule(db: AsyncSession) -> None:
     assert final.state == "learning"
     assert final.review_interval_days is None
     assert final.review_due_at is None
+
+
+async def test_a_wrong_answer_never_promotes_a_learning_skill(db: AsyncSession) -> None:
+    # A row rated far above the top tier (as saved before ratings were capped) with a
+    # top-tier streak: after one more scored miss it still passes `is_mastered`.
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    top = max(get_generator("add_within_10").tier_difficulties)
+    db.add(
+        SkillMastery(
+            player_id=pid,
+            skill_id="add_within_10",
+            rating=top + 4.0,
+            attempts=6,
+            recent=[[1, 2]] * 6,
+            state=SkillState.LEARNING.value,
+        )
+    )
+    await db.flush()
+
+    missed = await _issue(db, pid, session.session_id, tier=2, seed=21)
+    await _submit(db, pid, missed.id, _wrong(missed, 0))
+    await _submit(db, pid, missed.id, _wrong(missed, 1))
+    out = await _submit(db, pid, missed.id, _wrong(missed, 2))
+    assert out.answer_latex is not None  # scored as a miss
+    row = await _row(db, pid, "add_within_10")
+    assert is_mastered(service._rating(row, "add_within_10"), top)  # pyright: ignore[reportPrivateUsage]
+    assert row.state == "learning"
+    assert row.review_due_at is None
+    assert out.mastery.state is SkillState.LEARNING
+
+    solved = await _issue(db, pid, session.session_id, tier=2, seed=22)
+    await _submit(db, pid, solved.id, _right(solved))
+    assert (await _row(db, pid, "add_within_10")).state == "mastered"
 
 
 async def test_due_review_state_and_pick(db: AsyncSession) -> None:

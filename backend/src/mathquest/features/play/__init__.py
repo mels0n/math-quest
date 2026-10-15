@@ -1,7 +1,12 @@
 """Play slice: adventure sessions, adaptive problems and answer checking."""
 
 from mathquest.features.play.schema import AnswerOut, MasteryOut, ProblemOut, SessionOut
-from mathquest.features.play.service import next_problem, start_session, submit_answer
+from mathquest.features.play.service import (
+    next_problem,
+    start_session,
+    submit_answer,
+    total_solved,
+)
 
 __all__ = [
     "AnswerOut",
@@ -11,4 +16,5 @@ __all__ = [
     "next_problem",
     "start_session",
     "submit_answer",
+    "total_solved",
 ]

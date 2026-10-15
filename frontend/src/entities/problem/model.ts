@@ -32,6 +32,8 @@ export interface AnswerResult {
 	attempts_left: number;
 	mastery: Mastery;
 	answer_latex: string | null;
+	/** The player's saved count of solved problems after this answer. */
+	total_solved: number;
 }
 
 export const MAX_ATTEMPTS = 3;

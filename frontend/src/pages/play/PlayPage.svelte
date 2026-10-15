@@ -27,6 +27,7 @@
 	let revealedLatex = $state<string | null>(null);
 	let finished = $state(false);
 	let busy = $state(false);
+	/** The saved total from the server, the same on every device. */
 	let solvedCount = $state(0);
 	let notice = $state<{ text: string; retry: () => Promise<void>; label: string } | null>(null);
 	let card: MathCard | undefined = $state();
@@ -72,7 +73,9 @@
 	async function start() {
 		notice = null;
 		try {
-			player = (await fetchMe()).player;
+			const me = await fetchMe();
+			player = me.player;
+			solvedCount = me.total_solved;
 			sessionId = (await startSession()).session_id;
 		} catch (err) {
 			fail(err, start);
@@ -89,8 +92,8 @@
 			notice = null;
 			mastery = result.mastery;
 			attemptsLeft = result.attempts_left;
+			solvedCount = result.total_solved;
 			if (result.solved) {
-				solvedCount += 1;
 				feedback = { tone: 'good', text: feedbackMessage(result.verdict, result.misconception) };
 				finished = true;
 			} else if (result.answer_latex !== null) {
