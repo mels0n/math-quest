@@ -1,0 +1,35 @@
+# Lesson shown the first time a learner meets Add to 10.
+skill: add_within_10
+screens:
+  - title: Put groups together
+    body_md: >-
+      Adding means putting groups together. You have 3 blocks. You get 2
+      more. Now count them all: 1, 2, 3, 4, 5. So \(3 + 2 = {{= 3 + 2 }}\).
+    visual:
+      kind: base_ten
+      params: {ones: 5}
+  - title: Count on
+    body_md: >-
+      You do not have to count from 1. Start at the bigger number. For
+      \(3 + 2\), start at 3. Jump 2 times. Say 4, 5. You land on
+      {{= 3 + 2 }}.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 3, jumps: [1, 1], end: 5}
+  - title: Big number first
+    body_md: >-
+      You can add in any order. \(2 + 6\) is the same as \(6 + 2\). Start
+      at 6 and count on 2. Say 7, 8. So \(2 + 6 = {{= 2 + 6 }}\).
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 6, jumps: 2, end: 8}
+worked_example:
+  prompt:
+    - {kind: math, value: "4 + 3 = ?"}
+  steps:
+    - Start at 4, the bigger number.
+    - Count on 3. Say 5, 6, 7.
+    - The last number you say is the answer.
+    - So \(4 + 3 = {{= 4 + 3 }}\).
+try_it:
+  tier: 0

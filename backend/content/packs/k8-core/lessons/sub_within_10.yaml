@@ -1,0 +1,32 @@
+# Lesson shown the first time a learner meets Subtract from 10.
+skill: sub_within_10
+screens:
+  - title: Take some away
+    body_md: >-
+      Subtracting means taking some away. You have 7 blocks. You give 3
+      away. Now you have fewer. \(7 - 3\) means 7, take away 3.
+    visual:
+      kind: base_ten
+      params: {ones: 7}
+  - title: Count back
+    body_md: >-
+      Start at the first number. Then count back, one jump at a time. For
+      \(7 - 3\), start at 7 and jump back 3 times. Say 6, 5, 4. You land on
+      {{= 7 - 3 }}.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 7, jumps: [-1, -1, -1], end: 4}
+  - title: Check by adding
+    body_md: >-
+      Adding can check your answer. \(7 - 3 = {{= 7 - 3 }}\). Now put them
+      back: \(4 + 3 = {{= 4 + 3 }}\). You are back at 7, so it is right.
+worked_example:
+  prompt:
+    - {kind: math, value: "9 - 4 = ?"}
+  steps:
+    - Start at 9, the first number.
+    - Count back 4. Say 8, 7, 6, 5.
+    - The last number you say is the answer.
+    - So \(9 - 4 = {{= 9 - 4 }}\).
+try_it:
+  tier: 0

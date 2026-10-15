@@ -1,0 +1,36 @@
+# Four ways to explain adding to 10, plus feedback for each mistake the generator knows.
+skill: add_within_10
+approaches:
+  - style: visual
+    body_md: >-
+      Look at the number line. Put your finger on {big}. Hop {small} times to
+      the right, one hop at a time. Where you stop is the answer.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: "{big}", jumps: "{small}", end: "{{= a + b }}"}
+  - style: steps
+    body_md: |-
+      1. Find the bigger number. Say it out loud.
+      2. Hold up one finger for each number you add.
+      3. Count on as you lift each finger.
+      4. The last number you say is the answer.
+  - style: story
+    body_md: >-
+      You have {a} red blocks. A friend gives you {b} blue blocks. Put them
+      all in one pile. How many blocks are in the pile? That is
+      \({a} + {b}\).
+    visual:
+      kind: base_ten
+      params: {ones: "{{= a + b }}"}
+  - style: worked
+    body_md: >-
+      Here is one we did together: \(5 + 3\). Start at 5. Count on 3: say
+      6, 7, 8. So \(5 + 3 = {{= 5 + 3 }}\). Now do the same with {a} and
+      {b}.
+misconceptions:
+  subtracted_instead: >-
+    It looks like you took away. The plus sign means put {a} and {b}
+    together. So the answer is bigger than both.
+  counted_start: >-
+    So close! It looks like you counted {big} as a hop. Start at {big}. The
+    next number you say is hop one.

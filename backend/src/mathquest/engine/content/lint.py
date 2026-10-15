@@ -42,7 +42,8 @@ warning naming the pack file, the path inside it and the rule. The rules:
     ``vocabulary``) is a warning. Lines wrapped inside a paragraph are joined first.
 ``dashes``
     No em dash, no en dash, no ``--`` and no spaced hyphen (" - ") used as a dash in
-    kid-facing text outside math, nor any dash in the slot lists or the word list.
+    kid-facing text outside math and computed numbers, nor any dash in the slot lists
+    or the word list.
 ``slots``
     A word template names only generator values and its declared slots, and uses every
     slot it declares (slot kinds are checked by the schema).
@@ -651,7 +652,8 @@ def _dashes(texts: list[_Text]) -> Iterator[Finding]:
             yield Finding("error", text.file, text.path, "dashes", "em dash in kid-facing text")
         if "\u2013" in text.source:
             yield Finding("error", text.file, text.path, "dashes", "en dash in kid-facing text")
-        words = _MATH.sub(" ", text.source)
+        # A computed number shows only its result, so its minus sign is never a dash.
+        words = _CALC.sub(" ", _MATH.sub(" ", text.source))
         if "--" in words:
             yield Finding("error", text.file, text.path, "dashes", "'--' used as a dash")
         elif _SPACED_HYPHEN.search(words):

@@ -316,6 +316,12 @@ def test_double_minus_inside_math_is_not_a_dash(tmp_path: Path) -> None:
     assert _rule(_lint(load(tmp_path, files)), "dashes") == []
 
 
+def test_minus_inside_a_computed_number_is_not_a_dash(tmp_path: Path) -> None:
+    text = "Take {b} from {a}. You land on {{= a - b }}."
+    files = _edit(base(), "hints/alpha.yaml", lambda h: h["levels"][0].update(text_template=text))
+    assert _rule(_lint(load(tmp_path, files)), "dashes") == []
+
+
 # --- rule 9: slots ---
 
 
