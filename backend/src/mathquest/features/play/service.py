@@ -38,6 +38,13 @@ try. Input over 200 characters is UNREADABLE without reaching the checker. Maste
 changes once per problem: on the first correct answer (hints_used is the number of
 tries used before it) or when the third try is used up (scored incorrect).
 
+Before the first problem of a skill that has a lesson, `next` returns a lesson to show
+instead of a problem (the skill and its name, no problem issued, the session's count
+unchanged) until the player has marked that lesson seen (`lessons_seen`, written by the
+teaching slice). A skill with a scored problem never gets one, so a player who practised
+it before lessons existed is not interrupted. Skill choice depends only on stored
+state, so the `next` after the lesson picks the same skill and issues its problem.
+
 `total_solved` on every answer is the player's saved count of solved problems after
 that answer, the same number `total_solved` returns for the header on any device.
 
@@ -99,10 +106,16 @@ from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
 from mathquest.engine.templates import TemplateError
 from mathquest.engine.transport import answer_latex, prompt_out
 from mathquest.engine.types import VARIANTS, KeypadProfile, Problem, Variant
-from mathquest.entities import mastery, problems
+from mathquest.entities import lessons, mastery, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, ProblemInstance
-from mathquest.features.play.schema import AnswerOut, MasteryOut, ProblemOut, SessionOut
+from mathquest.features.play.schema import (
+    AnswerOut,
+    LessonDueOut,
+    MasteryOut,
+    ProblemOut,
+    SessionOut,
+)
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 
@@ -194,6 +207,21 @@ async def start_session(
     return out
 
 
+async def _lesson_due(
+    db: AsyncSession,
+    catalog: Catalog,
+    player_id: uuid.UUID,
+    skill_id: str,
+    row: SkillMastery | None,
+) -> bool:
+    """The skill has a lesson the player has not seen, and no problem of it is scored yet."""
+    if skill_id not in catalog.pack.lessons:
+        return False
+    if row is not None and row.attempts > 0:
+        return False
+    return not await lessons.has_seen(db, player_id, skill_id)
+
+
 async def next_problem(
     db: AsyncSession,
     catalog: Catalog,
@@ -201,7 +229,7 @@ async def next_problem(
     session_id: uuid.UUID,
     *,
     expose_answers: bool = False,
-) -> ProblemOut:
+) -> ProblemOut | LessonDueOut:
     session = await problems.lock_session(db, player_id, session_id)
     if session is None:
         raise NotFound()
@@ -215,6 +243,9 @@ async def next_problem(
     due = await mastery.due_reviews(db, player_id, now)
     recent = await problems.recent_skill_ids(db, session_id, limit=RECENT_LOOKBACK)
     skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count, recent)
+    if await _lesson_due(db, catalog, player_id, skill_id, by_skill.get(skill_id)):
+        await db.commit()
+        return LessonDueOut(skill_id=skill_id, skill_name=graph.skills[skill_id].name)
     source = catalog.source(skill_id)
     tier = choose_tier(ratings[skill_id], source.tier_difficulties)
     seed = secrets.randbelow(SEED_LIMIT)

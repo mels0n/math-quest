@@ -35,7 +35,7 @@ What each kind draws (the frontend's ``shared/visuals`` components):
     Counts of ``dollars``, ``quarters``, ``dimes``, ``nickels`` and ``pennies``.
 """
 
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal, Self, get_args
 
 from pydantic import (
     BaseModel,
@@ -276,10 +276,11 @@ Visual = Annotated[
 VisualModel = (
     NumberLine | BaseTen | FractionBars | AreaModel | AlgebraTiles | ArrayGrid | Clock | Money
 )
-VISUAL_KINDS = (
+VisualKind = Literal[
     "number_line", "base_ten", "fraction_bars", "area_model", "algebra_tiles", "array", "clock",
     "money",
-)  # fmt: skip
+]  # fmt: skip
+VISUAL_KINDS: tuple[VisualKind, ...] = get_args(VisualKind)
 
 
 class UnresolvedVisual(ValueError):

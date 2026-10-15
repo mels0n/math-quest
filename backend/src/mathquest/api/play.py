@@ -15,7 +15,7 @@ from mathquest.api.deps import (
     limit_session,
 )
 from mathquest.features import play
-from mathquest.features.play import AnswerOut, ProblemOut, SessionOut
+from mathquest.features.play import AnswerOut, NextOut, SessionOut
 
 router = APIRouter(prefix="/api/play")
 
@@ -72,7 +72,7 @@ async def start_session(body: StartIn, player: CurrentPlayer, db: Db) -> Session
 @router.post("/sessions/{session_id}/next", dependencies=[Depends(limit_next)])
 async def next_problem(
     session_id: uuid.UUID, request: Request, player: CurrentPlayer, db: Db, settings: AppSettings
-) -> ProblemOut:
+) -> NextOut:
     return await play.next_problem(
         db,
         request.app.state.catalog,

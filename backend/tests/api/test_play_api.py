@@ -45,11 +45,19 @@ async def _answer(client: httpx.AsyncClient, problem_id: str, latex: str) -> htt
     )
 
 
+async def _see_every_lesson(h: Api) -> None:
+    """Mark every lesson seen, so `next` issues problems straight away."""
+    for skill_id in h.app.state.catalog.pack.lessons:
+        r = await h.client.post(f"/api/lessons/{skill_id}/seen", headers=CSRF)
+        assert r.status_code == 200
+
+
 async def _api(api: ApiFactory, *, real_pool: bool = False, **overrides: object) -> Api:
     h = await api(real_pool=real_pool, **overrides)
     if not real_pool:
         h.app.state.checker_pool = _SyncPool()
     await _signup(h.client, "PlayerOne")
+    await _see_every_lesson(h)
     return h
 
 
@@ -67,7 +75,9 @@ async def test_next_problem_hides_answer(api: ApiFactory) -> None:
 
     assert r.status_code == 200
     body = r.json()
+    assert body["type"] == "problem"
     assert set(body) == {
+        "type",
         "problem_id",
         "skill_id",
         "skill_name",

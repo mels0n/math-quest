@@ -6,7 +6,7 @@ from alembic import context
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from mathquest.entities import mastery, models, problems  # noqa: F401  (registers tables)
+from mathquest.entities import lessons, mastery, models, problems  # noqa: F401  (registers tables)
 from mathquest.shared.config import get_settings
 from mathquest.shared.db import Base
 

@@ -2,9 +2,9 @@
 
 import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from mathquest.engine.checker.check import Verdict
 from mathquest.engine.mastery import SkillState
@@ -27,6 +27,7 @@ class ProblemOut(_Frozen):
     """An issued problem. ``choices`` is set (and ``keypad`` is "choice") only for a
     multiple-choice problem, which is answered with a choice index."""
 
+    type: Literal["problem"] = "problem"
     problem_id: uuid.UUID
     skill_id: str
     skill_name: str
@@ -35,6 +36,19 @@ class ProblemOut(_Frozen):
     choices: list[list[PromptPartOut]] | None = None
     dev_answer_latex: str | None = None
     dev_answer_choice: int | None = None
+
+
+class LessonDueOut(_Frozen):
+    """Shown instead of a problem before the first problem of a skill whose lesson the
+    player has not seen. The lesson itself is read from the lessons routes."""
+
+    type: Literal["lesson"] = "lesson"
+    skill_id: str
+    skill_name: str
+
+
+NextOut = Annotated[ProblemOut | LessonDueOut, Field(discriminator="type")]
+"""What ``next`` returns: a problem, or a lesson to show first."""
 
 
 class MasteryOut(_Frozen):

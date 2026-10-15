@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mathquest.entities import admin, mastery, models, problems
+from mathquest.entities import admin, lessons, mastery, models, problems
 from mathquest.shared.db import Base
 from tests.conftest import (
     BACKEND_DIR,
@@ -26,6 +26,8 @@ async def test_models_match_migration(db: AsyncSession) -> None:
         admin.AdminAudit.__tablename__,
         mastery.SkillMastery.__tablename__,
         problems.Attempt.__tablename__,
+        lessons.LessonSeen.__tablename__,
+        lessons.LessonTry.__tablename__,
     } <= set(Base.metadata.tables)
 
     def diff(sync_conn: Connection) -> list[object]:
@@ -109,5 +111,23 @@ def test_0006_gives_old_rows_the_bare_variant_and_downgrades() -> None:
         )
         assert {"variant", "template_id"}.isdisjoint({c[0] for c in columns})
         assert asyncio.run(_rows(url, schema, "SELECT count(*) FROM problem_instances")) == [(1,)]
+    finally:
+        asyncio.run(_exec(url, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+
+
+def test_0007_adds_and_drops_the_lesson_tables() -> None:
+    url = _database_url()
+    schema = f"mq_mig_{uuid.uuid4().hex[:12]}"
+    asyncio.run(_exec(url, f'CREATE SCHEMA "{schema}"'))
+    tables = (
+        "SELECT table_name FROM information_schema.tables"
+        f" WHERE table_schema = '{schema}' AND table_name LIKE 'lesson%' ORDER BY table_name"
+    )
+    try:
+        cfg = _alembic(url, schema)
+        command.upgrade(cfg, "0007")
+        assert asyncio.run(_rows(url, schema, tables)) == [("lesson_tries",), ("lessons_seen",)]
+        command.downgrade(cfg, "0006")
+        assert asyncio.run(_rows(url, schema, tables)) == []
     finally:
         asyncio.run(_exec(url, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
