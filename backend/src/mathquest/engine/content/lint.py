@@ -4,12 +4,10 @@ r"""Content lint: checks a loaded pack beyond what loading enforces.
 ``lint(pack, registry, slots=..., words=...)`` returns findings, each an error or a
 warning naming the pack file, the path inside it and the rule. The rules:
 
-``graph``
-    Prerequisites exist, the graph has no cycle and every skill is reachable from a
-    root (a skill with no prerequisites).
 ``generator``
-    Every skill's generator is registered with the skill's tier count, and every
-    misconception given feedback in its explanations is one the generator declares.
+    The pack binds to the registry (``catalog.check_binding``): every skill's generator
+    is registered with the skill's tier count, every misconception given feedback is
+    one the generator declares, and typed bank answers are in the skill's answer form.
 ``teaching``
     Every skill has a lesson, hints and explanations: an error in a region listed in
     ``complete_regions``, a warning elsewhere.
@@ -40,7 +38,9 @@ warning naming the pack file, the path inside it and the rule. The rules:
     A word template names only generator values and its declared slots, declares only
     slot kinds the slot lists have, and uses every slot it declares.
 
-Lint binds the pack to a generator registry passed in, through the same
+Lint runs on a pack the loader accepted, so the prerequisite graph already has no
+cycle and no unknown skill, and every skill is reachable from one without
+prerequisites. It binds the pack to a generator registry passed in, through the same
 ``SkillSource`` the app uses, so what it renders is what a learner sees.
 """
 
@@ -53,10 +53,9 @@ from typing import Literal
 
 import sympy
 
-from mathquest.engine.catalog import SkillSource
+from mathquest.engine.catalog import SkillSource, check_binding
 from mathquest.engine.checker.check import Verdict, check
 from mathquest.engine.content.coverage import skill_coverage
-from mathquest.engine.content.loader import _cycle  # pyright: ignore[reportPrivateUsage]
 from mathquest.engine.content.schema import GRADE_BANDS, Pack, Part, Skill, Slots
 from mathquest.engine.teaching import (
     render_explanations,
@@ -122,7 +121,6 @@ def lint(
 ) -> list[Finding]:
     """Every finding for ``pack``, errors and warnings, in rule order."""
     out: list[Finding] = []
-    out += _graph(pack)
     sources, generator_findings = _sources(pack, registry, slots)
     out += generator_findings
     out += _teaching(pack)
@@ -141,110 +139,27 @@ def errors(findings: list[Finding]) -> list[Finding]:
     return [f for f in findings if f.level == "error"]
 
 
-# --- rule 1: graph ---------------------------------------------------------------
-
-
-def _graph(pack: Pack) -> Iterator[Finding]:
-    ids = list(pack.skills)
-    missing = False
-    for i, skill in enumerate(pack.skills.values()):
-        for j, prereq in enumerate(skill.prerequisites):
-            if prereq not in pack.skills:
-                missing = True
-                yield Finding(
-                    "error",
-                    "skills.yaml",
-                    f"skills[{i}].prerequisites[{j}]",
-                    "graph",
-                    f"unknown prerequisite {prereq}",
-                )
-    if missing:
-        return
-    cycle = _cycle(pack.skills)
-    if cycle is not None:
-        yield Finding(
-            "error", "skills.yaml", "skills", "graph", f"prerequisite cycle: {' -> '.join(cycle)}"
-        )
-    dependents: dict[str, list[str]] = {sid: [] for sid in ids}
-    for skill in pack.skills.values():
-        for prereq in skill.prerequisites:
-            dependents[prereq].append(skill.id)
-    reached: set[str] = set()
-    stack = [sid for sid, s in pack.skills.items() if not s.prerequisites]
-    while stack:
-        sid = stack.pop()
-        if sid in reached:
-            continue
-        reached.add(sid)
-        stack.extend(
-            d for d in dependents[sid] if all(p in reached for p in pack.skills[d].prerequisites)
-        )
-    for i, sid in enumerate(ids):
-        if sid not in reached:
-            yield Finding(
-                "error",
-                "skills.yaml",
-                f"skills[{i}]",
-                "graph",
-                f"{sid} cannot be reached from a skill without prerequisites",
-            )
-
-
 # --- rule 2: generators ----------------------------------------------------------
 
 
 def _sources(
     pack: Pack, registry: Mapping[str, Generator], slots: Slots
 ) -> tuple[dict[str, SkillSource], list[Finding]]:
-    sources: dict[str, SkillSource] = {}
-    found: list[Finding] = []
-    for i, skill in enumerate(pack.skills.values()):
-        generator = registry.get(skill.generator)
-        if generator is None:
-            found.append(
-                Finding(
-                    "error",
-                    "skills.yaml",
-                    f"skills[{i}].generator",
-                    "generator",
-                    f"no generator is registered as {skill.generator}",
-                )
-            )
-            continue
-        have = len(generator.tier_difficulties)
-        if have != len(skill.tiers):
-            found.append(
-                Finding(
-                    "error",
-                    "skills.yaml",
-                    f"skills[{i}].tiers",
-                    "generator",
-                    f"{len(skill.tiers)} tiers declared but {skill.generator} has {have}",
-                )
-            )
-            continue
-        sources[skill.id] = SkillSource(
+    """Sources for the skills that bind, and a finding for every binding problem."""
+    problems = check_binding(pack, registry)
+    found = [Finding("error", p.file, p.path, "generator", p.message) for p in problems]
+    unbound = {p.path.split(".")[0] for p in problems if p.file == "skills.yaml"}
+    sources = {
+        skill.id: SkillSource(
             skill=skill,
-            generator=generator,
+            generator=registry[skill.generator],
             slots=slots,
             word_problems=pack.word_problems.get(skill.id),
             bank=pack.bank.get(skill.id),
         )
-    for sid, explanations in pack.explanations.items():
-        generator = registry.get(pack.skills[sid].generator)
-        if generator is None:
-            continue
-        for key in explanations.misconceptions:
-            if key not in generator.misconception_keys:
-                found.append(
-                    Finding(
-                        "error",
-                        f"explanations/{sid}.yaml",
-                        f"misconceptions.{key}",
-                        "generator",
-                        f"{generator.generator_id} never produces this misconception",
-                    )
-                )
+        for i, skill in enumerate(pack.skills.values())
+        if f"skills[{i}]" not in unbound
+    }
     return sources, found
 
 

@@ -65,6 +65,7 @@ root_package = "mathquest"
 name = "Backend layers import downward only"
 type = "layers"
 layers = [
+    "mathquest.cli",
     "mathquest.app",
     "mathquest.api",
     "mathquest.features",
@@ -82,10 +83,12 @@ modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Engine is independent of the application layers"
+name = "Engine is independent of the application layers and tools"
 type = "forbidden"
 source_modules = ["mathquest.engine"]
 forbidden_modules = [
+    "mathquest.cli",
+    "mathquest.app",
     "mathquest.api",
     "mathquest.features",
     "mathquest.entities",

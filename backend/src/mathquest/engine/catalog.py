@@ -5,8 +5,9 @@ two and checks what only the registry can answer: every skill's generator exists
 tier count matches the skill's declared tiers, and every misconception key that the
 skill's explanations give feedback for is one the generator declares, and every typed
 bank answer is in the answer form the skill's generator asks for (an integer skill
-cannot bank a fraction answer). The app builds a Catalog at boot, so a pack that fails
-any of these stops the app from starting.
+cannot bank a fraction answer). ``check_binding`` lists every misfit (the content lint
+reports them all); ``build_catalog`` raises on the first. The app builds a Catalog at
+boot, so a pack that fails any of these stops the app from starting.
 """
 
 import dataclasses
@@ -91,49 +92,93 @@ class Catalog:
         return self.sources[skill_id]
 
 
-def build_catalog(
-    pack: Pack, slots: Slots, registry: Mapping[str, Generator] | None = None
-) -> Catalog:
-    """Bind ``pack`` to ``registry`` (default: the built-in generators) and check it."""
-    generators = all_generators() if registry is None else registry
-    sources: dict[str, SkillSource] = {}
+@dataclass(frozen=True)
+class BindingProblem:
+    """A way ``pack`` does not fit the generator registry, located in a pack file."""
+
+    file: str
+    path: str
+    message: str
+
+    def __str__(self) -> str:
+        return f"{self.file}: {self.path}: {self.message}"
+
+
+def check_binding(pack: Pack, registry: Mapping[str, Generator]) -> list[BindingProblem]:
+    """Every way ``pack`` does not fit ``registry``; empty when it binds."""
+    found: list[BindingProblem] = []
+    bound: dict[str, Generator] = {}
     for i, skill in enumerate(pack.skills.values()):
-        where = f"skills.yaml: skills[{i}]"
-        generator = generators.get(skill.generator)
+        generator = registry.get(skill.generator)
         if generator is None:
-            raise ContentError(f"{where}.generator: unknown generator {skill.generator}")
+            found.append(
+                BindingProblem(
+                    "skills.yaml", f"skills[{i}].generator", f"unknown generator {skill.generator}"
+                )
+            )
+            continue
         have = len(generator.tier_difficulties)
         if have != len(skill.tiers):
-            raise ContentError(
-                f"{where}.tiers: {len(skill.tiers)} tiers declared but generator "
-                f"{skill.generator} has {have}"
+            found.append(
+                BindingProblem(
+                    "skills.yaml",
+                    f"skills[{i}].tiers",
+                    f"{len(skill.tiers)} tiers declared but generator {skill.generator} has {have}",
+                )
             )
-        sources[skill.id] = SkillSource(
-            skill=skill,
-            generator=generator,
-            slots=slots,
-            word_problems=pack.word_problems.get(skill.id),
-            bank=pack.bank.get(skill.id),
-        )
+            continue
+        bound[skill.id] = generator
     for sid, explanations in pack.explanations.items():
-        generator = sources[sid].generator
+        generator = bound.get(sid)
+        if generator is None:
+            continue
         for key in explanations.misconceptions:
             if key not in generator.misconception_keys:
-                raise ContentError(
-                    f"explanations/{sid}.yaml: misconceptions.{key}: generator "
-                    f"{generator.generator_id} never produces this misconception"
+                found.append(
+                    BindingProblem(
+                        f"explanations/{sid}.yaml",
+                        f"misconceptions.{key}",
+                        f"generator {generator.generator_id} never produces this misconception",
+                    )
                 )
     for sid, bank in pack.bank.items():
-        form = sources[sid].generate(0, 0).form
+        generator = bound.get(sid)
+        if generator is None:
+            continue
+        form = generator.generate(0, 0).form
         for i, item in enumerate(bank.items):
             if item.answer.kind != "expr":
                 continue
             node = parse(str(item.answer.value))
             if not satisfies_form(node, expr_answer(item), form):
-                raise ContentError(
-                    f"bank/{sid}.yaml: items[{i}].answer.value: not in the skill's "
-                    f"answer form ({form.value})"
+                found.append(
+                    BindingProblem(
+                        f"bank/{sid}.yaml",
+                        f"items[{i}].answer.value",
+                        f"not in the skill's answer form ({form.value})",
+                    )
                 )
+    return found
+
+
+def build_catalog(
+    pack: Pack, slots: Slots, registry: Mapping[str, Generator] | None = None
+) -> Catalog:
+    """Bind ``pack`` to ``registry`` (default: the built-in generators); raise on a misfit."""
+    generators = all_generators() if registry is None else registry
+    problems = check_binding(pack, generators)
+    if problems:
+        raise ContentError(str(problems[0]))
+    sources = {
+        skill.id: SkillSource(
+            skill=skill,
+            generator=generators[skill.generator],
+            slots=slots,
+            word_problems=pack.word_problems.get(skill.id),
+            bank=pack.bank.get(skill.id),
+        )
+        for skill in pack.skills.values()
+    }
     return Catalog(
         pack=pack,
         slots=slots,

@@ -43,27 +43,6 @@ def test_finding_prints_file_path_rule_and_message() -> None:
     assert str(finding) == "hints/a.yaml:levels[0]: dashes: em dash"
 
 
-# --- rule 1: graph ---
-
-
-def _with_prereqs(pack: Pack, prereqs: tuple[str, ...]) -> Pack:
-    alpha = pack.skills["alpha"].model_copy(update={"prerequisites": prereqs})
-    return pack.model_copy(update={"skills": {"alpha": alpha}})
-
-
-def test_graph_cycle_and_unreachable(tmp_path: Path) -> None:
-    pack = _with_prereqs(load(tmp_path, base()), ("alpha",))
-    messages = [f.message for f in _rule(_lint(pack), "graph")]
-    assert any("cycle: alpha -> alpha" in m for m in messages)
-    assert any("cannot be reached" in m for m in messages)
-
-
-def test_graph_unknown_prerequisite(tmp_path: Path) -> None:
-    pack = _with_prereqs(load(tmp_path, base()), ("ghost",))
-    (finding,) = _rule(_lint(pack), "graph")
-    assert (finding.file, finding.path) == ("skills.yaml", "skills[0].prerequisites[0]")
-
-
 # --- rule 2: generators ---
 
 

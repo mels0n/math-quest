@@ -4,6 +4,7 @@ from collections.abc import Iterable, Mapping
 from types import MappingProxyType
 
 from mathquest.engine.content.errors import ContentError
+from mathquest.engine.content.graph import find_cycle
 from mathquest.engine.content.schema import Skill
 
 
@@ -19,6 +20,9 @@ class SkillGraph:
             for prereq in skill.prerequisites:
                 if prereq not in by_id:
                     raise ContentError(f"skill {skill.id} has unknown prerequisite: {prereq}")
+        cycle = find_cycle(by_id)
+        if cycle is not None:
+            raise ContentError(f"prerequisite cycle among skills: {' -> '.join(cycle)}")
         self.skills: Mapping[str, Skill] = MappingProxyType(by_id)
         self._order = self._toposort(listed)
         self._rank = {skill_id: i for i, skill_id in enumerate(self._order)}
@@ -30,10 +34,7 @@ class SkillGraph:
         order: list[str] = []
         while remaining:
             ready = [sid for sid in remaining if not remaining[sid]]
-            if not ready:
-                cyclic = ", ".join(sorted(remaining))
-                raise ContentError(f"prerequisite cycle among skills: {cyclic}")
-            sid = ready[0]
+            sid = ready[0]  # never empty: find_cycle ran first
             order.append(sid)
             del remaining[sid]
             for deps in remaining.values():

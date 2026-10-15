@@ -31,6 +31,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from mathquest.engine.content.errors import ContentError
+from mathquest.engine.content.graph import find_cycle
 from mathquest.engine.content.schema import (
     Bank,
     Explanations,
@@ -85,29 +86,6 @@ def load_slots(path: Path) -> Slots:
     return _validate(Slots, _read(path.parent, path.name), path.name)
 
 
-def _cycle(skills: Mapping[str, Skill]) -> list[str] | None:
-    """A prerequisite cycle as a list of skill ids (first repeated at the end), or None."""
-    state: dict[str, int] = {}  # 1 visiting, 2 done
-    stack: list[str] = []
-
-    def visit(sid: str) -> list[str] | None:
-        state[sid] = 1
-        stack.append(sid)
-        for prereq in skills[sid].prerequisites:
-            if state.get(prereq) == 1:
-                return [*stack[stack.index(prereq) :], prereq]
-            if prereq not in state and (found := visit(prereq)) is not None:
-                return found
-        stack.pop()
-        state[sid] = 2
-        return None
-
-    for sid in skills:
-        if sid not in state and (found := visit(sid)) is not None:
-            return found
-    return None
-
-
 def _skills(root: Path, region_ids: set[str]) -> dict[str, Skill]:
     rel = "skills.yaml"
     listed = _validate(SkillList, _read(root, rel), rel).skills
@@ -122,7 +100,7 @@ def _skills(root: Path, region_ids: set[str]) -> dict[str, Skill]:
         for j, prereq in enumerate(skill.prerequisites):
             if prereq not in skills:
                 raise _fail(rel, ("skills", i, "prerequisites", j), f"unknown skill {prereq}")
-    cycle = _cycle(skills)
+    cycle = find_cycle(skills)
     if cycle is not None:
         raise _fail(rel, ("skills",), f"prerequisite cycle: {' -> '.join(cycle)}")
     return skills
