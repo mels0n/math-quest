@@ -37,7 +37,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mathquest.engine.catalog import Catalog
 from mathquest.engine.checker.bounded import CheckerPool
-from mathquest.engine.checker.check import CheckResult, Verdict, check_choice
+from mathquest.engine.checker.check import (
+    AnswerKindError,
+    CheckResult,
+    Verdict,
+    check_answer_kind,
+    check_choice,
+)
 from mathquest.engine.limits import SEED_LIMIT, STORED_LATEX_MAX
 from mathquest.engine.mastery import PROVISIONAL_REVIEW_DAYS, initial_rating
 from mathquest.engine.placement import (
@@ -49,8 +55,8 @@ from mathquest.engine.placement import (
     spine,
     start_anchor,
 )
-from mathquest.engine.transport import answer_latex, prompt_out
-from mathquest.engine.types import KeypadProfile, Problem, Variant
+from mathquest.engine.transport import answer_latex, keypad_for, prompt_out
+from mathquest.engine.types import Problem, Variant
 from mathquest.entities import mastery, placement
 from mathquest.entities.placement import PlacementRun
 from mathquest.features.placement.schema import (
@@ -74,12 +80,13 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _new_probe(catalog: Catalog, skill_id: str, anchor: int) -> Probe:
+def _new_probe(catalog: Catalog, skill_id: str, anchor: int) -> tuple[Probe, Problem]:
+    """A new probe on ``anchor`` and its problem, generated once."""
     skill = catalog.graph.skills[skill_id]
     variant: Variant = "bank" if skill.keypad == "choice" else "bare"
     seed = secrets.randbelow(SEED_LIMIT)
     problem = catalog.source(skill_id).generate(seed, probe_tier(skill), variant)
-    return {
+    probe = {
         "id": str(uuid.uuid4()),
         "anchor": anchor,
         "skill_id": skill_id,
@@ -90,6 +97,7 @@ def _new_probe(catalog: Catalog, skill_id: str, anchor: int) -> Probe:
         "free": 0,
         "correct": None,
     }
+    return probe, problem
 
 
 def _problem(catalog: Catalog, probe: Probe) -> Problem:
@@ -100,19 +108,18 @@ def _problem(catalog: Catalog, probe: Probe) -> Problem:
     )
 
 
-def _keypad(problem: Problem, declared: KeypadProfile) -> KeypadProfile:
-    return "choice" if problem.choices is not None else declared
-
-
-def _problem_out(catalog: Catalog, probe: Probe, expose_answers: bool) -> PlacementProblemOut:
-    problem = _problem(catalog, probe)
+def _problem_out(
+    catalog: Catalog, probe: Probe, expose_answers: bool, problem: Problem | None = None
+) -> PlacementProblemOut:
+    if problem is None:
+        problem = _problem(catalog, probe)
     skill = catalog.graph.skills[probe["skill_id"]]
     return PlacementProblemOut(
         problem_id=uuid.UUID(probe["id"]),
         skill_id=skill.id,
         skill_name=skill.name,
         prompt=prompt_out(problem.prompt),
-        keypad=_keypad(problem, skill.keypad),
+        keypad=keypad_for(problem, skill.keypad),
         choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
         dev_answer_latex=answer_latex(problem) if expose_answers else None,
         dev_answer_choice=problem.correct_choice if expose_answers else None,
@@ -145,11 +152,13 @@ def _step(
     row: PlacementRun,
     expose_answers: bool,
     retry: Verdict | None = None,
+    problem: Problem | None = None,
 ) -> PlacementStepOut:
+    """The open question; ``problem`` is its problem when the caller already has it."""
     probe = _open_probe(row)
     return PlacementStepOut(
         placement_id=row.id,
-        problem=_problem_out(catalog, probe, expose_answers),
+        problem=_problem_out(catalog, probe, expose_answers, problem),
         question=len(_probes(row)),
         max_questions=MAX_QUESTIONS,
         retry=retry if retry in (Verdict.UNREADABLE, Verdict.WRONG_FORM) else None,
@@ -202,29 +211,22 @@ async def start(
         raise Conflict("retake_too_soon")
     await placement.abandon_open(db, player_id, now)
     first = start_anchor(graph, anchors, grade_hint)
-    state = {
-        "anchors": list(anchors),
-        "start": first,
-        "probes": [_new_probe(catalog, anchors[first], first)],
-    }
+    probe, problem = _new_probe(catalog, anchors[first], first)
+    state = {"anchors": list(anchors), "start": first, "probes": [probe]}
     row = await placement.add_run(
         db, player_id=player_id, started_at=now, grade_hint=grade_hint, state=state
     )
-    out = _step(catalog, row, expose_answers)
+    out = _step(catalog, row, expose_answers, problem=problem)
     await db.commit()
     return out
 
 
 def _given(problem: Problem, latex: str | None, choice: int | None) -> None:
     """Reject an answer of the wrong kind for the problem (422), as play does."""
-    if problem.choices is None:
-        if latex is None or choice is not None:
-            raise Invalid("latex_expected")
-        return
-    if choice is None or latex is not None:
-        raise Invalid("choice_expected")
-    if not 0 <= choice < len(problem.choices):
-        raise Invalid("choice_out_of_range")
+    try:
+        check_answer_kind(problem, latex, choice)
+    except AnswerKindError as err:
+        raise Invalid(err.code) from None
 
 
 async def _finish(
@@ -321,7 +323,8 @@ async def answer(
         anchors: list[str] = state["anchors"]
         nxt = next_probe(len(anchors), state["start"], _answers(probes), _hint(row))
         if nxt is not None and anchors[nxt] in catalog.graph.skills:
-            probes.append(_new_probe(catalog, anchors[nxt], nxt))
+            probe, problem = _new_probe(catalog, anchors[nxt], nxt)
+            probes.append(probe)
             row.state = {**state, "probes": probes}
         else:
             row.state = {**state, "probes": probes}
@@ -331,6 +334,6 @@ async def answer(
             return out_done
     else:
         row.state = {**row.state, "probes": probes}
-    out = _step(catalog, row, expose_answers, retry)
+    out = _step(catalog, row, expose_answers, retry, problem)
     await db.commit()
     return out

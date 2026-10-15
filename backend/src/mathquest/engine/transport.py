@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, JsonValue
 
 from mathquest.engine.content.visuals import VisualKind, VisualModel
 from mathquest.engine.teaching import Feedback, FeedbackKind
-from mathquest.engine.types import Problem, Prompt, TextPart
+from mathquest.engine.types import KeypadProfile, Problem, Prompt, TextPart
 
 
 class PromptPartOut(BaseModel):
@@ -70,3 +70,8 @@ def latex(value: sympy.Expr) -> str:
 def answer_latex(problem: Problem) -> str | None:
     """The answer as LaTeX; None for a choice problem, whose answer is an index."""
     return None if problem.choices is not None else latex(problem.answer)
+
+
+def keypad_for(problem: Problem, declared: KeypadProfile) -> KeypadProfile:
+    """Choice buttons for a choice problem, else the skill's own keypad."""
+    return "choice" if problem.choices is not None else declared

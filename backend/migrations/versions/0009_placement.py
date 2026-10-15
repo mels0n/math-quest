@@ -41,6 +41,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Provisional marks have no meaning without placement: drop them, keep real progress.
+    # Placed rows stay mastered; only the flag that lets them survive a first miss goes.
     op.execute("DELETE FROM skill_mastery WHERE state = 'provisional' AND attempts = 0")
     op.execute(
         "UPDATE skill_mastery SET state = 'learning', review_interval_days = NULL,"

@@ -39,6 +39,7 @@ import math
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import Literal, get_args
 
 from mathquest.engine.content.schema import GRADE_BANDS, Skill
 from mathquest.engine.skillgraph import SkillGraph
@@ -55,7 +56,9 @@ OVER_COST = 3.0
 NEAR_COST = 0.15
 EARLY_BANDS = ("K", "1", "2")
 """Without a grade hint the round starts at the middle anchor of these bands."""
-GRADE_HINTS = ("K", "1", "2", "3", "4", "5", "6", "7", "8")
+GradeHint = Literal["K", "1", "2", "3", "4", "5", "6", "7", "8"]
+"""What "what grade are you in?" accepts: kindergarten to grade 8."""
+GRADE_HINTS: tuple[GradeHint, ...] = get_args(GradeHint)
 
 
 @dataclass(frozen=True)

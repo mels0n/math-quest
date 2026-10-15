@@ -1,6 +1,6 @@
 """Placement slice: a short round over anchor skills that sets where a new player starts."""
 
-from mathquest.engine.placement import GRADE_HINTS
+from mathquest.engine.placement import GRADE_HINTS, GradeHint
 from mathquest.features.placement.schema import (
     PlacementDoneOut,
     PlacementProblemOut,
@@ -12,6 +12,7 @@ from mathquest.features.placement.service import FREE_RETRIES, answer, start
 __all__ = [
     "FREE_RETRIES",
     "GRADE_HINTS",
+    "GradeHint",
     "PlacementDoneOut",
     "PlacementProblemOut",
     "PlacementStepOut",

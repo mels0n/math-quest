@@ -156,3 +156,25 @@ def check_choice(problem: Problem, choice: int) -> CheckResult:
     if choice == problem.correct_choice:
         return CheckResult(Verdict.CORRECT)
     return CheckResult(Verdict.INCORRECT)
+
+
+class AnswerKindError(ValueError):
+    """An answer of the wrong kind for its problem; ``code`` names the problem."""
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
+def check_answer_kind(problem: Problem, latex: str | None, choice: int | None) -> None:
+    """Exactly the kind of answer the problem takes: LaTeX for a typed problem, a choice
+    index inside the shown choices for a multiple-choice one. Raises AnswerKindError
+    ("latex_expected", "choice_expected" or "choice_out_of_range")."""
+    if problem.choices is None:
+        if latex is None or choice is not None:
+            raise AnswerKindError("latex_expected")
+        return
+    if choice is None or latex is not None:
+        raise AnswerKindError("choice_expected")
+    if not 0 <= choice < len(problem.choices):
+        raise AnswerKindError("choice_out_of_range")

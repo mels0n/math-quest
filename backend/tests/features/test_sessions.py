@@ -251,7 +251,7 @@ async def test_the_skill_list_shows_each_state_in_map_order(db: AsyncSession) ->
 
     out = await service.list_skills(db, CATALOG, pid)
 
-    assert [r.region_id for r in out.regions] == [
+    assert [r.id for r in out.regions] == [
         "number_meadows",
         "operation_canyon",
         "fraction_forest",
@@ -263,9 +263,19 @@ async def test_the_skill_list_shows_each_state_in_map_order(db: AsyncSession) ->
     assert states["place_value_tens_ones"] is SkillState.READY
     assert states["add_2digit_regroup"] is SkillState.LOCKED
     regions = [s.region for s in out.skills]
-    assert regions == sorted(regions, key=[r.region_id for r in out.regions].index)
+    assert regions == sorted(regions, key=[r.id for r in out.regions].index)
     lessons = {s.skill_id for s in out.skills if s.has_lesson}
     assert lessons == set(CATALOG.pack.lessons)
+
+
+async def test_a_provisional_skill_past_its_review_reads_as_due(db: AsyncSession) -> None:
+    pid = await _player(db)
+    await _mark_provisional(db, pid, "add_within_10", due_in=timedelta(hours=-1))
+    out = await service.list_skills(db, CATALOG, pid)
+    states = {s.skill_id: s.state for s in out.skills}
+    assert states["add_within_10"] is SkillState.REVIEW_DUE
+    session = await service.start_practice(db, CATALOG, pid, weak_spots=True)
+    assert [f.skill_id for f in session.focus] == ["add_within_10"]
 
 
 # Session length and summary

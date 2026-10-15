@@ -113,8 +113,10 @@ class SkillOut(_Frozen):
     has_lesson: bool
 
 
-class RegionNameOut(_Frozen):
-    region_id: str
+class RegionOut(_Frozen):
+    """A region of the map, in the same shape placement reports regions."""
+
+    id: str
     name: str
 
 
@@ -122,5 +124,5 @@ class SkillsOut(_Frozen):
     """Every skill of the pack in map order (regions by their order, skills in
     topological order inside each), with the player's state of each."""
 
-    regions: list[RegionNameOut]
+    regions: list[RegionOut]
     skills: list[SkillOut]

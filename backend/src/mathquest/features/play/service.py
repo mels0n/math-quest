@@ -94,8 +94,8 @@ Skill state machine, applied when a problem is scored:
   answer resets it to 1); a correct answer before the review is due leaves the schedule
   alone. If the new rating no longer satisfies `is_mastered`, the skill returns to
   LEARNING and its schedule is cleared.
-- REVIEW_DUE is never stored. It is derived on read: a MASTERED row whose
-  `review_due_at` has passed. The scheduler's mastered set is MASTERED plus REVIEW_DUE
+- REVIEW_DUE is never stored. It is derived on read: a MASTERED or PROVISIONAL row
+  whose `review_due_at` has passed. The scheduler's mastered set is MASTERED plus REVIEW_DUE
   plus PROVISIONAL.
 - PROVISIONAL is written by placement (docs/adr/0015-placement.md): the skill counts as
   mastered and is due for review a day later. Its first scored problem that can confirm
@@ -148,7 +148,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mathquest.engine.catalog import Catalog
 from mathquest.engine.checker.bounded import CheckerPool
-from mathquest.engine.checker.check import CheckResult, Verdict, check_choice
+from mathquest.engine.checker.check import (
+    AnswerKindError,
+    CheckResult,
+    Verdict,
+    check_answer_kind,
+    check_choice,
+)
 from mathquest.engine.limits import (
     MAX_ATTEMPTS,
     MAX_CHOICE_ATTEMPTS,
@@ -180,8 +186,14 @@ from mathquest.engine.scheduler import (
 )
 from mathquest.engine.teaching import all_approaches_shown, answer_feedback, hint_count
 from mathquest.engine.templates import TemplateError
-from mathquest.engine.transport import FeedbackOut, answer_latex, feedback_out, prompt_out
-from mathquest.engine.types import KeypadProfile, Problem
+from mathquest.engine.transport import (
+    FeedbackOut,
+    answer_latex,
+    feedback_out,
+    keypad_for,
+    prompt_out,
+)
+from mathquest.engine.types import Problem
 from mathquest.entities import lessons, mastery, problems, teaching
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance
@@ -190,7 +202,7 @@ from mathquest.features.play.schema import (
     LessonDueOut,
     MasteryOut,
     ProblemOut,
-    RegionNameOut,
+    RegionOut,
     SessionOut,
     SkillNameOut,
     SkillOut,
@@ -204,7 +216,6 @@ FREE_VERDICTS = 3
 WEAK_SPOTS = 3
 """Learning skills in "my weak spots", the ones with the lowest progress."""
 PRACTICE = "practice"
-_COUNTS_AS_MASTERED = (SkillState.MASTERED, SkillState.PROVISIONAL)
 CHOICE_PREFIX = "choice:"
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
 
@@ -235,11 +246,6 @@ def _top_tier(catalog: Catalog, skill_id: str) -> int:
     return len(catalog.source(skill_id).tier_difficulties) - 1
 
 
-def _keypad(problem: Problem, declared: KeypadProfile) -> KeypadProfile:
-    """Choice buttons for a choice problem, else the skill's own keypad."""
-    return "choice" if problem.choices is not None else declared
-
-
 @dataclass(frozen=True)
 class _Reveal:
     """The right answer, sent once a problem is scored."""
@@ -253,7 +259,10 @@ def _mastery_out(
 ) -> MasteryOut:
     top = _top_difficulty(catalog, skill_id)
     if row is not None and row.state == SkillState.PROVISIONAL:
-        state = SkillState.PROVISIONAL
+        # Past its review date it reads as due, like a mastered skill, so it counts
+        # toward "my weak spots".
+        due = row.review_due_at is not None and row.review_due_at <= now
+        state = SkillState.REVIEW_DUE if due else SkillState.PROVISIONAL
     elif row is None or row.attempts == 0:
         state = SkillState.READY
     elif row.state == SkillState.MASTERED:
@@ -317,7 +326,7 @@ async def _player_states(
     db: AsyncSession, catalog: Catalog, player_id: uuid.UUID, now: datetime
 ) -> dict[str, MasteryOut]:
     rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
-    mastered = {sid for sid, r in rows.items() if r.state in _COUNTS_AS_MASTERED}
+    mastered = {sid for sid, r in rows.items() if r.state in mastery.COUNTS_AS_MASTERED}
     ready = set(catalog.graph.ready(mastered))
     return {
         sid: _state(catalog, sid, rows.get(sid), ready, now) for sid in catalog.graph.topo_order()
@@ -335,7 +344,7 @@ async def list_skills(db: AsyncSession, catalog: Catalog, player_id: uuid.UUID) 
     skills = sorted(states, key=lambda sid: order.get(graph.skills[sid].region, len(order)))
     return SkillsOut(
         regions=[
-            RegionNameOut(region_id=r.id, name=r.name)
+            RegionOut(id=r.id, name=r.name)
             for r in regions
             if any(graph.skills[sid].region == r.id for sid in skills)
         ],
@@ -357,8 +366,8 @@ async def _weak_spots(
     db: AsyncSession, player_id: uuid.UUID, states: dict[str, MasteryOut], now: datetime
 ) -> list[str]:
     learning = [s for s in states.values() if s.state is SkillState.LEARNING]
-    order = list(states)
-    weakest = sorted(learning, key=lambda s: (s.progress, order.index(s.skill_id)))
+    order = {sid: i for i, sid in enumerate(states)}
+    weakest = sorted(learning, key=lambda s: (s.progress, order[s.skill_id]))
     focus = [s.skill_id for s in weakest[:WEAK_SPOTS]]
     for sid in await mastery.due_reviews(db, player_id, now):
         if sid in states and sid not in focus:
@@ -501,7 +510,7 @@ async def next_problem(
     by_skill = {r.skill_id: r for r in rows}
     graph = catalog.graph
     ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
-    mastered = {r.skill_id for r in rows if r.state in _COUNTS_AS_MASTERED}
+    mastered = {r.skill_id for r in rows if r.state in mastery.COUNTS_AS_MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
     history = [
         Played(skill_id=sid, correct=correct, stuck=stuck, warmup_for=warmup_for)
@@ -555,7 +564,7 @@ async def next_problem(
         skill_id=skill_id,
         skill_name=graph.skills[skill_id].name,
         prompt=prompt_out(problem.prompt),
-        keypad=_keypad(problem, graph.skills[skill_id].keypad),
+        keypad=keypad_for(problem, graph.skills[skill_id].keypad),
         choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
         has_lesson=skill_id in catalog.pack.lessons,
         hint_levels=hint_count(catalog.pack, skill_id) if teachable else 0,
@@ -761,16 +770,13 @@ def _repeat_of_last_wrong(attempts: list[Attempt], given: str) -> bool:
 
 
 def _given(problem: Problem, latex: str | None, choice: int | None) -> str:
-    """The answer as stored: the LaTeX, or `choice:<index>` for a choice problem."""
-    if problem.choices is None:
-        if latex is None or choice is not None:
-            raise Invalid("latex_expected")
-        return latex
-    if choice is None or latex is not None:
-        raise Invalid("choice_expected")
-    if not 0 <= choice < len(problem.choices):
-        raise Invalid("choice_out_of_range")
-    return f"{CHOICE_PREFIX}{choice}"
+    """The answer as stored: the LaTeX, or `choice:<index>` for a choice problem. An
+    answer of the wrong kind is Invalid."""
+    try:
+        check_answer_kind(problem, latex, choice)
+    except AnswerKindError as err:
+        raise Invalid(err.code) from None
+    return latex if latex is not None else f"{CHOICE_PREFIX}{choice}"
 
 
 async def submit_answer(

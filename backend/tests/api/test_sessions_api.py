@@ -61,7 +61,7 @@ async def test_the_skill_list(api: ApiFactory) -> None:
     r = await h.client.get("/api/skills")
     assert r.status_code == 200
     body = r.json()
-    assert body["regions"][0] == {"region_id": "number_meadows", "name": "Number Meadows"}
+    assert body["regions"][0] == {"id": "number_meadows", "name": "Number Meadows"}
     first = body["skills"][0]
     assert set(first) == {"skill_id", "name", "region", "state", "progress", "has_lesson"}
     states = {s["skill_id"]: s["state"] for s in body["skills"]}

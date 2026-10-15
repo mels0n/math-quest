@@ -1060,8 +1060,10 @@ async def test_a_review_below_the_probe_tier_does_not_confirm(db: AsyncSession) 
     out = await _submit(db, pid, inst.id, _right(inst))
 
     assert out.solved
-    assert out.mastery.state is SkillState.PROVISIONAL
+    # Still provisional and still due, so it reads as a review due.
+    assert out.mastery.state is SkillState.REVIEW_DUE
     row = await _row(db, pid, "add_within_10")
+    assert row.state == "provisional"
     assert row.review_due_at is not None and row.review_due_at <= datetime.now(UTC)
 
 
@@ -1153,7 +1155,11 @@ async def test_a_provisional_skill_reads_as_provisional(db: AsyncSession) -> Non
     await _mark_provisional(db, pid, "add_within_10")
     row = await _row(db, pid, "add_within_10")
     out = service._mastery_out(  # pyright: ignore[reportPrivateUsage]
-        CATALOG, "add_within_10", row, datetime.now(UTC) + timedelta(days=3)
+        CATALOG, "add_within_10", row, datetime.now(UTC)
     )
     assert out.state is SkillState.PROVISIONAL
     assert out.progress == pytest.approx(1.0)
+    later = service._mastery_out(  # pyright: ignore[reportPrivateUsage]
+        CATALOG, "add_within_10", row, datetime.now(UTC) + timedelta(days=3)
+    )
+    assert later.state is SkillState.REVIEW_DUE

@@ -4,9 +4,10 @@ import uuid
 from typing import Annotated, Literal, Self
 
 from fastapi import APIRouter, Depends, Header, Request
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from mathquest.api.deps import (
+    AnswerBody,
     AppSettings,
     CurrentPlayer,
     Db,
@@ -21,11 +22,6 @@ from mathquest.features.teaching import ExplanationOut, HintOut
 router = APIRouter(prefix="/api/play")
 skills_router = APIRouter(prefix="/api/skills")
 
-# Wide enough for any real answer; the service stores 200 characters and the checker
-# rejects longer input as unreadable.
-MAX_BODY_LATEX = 1000
-# Far above any real number of choices; the service rejects an index past the shown ones.
-MAX_CHOICE = 99
 LESSON_CLIENT = 2
 """The first client version that shows lessons. `next` offers a lesson only to a client
 that sends `X-MathQuest-Client: 2` or later, so a page loaded before lessons existed
@@ -59,35 +55,13 @@ class StartIn(BaseModel):
         return self
 
 
-class AnswerIn(BaseModel):
-    """Exactly one of ``latex`` (a typed answer) or ``choice`` (a choice index)."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    latex: str | None = Field(default=None, max_length=MAX_BODY_LATEX)
-    choice: StrictInt | None = Field(default=None, ge=0, le=MAX_CHOICE)
-
-    @model_validator(mode="after")
-    def _exactly_one(self) -> Self:
-        if (self.latex is None) == (self.choice is None):
-            raise ValueError("send exactly one of latex or choice")
-        return self
-
+class AnswerIn(AnswerBody):
     @field_validator("latex")
     @classmethod
-    def _storable(cls, value: str | None) -> str | None:
-        """Reject NUL and text that UTF-8 cannot encode; Postgres text cannot store either."""
-        if value is None:
-            return None
-        if "\x00" in value:
-            raise ValueError("NUL is not allowed")
-        if value.startswith(play.CHOICE_PREFIX):
+    def _not_a_stored_choice(cls, value: str | None) -> str | None:
+        if value is not None and value.startswith(play.CHOICE_PREFIX):
             # Reserved for stored choice attempts; keeps the attempts column unambiguous.
             raise ValueError("not an answer")
-        try:
-            value.encode("utf-8")
-        except UnicodeEncodeError:
-            raise ValueError("not valid UTF-8 text") from None
         return value
 
 
