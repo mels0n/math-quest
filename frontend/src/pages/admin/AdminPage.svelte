@@ -2,6 +2,8 @@
 	import { onMount, tick } from 'svelte';
 	import { ApiError } from '../../shared/api';
 	import '../../shared/ui';
+	import './admin.css';
+	import ContentView from './ContentView.svelte';
 	import {
 		NOT_ON_LAN,
 		adminErrorMessage,
@@ -30,6 +32,7 @@
 	type Panel = { id: string; kind: 'rename' | 'pin' | 'delete' };
 
 	let phase = $state<Phase>('loading');
+	let view = $state<'players' | 'content'>('players');
 	let password = $state('');
 	let loginError = $state('');
 	let busy = $state(false);
@@ -305,6 +308,21 @@
 				<button type="button" class="ghost" onclick={signOut}>Sign out</button>
 			</header>
 
+			<nav class="row tabs" aria-label="Admin views">
+				<button
+					type="button"
+					class:ghost={view !== 'players'}
+					aria-current={view === 'players' ? 'page' : undefined}
+					onclick={() => (view = 'players')}>Players</button
+				>
+				<button
+					type="button"
+					class:ghost={view !== 'content'}
+					aria-current={view === 'content' ? 'page' : undefined}
+					onclick={() => (view = 'content')}>Content</button
+				>
+			</nav>
+
 			{#if notice}<p class="notice" role="status">{notice}</p>{/if}
 
 			{#if recovery}
@@ -327,343 +345,181 @@
 				</section>
 			{/if}
 
-			<section class="card stack" aria-label="Signup word">
-				<h2>Signup word</h2>
-				<p class="muted">
-					{wordSet === null ? '' : wordSet ? 'A signup word is set.' : 'No signup word is set yet.'}
-				</p>
-				<form class="row" onsubmit={submitWord}>
-					<label class="grow">
-						New word
-						<input type="text" autocomplete="off" bind:value={newWord} maxlength="32" />
-					</label>
-					<button type="submit" disabled={busy || newWord === ''}>Save</button>
-				</form>
-				{#if wordError}<p class="error" role="alert">{wordError}</p>{/if}
-			</section>
+			{#if view === 'content'}
+				<ContentView onSessionLost={leaveIfSessionLost} />
+			{:else}
+				<section class="card stack" aria-label="Signup word">
+					<h2>Signup word</h2>
+					<p class="muted">
+						{wordSet === null ? '' : wordSet ? 'A signup word is set.' : 'No signup word is set yet.'}
+					</p>
+					<form class="row" onsubmit={submitWord}>
+						<label class="grow">
+							New word
+							<input type="text" autocomplete="off" bind:value={newWord} maxlength="32" />
+						</label>
+						<button type="submit" disabled={busy || newWord === ''}>Save</button>
+					</form>
+					{#if wordError}<p class="error" role="alert">{wordError}</p>{/if}
+				</section>
 
-			<section class="card stack" aria-label="Players">
-				<h2 tabindex="-1" bind:this={playersHeading}>Players</h2>
-				<form
-					class="row"
-					onsubmit={(e) => {
-						e.preventDefault();
-						void refresh();
-					}}
-				>
-					<label class="grow">
-						Search by nickname
-						<input type="search" bind:value={query} maxlength="64" />
-					</label>
-					<button type="submit">Search</button>
-				</form>
-				{#if listError}<p class="error" role="alert">{listError}</p>{/if}
+				<section class="card stack" aria-label="Players">
+					<h2 tabindex="-1" bind:this={playersHeading}>Players</h2>
+					<form
+						class="row"
+						onsubmit={(e) => {
+							e.preventDefault();
+							void refresh();
+						}}
+					>
+						<label class="grow">
+							Search by nickname
+							<input type="search" bind:value={query} maxlength="64" />
+						</label>
+						<button type="submit">Search</button>
+					</form>
+					{#if listError}<p class="error" role="alert">{listError}</p>{/if}
 
-				{#if players.length === 0}
-					<p class="muted">No players found.</p>
-				{:else}
-					<div class="scroll">
-						<table>
-							<thead>
-								<tr>
-									<th>Nickname</th>
-									<th>Joined</th>
-									<th>Last seen</th>
-									<th>Actions</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each players as player (player.id)}
-									<tr class:hidden-row={player.hidden}>
-										<td data-label="Nickname">
-											{player.nickname}
-											{#if player.hidden}<span class="tag">hidden</span>{/if}
-										</td>
-										<td data-label="Joined">{formatDate(player.created_at)}</td>
-										<td data-label="Last seen">{formatDate(player.last_seen)}</td>
-										<td class="actions">
-											<button
-												type="button"
-												class="small"
-												aria-label="{player.hidden ? 'Unhide' : 'Hide'} {player.nickname}"
-												onclick={() => toggleHidden(player)}
-												disabled={busy}
-											>
-												{player.hidden ? 'Unhide' : 'Hide'}
-											</button>
-											<button
-												type="button"
-												class="small"
-												aria-label="Rename {player.nickname}"
-												onclick={() => openPanel(player.id, 'rename', player.nickname)}>Rename</button
-											>
-											<button
-												type="button"
-												class="small"
-												aria-label="Reset PIN for {player.nickname}"
-												onclick={() => openPanel(player.id, 'pin', player.nickname)}>Reset PIN</button
-											>
-											<button
-												type="button"
-												class="small danger"
-												aria-label="Delete {player.nickname}"
-												onclick={() => openPanel(player.id, 'delete', player.nickname)}>Delete</button
-											>
-										</td>
+					{#if players.length === 0}
+						<p class="muted">No players found.</p>
+					{:else}
+						<div class="scroll">
+							<table>
+								<thead>
+									<tr>
+										<th>Nickname</th>
+										<th>Joined</th>
+										<th>Last seen</th>
+										<th>Actions</th>
 									</tr>
-									{#if panel?.id === player.id}
-										<tr class="panel-row">
-											<td colspan="4">
-												{#if panel.kind === 'rename'}
-													<form
-														class="row"
-														onsubmit={(e) => {
-															e.preventDefault();
-															void submitRename(player);
-														}}
-													>
-														<label class="grow">
-															New nickname for {player.nickname}
-															<input
-															type="text"
-															bind:value={renameTo}
-															maxlength="16"
-															autocomplete="off"
-															use:focusOnMount
-														/>
-														</label>
-														<button type="submit" disabled={busy || renameTo.trim() === ''}>Rename</button>
-														<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
-													</form>
-												{:else if panel.kind === 'pin'}
-													<form
-														class="row"
-														onsubmit={(e) => {
-															e.preventDefault();
-															void submitPin(player);
-														}}
-													>
-														<label class="grow">
-															New 4-digit PIN for {player.nickname}
-															<input
-																type="text"
-																inputmode="numeric"
-																pattern="[0-9]*"
-																maxlength="4"
-																autocomplete="off"
-																bind:value={newPin}
-																use:focusOnMount
-															/>
-														</label>
-														<button type="submit" disabled={busy || !isValidPin(newPin)}>Reset PIN</button>
-														<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
-													</form>
-												{:else}
-													<form
-														class="row"
-														onsubmit={(e) => {
-															e.preventDefault();
-															void submitDelete(player);
-														}}
-													>
-														<label class="grow">
-															This cannot be undone. Type <strong>{player.nickname}</strong> to confirm.
-															<input
-															type="text"
-															bind:value={typedNickname}
-															autocomplete="off"
-															use:focusOnMount
-														/>
-														</label>
-														<button
-															type="submit"
-															class="danger"
-															disabled={busy || !canDelete(player.nickname, typedNickname)}
-														>
-															Delete
-														</button>
-														<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
-													</form>
-												{/if}
-												{#if panelError}<p class="error" role="alert">{panelError}</p>{/if}
+								</thead>
+								<tbody>
+									{#each players as player (player.id)}
+										<tr class:hidden-row={player.hidden}>
+											<td data-label="Nickname">
+												{player.nickname}
+												{#if player.hidden}<span class="tag">hidden</span>{/if}
+											</td>
+											<td data-label="Joined">{formatDate(player.created_at)}</td>
+											<td data-label="Last seen">{formatDate(player.last_seen)}</td>
+											<td class="actions">
+												<button
+													type="button"
+													class="small"
+													aria-label="{player.hidden ? 'Unhide' : 'Hide'} {player.nickname}"
+													onclick={() => toggleHidden(player)}
+													disabled={busy}
+												>
+													{player.hidden ? 'Unhide' : 'Hide'}
+												</button>
+												<button
+													type="button"
+													class="small"
+													aria-label="Rename {player.nickname}"
+													onclick={() => openPanel(player.id, 'rename', player.nickname)}>Rename</button
+												>
+												<button
+													type="button"
+													class="small"
+													aria-label="Reset PIN for {player.nickname}"
+													onclick={() => openPanel(player.id, 'pin', player.nickname)}>Reset PIN</button
+												>
+												<button
+													type="button"
+													class="small danger"
+													aria-label="Delete {player.nickname}"
+													onclick={() => openPanel(player.id, 'delete', player.nickname)}>Delete</button
+												>
 											</td>
 										</tr>
-									{/if}
-								{/each}
-							</tbody>
-						</table>
-					</div>
-					{#if players.length >= LIST_LIMIT}
-						<p class="muted">Showing the first {LIST_LIMIT}. Search to narrow.</p>
+										{#if panel?.id === player.id}
+											<tr class="panel-row">
+												<td colspan="4">
+													{#if panel.kind === 'rename'}
+														<form
+															class="row"
+															onsubmit={(e) => {
+																e.preventDefault();
+																void submitRename(player);
+															}}
+														>
+															<label class="grow">
+																New nickname for {player.nickname}
+																<input
+																type="text"
+																bind:value={renameTo}
+																maxlength="16"
+																autocomplete="off"
+																use:focusOnMount
+															/>
+															</label>
+															<button type="submit" disabled={busy || renameTo.trim() === ''}>Rename</button>
+															<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
+														</form>
+													{:else if panel.kind === 'pin'}
+														<form
+															class="row"
+															onsubmit={(e) => {
+																e.preventDefault();
+																void submitPin(player);
+															}}
+														>
+															<label class="grow">
+																New 4-digit PIN for {player.nickname}
+																<input
+																	type="text"
+																	inputmode="numeric"
+																	pattern="[0-9]*"
+																	maxlength="4"
+																	autocomplete="off"
+																	bind:value={newPin}
+																	use:focusOnMount
+																/>
+															</label>
+															<button type="submit" disabled={busy || !isValidPin(newPin)}>Reset PIN</button>
+															<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
+														</form>
+													{:else}
+														<form
+															class="row"
+															onsubmit={(e) => {
+																e.preventDefault();
+																void submitDelete(player);
+															}}
+														>
+															<label class="grow">
+																This cannot be undone. Type <strong>{player.nickname}</strong> to confirm.
+																<input
+																type="text"
+																bind:value={typedNickname}
+																autocomplete="off"
+																use:focusOnMount
+															/>
+															</label>
+															<button
+																type="submit"
+																class="danger"
+																disabled={busy || !canDelete(player.nickname, typedNickname)}
+															>
+																Delete
+															</button>
+															<button type="button" class="ghost" onclick={closePanel}>Cancel</button>
+														</form>
+													{/if}
+													{#if panelError}<p class="error" role="alert">{panelError}</p>{/if}
+												</td>
+											</tr>
+										{/if}
+									{/each}
+								</tbody>
+							</table>
+						</div>
+						{#if players.length >= LIST_LIMIT}
+							<p class="muted">Showing the first {LIST_LIMIT}. Search to narrow.</p>
+						{/if}
 					{/if}
-				{/if}
-			</section>
+				</section>
+			{/if}
 		{/if}
 	</div>
 </main>
-
-<style>
-	.inner {
-		max-width: 56rem;
-		margin: 0 auto;
-	}
-	.admin {
-		padding: 1rem;
-		color: var(--mq-ink);
-		font-family: var(--mq-sans-font);
-		font-size: 1rem;
-		min-height: 100vh;
-		background: #f3f4f8;
-	}
-	.admin h1,
-	.admin h2 {
-		font-family: var(--mq-sans-font);
-		font-weight: 700;
-		letter-spacing: 0;
-		margin: 0;
-	}
-	h1 {
-		font-size: 1.5rem;
-	}
-	h2 {
-		font-size: 1.125rem;
-	}
-	.bar,
-	.row {
-		display: flex;
-		gap: 0.75rem;
-		align-items: flex-end;
-		flex-wrap: wrap;
-	}
-	.bar {
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 1rem;
-	}
-	.grow {
-		flex: 1 1 12rem;
-	}
-	.card {
-		background: var(--mq-card);
-		border: 1px solid var(--mq-line);
-		border-radius: var(--mq-radius);
-		padding: 1rem;
-		margin-bottom: 1rem;
-	}
-	.stack {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-	label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-		font-weight: 600;
-	}
-	input {
-		font: inherit;
-		padding: 0.5rem 0.625rem;
-		border: 1px solid var(--mq-ink-soft);
-		border-radius: var(--mq-radius);
-		min-height: 2.5rem;
-	}
-	button {
-		font: inherit;
-		font-weight: 600;
-		min-height: 2.5rem;
-		padding: 0.4rem 1rem;
-		border: 1px solid var(--mq-navy);
-		background: var(--mq-navy);
-		color: #fff;
-		border-radius: var(--mq-radius);
-		cursor: pointer;
-	}
-	button.ghost {
-		background: transparent;
-		color: var(--mq-navy);
-	}
-	button.danger {
-		background: #b0123a;
-		border-color: #b0123a;
-		color: #fff;
-	}
-	button.small {
-		min-height: 2.25rem;
-		padding: 0.25rem 0.625rem;
-	}
-	button:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-	button:focus-visible,
-	input:focus-visible {
-		outline: 3px solid var(--mq-navy);
-		outline-offset: 2px;
-	}
-	.error {
-		color: #b0123a;
-		margin: 0;
-	}
-	.notice {
-		background: #dff7ee;
-		border: 1px solid var(--mq-mint);
-		padding: 0.5rem 0.75rem;
-		border-radius: var(--mq-radius);
-	}
-	.muted {
-		color: var(--mq-ink-soft);
-		margin: 0;
-	}
-	.recovery .word {
-		font-size: 1.5rem;
-		font-weight: 700;
-		letter-spacing: 0.05em;
-		margin: 0.5rem 0;
-	}
-	.scroll {
-		overflow-x: auto;
-	}
-	table {
-		width: 100%;
-		border-collapse: collapse;
-	}
-	th,
-	td {
-		text-align: left;
-		padding: 0.5rem;
-		border-bottom: 1px solid var(--mq-line);
-		vertical-align: middle;
-	}
-	.actions {
-		display: flex;
-		gap: 0.375rem;
-		flex-wrap: wrap;
-	}
-	.hidden-row td:first-child {
-		color: var(--mq-ink-soft);
-	}
-	.tag {
-		font-size: 0.75rem;
-		background: var(--mq-line);
-		padding: 0.1rem 0.4rem;
-		border-radius: var(--mq-radius);
-		margin-left: 0.25rem;
-	}
-	.panel-row td {
-		background: #f7f7fb;
-	}
-	@media (max-width: 40rem) {
-		thead {
-			display: none;
-		}
-		tr,
-		td {
-			display: block;
-		}
-		td[data-label]::before {
-			content: attr(data-label) ': ';
-			font-weight: 600;
-		}
-	}
-</style>

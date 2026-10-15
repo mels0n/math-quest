@@ -48,6 +48,8 @@ class ProblemInstance(Base):
     skill_id: Mapped[str] = mapped_column(Text)
     tier: Mapped[int] = mapped_column(Integer)
     seed: Mapped[int] = mapped_column(BigInteger)
+    variant: Mapped[str] = mapped_column(Text, nullable=False, server_default="bare")
+    template_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     difficulty: Mapped[float] = mapped_column(Float)
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -102,6 +104,8 @@ async def add_problem(
     seed: int,
     difficulty: float,
     issued_at: datetime,
+    variant: str = "bare",
+    template_id: str | None = None,
 ) -> ProblemInstance:
     row = ProblemInstance(
         session_id=session_id,
@@ -109,6 +113,8 @@ async def add_problem(
         skill_id=skill_id,
         tier=tier,
         seed=seed,
+        variant=variant,
+        template_id=template_id,
         difficulty=difficulty,
         issued_at=issued_at,
     )

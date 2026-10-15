@@ -1,0 +1,136 @@
+# Word lists that word-problem slots draw from. Every entry is kid-safe, plain and
+# brand-free. Names are short, easy to read, balanced across girls and boys and drawn
+# from many cultures. Objects and units give the singular (`one`) and plural (`many`).
+names:
+  # Mostly girls' names
+  - Mia
+  - Ava
+  - Zoe
+  - Lily
+  - Nora
+  - Ana
+  - Priya
+  - Aisha
+  - Mei
+  - Yuki
+  - Sofia
+  - Lucia
+  - Amara
+  - Zara
+  - Leila
+  - Inés
+  - Hana
+  - Maya
+  - Rosa
+  - Nia
+  - Elena
+  - Kiri
+  - Isla
+  - Fatima
+  # Mostly boys' names
+  - Leo
+  - Sam
+  - Max
+  - Ben
+  - Omar
+  - Ravi
+  - Kenji
+  - Diego
+  - Mateo
+  - Kofi
+  - Jamal
+  - Arjun
+  - Hugo
+  - Luca
+  - Tariq
+  - Wei
+  - Noah
+  - Eli
+  - Malik
+  - Tomás
+  - Kai
+  - Ali
+  - Jin
+  - Felix
+objects:
+  - {one: apple, many: apples}
+  - {one: pear, many: pears}
+  - {one: plum, many: plums}
+  - {one: peach, many: peaches}
+  - {one: grape, many: grapes}
+  - {one: cherry, many: cherries}
+  - {one: carrot, many: carrots}
+  - {one: cookie, many: cookies}
+  - {one: cupcake, many: cupcakes}
+  - {one: egg, many: eggs}
+  - {one: crayon, many: crayons}
+  - {one: pencil, many: pencils}
+  - {one: marker, many: markers}
+  - {one: book, many: books}
+  - {one: sticker, many: stickers}
+  - {one: card, many: cards}
+  - {one: marble, many: marbles}
+  - {one: bead, many: beads}
+  - {one: button, many: buttons}
+  - {one: block, many: blocks}
+  - {one: ball, many: balls}
+  - {one: kite, many: kites}
+  - {one: balloon, many: balloons}
+  - {one: toy car, many: toy cars}
+  - {one: puzzle piece, many: puzzle pieces}
+  - {one: drum, many: drums}
+  - {one: bell, many: bells}
+  - {one: hat, many: hats}
+  - {one: sock, many: socks}
+  - {one: cup, many: cups}
+  - {one: box, many: boxes}
+  - {one: brush, many: brushes}
+  - {one: ribbon, many: ribbons}
+  - {one: shell, many: shells}
+  - {one: rock, many: rocks}
+  - {one: leaf, many: leaves}
+  - {one: feather, many: feathers}
+  - {one: acorn, many: acorns}
+  - {one: flower, many: flowers}
+  - {one: seed, many: seeds}
+  - {one: star, many: stars}
+  - {one: boat, many: boats}
+  - {one: bucket, many: buckets}
+  - {one: pinecone, many: pinecones}
+# Units in typed pools, so a template asks for the kind it can use ("{unit}" from
+# length_units for a walk). Only units taught by grade 2 for now; mass and volume
+# pools come with the grade 3 content.
+length_units:
+  - {one: inch, many: inches}
+  - {one: foot, many: feet}
+  - {one: centimeter, many: centimeters}
+  - {one: meter, many: meters}
+time_units:
+  - {one: minute, many: minutes}
+  - {one: hour, many: hours, article: an}
+  - {one: day, many: days}
+  - {one: week, many: weeks}
+money_units:
+  - {one: cent, many: cents}
+  - {one: dollar, many: dollars}
+contexts:
+  - at the park
+  - at school
+  - at the beach
+  - on the farm
+  - at the zoo
+  - in the garden
+  - at the library
+  - at the market
+  - on the bus
+  - at home
+  - at the lake
+  - at the fair
+  - in the forest
+  - at camp
+  - at the museum
+  - on a walk
+  - at a party
+  - in the kitchen
+  - at the pond
+  - in the yard

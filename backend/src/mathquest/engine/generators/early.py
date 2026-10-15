@@ -5,7 +5,7 @@ import random
 
 import sympy
 
-from mathquest.engine.generators._util import Built, SkillGenerator
+from mathquest.engine.generators._util import Built, SkillGenerator, math_prompt
 from mathquest.engine.types import AnswerForm
 
 _Int = sympy.Integer
@@ -15,11 +15,21 @@ _ADD20_TOTALS = ((10, 14), (12, 17), (15, 20))
 _SUB10_TOP = ((2, 5), (6, 8), (9, 10))
 
 
+def _sum(a: int, b: int) -> Built:
+    return Built(prompt=math_prompt(f"{a} + {b} = ?"), answer=_Int(a + b), values={"a": a, "b": b})
+
+
 def _add(a: int, b: int) -> Built:
+    """``big`` and ``small`` name the addends by size, for count-on hints."""
     return Built(
-        prompt_latex=f"{a} + {b} = ?",
+        prompt=math_prompt(f"{a} + {b} = ?"),
         answer=_Int(a + b),
-        wrong=(("subtracted_instead", _Int(abs(a - b))),),
+        wrong=(
+            ("subtracted_instead", _Int(abs(a - b))),
+            # Counting on from the start number counts it again: 8 + 5 as "8, 9, 10, 11, 12".
+            ("counted_start", _Int(a + b - 1)),
+        ),
+        values={"a": a, "b": b, "big": max(a, b), "small": min(a, b)},
     )
 
 
@@ -42,9 +52,10 @@ def _build_sub_within_10(rng: random.Random, tier: int) -> Built:
     a = rng.randint(lo, hi)
     b = rng.randint(1, a - 1)
     return Built(
-        prompt_latex=f"{a} - {b} = ?",
+        prompt=math_prompt(f"{a} - {b} = ?"),
         answer=_Int(a - b),
         wrong=(("added_instead", _Int(a + b)),),
+        values={"a": a, "b": b},
     )
 
 
@@ -61,12 +72,13 @@ def _build_sub_within_20(rng: random.Random, tier: int) -> Built:
     # Column-wise "smaller minus larger" error: ones digits subtracted the wrong way round.
     ones_apart = abs(a % 10 - b)
     return Built(
-        prompt_latex=f"{a} - {b} = ?",
+        prompt=math_prompt(f"{a} - {b} = ?"),
         answer=_Int(a - b),
         wrong=(
             ("subtracted_backwards", _Int(a // 10 * 10 + ones_apart)),
             ("added_instead", _Int(a + b)),
         ),
+        values={"a": a, "b": b},
     )
 
 
@@ -82,7 +94,7 @@ def _build_add_2digit_no_regroup(rng: random.Random, tier: int) -> Built:
         a_ones = rng.randint(0, 9)
         b_ones = rng.randint(0, 9 - a_ones)
         a, b = a_tens * 10 + a_ones, b_tens * 10 + b_ones
-    return Built(prompt_latex=f"{a} + {b} = ?", answer=_Int(a + b))
+    return _sum(a, b)
 
 
 def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
@@ -99,24 +111,38 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
     a, b = a_tens * 10 + a_ones, b_tens * 10 + b_ones
     total = a + b
     return Built(
-        prompt_latex=f"{a} + {b} = ?",
+        prompt=math_prompt(f"{a} + {b} = ?"),
         answer=_Int(total),
         wrong=(
             ("forgot_carry", _Int(total - 10)),
             ("added_carry_twice", _Int(total + 10)),
         ),
+        values={"a": a, "b": b},
     )
+
+
+_ADD_MISTAKES = ("subtracted_instead", "counted_start")
 
 
 def generators() -> list[SkillGenerator]:
     form = AnswerForm.INTEGER
     return [
-        SkillGenerator("add_within_10", -2.0, form, "numbers", _build_add_within_10),
-        SkillGenerator("sub_within_10", -1.8, form, "numbers", _build_sub_within_10),
-        SkillGenerator("add_within_20", -1.2, form, "numbers", _build_add_within_20),
-        SkillGenerator("sub_within_20", -1.0, form, "numbers", _build_sub_within_20),
+        SkillGenerator("add_within_10", -2.0, form, _build_add_within_10, _ADD_MISTAKES),
+        SkillGenerator("sub_within_10", -1.8, form, _build_sub_within_10, ("added_instead",)),
+        SkillGenerator("add_within_20", -1.2, form, _build_add_within_20, _ADD_MISTAKES),
         SkillGenerator(
-            "add_2digit_no_regroup", -0.5, form, "numbers", _build_add_2digit_no_regroup
+            "sub_within_20",
+            -1.0,
+            form,
+            _build_sub_within_20,
+            ("subtracted_backwards", "added_instead"),
         ),
-        SkillGenerator("add_2digit_regroup", 0.0, form, "numbers", _build_add_2digit_regroup),
+        SkillGenerator("add_2digit_no_regroup", -0.5, form, _build_add_2digit_no_regroup),
+        SkillGenerator(
+            "add_2digit_regroup",
+            0.0,
+            form,
+            _build_add_2digit_regroup,
+            ("forgot_carry", "added_carry_twice"),
+        ),
     ]

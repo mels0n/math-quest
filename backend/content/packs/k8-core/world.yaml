@@ -1,0 +1,56 @@
+# The map, in play order. Each region has:
+#   id               snake_case identifier skills refer to
+#   name             kid-facing name
+#   order            position on the map, 1 first
+#   creature_family  creature family living there (placeholder ids until creature art)
+#   boss_skill_set   skills the region boss draws from
+#   map_hint         a short description for map layout and art
+regions:
+  - id: number_meadows
+    name: Number Meadows
+    order: 1
+    creature_family: family_meadows
+    boss_skill_set: [add_within_20]
+    map_hint: Soft green hills and flower fields where the journey starts.
+  - id: operation_canyon
+    name: Operation Canyon
+    order: 2
+    creature_family: family_canyon
+    boss_skill_set: [add_2digit_regroup]
+    map_hint: Red rock walls, rope bridges and echoing paths.
+  - id: fraction_forest
+    name: Fraction Forest
+    order: 3
+    creature_family: family_forest
+    boss_skill_set: [add_fractions_unlike]
+    map_hint: Tall trees split into neat rings, with paths that branch and rejoin.
+  - id: decimal_docks
+    name: Decimal Docks
+    order: 4
+    creature_family: family_docks
+    boss_skill_set: []
+    map_hint: Wooden piers, boats and buoys marked with numbers.
+  - id: ratio_ridge
+    name: Ratio Ridge
+    order: 5
+    creature_family: family_ridge
+    boss_skill_set: []
+    map_hint: Windy mountain trails with balanced rock towers.
+  - id: integer_ice_caves
+    name: Integer Ice Caves
+    order: 6
+    creature_family: family_ice
+    boss_skill_set: []
+    map_hint: Frozen caves that go above and below the waterline.
+  - id: expression_swamp
+    name: Expression Swamp
+    order: 7
+    creature_family: family_swamp
+    boss_skill_set: []
+    map_hint: Misty marsh with lily pads that form patterns.
+  - id: equation_peaks
+    name: Equation Peaks
+    order: 8
+    creature_family: family_peaks
+    boss_skill_set: []
+    map_hint: Snowy summits with scales balanced on every ledge.

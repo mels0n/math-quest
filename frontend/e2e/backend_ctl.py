@@ -58,6 +58,7 @@ def serve(url: str, schema: str) -> None:
     settings = Settings(
         database_url=SecretStr(url),
         initial_signup_word_file=Path(os.environ["E2E_WORD_FILE"]),
+        admin_password_file=Path(os.environ["E2E_ADMIN_FILE"]),
         cookie_secure=False,
         dev_expose_answers=True,
     )

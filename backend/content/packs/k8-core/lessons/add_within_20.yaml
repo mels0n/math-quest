@@ -1,0 +1,32 @@
+# Lesson shown the first time a learner meets Add to 20.
+skill: add_within_20
+screens:
+  - title: Putting groups together
+    body_md: >-
+      Adding means putting two groups together. When you add, you get more.
+      \(8 + 5\) means 8, and then 5 more.
+  - title: Count on
+    body_md: >-
+      Start at the bigger number. Then count on, one jump at a time. For
+      \(8 + 5\), start at 8 and jump 5 times. Say 9, 10, 11, 12, 13. You
+      land on {{= 8 + 5 }}.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: 8, jumps: [1, 1, 1, 1, 1]}
+  - title: Make a ten
+    body_md: >-
+      Ten is a friendly number. Split 5 into 2 and 3. Now 8 and 2 make 10.
+      Then 10 and 3 make {{= 10 + 3 }}. So \(8 + 5 = {{= 8 + 5 }}\).
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: 8, jumps: [2, 3]}
+worked_example:
+  prompt:
+    - {kind: math, value: "9 + 6 = ?"}
+  steps:
+    - Start at 9, the bigger number.
+    - Take 1 from the 6 to make 10. That leaves 5.
+    - 10 and 5 make {{= 10 + 5 }}.
+    - So \(9 + 6 = {{= 9 + 6 }}\).
+try_it:
+  tier: 0

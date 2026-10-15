@@ -1,12 +1,35 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 """Adventure play loop: issue adaptive problems, check answers, update mastery.
 
-Problems are stored as (skill, tier, seed) and regenerated on demand, so no answer
-is ever persisted or sent before the problem is solved or out of tries.
+Problems are stored as (skill, tier, seed, variant, template_id) and regenerated on
+demand, so no answer is ever persisted or sent before the problem is solved or out of
+tries. The variant ("bare", "word" or "bank") is a seeded draw from the skill's
+word_share and bank_share (see `variants`); the template or bank item is picked by the
+seed too, and its id is stored. A word problem keeps the generator's answer unless its
+template computes one from an expression. If a stored template or item no longer exists
+(removed from the content pack, say), regeneration falls back to the bare problem.
+A bank item carries its own answer, so a problem issued from a bank item that is gone is
+stale: answering it closes it as Conflict("problem_closed"), and the client moves on to
+the next problem. Shipped bank items are never edited in place (ADR-0012), so an item
+that still exists is the one the learner saw. If rendering a word or bank variant fails
+when a problem is issued (a template that breaks for this seed), the failure is logged
+and the problem is issued and stored as the bare variant instead.
 
-A problem allows three tries. `attempts_left` (the hearts on the play screen) is
-MAX_ATTEMPTS minus the tries used up by misses; a correct answer does not use one, so a
-first-try solve still reports 3 and a wrong-then-right solve reports 2.
+Seeds are drawn below 2**53, so they survive a round trip through JavaScript numbers.
+
+A bank item can be multiple choice. Its problem is answered with a choice index, never
+LaTeX: sending LaTeX to a choice problem, a choice to any other problem, or an index
+outside the shown choices is Invalid (422) and records nothing. A choice attempt is
+stored in the attempts table's latex column as `choice:<index>`; a choice problem only
+ever stores that form, and the answer route rejects typed LaTeX that starts with
+`choice:`, so no other problem ever does and the column stays unambiguous. When a choice
+problem is scored, `answer_choice` reveals the right index instead of `answer_latex`.
+
+A typed problem allows three tries (MAX_ATTEMPTS); a choice problem allows two
+(MAX_CHOICE_ATTEMPTS), since with three or more choices a third try would be a free
+guess. `attempts_left` (the hearts on the play screen) is the problem's allowance minus
+the tries used up by misses; a correct answer does not use one, so a first-try solve of
+a typed problem still reports 3 and a wrong-then-right solve reports 2.
 
 The first three WRONG_FORM or UNREADABLE verdicts on a problem are free; later ones use
 up a try like INCORRECT does (the verdict returned is still WRONG_FORM or UNREADABLE).
@@ -48,17 +71,18 @@ submissions cannot deadlock; the skill_mastery row is created with ON CONFLICT D
 NOTHING before it is locked.
 """
 
+import logging
 import secrets
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-import sympy
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from mathquest.engine.catalog import Catalog
 from mathquest.engine.checker.bounded import CheckerPool
-from mathquest.engine.checker.check import CheckResult, Verdict
-from mathquest.engine.generators import get_generator
+from mathquest.engine.checker.check import CheckResult, Verdict, check_choice
 from mathquest.engine.mastery import (
     MASTERY_PREDICT,
     Outcome,
@@ -72,47 +96,71 @@ from mathquest.engine.mastery import (
     update,
 )
 from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
-from mathquest.engine.skillgraph import SkillGraph
+from mathquest.engine.templates import TemplateError
+from mathquest.engine.transport import answer_latex, prompt_out
+from mathquest.engine.types import VARIANTS, KeypadProfile, Problem, Variant
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, ProblemInstance
 from mathquest.features.play.schema import AnswerOut, MasteryOut, ProblemOut, SessionOut
-from mathquest.shared.errors import Conflict, NotFound
+from mathquest.features.play.variants import choose_variant
+from mathquest.shared.errors import Conflict, Invalid, NotFound
 
 MAX_ATTEMPTS = 3
+MAX_CHOICE_ATTEMPTS = 2
 FREE_VERDICTS = 3
 STORED_LATEX_MAX = 200
+CHOICE_PREFIX = "choice:"
 # Room for a whole run plus the reviews (every fifth problem) that can sit inside it.
 RECENT_LOOKBACK = RUN_LENGTH * 2 + 2
-_SEED_LIMIT = 2**62
+SEED_LIMIT = 2**53
+"""New seeds are below this, so they are exact as JavaScript numbers."""
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
+
+
+log = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _start_rating(skill_id: str) -> float:
-    return initial_rating(get_generator(skill_id).tier_difficulties)
+def _start_rating(catalog: Catalog, skill_id: str) -> float:
+    return initial_rating(catalog.source(skill_id).tier_difficulties)
 
 
-def _rating(row: SkillMastery | None, skill_id: str) -> SkillRating:
+def _rating(catalog: Catalog, row: SkillMastery | None, skill_id: str) -> SkillRating:
     if row is None:
-        return SkillRating(rating=_start_rating(skill_id))
+        return SkillRating(rating=_start_rating(catalog, skill_id))
     recent = tuple((bool(e[0]), int(e[1])) for e in row.recent)
     return SkillRating(row.rating, row.attempts, recent)
 
 
-def _top_difficulty(skill_id: str) -> float:
-    return max(get_generator(skill_id).tier_difficulties)
+def _top_difficulty(catalog: Catalog, skill_id: str) -> float:
+    return max(catalog.source(skill_id).tier_difficulties)
 
 
-def _top_tier(skill_id: str) -> int:
-    return len(get_generator(skill_id).tier_difficulties) - 1
+def _top_tier(catalog: Catalog, skill_id: str) -> int:
+    return len(catalog.source(skill_id).tier_difficulties) - 1
 
 
-def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> MasteryOut:
-    top = _top_difficulty(skill_id)
+def _keypad(problem: Problem, declared: KeypadProfile) -> KeypadProfile:
+    """Choice buttons for a choice problem, else the skill's own keypad."""
+    return "choice" if problem.choices is not None else declared
+
+
+@dataclass(frozen=True)
+class _Reveal:
+    """The right answer, sent once a problem is scored."""
+
+    latex: str | None
+    choice: int | None
+
+
+def _mastery_out(
+    catalog: Catalog, skill_id: str, row: SkillMastery | None, now: datetime
+) -> MasteryOut:
+    top = _top_difficulty(catalog, skill_id)
     if row is None or row.attempts == 0:
         state = SkillState.READY
     elif row.state == SkillState.MASTERED:
@@ -123,7 +171,8 @@ def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> Mast
     if state in (SkillState.MASTERED, SkillState.REVIEW_DUE):
         progress = 1.0
     else:
-        progress = min(1.0, max(0.0, predict(_rating(row, skill_id).rating, top) / MASTERY_PREDICT))
+        rating = _rating(catalog, row, skill_id).rating
+        progress = min(1.0, max(0.0, predict(rating, top) / MASTERY_PREDICT))
     return MasteryOut(skill_id=skill_id, state=state, progress=progress)
 
 
@@ -147,7 +196,7 @@ async def start_session(
 
 async def next_problem(
     db: AsyncSession,
-    graph: SkillGraph,
+    catalog: Catalog,
     player_id: uuid.UUID,
     session_id: uuid.UUID,
     *,
@@ -160,15 +209,23 @@ async def next_problem(
     await problems.close_open(db, session_id, now)
     rows = await mastery.list_for_player(db, player_id)
     by_skill = {r.skill_id: r for r in rows}
-    ratings = {sid: _rating(by_skill.get(sid), sid) for sid in graph.skills}
+    graph = catalog.graph
+    ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
     mastered = {r.skill_id for r in rows if r.state == SkillState.MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
     recent = await problems.recent_skill_ids(db, session_id, limit=RECENT_LOOKBACK)
     skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count, recent)
-    generator = get_generator(skill_id)
-    tier = choose_tier(ratings[skill_id], generator.tier_difficulties)
-    seed = secrets.randbelow(_SEED_LIMIT)
-    problem = generator.generate(seed, tier)
+    source = catalog.source(skill_id)
+    tier = choose_tier(ratings[skill_id], source.tier_difficulties)
+    seed = secrets.randbelow(SEED_LIMIT)
+    variant = choose_variant(source, seed)
+    try:
+        problem = source.generate(seed, tier, variant)
+    except TemplateError:
+        log.exception(
+            "%s variant of %s failed for seed %d; issuing it bare", variant, skill_id, seed
+        )
+        problem = source.generate(seed, tier)
     instance = await problems.add_problem(
         db,
         session_id=session_id,
@@ -176,6 +233,8 @@ async def next_problem(
         skill_id=skill_id,
         tier=tier,
         seed=seed,
+        variant=problem.variant,
+        template_id=problem.template_id,
         difficulty=problem.difficulty,
         issued_at=now,
     )
@@ -184,26 +243,33 @@ async def next_problem(
         problem_id=instance.id,
         skill_id=skill_id,
         skill_name=graph.skills[skill_id].name,
-        prompt_latex=problem.prompt_latex,
-        keypad=problem.keypad,
-        dev_answer_latex=sympy.latex(problem.answer) if expose_answers else None,
+        prompt=prompt_out(problem.prompt),
+        keypad=_keypad(problem, graph.skills[skill_id].keypad),
+        choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
+        dev_answer_latex=answer_latex(problem) if expose_answers else None,
+        dev_answer_choice=problem.correct_choice if expose_answers else None,
     )
     await db.commit()
     return out
 
 
 def _apply_score(
-    row: SkillMastery, skill_id: str, difficulty: float, outcome: Outcome, now: datetime
+    catalog: Catalog,
+    row: SkillMastery,
+    skill_id: str,
+    difficulty: float,
+    outcome: Outcome,
+    now: datetime,
 ) -> None:
-    top = _top_difficulty(skill_id)
-    after = update(_rating(row, skill_id), difficulty, outcome, top)
+    top = _top_difficulty(catalog, skill_id)
+    after = update(_rating(catalog, row, skill_id), difficulty, outcome, top)
     was_mastered = row.state == SkillState.MASTERED
     review_due = was_mastered and row.review_due_at is not None and row.review_due_at <= now
     row.rating = after.rating
     row.attempts = after.attempts
     row.recent = [[int(correct), tier] for correct, tier in after.recent]
     row.updated_at = now
-    mastered = is_mastered(after, top, _top_tier(skill_id))
+    mastered = is_mastered(after, top, _top_tier(catalog, skill_id))
     if not mastered or (not was_mastered and not outcome.correct):
         row.state = SkillState.LEARNING
         row.review_interval_days = None
@@ -218,6 +284,25 @@ def _apply_score(
         interval = next_review_days(row.review_interval_days, outcome.correct)
     row.review_interval_days = interval
     row.review_due_at = now + timedelta(days=interval)
+
+
+def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
+    """The issued problem again, from its stored seed, tier, variant and template."""
+    variant: Variant = "bare"
+    for known in VARIANTS:
+        if known == instance.variant:
+            variant = known
+    source = catalog.source(instance.skill_id)
+    return source.generate(instance.seed, instance.tier, variant, instance.template_id)
+
+
+def _allowed(problem: Problem) -> int:
+    return MAX_CHOICE_ATTEMPTS if problem.choices is not None else MAX_ATTEMPTS
+
+
+def _stale(instance: ProblemInstance, problem: Problem) -> bool:
+    """Issued from a bank item that no longer exists, so its answer is unknown."""
+    return instance.variant == "bank" and problem.variant != "bank"
 
 
 def _tries_used(attempts: list[Attempt]) -> int:
@@ -240,10 +325,12 @@ async def _load(
 
 async def _stored(
     db: AsyncSession,
+    catalog: Catalog,
     instance: ProblemInstance,
     attempts: list[Attempt],
-    answer_latex: str | None,
+    reveal: _Reveal | None,
     now: datetime,
+    allowed: int,
 ) -> AnswerOut:
     """The result already on record for this problem; commits to release the lock."""
     last = attempts[-1]
@@ -253,52 +340,78 @@ async def _stored(
         verdict=Verdict(last.verdict),
         misconception=last.misconception,
         solved=bool(instance.correct),
-        attempts_left=max(0, MAX_ATTEMPTS - used),
-        mastery=_mastery_out(instance.skill_id, row, now),
-        answer_latex=answer_latex,
+        attempts_left=max(0, allowed - used),
+        mastery=_mastery_out(catalog, instance.skill_id, row, now),
+        answer_latex=reveal.latex if reveal else None,
+        answer_choice=reveal.choice if reveal else None,
         total_solved=await problems.count_solved(db, instance.player_id),
     )
     await db.commit()
     return out
 
 
-def _repeat_of_last_wrong(attempts: list[Attempt], latex: str) -> bool:
+def _repeat_of_last_wrong(attempts: list[Attempt], given: str) -> bool:
     return bool(
         attempts
         and attempts[-1].verdict == Verdict.INCORRECT.value
-        and attempts[-1].latex == latex[:STORED_LATEX_MAX]
+        and attempts[-1].latex == given[:STORED_LATEX_MAX]
     )
+
+
+def _given(problem: Problem, latex: str | None, choice: int | None) -> str:
+    """The answer as stored: the LaTeX, or `choice:<index>` for a choice problem."""
+    if problem.choices is None:
+        if latex is None or choice is not None:
+            raise Invalid("latex_expected")
+        return latex
+    if choice is None or latex is not None:
+        raise Invalid("choice_expected")
+    if not 0 <= choice < len(problem.choices):
+        raise Invalid("choice_out_of_range")
+    return f"{CHOICE_PREFIX}{choice}"
 
 
 async def submit_answer(
     db: AsyncSession,
     pool: CheckerPool,
-    graph: SkillGraph,
+    catalog: Catalog,
     player_id: uuid.UUID,
     problem_id: uuid.UUID,
-    latex: str,
+    latex: str | None = None,
+    *,
+    choice: int | None = None,
 ) -> AnswerOut:
+    """Score one answer: ``latex`` for a typed answer, ``choice`` for a choice problem."""
     received = _now()
     instance, attempts = await _load(db, player_id, problem_id)
     skill_id = instance.skill_id
-    problem = get_generator(skill_id).generate(instance.seed, instance.tier)
-    answer_latex = str(sympy.latex(problem.answer))
+    problem = regenerate(catalog, instance)
+    if _stale(instance, problem):
+        if instance.answered_at is None:
+            instance.answered_at = received
+            await db.commit()
+        raise Conflict("problem_closed")
+    given = _given(problem, latex, choice)
+    reveal = _Reveal(answer_latex(problem), problem.correct_choice)
+    allowed = _allowed(problem)
     if instance.answered_at is not None:
-        return await _stored(db, instance, attempts, answer_latex, received)
-    if _repeat_of_last_wrong(attempts, latex):
-        return await _stored(db, instance, attempts, None, received)
+        return await _stored(db, catalog, instance, attempts, reveal, received, allowed)
+    if _repeat_of_last_wrong(attempts, given):
+        return await _stored(db, catalog, instance, attempts, None, received, allowed)
     await db.commit()
 
-    if len(latex) > STORED_LATEX_MAX:
+    if choice is not None:
+        result = check_choice(problem, choice)
+    elif len(given) > STORED_LATEX_MAX:
         result = CheckResult(Verdict.UNREADABLE, None)
     else:
-        result = await pool.check(problem, latex)
+        result = await pool.check(problem, given)
 
     instance, attempts = await _load(db, player_id, problem_id)
     if instance.answered_at is not None:
-        return await _stored(db, instance, attempts, answer_latex, received)
-    if _repeat_of_last_wrong(attempts, latex):
-        return await _stored(db, instance, attempts, None, received)
+        return await _stored(db, catalog, instance, attempts, reveal, received, allowed)
+    if _repeat_of_last_wrong(attempts, given):
+        return await _stored(db, catalog, instance, attempts, None, received, allowed)
 
     verdict = result.verdict
     misconception = result.misconception if verdict is Verdict.INCORRECT else None
@@ -309,25 +422,25 @@ async def submit_answer(
         db,
         problem_id=instance.id,
         player_id=player_id,
-        latex=latex[:STORED_LATEX_MAX],
+        latex=given[:STORED_LATEX_MAX],
         verdict=verdict.value,
         misconception=misconception,
         seconds=seconds,
         at=received,
     )
     used = _tries_used([*attempts, attempt])
-    scored = solved or used >= MAX_ATTEMPTS
+    scored = solved or used >= allowed
 
     if scored:
-        row = await mastery.lock(db, player_id, skill_id, _start_rating(skill_id))
+        row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
         outcome = Outcome(
             correct=solved,
             hints_used=tried,
             seconds=seconds,
-            fluency=graph.skills[skill_id].fluency,
+            fluency=catalog.graph.skills[skill_id].fluency,
             tier=instance.tier,
         )
-        _apply_score(row, skill_id, instance.difficulty, outcome, received)
+        _apply_score(catalog, row, skill_id, instance.difficulty, outcome, received)
         instance.answered_at = received
         instance.correct = solved
     else:
@@ -337,9 +450,10 @@ async def submit_answer(
         verdict=verdict,
         misconception=misconception,
         solved=solved,
-        attempts_left=MAX_ATTEMPTS - used,
-        mastery=_mastery_out(skill_id, row, received),
-        answer_latex=answer_latex if scored else None,
+        attempts_left=allowed - used,
+        mastery=_mastery_out(catalog, skill_id, row, received),
+        answer_latex=reveal.latex if scored else None,
+        answer_choice=reveal.choice if scored else None,
         total_solved=await problems.count_solved(db, player_id),
     )
     await db.commit()

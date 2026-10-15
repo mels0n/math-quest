@@ -2,6 +2,7 @@
 
 from mathquest.features.play.schema import AnswerOut, MasteryOut, ProblemOut, SessionOut
 from mathquest.features.play.service import (
+    CHOICE_PREFIX,
     next_problem,
     start_session,
     submit_answer,
@@ -9,6 +10,7 @@ from mathquest.features.play.service import (
 )
 
 __all__ = [
+    "CHOICE_PREFIX",
     "AnswerOut",
     "MasteryOut",
     "ProblemOut",

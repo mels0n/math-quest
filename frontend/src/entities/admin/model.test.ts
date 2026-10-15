@@ -3,9 +3,11 @@ import { ApiError } from '../../shared/api';
 import {
 	adminErrorMessage,
 	canDelete,
+	coverageCell,
 	isValidNickname,
 	isValidPin,
 	isValidSignupWord,
+	parseSeed,
 	resolveNotFound
 } from './model';
 
@@ -97,5 +99,26 @@ describe('resolveNotFound', () => {
 		expect(resolveNotFound(new ApiError(500, 'http_error', null))).toBe('unknown');
 		expect(resolveNotFound(new ApiError(0, 'network', null))).toBe('unknown');
 		expect(resolveNotFound(new Error('x'))).toBe('unknown');
+	});
+});
+
+describe('content preview helpers', () => {
+	it('reads a seed: blank means the sample seeds, junk and huge numbers are refused', () => {
+		expect(parseSeed('')).toBeUndefined();
+		expect(parseSeed(' 42 ')).toBe(42);
+		expect(parseSeed('0')).toBe(0);
+		expect(parseSeed('2147483648')).toBe(2147483648);
+		expect(parseSeed('9007199254740991')).toBe(9007199254740991);
+		expect(parseSeed('9007199254740992')).toBeNull();
+		expect(parseSeed('12345678901234567')).toBeNull();
+		expect(parseSeed('-1')).toBeNull();
+		expect(parseSeed('1e3')).toBeNull();
+	});
+
+	it('shows a coverage cell as have / target or n/a', () => {
+		expect(coverageCell(15, '15+')).toBe('15 / 15+');
+		expect(coverageCell(4, '3-4')).toBe('4 / 3-4');
+		expect(coverageCell(null, '30+')).toBe('n/a');
+		expect(coverageCell(1, undefined)).toBe('1 / ?');
 	});
 });

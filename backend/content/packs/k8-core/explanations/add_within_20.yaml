@@ -1,0 +1,32 @@
+# Four ways to explain adding to 20, plus feedback for each mistake the generator knows.
+skill: add_within_20
+approaches:
+  - style: visual
+    body_md: >-
+      Picture a number line. Put your finger on {big}, the bigger number. Make
+      {small} small jumps to the right. The number where you stop is the answer.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: "{big}", jumps: "{small}", end: "{{= a + b }}"}
+  - style: steps
+    body_md: |-
+      1. Find the bigger number and say it out loud.
+      2. Count on the other number, one at a time.
+      3. Use your fingers to keep track.
+      4. The last number you say is the answer.
+  - style: story
+    body_md: >-
+      {a} ducks swim in a pond. {b} more ducks fly down and join them. How
+      many ducks are in the pond now? That is \({a} + {b}\).
+  - style: worked
+    body_md: >-
+      Here is one we did together: \(7 + 6\). Take 3 from the 6 to make 10
+      with the 7. That leaves 3. Then 10 and 3 make {{= 10 + 3 }}. So
+      \(7 + 6 = {{= 7 + 6 }}\). Try the same steps with {a} and {b}.
+misconceptions:
+  subtracted_instead: >-
+    It looks like you took away. The plus sign means put {a} and {b}
+    together. So the answer is bigger than both.
+  counted_start: >-
+    You were close! It looks like you counted {big} as a jump. For
+    \({a} + {b}\), start at {big}. The next number you say is jump one.

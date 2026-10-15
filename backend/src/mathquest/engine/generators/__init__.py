@@ -1,4 +1,8 @@
-"""Registry of problem generators, one per skill."""
+"""Registry of problem generators, keyed by generator id.
+
+A skill names its generator in ``skills.yaml``; existing skills use a generator of the
+same id.
+"""
 
 from collections.abc import Mapping
 from types import MappingProxyType
@@ -8,15 +12,15 @@ from mathquest.engine.types import Generator
 
 _REGISTRY: Mapping[str, Generator] = MappingProxyType(
     {
-        g.skill_id: g
+        g.generator_id: g
         for g in [*early.generators(), *place_value.generators(), *fractions.generators()]
     }
 )
 
 
-def get_generator(skill_id: str) -> Generator:
-    """Return the generator for ``skill_id``; KeyError when there is none."""
-    return _REGISTRY[skill_id]
+def get_generator(generator_id: str) -> Generator:
+    """Return the generator registered as ``generator_id``; KeyError when there is none."""
+    return _REGISTRY[generator_id]
 
 
 def all_generators() -> Mapping[str, Generator]:

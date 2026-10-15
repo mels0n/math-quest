@@ -1,0 +1,6 @@
+regions:
+  - id: meadow
+    name: Meadow
+    order: 1
+    creature_family: family_test
+    map_hint: A test field.

@@ -1,0 +1,28 @@
+skill: story
+templates:
+  - id: marbles
+    text_template: "{name} has {a} {obj}. {friend} gives {b} more. How many now?"
+    slots: {name: names, friend: names, obj: objects}
+    grade_band: 1
+  - id: one_bag
+    text_template: "Each {thing.one} bag holds {a}. {name} adds {b}. How many?"
+    slots: {name: names, thing: objects}
+    grade_band: 1
+  - id: walk
+    text_template: "{name} walks {a} {unit} {place}, then {b} more. How far?"
+    slots: {name: names, unit: length_units, place: contexts}
+    grade_band: 2
+  - id: as_math
+    text_template: 'Find the sum: \({a} + {b} = ?\)'
+    grade_band: 1
+  - id: gives_away
+    text_template: "{name} has {a} cards and gets {b}. {name} gives away {n}. How many left?"
+    slots: {name: names, n: number}
+    answer_from: expression
+    expression: "a + b - n"
+    grade_band: 2
+  - id: halves
+    text_template: 'Two friends share \(2 \cdot ({a} + {b}) = {{= 2(a + b) }}\) grapes. How many each?'
+    answer_from: expression
+    expression: '\frac{2(a + b)}{2}'
+    grade_band: 3

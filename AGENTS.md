@@ -12,6 +12,8 @@ Backend (run in `backend/`; needs Python 3.13+ and uv):
 - Lint: `uv run ruff check`
 - Types: `uv run pyright`
 - Import boundaries: `uv run lint-imports`
+- Content: `uv run content-lint` (blocking in CI), `uv run content-report` (coverage);
+  see [docs/how-to/add-content.md](docs/how-to/add-content.md)
 
 Frontend (run in `frontend/`; needs Node 24):
 
@@ -32,8 +34,11 @@ backend/
     features/   use cases (accounts, play)
     entities/   database models and per-entity data access
     shared/     config, database, errors, logging
-    engine/     pure problem engine (types, skill graph, generators, checker, mastery)
-  content/      skill packs and word lists
+    engine/     pure problem engine (types, skill graph, generators, checker, mastery,
+                content pack loader, lint and coverage, templates, word problems, bank items)
+    cli/        content tools: `uv run content-lint`, `uv run content-report`
+  content/      content packs (skills, world, teaching text, word problems, bank items),
+                word-problem slot lists, the early-reader word list and account word lists
   migrations/   Alembic revisions
   tests/
 frontend/

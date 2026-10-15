@@ -1,10 +1,10 @@
 """Adventure play routes."""
 
 import uuid
-from typing import Literal
+from typing import Literal, Self
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 
 from mathquest.api.deps import (
     AppSettings,
@@ -22,6 +22,8 @@ router = APIRouter(prefix="/api/play")
 # Wide enough for any real answer; the service stores 200 characters and the checker
 # rejects longer input as unreadable.
 MAX_BODY_LATEX = 1000
+# Far above any real number of choices; the service rejects an index past the shown ones.
+MAX_CHOICE = 99
 
 
 class StartIn(BaseModel):
@@ -31,16 +33,30 @@ class StartIn(BaseModel):
 
 
 class AnswerIn(BaseModel):
+    """Exactly one of ``latex`` (a typed answer) or ``choice`` (a choice index)."""
+
     model_config = ConfigDict(extra="forbid")
 
-    latex: str = Field(max_length=MAX_BODY_LATEX)
+    latex: str | None = Field(default=None, max_length=MAX_BODY_LATEX)
+    choice: StrictInt | None = Field(default=None, ge=0, le=MAX_CHOICE)
+
+    @model_validator(mode="after")
+    def _exactly_one(self) -> Self:
+        if (self.latex is None) == (self.choice is None):
+            raise ValueError("send exactly one of latex or choice")
+        return self
 
     @field_validator("latex")
     @classmethod
-    def _storable(cls, value: str) -> str:
+    def _storable(cls, value: str | None) -> str | None:
         """Reject NUL and text that UTF-8 cannot encode; Postgres text cannot store either."""
+        if value is None:
+            return None
         if "\x00" in value:
             raise ValueError("NUL is not allowed")
+        if value.startswith(play.CHOICE_PREFIX):
+            # Reserved for stored choice attempts; keeps the attempts column unambiguous.
+            raise ValueError("not an answer")
         try:
             value.encode("utf-8")
         except UnicodeEncodeError:
@@ -59,7 +75,7 @@ async def next_problem(
 ) -> ProblemOut:
     return await play.next_problem(
         db,
-        request.app.state.skill_graph,
+        request.app.state.catalog,
         player.id,
         session_id,
         expose_answers=settings.dev_expose_answers,
@@ -73,8 +89,9 @@ async def answer(
     return await play.submit_answer(
         db,
         request.app.state.checker_pool,
-        request.app.state.skill_graph,
+        request.app.state.catalog,
         player.id,
         problem_id,
         body.latex,
+        choice=body.choice,
     )

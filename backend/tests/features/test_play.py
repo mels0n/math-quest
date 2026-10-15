@@ -15,24 +15,27 @@ import sympy
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from mathquest.engine.catalog import Catalog, build_catalog, load_catalog
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check
-from mathquest.engine.generators import get_generator
+from mathquest.engine.content import load_pack
+from mathquest.engine.content.schema import Bank, WordProblems, WordTemplate
 from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
 from mathquest.engine.scheduler import RUN_LENGTH
-from mathquest.engine.skillgraph import SkillGraph, load_pack
+from mathquest.engine.transport import prompt_out
 from mathquest.engine.types import Problem
 from mathquest.entities import mastery, players, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.models import Player
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance, add_problem
 from mathquest.features.play import service
-from mathquest.features.play.schema import AnswerOut
-from mathquest.shared.errors import Conflict, NotFound
+from mathquest.features.play.schema import AnswerOut, ProblemOut
+from mathquest.features.play.variants import choose_variant
+from mathquest.shared.errors import Conflict, Invalid, NotFound
 from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
 
-PACK = Path(__file__).resolve().parents[2] / "content" / "packs" / "k8-core"
-GRAPH = load_pack(PACK)
+CATALOG = load_catalog(Path(__file__).resolve().parents[2] / "content", "k8-core")
+GRAPH = CATALOG.graph
 SEED = 7
 
 
@@ -62,8 +65,10 @@ async def _issue(
     skill_id: str = "add_within_10",
     tier: int = 0,
     seed: int = SEED,
+    variant: str = "bare",
+    template_id: str | None = None,
 ) -> ProblemInstance:
-    problem = get_generator(skill_id).generate(seed, tier)
+    problem = CATALOG.source(skill_id).generate(seed, tier)
     return await add_problem(
         db,
         session_id=session_id,
@@ -73,11 +78,13 @@ async def _issue(
         seed=seed,
         difficulty=problem.difficulty,
         issued_at=datetime.now(UTC),
+        variant=variant,
+        template_id=template_id,
     )
 
 
 def _answer(inst: ProblemInstance) -> sympy.Expr:
-    return get_generator(inst.skill_id).generate(inst.seed, inst.tier).answer
+    return CATALOG.source(inst.skill_id).generate(inst.seed, inst.tier).answer
 
 
 def _right(inst: ProblemInstance) -> str:
@@ -98,7 +105,7 @@ async def _row(db: AsyncSession, player_id: uuid.UUID, skill_id: str) -> SkillMa
 async def _submit(
     db: AsyncSession, player_id: uuid.UUID, problem_id: uuid.UUID, latex: str
 ) -> AnswerOut:
-    return await service.submit_answer(db, POOL, GRAPH, player_id, problem_id, latex)
+    return await service.submit_answer(db, POOL, CATALOG, player_id, problem_id, latex)
 
 
 async def test_correct_answer_updates_mastery_once(db: AsyncSession) -> None:
@@ -116,7 +123,7 @@ async def test_correct_answer_updates_mastery_once(db: AsyncSession) -> None:
     assert out.mastery.state is SkillState.LEARNING
     row = await _row(db, pid, "add_within_10")
     assert row.attempts == 1
-    assert row.rating > service._start_rating("add_within_10")  # pyright: ignore[reportPrivateUsage]
+    assert row.rating > service._start_rating(CATALOG, "add_within_10")  # pyright: ignore[reportPrivateUsage]
     assert row.recent == [[1, 0]]
 
 
@@ -185,7 +192,7 @@ async def test_three_misses_reveals_answer_and_scores_incorrect(db: AsyncSession
     assert third.answer_latex == _right(inst)
     row = await _row(db, pid, "add_within_10")
     assert row.attempts == 1
-    assert row.rating < service._start_rating("add_within_10")  # pyright: ignore[reportPrivateUsage]
+    assert row.rating < service._start_rating(CATALOG, "add_within_10")  # pyright: ignore[reportPrivateUsage]
     assert row.recent == [[0, 0]]
 
     again = await _submit(db, pid, inst.id, _right(inst))
@@ -262,7 +269,7 @@ async def test_other_player_problem_404(db: AsyncSession) -> None:
     with pytest.raises(NotFound):
         await _submit(db, other, inst.id, _right(inst))
     with pytest.raises(NotFound):
-        await service.next_problem(db, GRAPH, other, session.session_id)
+        await service.next_problem(db, CATALOG, other, session.session_id)
     with pytest.raises(NotFound):
         await _submit(db, owner, uuid.uuid4(), "1")
     assert await mastery.get(db, owner, "add_within_10") is None
@@ -272,11 +279,12 @@ async def test_new_player_starts_on_ready_skills(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
-    problem = await service.next_problem(db, GRAPH, pid, session.session_id)
+    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
 
     assert problem.skill_id in GRAPH.ready(set())
-    assert problem.prompt_latex
+    assert problem.prompt
     assert problem.skill_name == GRAPH.skills[problem.skill_id].name
+    assert problem.keypad == GRAPH.skills[problem.skill_id].keypad
     assert problem.dev_answer_latex is None
     count = await db.scalar(
         select(func.count()).select_from(ProblemInstance).where(ProblemInstance.player_id == pid)
@@ -288,7 +296,7 @@ async def test_next_problem_exposes_answer_only_when_asked(db: AsyncSession) -> 
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
-    problem = await service.next_problem(db, GRAPH, pid, session.session_id, expose_answers=True)
+    problem = await service.next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
 
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
@@ -299,15 +307,42 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
-    problem = await service.next_problem(db, GRAPH, pid, session.session_id)
+    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
 
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
-    regenerated = get_generator(inst.skill_id).generate(inst.seed, inst.tier)
-    assert regenerated.prompt_latex == problem.prompt_latex
+    regenerated = service.regenerate(CATALOG, inst)
+    assert prompt_out(regenerated.prompt) == problem.prompt
     assert inst.difficulty == regenerated.difficulty
-    again = await service.next_problem(db, GRAPH, pid, session.session_id)
+    again = await service.next_problem(db, CATALOG, pid, session.session_id)
     assert again.problem_id != problem.problem_id
+
+
+async def test_a_skill_without_word_or_bank_content_stays_bare(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+
+    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+
+    inst = await db.get(ProblemInstance, problem.problem_id)
+    assert inst is not None
+    assert (inst.variant, inst.template_id) == ("bare", None)
+
+
+@pytest.mark.parametrize(
+    ("variant", "template_id"), [("word", "removed_template"), ("nonsense", "x")]
+)
+async def test_unknown_variant_or_template_falls_back_to_bare(
+    db: AsyncSession, variant: str, template_id: str | None
+) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, variant=variant, template_id=template_id)
+
+    bare = CATALOG.source(inst.skill_id).generate(inst.seed, inst.tier)
+    assert service.regenerate(CATALOG, inst) == bare
+    out = await _submit(db, pid, inst.id, _right(inst))
+    assert out.solved
 
 
 async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -> None:
@@ -316,7 +351,7 @@ async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -
     skills: list[str] = []
     for _ in range(4):
         problem = await service.next_problem(
-            db, GRAPH, pid, session.session_id, expose_answers=True
+            db, CATALOG, pid, session.session_id, expose_answers=True
         )
         skills.append(problem.skill_id)
         await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
@@ -330,10 +365,10 @@ async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -
 
 async def _master(db: AsyncSession, pid: uuid.UUID, session_id: uuid.UUID, skill_id: str) -> int:
     """Answer correctly at the engine's chosen tier until mastered; returns the answer count."""
-    tiers = get_generator(skill_id).tier_difficulties
+    tiers = CATALOG.source(skill_id).tier_difficulties
     for n in range(1, 40):
         row = await mastery.get(db, pid, skill_id)
-        tier = choose_tier(service._rating(row, skill_id), tiers)  # pyright: ignore[reportPrivateUsage]
+        tier = choose_tier(service._rating(CATALOG, row, skill_id), tiers)  # pyright: ignore[reportPrivateUsage]
         inst = await _issue(db, pid, session_id, skill_id, tier, seed=n)
         await _submit(db, pid, inst.id, _right(inst))
         if (await _row(db, pid, skill_id)).state == "mastered":
@@ -403,7 +438,7 @@ async def test_a_wrong_answer_never_promotes_a_learning_skill(db: AsyncSession) 
     # top-tier streak: after one more scored miss it still passes `is_mastered`.
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
-    top = max(get_generator("add_within_10").tier_difficulties)
+    top = max(CATALOG.source("add_within_10").tier_difficulties)
     db.add(
         SkillMastery(
             player_id=pid,
@@ -422,7 +457,7 @@ async def test_a_wrong_answer_never_promotes_a_learning_skill(db: AsyncSession) 
     out = await _submit(db, pid, missed.id, _wrong(missed, 2))
     assert out.answer_latex is not None  # scored as a miss
     row = await _row(db, pid, "add_within_10")
-    assert is_mastered(service._rating(row, "add_within_10"), top)  # pyright: ignore[reportPrivateUsage]
+    assert is_mastered(service._rating(CATALOG, row, "add_within_10"), top)  # pyright: ignore[reportPrivateUsage]
     assert row.state == "learning"
     assert row.review_due_at is None
     assert out.mastery.state is SkillState.LEARNING
@@ -445,7 +480,7 @@ async def test_due_review_state_and_pick(db: AsyncSession) -> None:
         update(PlaySession).where(PlaySession.id == session.session_id).values(problem_count=4)
     )
 
-    problem = await service.next_problem(db, GRAPH, pid, session.session_id)
+    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
 
     assert problem.skill_id == "add_within_10"
     inst = await db.get(ProblemInstance, problem.problem_id)
@@ -481,7 +516,7 @@ async def test_long_input_is_unreadable_without_the_checker_and_capped_when_stor
     inst = await _issue(db, pid, session.session_id)
     pool = _CountingPool()
 
-    out = await service.submit_answer(db, pool, GRAPH, pid, inst.id, "9" * 500)
+    out = await service.submit_answer(db, pool, CATALOG, pid, inst.id, "9" * 500)
 
     assert out.verdict is Verdict.UNREADABLE
     assert out.attempts_left == 3
@@ -528,8 +563,8 @@ async def test_repeating_the_previous_wrong_answer_is_free(db: AsyncSession) -> 
 async def test_next_problem_closes_the_previous_one(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
-    first = await service.next_problem(db, GRAPH, pid, session.session_id, expose_answers=True)
-    await service.next_problem(db, GRAPH, pid, session.session_id)
+    first = await service.next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
+    await service.next_problem(db, CATALOG, pid, session.session_id)
 
     with pytest.raises(Conflict) as err:
         await _submit(db, pid, first.problem_id, first.dev_answer_latex or "1")
@@ -563,7 +598,7 @@ async def test_no_transaction_is_open_during_the_check(db: AsyncSession) -> None
     await db.commit()
     pool = _SlowPool(0.0, db)
 
-    out = await service.submit_answer(db, pool, GRAPH, pid, inst.id, _right(inst))
+    out = await service.submit_answer(db, pool, CATALOG, pid, inst.id, _right(inst))
 
     assert out.solved is True
     assert pool.open_during_check == [False]
@@ -586,7 +621,7 @@ async def test_slow_check_does_not_block_or_double_count(db_schema: str) -> None
 
         async def submit(latex: str) -> AnswerOut:
             async with factory() as s:
-                return await service.submit_answer(s, pool, GRAPH, pid, inst.id, latex)
+                return await service.submit_answer(s, pool, CATALOG, pid, inst.id, latex)
 
         slow = asyncio.create_task(submit(_right(inst)))
         await asyncio.sleep(0.1)
@@ -616,7 +651,7 @@ async def test_concurrent_submissions_two_devices(db_schema: str) -> None:
         connect_args={"server_settings": {"search_path": db_schema}},
     )
     factory = async_sessionmaker(engine, expire_on_commit=False)
-    graph: SkillGraph = GRAPH
+    catalog: Catalog = CATALOG
     try:
         async with factory() as setup:
             pid = await _player(setup, "Racer")
@@ -627,7 +662,7 @@ async def test_concurrent_submissions_two_devices(db_schema: str) -> None:
 
         async def submit(inst: ProblemInstance) -> AnswerOut:
             async with factory() as s:
-                return await service.submit_answer(s, POOL, graph, pid, inst.id, _right(inst))
+                return await service.submit_answer(s, POOL, catalog, pid, inst.id, _right(inst))
 
         async def submit_twice(inst: ProblemInstance) -> list[AnswerOut]:
             return list(await asyncio.gather(submit(inst), submit(inst)))
@@ -670,12 +705,13 @@ async def test_mastery_row_lock_makes_a_second_scorer_wait(db_schema: str) -> No
             pid = await _player(setup, "Holder")
             session = await service.start_session(setup, pid, "adventure")
             inst = await _issue(setup, pid, session.session_id, seed=11)
-            await mastery.lock(setup, pid, "add_within_10", service._start_rating("add_within_10"))  # pyright: ignore[reportPrivateUsage]
+            start = service._start_rating(CATALOG, "add_within_10")  # pyright: ignore[reportPrivateUsage]
+            await mastery.lock(setup, pid, "add_within_10", start)
             await setup.commit()
 
         async def submit() -> AnswerOut:
             async with factory() as s:
-                return await service.submit_answer(s, POOL, GRAPH, pid, inst.id, _right(inst))
+                return await service.submit_answer(s, POOL, CATALOG, pid, inst.id, _right(inst))
 
         async with factory() as holder:
             held = await mastery.lock(holder, pid, "add_within_10", 0.0)
@@ -695,3 +731,209 @@ async def test_mastery_row_lock_makes_a_second_scorer_wait(db_schema: str) -> No
             await cleanup.execute(delete(Player).where(Player.nickname.like("Holder%")))
             await cleanup.commit()
         await engine.dispose()
+
+
+FIXTURE = build_catalog(
+    load_pack(Path(__file__).resolve().parents[1] / "fixtures" / "packs" / "test-pack"),
+    CATALOG.slots,
+)
+
+
+async def test_variant_and_template_are_drawn_from_the_seed_and_stored(db: AsyncSession) -> None:
+    pid = await _player(db)
+    row = await mastery.lock(db, pid, "pick", 0.0)
+    row.state = SkillState.MASTERED
+    await db.commit()
+    session = await service.start_session(db, pid, "adventure")
+    source = FIXTURE.source("story")
+    seen: set[str] = set()
+    for _ in range(16):
+        problem = await service.next_problem(db, FIXTURE, pid, session.session_id)
+        inst = await db.get(ProblemInstance, problem.problem_id)
+        assert inst is not None and inst.skill_id == "story"
+        assert inst.variant == choose_variant(source, inst.seed)
+        expected = service.regenerate(FIXTURE, inst)
+        assert inst.template_id == expected.template_id
+        assert prompt_out(expected.prompt) == problem.prompt
+        assert problem.choices is None and problem.keypad == "numpad"
+        seen.add(inst.variant)
+    assert "word" in seen
+
+
+async def _choice_problem(db: AsyncSession) -> tuple[uuid.UUID, ProblemOut]:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    problem = await service.next_problem(db, FIXTURE, pid, session.session_id, expose_answers=True)
+    return pid, problem
+
+
+async def test_a_choice_problem_is_answered_by_index(db: AsyncSession) -> None:
+    pid, problem = await _choice_problem(db)
+    assert problem.skill_id == "pick" and problem.keypad == "choice"
+    assert problem.choices and problem.dev_answer_choice is not None
+    assert problem.dev_answer_latex is None
+    right = problem.dev_answer_choice
+    wrong = (right + 1) % len(problem.choices)
+
+    miss = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
+    assert (miss.verdict, miss.attempts_left, miss.answer_choice) == (Verdict.INCORRECT, 1, None)
+    again = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
+    assert again.attempts_left == 1
+
+    hit = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=right)
+    assert hit.verdict is Verdict.CORRECT and hit.solved
+    assert (hit.answer_choice, hit.answer_latex) == (right, None)
+    stored = (
+        (
+            await db.execute(
+                select(Attempt.latex)
+                .where(Attempt.problem_id == problem.problem_id)
+                .order_by(Attempt.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert stored == [f"choice:{wrong}", f"choice:{right}"]
+    replay = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
+    assert replay.solved and replay.answer_choice == right
+
+
+@pytest.mark.parametrize(
+    ("latex", "choice", "code"),
+    [
+        ("1", None, "choice_expected"),
+        (None, 99, "choice_out_of_range"),
+        (None, -1, "choice_out_of_range"),
+    ],
+)
+async def test_bad_choice_answers_are_invalid_and_record_nothing(
+    db: AsyncSession, latex: str | None, choice: int | None, code: str
+) -> None:
+    pid, problem = await _choice_problem(db)
+    with pytest.raises(Invalid) as exc:
+        await service.submit_answer(
+            db, POOL, FIXTURE, pid, problem.problem_id, latex, choice=choice
+        )
+    assert exc.value.code == code
+    await db.rollback()
+    count = await db.scalar(
+        select(func.count()).select_from(Attempt).where(Attempt.problem_id == problem.problem_id)
+    )
+    assert count == 0
+
+
+async def test_a_choice_for_a_typed_problem_is_invalid(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id)
+    with pytest.raises(Invalid, match="latex_expected"):
+        await service.submit_answer(db, POOL, CATALOG, pid, inst.id, choice=0)
+
+
+async def test_a_second_miss_on_a_choice_problem_scores_it(db: AsyncSession) -> None:
+    pid, problem = await _choice_problem(db)
+    assert problem.choices and problem.dev_answer_choice is not None
+    right = problem.dev_answer_choice
+    first, second = ((right + k) % len(problem.choices) for k in (1, 2))
+
+    await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=first)
+    out = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=second)
+    assert (out.solved, out.attempts_left, out.answer_choice) == (False, 0, right)
+    assert service.MAX_CHOICE_ATTEMPTS == 2
+
+
+def _without_bank_item(item_id: str) -> Catalog:
+    pack = FIXTURE.pack
+    bank = pack.bank["pick"]
+    kept = Bank(skill="pick", items=tuple(i for i in bank.items if i.id != item_id))
+    return build_catalog(
+        pack.model_copy(update={"bank": {**pack.bank, "pick": kept}}), FIXTURE.slots
+    )
+
+
+@pytest.mark.parametrize("send", ["choice", "latex"])
+async def test_a_problem_whose_bank_item_is_gone_is_closed(db: AsyncSession, send: str) -> None:
+    pid, problem = await _choice_problem(db)
+    inst = await db.get(ProblemInstance, problem.problem_id)
+    assert inst is not None and inst.variant == "bank" and inst.template_id is not None
+    changed = _without_bank_item(inst.template_id)
+    latex, choice = (None, 0) if send == "choice" else ("1", None)
+
+    for _ in range(2):
+        with pytest.raises(Conflict, match="problem_closed"):
+            await service.submit_answer(
+                db, POOL, changed, pid, problem.problem_id, latex, choice=choice
+            )
+        await db.rollback()
+    await db.refresh(inst)
+    assert inst.answered_at is not None and inst.correct is None
+    count = await db.scalar(
+        select(func.count()).select_from(Attempt).where(Attempt.problem_id == inst.id)
+    )
+    assert count == 0
+
+
+def _failing_word_catalog() -> Catalog:
+    """`story` always draws a word problem whose text breaks for an odd `a`."""
+    pack = FIXTURE.pack
+    story = pack.skills["story"].model_copy(update={"word_share": 1.0, "bank_share": 0.0})
+    template = WordTemplate(
+        id="halves", text_template=r"Half of {a} is {{= \frac{a}{2} }}.", grade_band="1"
+    )
+    words = WordProblems(skill="story", templates=(template,))
+    return build_catalog(
+        pack.model_copy(
+            update={
+                "skills": {**pack.skills, "story": story},
+                "word_problems": {**pack.word_problems, "story": words},
+            }
+        ),
+        FIXTURE.slots,
+    )
+
+
+async def test_a_variant_that_fails_to_render_is_issued_bare(
+    db: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    catalog = _failing_word_catalog()
+    seeds = iter(range(12))
+    monkeypatch.setattr(service.secrets, "randbelow", lambda _limit: next(seeds))  # pyright: ignore[reportUnknownLambdaType]
+    pid = await _player(db)
+    row = await mastery.lock(db, pid, "pick", 0.0)
+    row.state = SkillState.MASTERED
+    await db.commit()
+    session = await service.start_session(db, pid, "adventure")
+    variants: set[str] = set()
+    for _ in range(12):
+        problem = await service.next_problem(db, catalog, pid, session.session_id)
+        inst = await db.get(ProblemInstance, problem.problem_id)
+        assert inst is not None and inst.skill_id == "story"
+        source = catalog.source("story")
+        a = source.generate(inst.seed, inst.tier).values["a"]
+        assert isinstance(a, int)
+        expected = "word" if a % 2 == 0 else "bare"
+        assert (inst.variant, inst.template_id) == (
+            (expected, "halves") if expected == "word" else ("bare", None)
+        )
+        regenerated = service.regenerate(catalog, inst)
+        assert prompt_out(regenerated.prompt) == problem.prompt
+        variants.add(inst.variant)
+    assert variants == {"word", "bare"}
+
+
+async def test_new_seeds_are_safe_javascript_integers(db: AsyncSession) -> None:
+    assert service.SEED_LIMIT == 2**53
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+    inst = await db.get(ProblemInstance, problem.problem_id)
+    assert inst is not None and 0 <= inst.seed < 2**53
+
+
+async def test_a_stored_seed_above_the_new_limit_still_regenerates(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, seed=2**62 - 1)
+    out = await _submit(db, pid, inst.id, _right(inst))
+    assert out.solved

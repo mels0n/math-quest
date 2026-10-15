@@ -33,7 +33,8 @@ export const canDelete = (nickname: string, typed: string): boolean =>
 export const isValidPin = (pin: string): boolean => /^[0-9]{4}$/.test(pin);
 
 /** Mirrors the backend nickname rule: 3 to 16 of letters, numbers, space, underscore, hyphen. */
-export const isValidNickname = (nickname: string): boolean => /^[A-Za-z0-9 _-]{3,16}$/.test(nickname);
+export const isValidNickname = (nickname: string): boolean =>
+	/^[A-Za-z0-9 _-]{3,16}$/.test(nickname);
 
 export const isValidSignupWord = (word: string): boolean => /^[A-Za-z]{3,32}$/.test(word);
 
@@ -75,4 +76,136 @@ export function resolveNotFound(sessionCheckFailure: unknown): NotFoundVerdict {
 		if (sessionCheckFailure.status === 401) return 'login';
 	}
 	return 'unknown';
+}
+
+/** One part of rendered content: words (which may hold simple Markdown) or LaTeX math. */
+export interface ContentPart {
+	kind: 'text' | 'math';
+	value: string;
+}
+
+export interface CoverageGap {
+	field: string;
+	have: number;
+	want: number;
+}
+
+export interface SkillCoverage {
+	skill_id: string;
+	name: string;
+	tiers: number;
+	misconceptions: number;
+	/** Misconceptions of the generator with feedback written. */
+	feedback: number;
+	/** null when word problems do not fit the skill. */
+	word_templates: number | null;
+	/** null when the skill is not banked. */
+	bank_items: number | null;
+	lesson: boolean;
+	hints: number;
+	explanations: number;
+	gaps: CoverageGap[];
+}
+
+export interface RegionCoverage {
+	region_id: string;
+	name: string;
+	complete: boolean;
+	skills: SkillCoverage[];
+}
+
+export interface ContentPack {
+	id: string;
+	title: string;
+	version: string;
+	live: boolean;
+	complete_regions: string[];
+	regions: RegionCoverage[];
+}
+
+export interface ContentOverview {
+	packs: ContentPack[];
+	/** Each coverage target as shown, keyed by field: "3+", "3-4" ... */
+	targets: Record<string, string>;
+}
+
+export interface ContentVisual {
+	kind: string;
+	params: Record<string, unknown>;
+}
+
+export interface MisconceptionPreview {
+	key: string;
+	answer_latex: string;
+	feedback: ContentPart[] | null;
+}
+
+export interface ProblemPreview {
+	seed: number;
+	tier: number;
+	prompt: ContentPart[];
+	answer_latex: string | null;
+	choices: ContentPart[][] | null;
+	correct_choice: number | null;
+	misconceptions: MisconceptionPreview[];
+	error: string | null;
+}
+
+export interface LessonPreview {
+	screens: {
+		title: string;
+		body: ContentPart[];
+		visual: ContentVisual | null;
+	}[];
+	worked_prompt: ContentPart[];
+	worked_steps: ContentPart[][];
+	try_it_tier: number;
+	try_it_seed: number | null;
+}
+
+export interface SkillPreview {
+	skill_id: string;
+	name: string;
+	region: string;
+	grade_band: string;
+	keypad: string;
+	tier_labels: string[];
+	tier: number;
+	seeds: number[];
+	coverage: SkillCoverage;
+	problems: ProblemPreview[];
+	lesson: LessonPreview | null;
+	hints: ContentPart[][] | null;
+	explanations: { style: string; body: ContentPart[]; visual: ContentVisual | null }[] | null;
+	word_templates: {
+		id: string;
+		grade_band: string;
+		answer_from: 'generator_answer' | 'expression';
+		samples: ProblemPreview[];
+	}[];
+	bank_items: { id: string; kind: 'choice' | 'expr'; sample: ProblemPreview }[];
+	errors: string[];
+}
+
+export interface PreviewParams {
+	seed?: number;
+	tier?: number;
+}
+
+/** Largest seed the preview accepts: the largest integer a JavaScript number holds exactly. */
+export const MAX_PREVIEW_SEED = Number.MAX_SAFE_INTEGER;
+
+/** A seed typed by the admin: a whole number in range, or undefined for the sample seeds. */
+export function parseSeed(raw: string): number | undefined | null {
+	const trimmed = raw.trim();
+	if (trimmed === '') return undefined;
+	if (!/^[0-9]{1,16}$/.test(trimmed)) return null;
+	const seed = Number(trimmed);
+	return seed <= MAX_PREVIEW_SEED ? seed : null;
+}
+
+/** "have / target" for a coverage target such as "4 / 3-4", or "n/a" when it does not apply. */
+export function coverageCell(have: number | null, target: string | undefined): string {
+	if (have === null) return 'n/a';
+	return `${have} / ${target ?? '?'}`;
 }

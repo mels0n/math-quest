@@ -1,0 +1,34 @@
+# A choice-only skill and a skill with word problems and typed bank items.
+skills:
+  - id: pick
+    name: Pick One
+    region: meadow
+    fluency: false
+    anchor: false
+    generator: add_within_10
+    tiers:
+      - {id: 0, label: Easy}
+      - {id: 1, label: Middle}
+      - {id: 2, label: Hard}
+    grade_band: "1"
+    keypad: choice
+    word_share: 0.0
+    banked: true
+    bank_share: 1.0
+  - id: story
+    name: Story Sums
+    region: meadow
+    prerequisites: [pick]
+    fluency: false
+    anchor: false
+    generator: add_within_20
+    tiers:
+      - {id: 0, label: Easy}
+      - {id: 1, label: Middle}
+      - {id: 2, label: Hard}
+    grade_band: "1"
+    keypad: numpad
+    word_problems_fit: true
+    word_share: 0.5
+    banked: true
+    bank_share: 0.2

@@ -70,8 +70,17 @@ export default async function globalSetup() {
 	const signupWord = `e2e${randomBytes(4).toString('hex')}`;
 	writeFileSync(wordFile, signupWord, 'utf8');
 	process.env.E2E_SIGNUP_WORD = signupWord;
+	const adminFile = join(dir, 'admin_password');
+	const adminPassword = `e2e-admin-${randomBytes(12).toString('hex')}`;
+	writeFileSync(adminFile, adminPassword, 'utf8');
+	process.env.E2E_ADMIN_PASSWORD = adminPassword;
 
-	const env = { ...process.env, TEST_DATABASE_URL: databaseUrl(), E2E_WORD_FILE: wordFile };
+	const env = {
+		...process.env,
+		TEST_DATABASE_URL: databaseUrl(),
+		E2E_WORD_FILE: wordFile,
+		E2E_ADMIN_FILE: adminFile
+	};
 	let server: ChildProcess | undefined;
 	let tail = '';
 

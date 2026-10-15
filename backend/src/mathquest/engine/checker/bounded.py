@@ -50,12 +50,11 @@ def _warm_task() -> bool:
         skill_id="warm",
         tier=1,
         seed=0,
-        prompt_latex="",
+        prompt=(),
         answer=sympy.Integer(2),
         form=AnswerForm.ANY,
         misconceptions=(),
         difficulty=0.0,
-        keypad="numbers",
     )
     return check(problem, "2").verdict is Verdict.CORRECT
 

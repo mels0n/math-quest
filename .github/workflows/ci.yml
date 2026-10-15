@@ -36,6 +36,16 @@ jobs:
       - run: uv run ruff check
       - run: uv run pyright
       - run: uv run lint-imports
+      - name: Content lint
+        run: uv run content-lint content/packs/*
+      - name: Content coverage report
+        run: uv run content-report content/packs/* > "$RUNNER_TEMP/content-report.md"
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: content-report
+          path: ${{ runner.temp }}/content-report.md
+          if-no-files-found: ignore
       - name: Install PostgreSQL client tools
         run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
         working-directory: .

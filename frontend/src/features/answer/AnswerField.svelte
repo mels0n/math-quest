@@ -97,21 +97,23 @@
 <div class="answer">
 	<div class="field" bind:this={host}></div>
 	<p class="notice" role="status" data-testid="answer-notice">{notice}</p>
-	<div class="pad" role="group" aria-label="Answer keypad" data-profile={profile}>
-		<div class="block digits">
-			{#each layout.digits as key (key.name)}
-				{@render keyButton(key)}
-			{/each}
-		</div>
-		{#if layout.extras.length > 0}
-			<div class="block extras">
-				{#each layout.extras as key (key.name)}
+	{#if layout}
+		<div class="pad" role="group" aria-label="Answer keypad" data-profile={profile}>
+			<div class="block digits">
+				{#each layout.digits as key (key.name)}
 					{@render keyButton(key)}
 				{/each}
 			</div>
-		{/if}
-		<div class="go">{@render keyButton(layout.go)}</div>
-</div>
+			{#if layout.extras.length > 0}
+				<div class="block extras">
+					{#each layout.extras as key (key.name)}
+						{@render keyButton(key)}
+					{/each}
+				</div>
+			{/if}
+			<div class="go">{@render keyButton(layout.go)}</div>
+		</div>
+	{/if}
 </div>
 
 {#snippet keyButton(key: Key)}
@@ -166,7 +168,7 @@
 		gap: 0.5rem;
 		align-items: start;
 	}
-	.pad[data-profile='numbers'] {
+	.pad[data-profile='numpad'] {
 		grid-template-columns: 1fr;
 	}
 	.block {
@@ -174,10 +176,10 @@
 		grid-template-columns: repeat(3, minmax(var(--mq-tap), 1fr));
 		gap: 0.5rem;
 	}
-	.pad:not([data-profile='numbers']) .digits {
+	.pad:not([data-profile='numpad']) .digits {
 		width: min(20rem, 55vw);
 	}
-	.pad[data-profile='numbers'] .digits {
+	.pad[data-profile='numpad'] .digits {
 		max-width: 22rem;
 		margin: 0 auto;
 		width: 100%;
@@ -186,10 +188,10 @@
 		grid-column: 1 / -1;
 	}
 	@media (max-width: 34rem) {
-		.pad:not([data-profile='numbers']) {
+		.pad:not([data-profile='numpad']) {
 			grid-template-columns: 1fr;
 		}
-		.pad:not([data-profile='numbers']) .digits {
+		.pad:not([data-profile='numpad']) .digits {
 			width: 100%;
 		}
 	}

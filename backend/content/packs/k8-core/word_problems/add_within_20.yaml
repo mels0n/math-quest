@@ -1,0 +1,61 @@
+# Word problems for Add to 20. Every template uses the generator's {a} and {b} and
+# asks for their sum. Short sentences (12 words or fewer), simple words, no sentence
+# that starts with a number, and a question that says whose things are counted.
+skill: add_within_20
+templates:
+  - id: gives_more
+    text_template: "{name} has {a obj}. {friend} gives {name} {b} more. How many {obj} does {name} have now?"
+    slots: {name: names, friend: names, obj: objects}
+    grade_band: 1
+  - id: birds_on_fence
+    text_template: "There are {a} birds on a fence. Then {b} more birds land. How many birds are on the fence now?"
+    grade_band: 1
+  - id: beach_shells
+    text_template: "{name} finds {a} shells at the beach. Then {name} finds {b} more. How many shells does {name} have?"
+    slots: {name: names}
+    grade_band: 1
+  - id: bus_riders
+    text_template: "There are {a} kids on the bus. Then {b} more kids get on. How many kids are on the bus now?"
+    grade_band: 1
+  - id: reading_pages
+    text_template: "{name} reads {a} pages in the morning. Then {name} reads {b} pages at night. How many pages does {name} read in all?"
+    slots: {name: names}
+    grade_band: 1
+  - id: together
+    text_template: "{name} has {a obj}. {friend} has {b obj}. How many {obj} do they have together?"
+    slots: {name: names, friend: names, obj: objects}
+    grade_band: 1
+  - id: garden_flowers
+    text_template: "{name} plants {a} red flowers and {b} yellow flowers. How many flowers does {name} plant in all?"
+    slots: {name: names}
+    grade_band: 1
+  - id: fish_tank
+    text_template: "A tank has {a} fish. {name} adds {b} more fish. How many fish are in the tank now?"
+    slots: {name: names}
+    grade_band: 1
+  - id: block_tower
+    text_template: "{name} builds a tower with {a} blocks. Then {name} adds {b} blocks. How many blocks are in the tower now?"
+    slots: {name: names}
+    grade_band: 1
+  - id: picking_apples
+    text_template: "{name} picks {a} apples. {friend} picks {b} apples. How many apples did they pick in all?"
+    slots: {name: names, friend: names}
+    grade_band: 1
+  - id: frog_hops
+    text_template: "A frog hops {a} times. Then it hops {b} more times. How many times does the frog hop in all?"
+    grade_band: 1
+  - id: baking_cookies
+    text_template: "{name} bakes {a} cookies. Then {name} bakes {b} more. How many cookies does {name} bake in all?"
+    slots: {name: names}
+    grade_band: 1
+  - id: game_points
+    text_template: "{name} scores {a} points. Then {name} scores {b} more points. How many points does {name} score in all?"
+    slots: {name: names}
+    grade_band: 1
+  - id: reading_books
+    text_template: "{name} reads {a} books this month. {friend} reads {b} books. How many books do they read together?"
+    slots: {name: names, friend: names}
+    grade_band: 1
+  - id: farm_eggs
+    text_template: "The hens lay {a} eggs on Monday. They lay {b} eggs on Tuesday. How many eggs do the hens lay in all?"
+    grade_band: 1

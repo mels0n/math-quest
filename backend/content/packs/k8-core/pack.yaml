@@ -1,0 +1,11 @@
+# Pack metadata.
+#   id                pack identifier, the same as the directory name
+#   title             display name
+#   version           semver; bump it with every content change so the live version shows
+#   complete_regions  regions whose teaching content is declared complete: every skill in
+#                     them must have a lesson, hints and explanations (and word problems
+#                     or bank items where its flags ask for them), or loading fails
+id: k8-core
+title: Kindergarten to Grade 8
+version: 0.3.0
+complete_regions: []

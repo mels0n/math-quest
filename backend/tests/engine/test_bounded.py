@@ -30,12 +30,11 @@ def problem_for(answer: sympy.Basic) -> Problem:
         skill_id="test",
         tier=1,
         seed=0,
-        prompt_latex="1+1",
+        prompt=(),
         answer=answer,  # pyright: ignore[reportArgumentType]
         form=AnswerForm.ANY,
         misconceptions=(),
         difficulty=0.5,
-        keypad="numbers",
     )
 
 

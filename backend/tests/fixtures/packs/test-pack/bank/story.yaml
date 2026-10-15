@@ -1,0 +1,14 @@
+skill: story
+items:
+  - id: double
+    prompt:
+      - {kind: text, value: "What is double "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: "?"}
+    answer: {kind: expr, value: "12"}
+  - id: half_of_ten
+    prompt:
+      - {kind: text, value: "What is half of "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: "?"}
+    answer: {kind: expr, value: '5'}
