@@ -1,6 +1,6 @@
 # 0011. Structured prompts, stored variants and skill keypads
 
-- Status: accepted
+- Status: accepted, amended in part by [ADR-0012](0012-content-packs.md)
 - Date: 2026-10-15
 
 ## Context
