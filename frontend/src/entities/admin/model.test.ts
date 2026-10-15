@@ -115,9 +115,10 @@ describe('content preview helpers', () => {
 		expect(parseSeed('1e3')).toBeNull();
 	});
 
-	it('shows a coverage cell as have/want or n/a', () => {
-		expect(coverageCell(15, 15)).toBe('15/15');
-		expect(coverageCell(1, 2)).toBe('1/2');
-		expect(coverageCell(null, 30)).toBe('n/a');
+	it('shows a coverage cell as have / target or n/a', () => {
+		expect(coverageCell(15, '15+')).toBe('15 / 15+');
+		expect(coverageCell(4, '3-4')).toBe('4 / 3-4');
+		expect(coverageCell(null, '30+')).toBe('n/a');
+		expect(coverageCell(1, undefined)).toBe('1 / ?');
 	});
 });

@@ -21,6 +21,7 @@
 	let { onSessionLost }: { onSessionLost: (err: unknown) => boolean } = $props();
 
 	let packs = $state<ContentPack[]>([]);
+	let targets = $state<Record<string, string>>({});
 	let loadError = $state('');
 	let loading = $state(true);
 
@@ -34,7 +35,9 @@
 
 	onMount(async () => {
 		try {
-			packs = (await getContent()).packs;
+			const overview = await getContent();
+			packs = overview.packs;
+			targets = overview.targets;
 		} catch (err) {
 			if (!onSessionLost(err)) loadError = adminErrorMessage(err);
 		} finally {
@@ -87,6 +90,37 @@
 
 	function shortOf(skill: SkillCoverage, field: string): boolean {
 		return skill.gaps.some((g) => g.field === field);
+	}
+
+	/** The coverage cells of a row, each with the gap field that marks it short. */
+	function cells(skill: SkillCoverage) {
+		const t = (field: string) => targets[field];
+		return [
+			{ label: 'Tiers', field: 'tiers', text: coverageCell(skill.tiers, t('tiers')) },
+			{
+				label: 'Mistakes',
+				field: 'misconceptions',
+				text: coverageCell(skill.misconceptions, t('misconceptions'))
+			},
+			{
+				label: 'Feedback',
+				field: 'misconception feedback',
+				text: coverageCell(skill.feedback, String(skill.misconceptions))
+			},
+			{
+				label: 'Word',
+				field: 'word templates',
+				text: coverageCell(skill.word_templates, t('word templates'))
+			},
+			{ label: 'Bank', field: 'bank items', text: coverageCell(skill.bank_items, t('bank items')) },
+			{ label: 'Lesson', field: 'lesson', text: skill.lesson ? 'yes' : 'no' },
+			{ label: 'Hints', field: 'hints', text: coverageCell(skill.hints, t('hints')) },
+			{
+				label: 'Explain',
+				field: 'explanations',
+				text: coverageCell(skill.explanations, t('explanations'))
+			}
+		];
 	}
 
 	function params(value: Record<string, unknown>): string {
@@ -143,6 +177,7 @@
 							<th>Skill</th>
 							<th>Tiers</th>
 							<th>Mistakes</th>
+							<th>Feedback</th>
 							<th>Word</th>
 							<th>Bank</th>
 							<th>Lesson</th>
@@ -163,25 +198,11 @@
 									>
 									<span class="muted id">{skill.skill_id}</span>
 								</td>
-								<td data-label="Tiers" class:short={shortOf(skill, 'tiers')}
-									>{coverageCell(skill.tiers, 3)}</td
-								>
-								<td data-label="Mistakes" class:short={shortOf(skill, 'misconceptions')}
-									>{coverageCell(skill.misconceptions, 2)}</td
-								>
-								<td data-label="Word" class:short={shortOf(skill, 'word templates')}
-									>{coverageCell(skill.word_templates, 15)}</td
-								>
-								<td data-label="Bank" class:short={shortOf(skill, 'bank items')}
-									>{coverageCell(skill.bank_items, 30)}</td
-								>
-								<td data-label="Lesson" class:short={!skill.lesson}>{skill.lesson ? 'yes' : 'no'}</td>
-								<td data-label="Hints" class:short={shortOf(skill, 'hints')}
-									>{coverageCell(skill.hints, 3)}</td
-								>
-								<td data-label="Explain" class:short={shortOf(skill, 'explanations')}
-									>{coverageCell(skill.explanations, 3)}</td
-								>
+								{#each cells(skill) as cell (cell.label)}
+									<td data-label={cell.label} class:short={shortOf(skill, cell.field)}
+										>{cell.text}</td
+									>
+								{/each}
 								<td data-label="Status">{status(skill)}</td>
 							</tr>
 						{/each}
@@ -371,13 +392,11 @@
 		color: var(--mq-navy);
 		text-decoration: underline;
 		padding: 0;
-		min-height: 2rem;
+		min-height: 2.75rem;
 		text-align: left;
 	}
 	select {
-		font: inherit;
-		min-height: 2.5rem;
-		padding: 0.25rem 0.5rem;
+		width: 100%;
 	}
 	.item,
 	.problem {

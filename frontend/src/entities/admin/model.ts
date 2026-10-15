@@ -95,6 +95,8 @@ export interface SkillCoverage {
 	name: string;
 	tiers: number;
 	misconceptions: number;
+	/** Misconceptions of the generator with feedback written. */
+	feedback: number;
 	/** null when word problems do not fit the skill. */
 	word_templates: number | null;
 	/** null when the skill is not banked. */
@@ -123,6 +125,8 @@ export interface ContentPack {
 
 export interface ContentOverview {
 	packs: ContentPack[];
+	/** Each coverage target as shown, keyed by field: "3+", "3-4" ... */
+	targets: Record<string, string>;
 }
 
 export interface ContentVisual {
@@ -200,8 +204,8 @@ export function parseSeed(raw: string): number | undefined | null {
 	return seed <= MAX_PREVIEW_SEED ? seed : null;
 }
 
-/** "have/want" for a coverage target, or "n/a" when the target does not apply. */
-export function coverageCell(have: number | null, want: number): string {
+/** "have / target" for a coverage target such as "4 / 3-4", or "n/a" when it does not apply. */
+export function coverageCell(have: number | null, target: string | undefined): string {
 	if (have === null) return 'n/a';
-	return `${have}/${want}`;
+	return `${have} / ${target ?? '?'}`;
 }
