@@ -1,7 +1,8 @@
 import { apiFetch } from '../../shared/api';
-import type { PlayerEnvelope, PlayerWithRecovery } from './model';
+import type { MeEnvelope, PlayerEnvelope, PlayerWithRecovery } from './model';
 
-export const fetchMe = () => apiFetch<PlayerEnvelope>('/api/me');
+export const fetchMe = (fetchImpl?: typeof fetch) =>
+	apiFetch<MeEnvelope>('/api/me', { fetchImpl });
 
 export const suggestNickname = () =>
 	apiFetch<{ nickname: string }>('/api/auth/nickname-suggestion').then((r) => r.nickname);
