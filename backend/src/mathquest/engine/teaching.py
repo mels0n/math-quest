@@ -4,8 +4,10 @@ Lessons are static: their text is rendered with no values, so a computed number 
 lesson (``{{= 9 + 6 }}``) can only use literal numbers. Hints, explanations and
 misconception feedback are rendered for a problem, with the generator's values.
 Every function is pure and returns prompts (text and math parts) ready to send.
-A visual's string parameters are templates too, rendered with the same values; one that
-renders to a whole number becomes that number.
+A visual's string parameters are templates too, rendered with the same values; each must
+render to a whole number, and the filled-in visual is checked against its kind's params
+schema again (``content.visuals.resolve``). A visual that fails raises TemplateError, like
+any other text that does not render.
 """
 
 import re
@@ -20,9 +22,9 @@ from mathquest.engine.content.schema import (
     Explanations,
     HintLadder,
     Lesson,
-    Visual,
 )
-from mathquest.engine.templates import Value, plain, render
+from mathquest.engine.content.visuals import UnresolvedVisual, VisualModel, resolve
+from mathquest.engine.templates import TemplateError, Value, plain, render
 from mathquest.engine.types import Problem, Prompt
 
 
@@ -30,7 +32,7 @@ from mathquest.engine.types import Problem, Prompt
 class LessonScreen:
     title: str
     body: Prompt
-    visual: Visual | None
+    visual: VisualModel | None
 
 
 @dataclass(frozen=True)
@@ -47,7 +49,7 @@ class RenderedLesson:
 class RenderedApproach:
     style: ApproachStyle
     body: Prompt
-    visual: Visual | None
+    visual: VisualModel | None
 
 
 _WHOLE = re.compile(r"-?\d+")
@@ -64,12 +66,16 @@ def _param(value: JsonValue, values: Mapping[str, Value]) -> JsonValue:
     return value
 
 
-def render_visual(visual: Visual | None, values: Mapping[str, Value]) -> Visual | None:
-    """``visual`` with its template parameters filled in from ``values``."""
+def render_visual(visual: VisualModel | None, values: Mapping[str, Value]) -> VisualModel | None:
+    """``visual`` with its template parameters filled in from ``values`` and checked."""
     if visual is None:
         return None
-    params = {k: _param(v, values) for k, v in visual.params.items()}
-    return visual.model_copy(update={"params": params})
+    raw: dict[str, JsonValue] = visual.params.model_dump(mode="json")
+    params = {k: _param(v, values) for k, v in raw.items()}
+    try:
+        return resolve(visual, params)
+    except UnresolvedVisual as err:
+        raise TemplateError(str(err)) from None
 
 
 def render_lesson(lesson: Lesson) -> RenderedLesson:

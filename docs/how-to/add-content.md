@@ -60,7 +60,22 @@ Template forms beyond `{a}` and `{{= expr }}`:
 - `{n obj}` writes a number with a noun that agrees: "1 rock", "5 rocks".
 - Unit slots come from typed pools: `length_units`, `time_units`, `money_units`.
 - A visual's string parameters are templates: `start: "{big}"` starts a number line at
-  this problem's bigger number.
+  this problem's bigger number. Each must render to a whole number.
+
+Visuals (`visual: {kind, params}`) and their params. Unknown params and numbers out of
+range are load errors; a template that goes out of range for some problem is a lint
+error:
+
+| kind | params |
+| --- | --- |
+| `number_line` | `min`, `max` (at most 100 apart), `start`, `jumps` (a list of jump sizes, negative goes left, or one number `n` for `n` jumps of one), `end` |
+| `base_ten` | `hundreds`, `tens`, `ones` |
+| `fraction_bars` | `bars`: one to four `{parts, shaded}` |
+| `area_model` | `rows`, `cols` (one to three parts of each factor), `show_products` |
+| `algebra_tiles` | `x2`, `x`, `units` (negative counts draw negative tiles) |
+| `array` | `rows`, `cols` (1 to 12) |
+| `clock` | `hour` (1 to 12), `minute` |
+| `money` | `dollars`, `quarters`, `dimes`, `nickels`, `pennies` |
 
 A region listed in `complete_regions` must meet every target for every skill in it.
 Add a region there only when the report shows it done.

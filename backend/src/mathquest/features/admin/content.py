@@ -15,7 +15,8 @@ from mathquest.engine.content.coverage import (
     pack_coverage,
     skill_coverage,
 )
-from mathquest.engine.content.schema import Explanations, Visual
+from mathquest.engine.content.schema import Explanations
+from mathquest.engine.content.visuals import VisualModel
 from mathquest.engine.teaching import (
     render_explanations,
     render_feedback,
@@ -47,8 +48,10 @@ SAMPLE_SEEDS = (1, 2, 3)
 """Seeds shown when the admin does not pick one."""
 
 
-def _visual(visual: Visual | None) -> VisualOut | None:
-    return None if visual is None else VisualOut(kind=visual.kind, params=dict(visual.params))
+def _visual(visual: VisualModel | None) -> VisualOut | None:
+    if visual is None:
+        return None
+    return VisualOut(kind=visual.kind, params=visual.params.model_dump(mode="json"))
 
 
 def _coverage(coverage: SkillCoverage) -> SkillCoverageOut:

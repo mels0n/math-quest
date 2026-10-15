@@ -81,7 +81,7 @@ def test_the_number_line_shows_this_problem() -> None:
         visual = render_explanations(PACK.explanations[SKILL], problem)[0].visual
         assert visual is not None and visual.kind == "number_line"
         a, b = int(problem.values["a"]), int(problem.values["b"])
-        assert visual.params == {
+        assert visual.params.model_dump() == {
             "min": 0, "max": 20, "start": max(a, b), "jumps": min(a, b), "end": a + b,
         }  # fmt: skip
 

@@ -228,7 +228,17 @@ INVALID: list[tuple[str, dict[str, Any], str]] = [
     (
         "unknown visual kind",
         _mutated(["lessons/alpha.yaml", "screens", 1, "visual", "kind"], "pie_chart"),
-        "lessons/alpha.yaml: screens[1].visual.kind: Input should be",
+        "lessons/alpha.yaml: screens[1].visual: Input tag 'pie_chart' found using 'kind'",
+    ),
+    (
+        "unknown visual param",
+        _mutated(["lessons/alpha.yaml", "screens", 1, "visual", "params", "colour"], "gold"),
+        "lessons/alpha.yaml: screens[1].visual.number_line.params.colour: Extra inputs",
+    ),
+    (
+        "visual param out of range",
+        _mutated(["lessons/alpha.yaml", "screens", 1, "visual", "params", "start"], 99),
+        "lessons/alpha.yaml: screens[1].visual.number_line.params: Value error, start must be",
     ),
     (
         "unknown keypad",
@@ -288,7 +298,8 @@ INVALID: list[tuple[str, dict[str, Any], str]] = [
     (
         "visual parameter that is not a template",
         _mutated(["lessons/alpha.yaml", "screens", 1, "visual", "params", "start"], "{oops"),
-        "lessons/alpha.yaml: screens[1].visual: Value error, stray '{' in text",
+        "lessons/alpha.yaml: screens[1].visual.number_line.params.start: "
+        "Value error, stray '{' in text",
     ),
     (
         "only two choices",
