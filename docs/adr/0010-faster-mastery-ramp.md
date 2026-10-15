@@ -30,7 +30,9 @@ The update rule keeps its shape: after each scored problem the rating moves by
 - **Rating cap.** After every update the rating is capped at the top tier's
   difficulty plus 1.5. Without the cap a long streak carries the rating so far above
   the top tier that misses there stop mattering. With it, one miss on the top tier
-  moves the next problem down a tier, however long the streak before it was.
+  moves the next problem down a tier, however long the streak before it was. This
+  relies on neighbouring tiers being 1.0 apart in difficulty, which is true of every
+  current skill; a skill with wider tier gaps would need the cap revisited.
 - **Mastery.** A skill is mastered when it has at least 6 scored attempts, predicted
   success on the top tier of at least 0.7, and at least 5 correct top-tier answers
   among the last 6. A wrong answer never turns a skill from learning to mastered.
