@@ -1,16 +1,19 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import {
 		MAX_ATTEMPTS,
 		PLAY_COPY,
 		answerTry,
+		endSession,
 		feedbackMessage,
 		fetchLesson,
 		markLessonSeen,
 		nextProblem,
+		parsePlayTarget,
 		requestExplanation,
 		requestHint,
+		startPractice,
 		startSession,
 		startTry,
 		submitAnswer
@@ -21,18 +24,23 @@
 		Feedback,
 		Lesson,
 		Mastery,
+		PracticeTarget,
 		Problem,
 		PromptPart,
+		SkillName,
+		Summary,
 		TryProblem
 	} from '../../entities/problem';
 	import { fetchMe } from '../../entities/player';
 	import type { Player } from '../../entities/player';
-	import { ERROR_COPY } from '../../shared/api';
+	import { ApiError, ERROR_COPY } from '../../shared/api';
 	import { PixelButton, PixelFrame } from '../../shared/ui';
 	import { LessonView } from '../../widgets/lesson';
 	import { MathCard } from '../../widgets/math-card';
 	import type { CardFeedback } from '../../widgets/math-card';
+	import { SessionSummary } from '../../widgets/session-summary';
 	import { classifyPlayError } from './errors';
+	import { SESSION_COPY, focusLine } from './session-copy';
 
 	let player = $state<Player | null>(null);
 	let sessionId = '';
@@ -53,6 +61,12 @@
 	let hints = $state<PromptPart[][]>([]);
 	let explanation = $state<Explanation | null>(null);
 	let missed = $state(false);
+
+	/** Practice from the picker, or null for an adventure. */
+	let practiceTarget = $state<PracticeTarget | null>(null);
+	let focus = $state<SkillName[]>([]);
+	/** The summary of the session just ended; replaces the card. */
+	let summary = $state<Summary | null>(null);
 
 	/** The lesson on screen: one due before a new skill, or one replayed from a problem. */
 	let lesson = $state<Lesson | null>(null);
@@ -174,10 +188,34 @@
 		return 'handled';
 	}
 
+	function showSummary(shown: Summary) {
+		summary = shown;
+		problem = null;
+		lesson = null;
+		notice = null;
+	}
+
+	/** Ends the session now and shows how it went. */
+	async function finish() {
+		if (busy || !sessionId) return;
+		busy = true;
+		try {
+			showSummary(await endSession(sessionId));
+		} catch (err) {
+			fail(err, finish);
+		} finally {
+			busy = false;
+		}
+	}
+
 	async function loadNext() {
 		busy = true;
 		try {
 			const next = await nextProblem(sessionId);
+			if (next.type === 'summary') {
+				showSummary(next);
+				return;
+			}
 			if (next.type === 'lesson') {
 				busy = false;
 				problem = null;
@@ -197,24 +235,47 @@
 			finished = false;
 			notice = null;
 		} catch (err) {
+			if (err instanceof ApiError && err.code === 'session_ended') {
+				busy = false;
+				await finish();
+				return;
+			}
 			fail(err, loadNext);
 		} finally {
 			busy = false;
 		}
 	}
 
-	async function start() {
+	async function start(lessonFirst = false) {
 		notice = null;
+		summary = null;
 		try {
 			const me = await fetchMe();
 			player = me.player;
 			solvedCount = me.total_solved;
-			sessionId = (await startSession()).session_id;
+			const session = practiceTarget ? await startPractice(practiceTarget) : await startSession();
+			sessionId = session.session_id;
+			focus = session.focus;
 		} catch (err) {
-			fail(err, start);
+			if (err instanceof ApiError && err.status === 409) {
+				// The skill is locked, or there are no weak spots: back to the picker.
+				void goto('/practice');
+				return;
+			}
+			fail(err, () => start(lessonFirst));
 			return;
 		}
 		await loadNext();
+		const skill = focus[0];
+		if (lessonFirst && skill && !lesson && problem) await openLesson(skill.skill_id, true);
+	}
+
+	/** A fresh adventure after a summary. */
+	async function playAgain() {
+		practiceTarget = null;
+		focus = [];
+		replaceState('/play', {});
+		await start();
 	}
 
 	async function submit(answer: Answer) {
@@ -290,7 +351,9 @@
 	}
 
 	onMount(() => {
-		void start();
+		const target = parsePlayTarget(new URL(window.location.href).searchParams);
+		practiceTarget = target.practice;
+		void start(target.lesson);
 	});
 </script>
 
@@ -305,6 +368,18 @@
 			<p>{notice.text}</p>
 			<PixelButton variant="gold" onclick={notice.retry}>{notice.label}</PixelButton>
 		</div>
+	{/if}
+
+	{#if summary}
+		<SessionSummary
+			{summary}
+			{busy}
+			onPlayAgain={() => void playAgain()}
+			onPractice={() => void goto('/practice')}
+		/>
+	{/if}
+	{#if focus.length > 0 && !summary}
+		<p class="focus" data-testid="practice-focus">{focusLine(focus, practiceTarget)}</p>
 	{/if}
 
 	{#if lesson}
@@ -350,15 +425,18 @@
 				onHint={() => help('hint')}
 				onExplain={() => help('explain')}
 			/>
-			{#if problem.has_lesson}
-				<div class="replay">
+			<div class="replay">
+				{#if problem.has_lesson}
 					<PixelButton variant="plain" disabled={busy} onclick={() => problem && openLesson(problem.skill_id, true)}>
 						{PLAY_COPY.replayLesson}
 					</PixelButton>
-				</div>
-			{/if}
+				{/if}
+				<PixelButton variant="plain" disabled={busy} onclick={() => void finish()}>
+					{SESSION_COPY.finish}
+				</PixelButton>
+			</div>
 		</div>
-	{:else if !lesson && !notice}
+	{:else if !lesson && !notice && !summary}
 		<p class="note">{PLAY_COPY.loading}{player ? `, ${player.nickname}` : ''}...</p>
 	{/if}
 </PixelFrame>
@@ -380,8 +458,16 @@
 	}
 	.replay {
 		display: flex;
+		flex-wrap: wrap;
 		justify-content: center;
+		gap: 0.75rem;
 		margin-top: 0.75rem;
+	}
+	.focus {
+		margin: 0;
+		font-size: 1.1rem;
+		text-align: center;
+		color: var(--mq-mint);
 	}
 	.note {
 		font-size: 1.2rem;

@@ -1,8 +1,11 @@
 export { PLAY_COPY, feedbackMessage } from './feedback';
 export {
+	endSession,
+	fetchSkills,
 	nextProblem,
 	requestExplanation,
 	requestHint,
+	startPractice,
 	startSession,
 	submitAnswer
 } from './api';
@@ -17,10 +20,16 @@ export type {
 	LessonDue,
 	Mastery,
 	NextItem,
+	PracticeTarget,
 	Problem,
 	PromptPart,
 	Session,
+	SessionMode,
+	SkillEntry,
+	SkillList,
+	SkillName,
 	SkillState,
+	Summary,
 	Verdict
 } from './model';
 export { answerTry, fetchLesson, markLessonSeen, startTry } from './lesson-api';
@@ -34,3 +43,5 @@ export type {
 	PlacementStep,
 	Region
 } from './placement-model';
+export { parsePlayTarget, practiceHref, weakSpotsHref } from './play-target';
+export type { PlayTarget } from './play-target';
