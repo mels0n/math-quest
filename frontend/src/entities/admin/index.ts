@@ -11,6 +11,7 @@ export {
 	resetPin,
 	setSignupWord,
 	signupWordState,
+	stuckLogUrl,
 	unhidePlayer
 } from './api';
 export {

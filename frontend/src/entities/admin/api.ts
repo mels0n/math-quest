@@ -86,3 +86,11 @@ export function getSkillPreview(
 	const path = `${base}/content/skills/${encodeURIComponent(skillId)}`;
 	return apiFetch<SkillPreview>(`${path}${qs ? `?${qs}` : ''}`, { fetchImpl });
 }
+
+/**
+ * Where to download the stuck log: problems learners stayed stuck on after every
+ * explanation, as JSON (the file `content-report --stuck` reads) or CSV. No player names.
+ */
+export function stuckLogUrl(format: 'json' | 'csv'): string {
+	return format === 'csv' ? `${base}/stuck-log?format=csv` : `${base}/stuck-log`;
+}
