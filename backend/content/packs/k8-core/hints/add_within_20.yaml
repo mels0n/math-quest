@@ -4,8 +4,7 @@ levels:
   - text_template: >-
       You are putting {a} and {b} together. The answer is bigger than both.
   - text_template: >-
-      Start at {big}, the bigger number. Count on {small} more, one jump at a
-      time.
+      Start at {big}. Count on {small}, one jump at a time.
   - text_template: >-
       Start at {big} and count on {small}. You land on {{= a + b }}.
       So \({a} + {b} = {{= a + b }}\).
