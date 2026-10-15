@@ -31,9 +31,11 @@ reports them as UNREADABLE, so this module does not wrap it.
 Skill state machine, applied when a problem is scored:
 - A skill's first rating is `initial_rating` (base difficulty + 1.0).
 - A skill with any scored problem that is not mastered is LEARNING.
-- After the rating update, `is_mastered` against the top tier difficulty makes the
-  skill MASTERED with `review_interval_days = next_review_days(None, True)` and
-  `review_due_at = now + interval`.
+- The rating update is capped at the top tier difficulty + RATING_CAP_ABOVE_TOP.
+- After the rating update, `is_mastered` against the top tier difficulty makes a
+  LEARNING skill MASTERED, with `review_interval_days = next_review_days(None, True)`
+  and `review_due_at = now + interval`. Only a correct answer does this: a wrong answer
+  never promotes a skill.
 - Scoring a skill that was already MASTERED: a wrong answer, or a correct one once the
   review is due, takes `next_review_days(previous, correct)` as the new interval (a wrong
   answer resets it to 1); a correct answer before the review is due leaves the schedule
@@ -59,6 +61,7 @@ from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict
 from mathquest.engine.generators import get_generator
 from mathquest.engine.mastery import (
+    MASTERY_PREDICT,
     Outcome,
     SkillRating,
     SkillState,
@@ -80,7 +83,6 @@ from mathquest.shared.errors import Conflict, NotFound
 MAX_ATTEMPTS = 3
 FREE_VERDICTS = 3
 STORED_LATEX_MAX = 200
-MASTERY_TARGET = 0.7
 _SEED_LIMIT = 2**62
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
 
@@ -120,7 +122,7 @@ def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> Mast
     if state in (SkillState.MASTERED, SkillState.REVIEW_DUE):
         progress = 1.0
     else:
-        progress = min(1.0, max(0.0, predict(_rating(row, skill_id).rating, top) / MASTERY_TARGET))
+        progress = min(1.0, max(0.0, predict(_rating(row, skill_id).rating, top) / MASTERY_PREDICT))
     return MasteryOut(skill_id=skill_id, state=state, progress=progress)
 
 
@@ -191,14 +193,16 @@ async def next_problem(
 def _apply_score(
     row: SkillMastery, skill_id: str, difficulty: float, outcome: Outcome, now: datetime
 ) -> None:
-    after = update(_rating(row, skill_id), difficulty, outcome)
+    top = _top_difficulty(skill_id)
+    after = update(_rating(row, skill_id), difficulty, outcome, top)
     was_mastered = row.state == SkillState.MASTERED
     review_due = was_mastered and row.review_due_at is not None and row.review_due_at <= now
     row.rating = after.rating
     row.attempts = after.attempts
     row.recent = [[int(correct), tier] for correct, tier in after.recent]
     row.updated_at = now
-    if not is_mastered(after, _top_difficulty(skill_id), _top_tier(skill_id)):
+    mastered = is_mastered(after, top, _top_tier(skill_id))
+    if not mastered or (not was_mastered and not outcome.correct):
         row.state = SkillState.LEARNING
         row.review_interval_days = None
         row.review_due_at = None

@@ -1,4 +1,7 @@
-"""Elo-style per-skill rating, mastery decision and spaced-review steps."""
+"""Elo-style per-skill rating, mastery decision and spaced-review steps.
+
+See docs/adr/0008-mastery-model-tuning.md and docs/adr/0010-faster-mastery-ramp.md.
+"""
 
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
@@ -8,9 +11,12 @@ from math import exp, sqrt
 TARGET_SUCCESS = 0.775
 RECENT_WINDOW = 10
 MASTERY_PREDICT = 0.7
-MASTERY_MIN_ATTEMPTS = 8
+MASTERY_MIN_ATTEMPTS = 6
 MASTERY_STREAK_WINDOW = 6
 MASTERY_STREAK_NEEDED = 5
+K_FLOOR = 0.3
+STREAK_BONUS_MAX = 2
+RATING_CAP_ABOVE_TOP = 1.5
 TOP_TIER = 2
 REVIEW_STEPS = (1, 3, 7, 21)
 
@@ -60,9 +66,34 @@ def score(o: Outcome) -> float:
     return base * factor
 
 
-def update(r: SkillRating, difficulty: float, o: Outcome) -> SkillRating:
-    k = max(0.3, 1.0 / sqrt(1 + r.attempts))
-    rating = r.rating + k * (score(o) - predict(r.rating, difficulty))
+def correct_streak(r: SkillRating) -> int:
+    """How many outcomes at the end of `recent` are correct in a row (newest last)."""
+    streak = 0
+    for correct, _tier in reversed(r.recent):
+        if not correct:
+            break
+        streak += 1
+    return streak
+
+
+def step_size(r: SkillRating) -> float:
+    """`max(K_FLOOR, 1/sqrt(1+attempts))`, multiplied by 1 + the correct streak (at most 2)."""
+    base = max(K_FLOOR, 1.0 / sqrt(1 + r.attempts))
+    return base * (1 + min(correct_streak(r), STREAK_BONUS_MAX))
+
+
+def update(
+    r: SkillRating, difficulty: float, o: Outcome, top_difficulty: float | None = None
+) -> SkillRating:
+    """Move the rating by `step_size * (score - predicted)`.
+
+    With `top_difficulty` given, the new rating is capped at top_difficulty +
+    RATING_CAP_ABOVE_TOP, so a long streak cannot carry the rating so far above the top
+    tier that a miss there no longer moves the next problem down a tier.
+    """
+    rating = r.rating + step_size(r) * (score(o) - predict(r.rating, difficulty))
+    if top_difficulty is not None:
+        rating = min(rating, top_difficulty + RATING_CAP_ABOVE_TOP)
     return replace(
         r,
         rating=rating,
@@ -88,7 +119,9 @@ def initial_rating(tier_difficulties: Sequence[float]) -> float:
 
 
 def is_mastered(r: SkillRating, top_difficulty: float, top_tier: int = TOP_TIER) -> bool:
-    """Enough attempts, high predicted success on the top tier, and a recent top-tier streak."""
+    """At least MASTERY_MIN_ATTEMPTS attempts, predicted top-tier success of at least
+    MASTERY_PREDICT, and MASTERY_STREAK_NEEDED correct top-tier answers among the last
+    MASTERY_STREAK_WINDOW."""
     if r.attempts < MASTERY_MIN_ATTEMPTS or predict(r.rating, top_difficulty) < MASTERY_PREDICT:
         return False
     streak = sum(

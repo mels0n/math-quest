@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check
 from mathquest.engine.generators import get_generator
-from mathquest.engine.mastery import SkillState, choose_tier
+from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
 from mathquest.engine.skillgraph import SkillGraph, load_pack
 from mathquest.engine.types import Problem
 from mathquest.entities import mastery, players, problems
@@ -377,6 +377,40 @@ async def test_mastered_skill_review_schedule(db: AsyncSession) -> None:
     assert final.state == "learning"
     assert final.review_interval_days is None
     assert final.review_due_at is None
+
+
+async def test_a_wrong_answer_never_promotes_a_learning_skill(db: AsyncSession) -> None:
+    # A row rated far above the top tier (as saved before ratings were capped) with a
+    # top-tier streak: after one more scored miss it still passes `is_mastered`.
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    top = max(get_generator("add_within_10").tier_difficulties)
+    db.add(
+        SkillMastery(
+            player_id=pid,
+            skill_id="add_within_10",
+            rating=top + 4.0,
+            attempts=6,
+            recent=[[1, 2]] * 6,
+            state=SkillState.LEARNING.value,
+        )
+    )
+    await db.flush()
+
+    missed = await _issue(db, pid, session.session_id, tier=2, seed=21)
+    await _submit(db, pid, missed.id, _wrong(missed, 0))
+    await _submit(db, pid, missed.id, _wrong(missed, 1))
+    out = await _submit(db, pid, missed.id, _wrong(missed, 2))
+    assert out.answer_latex is not None  # scored as a miss
+    row = await _row(db, pid, "add_within_10")
+    assert is_mastered(service._rating(row, "add_within_10"), top)  # pyright: ignore[reportPrivateUsage]
+    assert row.state == "learning"
+    assert row.review_due_at is None
+    assert out.mastery.state is SkillState.LEARNING
+
+    solved = await _issue(db, pid, session.session_id, tier=2, seed=22)
+    await _submit(db, pid, solved.id, _right(solved))
+    assert (await _row(db, pid, "add_within_10")).state == "mastered"
 
 
 async def test_due_review_state_and_pick(db: AsyncSession) -> None:
