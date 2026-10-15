@@ -3,7 +3,6 @@ import type { Summary } from '../../entities/problem';
 export const SUMMARY_COPY = {
 	adventureTitle: 'QUEST COMPLETE!',
 	practiceTitle: 'PRACTICE DONE!',
-	solved: 'Problems solved',
 	accuracy: 'Right answers',
 	time: 'Time',
 	practiced: 'Skills you worked on',

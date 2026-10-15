@@ -34,7 +34,7 @@
 	import { fetchMe } from '../../entities/player';
 	import type { Player } from '../../entities/player';
 	import { ApiError, ERROR_COPY } from '../../shared/api';
-	import { PixelButton, PixelFrame } from '../../shared/ui';
+	import { PixelButton, PixelFrame, SettingsIcon } from '../../shared/ui';
 	import { LessonView } from '../../widgets/lesson';
 	import { MathCard } from '../../widgets/math-card';
 	import type { CardFeedback } from '../../widgets/math-card';
@@ -257,7 +257,7 @@
 			sessionId = session.session_id;
 			focus = session.focus;
 		} catch (err) {
-			if (err instanceof ApiError && err.status === 409) {
+			if (err instanceof ApiError && (err.code === 'skill_locked' || err.code === 'no_weak_spots')) {
 				// The skill is locked, or there are no weak spots: back to the picker.
 				void goto('/practice');
 				return;
@@ -360,7 +360,7 @@
 <PixelFrame title="MATH QUEST">
 	{#snippet hud()}
 		<span data-testid="solved">&#9733; {solvedCount}</span>
-		<PixelButton variant="plain" label="Settings" onclick={() => void goto('/settings')}>&#9881;</PixelButton>
+		<PixelButton variant="plain" label="Settings" onclick={() => void goto('/settings')}><SettingsIcon /></PixelButton>
 	{/snippet}
 
 	{#if notice}

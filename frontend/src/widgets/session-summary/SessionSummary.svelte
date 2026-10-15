@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { Summary } from '../../entities/problem';
 	import { PixelButton } from '../../shared/ui';
 	import { SUMMARY_COPY, accuracyText, durationText, summaryTitle } from './summary';
@@ -16,18 +17,22 @@
 	} = $props();
 
 	const accuracy = $derived(accuracyText(summary));
+	let heading: HTMLHeadingElement | undefined = $state();
+
+	// Move focus to the summary once it is on screen, so it is read out. Waits a frame:
+	// the card it replaces is torn down in the same update.
+	onMount(() => {
+		const frame = requestAnimationFrame(() => heading?.focus());
+		return () => cancelAnimationFrame(frame);
+	});
 </script>
 
 <section class="summary" data-testid="summary" aria-labelledby="summary-title">
-	<h2 id="summary-title" class="mq-pixel">{summaryTitle(summary)}</h2>
+	<h2 id="summary-title" class="mq-pixel" tabindex="-1" bind:this={heading}>{summaryTitle(summary)}</h2>
 	{#if summary.problems_scored === 0}
 		<p class="lead">{SUMMARY_COPY.none}</p>
 	{:else}
 		<dl class="stats">
-			<div>
-				<dt>{SUMMARY_COPY.solved}</dt>
-				<dd data-testid="summary-solved">{summary.problems_solved}</dd>
-			</div>
 			{#if accuracy}
 				<div>
 					<dt>{SUMMARY_COPY.accuracy}</dt>
@@ -75,6 +80,9 @@
 		background: var(--mq-navy);
 		border: 4px solid var(--mq-gold);
 		box-shadow: 0 4px 0 #000;
+	}
+	h2:focus:not(:focus-visible) {
+		outline: none;
 	}
 	h2 {
 		margin: 0;
