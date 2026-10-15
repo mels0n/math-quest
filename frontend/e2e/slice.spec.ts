@@ -31,7 +31,7 @@ async function typeAnswer(page: Page, latex: string, viaKeypad = false) {
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
 }
 
-test('sign up, see the recovery word, answer three problems, log back in', async ({ page }) => {
+test('sign up, take the first lesson, get help on a miss, answer three problems, log back in', async ({ page }) => {
 	const signupWord = process.env.E2E_SIGNUP_WORD ?? '';
 	expect(signupWord).not.toBe('');
 
@@ -115,12 +115,38 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 			await expect(page.getByTestId('answer-notice')).toHaveText('Fill in the empty box first.');
 			await expect(page.getByTestId('feedback')).toHaveText('');
 
+			// A wrong answer gets feedback that points to a hint, never the answer.
 			await typeAnswer(page, '12345');
 			await expect(page.getByTestId('feedback')).toHaveText('So close! Try again.');
+			const teach = page.getByTestId('teach-feedback');
+			await expect(teach).toHaveText('Not yet. Tap Hint for a clue.');
+			await expect(teach).not.toContainText(answer);
+
+			// Hints come one level at a time.
+			const hints = page.getByTestId('hint');
+			await expect(hints).toHaveCount(0);
+			await page.getByRole('button', { name: 'Hint', exact: true }).click();
+			await expect(hints).toHaveCount(1);
+			await expect(hints.first()).toContainText('Hint 1');
+			await page.getByRole('button', { name: 'Next hint', exact: true }).click();
+			await expect(hints).toHaveCount(2);
+
+			// Still stuck: another way to see it, with this problem's numbers.
+			await page.getByRole('button', { name: 'Explain it another way' }).click();
+			await expect(page.getByTestId('explanation')).toBeVisible();
+			// Help fits a small phone without sideways scrolling.
+			const size = page.viewportSize();
+			await page.setViewportSize({ width: 320, height: 640 });
+			const fits = () => document.documentElement.scrollWidth <= window.innerWidth;
+			expect(await page.evaluate(fits)).toBe(true);
+			if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/help.png`, fullPage: true });
+			if (size) await page.setViewportSize(size);
 		}
 
 		await typeAnswer(page, answer, round === 1);
 		await expect(page.getByTestId('feedback')).toHaveText("That's right!");
+		await expect(page.getByTestId('teach-feedback')).toHaveCount(0);
+		await expect(page.getByRole('button', { name: /hint/i })).toHaveCount(0);
 		await expect(page.getByRole('progressbar')).toBeVisible();
 		expect(await page.content()).not.toContain('dev_answer');
 
