@@ -7,7 +7,12 @@
 	import PinPad from './PinPad.svelte';
 	import RecoveryWord from './RecoveryWord.svelte';
 
-	let { onSignedIn }: { onSignedIn: (player: Player) => void } = $props();
+	let {
+		onSignedIn
+	}: {
+		/** Called once signed in; `mode` says whether this was a new player, a login or a recovery. */
+		onSignedIn: (player: Player, mode: AuthMode) => void;
+	} = $props();
 
 	let mode = $state<AuthMode>('login');
 	let nickname = $state('');
@@ -46,11 +51,12 @@
 		busy = true;
 		error = '';
 		try {
-			const outcome = await submitAuth(mode, { nickname, pin, signupWord, recoveryWord });
+			const used = mode;
+			const outcome = await submitAuth(used, { nickname, pin, signupWord, recoveryWord });
 			if (outcome.kind === 'signed_in') {
-				onSignedIn(outcome.player);
+				onSignedIn(outcome.player, used);
 			} else {
-				reveal = createRecoveryReveal(outcome, onSignedIn);
+				reveal = createRecoveryReveal(outcome, (player) => onSignedIn(player, used));
 				shownWord = reveal.word();
 			}
 		} catch (err) {

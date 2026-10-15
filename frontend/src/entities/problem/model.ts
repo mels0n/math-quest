@@ -3,7 +3,13 @@
 import type { Visual } from '../../shared/visuals';
 
 export type Verdict = 'correct' | 'incorrect' | 'wrong_form' | 'unreadable';
-export type SkillState = 'locked' | 'ready' | 'learning' | 'mastered' | 'review_due';
+export type SkillState =
+	| 'locked'
+	| 'ready'
+	| 'learning'
+	| 'mastered'
+	| 'review_due'
+	| 'provisional';
 /** Keypad profiles a skill can ask for; `choice` means answer buttons, no keypad. */
 export const KEYPAD_PROFILES = [
 	'numpad',

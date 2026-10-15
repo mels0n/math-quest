@@ -25,7 +25,7 @@
 		PromptPart,
 		TryProblem
 	} from '../../entities/problem';
-	import { fetchMe, logout } from '../../entities/player';
+	import { fetchMe } from '../../entities/player';
 	import type { Player } from '../../entities/player';
 	import { ERROR_COPY } from '../../shared/api';
 	import { PixelButton, PixelFrame } from '../../shared/ui';
@@ -289,15 +289,6 @@
 		notice = null;
 	}
 
-	async function quit() {
-		try {
-			await logout();
-		} catch {
-			// Leaving anyway: the session cookie expires on its own.
-		}
-		await goto('/');
-	}
-
 	onMount(() => {
 		void start();
 	});
@@ -306,7 +297,7 @@
 <PixelFrame title="MATH QUEST">
 	{#snippet hud()}
 		<span data-testid="solved">&#9733; {solvedCount}</span>
-		<PixelButton variant="plain" label="Log out" onclick={quit}>Log out</PixelButton>
+		<PixelButton variant="plain" label="Settings" onclick={() => void goto('/settings')}>&#9881;</PixelButton>
 	{/snippet}
 
 	{#if notice}

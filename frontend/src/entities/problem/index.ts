@@ -25,3 +25,12 @@ export type {
 } from './model';
 export { answerTry, fetchLesson, markLessonSeen, startTry } from './lesson-api';
 export type { Lesson, LessonScreen, TryProblem, TryResult } from './lesson-model';
+export { answerPlacement, startPlacement } from './placement-api';
+export { GRADE_HINTS } from './placement-model';
+export type {
+	GradeHint,
+	PlacementDone,
+	PlacementResult,
+	PlacementStep,
+	Region
+} from './placement-model';

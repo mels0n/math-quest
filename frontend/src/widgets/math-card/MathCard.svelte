@@ -31,7 +31,8 @@
 		explanation = null,
 		missed = false,
 		onHint,
-		onExplain
+		onExplain,
+		hearts = true
 	}: {
 		problem: Problem;
 		attemptsLeft: number;
@@ -54,6 +55,8 @@
 		/** Without these the card shows no help buttons (a lesson's try-it). */
 		onHint?: () => void;
 		onExplain?: () => void;
+		/** Show the tries left (placement has none). */
+		hearts?: boolean;
 	} = $props();
 
 	const buttons = $derived(helpButtons(problem, { hintsShown: hints.length, missed, finished }));
@@ -126,11 +129,13 @@
 <section class="card" aria-label="Math problem">
 	<div class="top">
 		<h2 class="skill">{problem.skill_name}</h2>
-		<span class="hearts" role="img" aria-label="{attemptsLeft} tries left">
-			{#each Array.from({ length: MAX_ATTEMPTS }, (_, i) => i) as i (i)}
-				<span class:lost={i >= attemptsLeft}>&#9829;</span>
-			{/each}
-		</span>
+		{#if hearts}
+			<span class="hearts" role="img" aria-label="{attemptsLeft} tries left">
+				{#each Array.from({ length: MAX_ATTEMPTS }, (_, i) => i) as i (i)}
+					<span class:lost={i >= attemptsLeft}>&#9829;</span>
+				{/each}
+			</span>
+		{/if}
 	</div>
 
 	<div class="prompt" class:wordy data-testid="prompt">
