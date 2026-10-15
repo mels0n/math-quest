@@ -236,10 +236,15 @@ def test_hard_student_equations_are_fast(latex: str) -> None:
     assert time.perf_counter() - start < 1
 
 
-def test_nonzero_difference_skips_simplify_and_is_fast() -> None:
+def test_nonzero_difference_skips_simplify_and_is_fast(monkeypatch: pytest.MonkeyPatch) -> None:
+    def no_simplify(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("simplify must not run on a rational difference")
+
+    monkeypatch.setattr(sympy, "simplify", no_simplify)
     start = time.perf_counter()
     assert verdict(make_problem(sympy.Integer(1)), "(x+1)^{60}(y+1)^{60}") is Verdict.INCORRECT
-    assert time.perf_counter() - start < 1
+    # Generous: the guard above is the real check; this only catches a pathological slowdown.
+    assert time.perf_counter() - start < 3
 
 
 def test_rational_function_equivalence() -> None:
