@@ -1,8 +1,13 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 """Adventure play loop: issue adaptive problems, check answers, update mastery.
 
-Problems are stored as (skill, tier, seed) and regenerated on demand, so no answer
-is ever persisted or sent before the problem is solved or out of tries.
+Problems are stored as (skill, tier, seed, variant, template_id) and regenerated on
+demand, so no answer is ever persisted or sent before the problem is solved or out of
+tries. The variant ("bare", "word" or "bank") and template only change how the prompt
+is presented; the answer always comes from the generator's (seed, tier). Every problem
+is issued as "bare" today. If a stored variant or template no longer exists (a template
+removed from the content pack, say), regeneration falls back to the bare variant for
+display, and checking stays correct because the answer never depended on it.
 
 A problem allows three tries. `attempts_left` (the hearts on the play screen) is
 MAX_ATTEMPTS minus the tries used up by misses; a correct answer does not use one, so a
@@ -73,7 +78,7 @@ from mathquest.engine.mastery import (
 )
 from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
 from mathquest.engine.skillgraph import SkillGraph
-from mathquest.engine.types import Prompt, TextPart
+from mathquest.engine.types import VARIANTS, Problem, Prompt, TextPart, Variant
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, ProblemInstance
@@ -184,7 +189,7 @@ async def next_problem(
     generator = get_generator(skill_id)
     tier = choose_tier(ratings[skill_id], generator.tier_difficulties)
     seed = secrets.randbelow(_SEED_LIMIT)
-    problem = generator.generate(seed, tier)
+    problem = generator.generate(seed, tier, "bare")
     instance = await problems.add_problem(
         db,
         session_id=session_id,
@@ -192,6 +197,8 @@ async def next_problem(
         skill_id=skill_id,
         tier=tier,
         seed=seed,
+        variant=problem.variant,
+        template_id=problem.template_id,
         difficulty=problem.difficulty,
         issued_at=now,
     )
@@ -234,6 +241,16 @@ def _apply_score(
         interval = next_review_days(row.review_interval_days, outcome.correct)
     row.review_interval_days = interval
     row.review_due_at = now + timedelta(days=interval)
+
+
+def regenerate(instance: ProblemInstance) -> Problem:
+    """The issued problem again, from its stored seed, tier, variant and template."""
+    variant: Variant = "bare"
+    for known in VARIANTS:
+        if known == instance.variant:
+            variant = known
+    generator = get_generator(instance.skill_id)
+    return generator.generate(instance.seed, instance.tier, variant, instance.template_id)
 
 
 def _tries_used(attempts: list[Attempt]) -> int:
@@ -297,7 +314,7 @@ async def submit_answer(
     received = _now()
     instance, attempts = await _load(db, player_id, problem_id)
     skill_id = instance.skill_id
-    problem = get_generator(skill_id).generate(instance.seed, instance.tier)
+    problem = regenerate(instance)
     answer_latex = str(sympy.latex(problem.answer))
     if instance.answered_at is not None:
         return await _stored(db, instance, attempts, answer_latex, received)

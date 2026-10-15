@@ -62,6 +62,8 @@ async def _issue(
     skill_id: str = "add_within_10",
     tier: int = 0,
     seed: int = SEED,
+    variant: str = "bare",
+    template_id: str | None = None,
 ) -> ProblemInstance:
     problem = get_generator(skill_id).generate(seed, tier)
     return await add_problem(
@@ -73,6 +75,8 @@ async def _issue(
         seed=seed,
         difficulty=problem.difficulty,
         issued_at=datetime.now(UTC),
+        variant=variant,
+        template_id=template_id,
     )
 
 
@@ -308,6 +312,33 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
     assert inst.difficulty == regenerated.difficulty
     again = await service.next_problem(db, GRAPH, pid, session.session_id)
     assert again.problem_id != problem.problem_id
+
+
+async def test_next_problem_stores_the_bare_variant(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+
+    problem = await service.next_problem(db, GRAPH, pid, session.session_id)
+
+    inst = await db.get(ProblemInstance, problem.problem_id)
+    assert inst is not None
+    assert (inst.variant, inst.template_id) == ("bare", None)
+
+
+@pytest.mark.parametrize(
+    ("variant", "template_id"), [("word", "removed_template"), ("bank", None), ("nonsense", "x")]
+)
+async def test_unknown_variant_or_template_falls_back_to_bare(
+    db: AsyncSession, variant: str, template_id: str | None
+) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, variant=variant, template_id=template_id)
+
+    bare = get_generator(inst.skill_id).generate(inst.seed, inst.tier)
+    assert service.regenerate(inst) == bare
+    out = await _submit(db, pid, inst.id, _right(inst))
+    assert out.solved
 
 
 async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -> None:
