@@ -65,7 +65,7 @@ Before the first problem of a skill that has a lesson, `next` returns a lesson t
 cannot show one gets the problem)
 instead of a problem (the skill and its name, no problem issued, the session's count
 unchanged) until the player has marked that lesson seen (`lessons_seen`, written by the
-teaching slice). A skill with a scored problem never gets one, so a player who practised
+teaching slice). A skill with a scored problem never gets one, so a player who practiced
 it before lessons existed is not interrupted. Skill choice depends only on stored
 state, so the `next` after the lesson picks the same skill and issues its problem.
 
@@ -94,8 +94,43 @@ Skill state machine, applied when a problem is scored:
   answer resets it to 1); a correct answer before the review is due leaves the schedule
   alone. If the new rating no longer satisfies `is_mastered`, the skill returns to
   LEARNING and its schedule is cleared.
-- REVIEW_DUE is never stored. It is derived on read: a MASTERED row whose
-  `review_due_at` has passed. The scheduler's mastered set is MASTERED plus REVIEW_DUE.
+- REVIEW_DUE is never stored. It is derived on read: a MASTERED or PROVISIONAL row
+  whose `review_due_at` has passed. The scheduler's mastered set is MASTERED plus REVIEW_DUE
+  plus PROVISIONAL.
+- PROVISIONAL is written by placement (docs/adr/0015-placement.md): the skill counts as
+  mastered and is due for review a day later. Its first scored problem that can confirm
+  it (`_confirms`: a generator problem, not a bank item, at the placement probe's tier
+  or above; a provisional skill's problems are issued that way) decides it: a correct
+  answer makes it MASTERED with `placed` set and the normal first review interval; a
+  wrong one makes it LEARNING. A correct answer on a problem that cannot confirm it
+  leaves it provisional and due. Its lesson is never offered before that review, since
+  placement found the learner already knows it.
+- A `placed` MASTERED skill (`placed_keeps_mastery`) stays mastered on a correct answer
+  even while `is_mastered` does not yet hold, and survives its first miss in the recent
+  window with its review interval reset; a second miss in the window reverts it. Once
+  `is_mastered` holds, `placed` is cleared and the normal rule applies.
+
+Sessions (docs/adr/0016-practice-and-sessions.md). An adventure session lasts
+SESSION_PROBLEMS problems: once that many were issued, `next` ends it and returns its
+summary instead of a problem (only to a client that asked for summaries with
+`offer_summary`; an older client keeps getting problems, as before sessions had an end).
+`end_session` ends a session early and returns the same summary, and again for a session
+already ended. `next` on an ended session is a Conflict("session_ended"). Ending a
+session closes its open problems. The summary lists the skills with a scored problem in
+the session, those that became mastered from learning in it (`newly_mastered` on the
+problem that did it) and are still mastered, the problems solved and scored, and the time
+from the first problem issued to the last answer received.
+
+A practice session works on its `focus`: one skill the player picked (ready, learning,
+provisional or mastered; a locked one is a Conflict("skill_locked")), or "my weak spots",
+the WEAK_SPOTS learning skills with the lowest progress followed by the due reviews (none
+of either is a Conflict("no_weak_spots")). The skill comes from `scheduler.plan_practice`;
+lessons, hints, explanations, warm-ups and the frustration guard work as in an adventure.
+A practice session has no set length and no review slots. It is untimed: a fluency
+skill's speed does not change the score. The first scored problem of a focus skill that
+was mastered (not provisional) when the session started, and still is, records a
+revisit event (one per session and skill); a skill mastered or confirmed during the
+session is not a revisit.
 
 Row locks are always taken problem instance first, then skill_mastery, so concurrent
 submissions cannot deadlock; the skill_mastery row is created with ON CONFLICT DO
@@ -113,7 +148,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from mathquest.engine.catalog import Catalog
 from mathquest.engine.checker.bounded import CheckerPool
-from mathquest.engine.checker.check import CheckResult, Verdict, check_choice
+from mathquest.engine.checker.check import (
+    AnswerKindError,
+    CheckResult,
+    Verdict,
+    check_answer_kind,
+    check_choice,
+)
 from mathquest.engine.limits import (
     MAX_ATTEMPTS,
     MAX_CHOICE_ATTEMPTS,
@@ -130,28 +171,51 @@ from mathquest.engine.mastery import (
     initial_rating,
     is_mastered,
     next_review_days,
+    placed_keeps_mastery,
     predict,
     update,
 )
-from mathquest.engine.scheduler import Played, guard_tier, plan_next
+from mathquest.engine.placement import probe_tier
+from mathquest.engine.scheduler import (
+    SESSION_PROBLEMS,
+    Pick,
+    Played,
+    guard_tier,
+    plan_next,
+    plan_practice,
+)
 from mathquest.engine.teaching import all_approaches_shown, answer_feedback, hint_count
 from mathquest.engine.templates import TemplateError
-from mathquest.engine.transport import FeedbackOut, answer_latex, feedback_out, prompt_out
-from mathquest.engine.types import KeypadProfile, Problem
+from mathquest.engine.transport import (
+    FeedbackOut,
+    answer_latex,
+    feedback_out,
+    keypad_for,
+    prompt_out,
+)
+from mathquest.engine.types import Problem
 from mathquest.entities import lessons, mastery, problems, teaching
 from mathquest.entities.mastery import SkillMastery
-from mathquest.entities.problems import Attempt, ProblemInstance
+from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance
 from mathquest.features.play.schema import (
     AnswerOut,
     LessonDueOut,
     MasteryOut,
     ProblemOut,
+    RegionOut,
     SessionOut,
+    SkillNameOut,
+    SkillOut,
+    SkillsOut,
+    SummaryOut,
 )
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 
 FREE_VERDICTS = 3
+WEAK_SPOTS = 3
+"""Learning skills in "my weak spots", the ones with the lowest progress."""
+PRACTICE = "practice"
 CHOICE_PREFIX = "choice:"
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
 
@@ -182,11 +246,6 @@ def _top_tier(catalog: Catalog, skill_id: str) -> int:
     return len(catalog.source(skill_id).tier_difficulties) - 1
 
 
-def _keypad(problem: Problem, declared: KeypadProfile) -> KeypadProfile:
-    """Choice buttons for a choice problem, else the skill's own keypad."""
-    return "choice" if problem.choices is not None else declared
-
-
 @dataclass(frozen=True)
 class _Reveal:
     """The right answer, sent once a problem is scored."""
@@ -199,14 +258,19 @@ def _mastery_out(
     catalog: Catalog, skill_id: str, row: SkillMastery | None, now: datetime
 ) -> MasteryOut:
     top = _top_difficulty(catalog, skill_id)
-    if row is None or row.attempts == 0:
+    if row is not None and row.state == SkillState.PROVISIONAL:
+        # Past its review date it reads as due, like a mastered skill, so it counts
+        # toward "my weak spots".
+        due = row.review_due_at is not None and row.review_due_at <= now
+        state = SkillState.REVIEW_DUE if due else SkillState.PROVISIONAL
+    elif row is None or row.attempts == 0:
         state = SkillState.READY
     elif row.state == SkillState.MASTERED:
         due = row.review_due_at is not None and row.review_due_at <= now
         state = SkillState.REVIEW_DUE if due else SkillState.MASTERED
     else:
         state = SkillState.LEARNING
-    if state in (SkillState.MASTERED, SkillState.REVIEW_DUE):
+    if state in (SkillState.MASTERED, SkillState.REVIEW_DUE, SkillState.PROVISIONAL):
         progress = 1.0
     else:
         rating = _rating(catalog, row, skill_id).rating
@@ -221,6 +285,22 @@ async def total_solved(db: AsyncSession, player_id: uuid.UUID) -> int:
     return total
 
 
+def _names(catalog: Catalog, skill_ids: list[str]) -> list[SkillNameOut]:
+    """Names of the skills still in the pack, in the given order."""
+    skills = catalog.graph.skills
+    return [SkillNameOut(skill_id=sid, name=skills[sid].name) for sid in skill_ids if sid in skills]
+
+
+def _session_out(catalog: Catalog, row: PlaySession) -> SessionOut:
+    return SessionOut(
+        session_id=row.id,
+        mode=PRACTICE if row.mode == PRACTICE else "adventure",
+        started_at=row.started_at,
+        problem_count=row.problem_count,
+        focus=_names(catalog, list(row.focus or [])),
+    )
+
+
 async def start_session(
     db: AsyncSession, player_id: uuid.UUID, mode: Literal["adventure"]
 ) -> SessionOut:
@@ -232,6 +312,161 @@ async def start_session(
     return out
 
 
+def _state(
+    catalog: Catalog, skill_id: str, row: SkillMastery | None, ready: set[str], now: datetime
+) -> MasteryOut:
+    """The skill's state as the player sees it; READY only when it can be played."""
+    out = _mastery_out(catalog, skill_id, row, now)
+    if out.state is SkillState.READY and skill_id not in ready:
+        return MasteryOut(skill_id=skill_id, state=SkillState.LOCKED, progress=0.0)
+    return out
+
+
+async def _player_states(
+    db: AsyncSession, catalog: Catalog, player_id: uuid.UUID, now: datetime
+) -> dict[str, MasteryOut]:
+    rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
+    mastered = {sid for sid, r in rows.items() if r.state in mastery.COUNTS_AS_MASTERED}
+    ready = set(catalog.graph.ready(mastered))
+    return {
+        sid: _state(catalog, sid, rows.get(sid), ready, now) for sid in catalog.graph.topo_order()
+    }
+
+
+async def list_skills(db: AsyncSession, catalog: Catalog, player_id: uuid.UUID) -> SkillsOut:
+    """Every skill with the player's state of it, for the practice picker; regions
+    without skills are left out."""
+    states = await _player_states(db, catalog, player_id, _now())
+    await db.commit()
+    graph = catalog.graph
+    regions = sorted(catalog.pack.world.regions, key=lambda r: r.order)
+    order = {r.id: i for i, r in enumerate(regions)}
+    skills = sorted(states, key=lambda sid: order.get(graph.skills[sid].region, len(order)))
+    return SkillsOut(
+        regions=[
+            RegionOut(id=r.id, name=r.name)
+            for r in regions
+            if any(graph.skills[sid].region == r.id for sid in skills)
+        ],
+        skills=[
+            SkillOut(
+                skill_id=sid,
+                name=graph.skills[sid].name,
+                region=graph.skills[sid].region,
+                state=states[sid].state,
+                progress=states[sid].progress,
+                has_lesson=sid in catalog.pack.lessons,
+            )
+            for sid in skills
+        ],
+    )
+
+
+async def _weak_spots(
+    db: AsyncSession, player_id: uuid.UUID, states: dict[str, MasteryOut], now: datetime
+) -> list[str]:
+    learning = [s for s in states.values() if s.state is SkillState.LEARNING]
+    order = {sid: i for i, sid in enumerate(states)}
+    weakest = sorted(learning, key=lambda s: (s.progress, order[s.skill_id]))
+    focus = [s.skill_id for s in weakest[:WEAK_SPOTS]]
+    for sid in await mastery.due_reviews(db, player_id, now):
+        if sid in states and sid not in focus:
+            focus.append(sid)
+    return focus
+
+
+async def start_practice(
+    db: AsyncSession,
+    catalog: Catalog,
+    player_id: uuid.UUID,
+    *,
+    skill_id: str | None = None,
+    weak_spots: bool = False,
+) -> SessionOut:
+    """A practice session on ``skill_id``, or on the player's weak spots."""
+    if (skill_id is None) == (not weak_spots):
+        raise Invalid("skill_or_weak_spots")
+    now = _now()
+    states = await _player_states(db, catalog, player_id, now)
+    if skill_id is not None:
+        if skill_id not in states:
+            raise NotFound()
+        if states[skill_id].state is SkillState.LOCKED:
+            raise Conflict("skill_locked")
+        focus = [skill_id]
+    else:
+        focus = await _weak_spots(db, player_id, states, now)
+        if not focus:
+            raise Conflict("no_weak_spots")
+    rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
+    mastered = [sid for sid in focus if sid in rows and rows[sid].state == SkillState.MASTERED]
+    row = await problems.add_session(
+        db,
+        player_id=player_id,
+        mode=PRACTICE,
+        started_at=now,
+        focus=focus,
+        mastered_at_start=mastered,
+    )
+    out = _session_out(catalog, row)
+    await db.commit()
+    return out
+
+
+async def _summary(
+    db: AsyncSession, catalog: Catalog, player_id: uuid.UUID, session: PlaySession
+) -> SummaryOut:
+    issued = await problems.session_problems(db, session.id)
+    last = await problems.last_answer_at(db, session.id)
+    rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
+    practiced: list[str] = []
+    mastered: list[str] = []
+    for skill_id, correct, newly, _at in issued:
+        if correct is not None and skill_id not in practiced:
+            practiced.append(skill_id)
+        row = rows.get(skill_id)
+        still = row is not None and row.state == SkillState.MASTERED
+        if newly and still and skill_id not in mastered:
+            mastered.append(skill_id)
+    scored = sum(1 for _s, correct, _n, _a in issued if correct is not None)
+    solved = sum(1 for _s, correct, _n, _a in issued if correct)
+    seconds = 0
+    if issued and last is not None:
+        seconds = max(0, round((last - issued[0][3]).total_seconds()))
+    return SummaryOut(
+        session_id=session.id,
+        mode=PRACTICE if session.mode == PRACTICE else "adventure",
+        skills_practiced=_names(catalog, practiced),
+        newly_mastered=_names(catalog, mastered),
+        problems_solved=solved,
+        problems_scored=scored,
+        accuracy=solved / scored if scored else None,
+        seconds=seconds,
+    )
+
+
+async def _finish(
+    db: AsyncSession, catalog: Catalog, player_id: uuid.UUID, session: PlaySession, now: datetime
+) -> SummaryOut:
+    """End the session (closing its open problems) and summarise it; commits."""
+    if session.ended_at is None:
+        await problems.close_open(db, session.id, now)
+        session.ended_at = now
+    out = await _summary(db, catalog, player_id, session)
+    await db.commit()
+    return out
+
+
+async def end_session(
+    db: AsyncSession, catalog: Catalog, player_id: uuid.UUID, session_id: uuid.UUID
+) -> SummaryOut:
+    """End a session now and return its summary (again, for one already ended)."""
+    session = await problems.lock_session(db, player_id, session_id)
+    if session is None:
+        raise NotFound()
+    return await _finish(db, catalog, player_id, session, _now())
+
+
 async def _lesson_due(
     db: AsyncSession,
     catalog: Catalog,
@@ -239,10 +474,11 @@ async def _lesson_due(
     skill_id: str,
     row: SkillMastery | None,
 ) -> bool:
-    """The skill has a lesson the player has not seen, and no problem of it is scored yet."""
+    """The skill has a lesson the player has not seen, no problem of it is scored yet,
+    and placement has not marked it provisionally mastered."""
     if skill_id not in catalog.pack.lessons:
         return False
-    if row is not None and row.attempts > 0:
+    if row is not None and (row.attempts > 0 or row.state == SkillState.PROVISIONAL):
         return False
     return not await lessons.has_seen(db, player_id, skill_id)
 
@@ -255,25 +491,36 @@ async def next_problem(
     *,
     expose_answers: bool = False,
     offer_lessons: bool = True,
-) -> ProblemOut | LessonDueOut:
+    offer_summary: bool = False,
+) -> ProblemOut | LessonDueOut | SummaryOut:
     """The next problem, or the lesson to show first when ``offer_lessons`` (clients
-    that do not understand lessons get the problem)."""
+    that do not understand lessons get the problem), or the summary once an adventure
+    has had SESSION_PROBLEMS problems when ``offer_summary``."""
     session = await problems.lock_session(db, player_id, session_id)
     if session is None:
         raise NotFound()
+    if session.ended_at is not None:
+        raise Conflict("session_ended")
     now = _now()
+    practice = session.mode == PRACTICE
+    if offer_summary and not practice and session.problem_count >= SESSION_PROBLEMS:
+        return await _finish(db, catalog, player_id, session, now)
     await problems.close_open(db, session_id, now)
     rows = await mastery.list_for_player(db, player_id)
     by_skill = {r.skill_id: r for r in rows}
     graph = catalog.graph
     ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
-    mastered = {r.skill_id for r in rows if r.state == SkillState.MASTERED}
+    mastered = {r.skill_id for r in rows if r.state in mastery.COUNTS_AS_MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
     history = [
         Played(skill_id=sid, correct=correct, stuck=stuck, warmup_for=warmup_for)
         for sid, correct, stuck, warmup_for in await problems.session_history(db, session_id)
     ]
-    pick = plan_next(graph, ratings, mastered, due, session.problem_count, history)
+    pick: Pick
+    if practice:
+        pick = plan_practice(graph, ratings, list(session.focus or []), history)
+    else:
+        pick = plan_next(graph, ratings, mastered, due, session.problem_count, history)
     skill_id = pick.skill_id
     if offer_lessons and await _lesson_due(
         db, catalog, player_id, skill_id, by_skill.get(skill_id)
@@ -284,6 +531,12 @@ async def next_problem(
     tier = guard_tier(choose_tier(ratings[skill_id], source.tier_difficulties), history, skill_id)
     seed = secrets.randbelow(SEED_LIMIT)
     variant = choose_variant(source, seed)
+    row = by_skill.get(skill_id)
+    if row is not None and row.state == SkillState.PROVISIONAL:
+        # A problem that can confirm placement's mark: the generator's, at its tier.
+        tier = max(tier, probe_tier(graph.skills[skill_id]))
+        if graph.skills[skill_id].keypad != "choice":
+            variant = "bare"
     try:
         problem = source.generate(seed, tier, variant)
     except TemplateError:
@@ -311,7 +564,7 @@ async def next_problem(
         skill_id=skill_id,
         skill_name=graph.skills[skill_id].name,
         prompt=prompt_out(problem.prompt),
-        keypad=_keypad(problem, graph.skills[skill_id].keypad),
+        keypad=keypad_for(problem, graph.skills[skill_id].keypad),
         choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
         has_lesson=skill_id in catalog.pack.lessons,
         hint_levels=hint_count(catalog.pack, skill_id) if teachable else 0,
@@ -323,6 +576,15 @@ async def next_problem(
     return out
 
 
+def _confirms(catalog: Catalog, skill_id: str, variant: str, tier: int) -> bool:
+    """Whether a correct answer on this problem can confirm a provisional skill: the
+    generator's problem (a skill answered only by choices has only bank items) at the
+    placement probe's tier or above."""
+    skill = catalog.graph.skills[skill_id]
+    generator = variant != "bank" or skill.keypad == "choice"
+    return generator and tier >= probe_tier(skill)
+
+
 def _apply_score(
     catalog: Catalog,
     row: SkillMastery,
@@ -330,30 +592,51 @@ def _apply_score(
     difficulty: float,
     outcome: Outcome,
     now: datetime,
-) -> None:
+    *,
+    confirms: bool = True,
+) -> bool:
+    """Apply a scored outcome to the skill; True when it became mastered from learning.
+
+    ``confirms`` says whether the problem can confirm a provisional skill: a generator
+    problem (not a bank item) at the placement probe's tier or above."""
     top = _top_difficulty(catalog, skill_id)
+    top_tier = _top_tier(catalog, skill_id)
     after = update(_rating(catalog, row, skill_id), difficulty, outcome, top)
     was_mastered = row.state == SkillState.MASTERED
+    was_provisional = row.state == SkillState.PROVISIONAL
     review_due = was_mastered and row.review_due_at is not None and row.review_due_at <= now
     row.rating = after.rating
     row.attempts = after.attempts
     row.recent = [[int(correct), tier] for correct, tier in after.recent]
     row.updated_at = now
-    mastered = is_mastered(after, top, _top_tier(catalog, skill_id))
-    if not mastered or (not was_mastered and not outcome.correct):
+    if was_provisional and outcome.correct and not confirms:
+        # Right, but on a problem that cannot confirm it: stays provisional and due.
+        return False
+    by_rating = is_mastered(after, top, top_tier)
+    if was_provisional:
+        mastered = outcome.correct
+        row.placed = outcome.correct and not by_rating
+    elif was_mastered and row.placed:
+        mastered = by_rating or placed_keeps_mastery(after, outcome.correct)
+        row.placed = mastered and not by_rating
+    else:
+        mastered = by_rating
+    if not mastered or (not was_mastered and not was_provisional and not outcome.correct):
         row.state = SkillState.LEARNING
+        row.placed = False
         row.review_interval_days = None
         row.review_due_at = None
-        return
+        return False
     row.state = SkillState.MASTERED
     if not was_mastered:
         interval = next_review_days(None, True)
     elif outcome.correct and not review_due and row.review_due_at is not None:
-        return
+        return False
     else:
         interval = next_review_days(row.review_interval_days, outcome.correct)
     row.review_interval_days = interval
     row.review_due_at = now + timedelta(days=interval)
+    return not was_mastered and not was_provisional
 
 
 def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
@@ -487,16 +770,13 @@ def _repeat_of_last_wrong(attempts: list[Attempt], given: str) -> bool:
 
 
 def _given(problem: Problem, latex: str | None, choice: int | None) -> str:
-    """The answer as stored: the LaTeX, or `choice:<index>` for a choice problem."""
-    if problem.choices is None:
-        if latex is None or choice is not None:
-            raise Invalid("latex_expected")
-        return latex
-    if choice is None or latex is not None:
-        raise Invalid("choice_expected")
-    if not 0 <= choice < len(problem.choices):
-        raise Invalid("choice_out_of_range")
-    return f"{CHOICE_PREFIX}{choice}"
+    """The answer as stored: the LaTeX, or `choice:<index>` for a choice problem. An
+    answer of the wrong kind is Invalid."""
+    try:
+        check_answer_kind(problem, latex, choice)
+    except AnswerKindError as err:
+        raise Invalid(err.code) from None
+    return latex if latex is not None else f"{CHOICE_PREFIX}{choice}"
 
 
 async def submit_answer(
@@ -560,7 +840,21 @@ async def submit_answer(
     scored = solved or used >= allowed
 
     if scored:
+        session = await problems.get_session(db, instance.session_id)
+        practice = session.mode == PRACTICE
         row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
+        if (
+            practice
+            and skill_id in (session.mastered_at_start or [])
+            and row.state == SkillState.MASTERED
+        ):
+            await problems.add_revisit(
+                db,
+                player_id=player_id,
+                session_id=instance.session_id,
+                skill_id=skill_id,
+                at=received,
+            )
         outcome = Outcome(
             correct=solved,
             hints_used=help_used(
@@ -568,10 +862,14 @@ async def submit_answer(
                 instance.hints_used + await teaching.views_on_problem(db, instance.id),
             ),
             seconds=seconds,
-            fluency=catalog.graph.skills[skill_id].fluency,
+            # Practice is untimed: speed never lowers the score there.
+            fluency=catalog.graph.skills[skill_id].fluency and not practice,
             tier=instance.tier,
         )
-        _apply_score(catalog, row, skill_id, instance.difficulty, outcome, received)
+        confirms = _confirms(catalog, skill_id, instance.variant, instance.tier)
+        instance.newly_mastered = _apply_score(
+            catalog, row, skill_id, instance.difficulty, outcome, received, confirms=confirms
+        )
         instance.answered_at = received
         instance.correct = solved
         if not solved:

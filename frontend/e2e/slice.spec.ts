@@ -9,6 +9,8 @@ interface NextBody {
 
 const isNext = (r: Response) => r.url().includes('/next') && r.request().method() === 'POST';
 const isTry = (r: Response) => r.url().endsWith('/try') && r.request().method() === 'POST';
+const isPlacementAnswer = (r: Response) =>
+	r.url().endsWith('/api/placement/answer') && r.request().method() === 'POST';
 
 async function tapPin(page: Page, pin: string) {
 	for (const d of pin) {
@@ -31,7 +33,7 @@ async function typeAnswer(page: Page, latex: string, viaKeypad = false) {
 	await page.getByRole('button', { name: 'Go', exact: true }).click();
 }
 
-test('sign up, take the first lesson, get help on a miss, answer three problems, log back in', async ({ page }) => {
+test('sign up, miss the placement round, take the first lesson, get help on a miss, answer three problems, log back in', async ({ page }) => {
 	const signupWord = process.env.E2E_SIGNUP_WORD ?? '';
 	expect(signupWord).not.toBe('');
 
@@ -52,9 +54,25 @@ test('sign up, take the first lesson, get help on a miss, answer three problems,
 	const firstWord = (await word.innerText()).trim();
 	expect(firstWord.length).toBeGreaterThan(2);
 
+	// A new player is asked their grade, then takes the placement round. Missing
+	// every placement puzzle starts them at the beginning of the map.
+	await page.getByRole('button', { name: 'I wrote it down' }).click();
+	await expect(page.getByRole('heading', { name: 'What grade are you in?' })).toBeVisible();
+	await page.getByRole('button', { name: 'Skip', exact: true }).click();
+	await expect(page).toHaveURL(/\/placement\?grade=skip$/);
+	const done = page.getByTestId('placement-done');
+	for (let asked = 1, finished = false; !finished; asked += 1) {
+		expect(asked).toBeLessThanOrEqual(15);
+		await expect(page.getByTestId('placement-count')).toHaveText(`Puzzle ${asked}`);
+		const answered = page.waitForResponse(isPlacementAnswer);
+		await typeAnswer(page, '99999');
+		finished = ((await (await answered).json()) as { done: boolean }).done;
+	}
+	await expect(done).toContainText("We'll start right at the beginning of the map.");
+
 	const firstNext = page.waitForResponse(isNext);
 	const firstTry = page.waitForResponse(isTry);
-	await page.getByRole('button', { name: 'I wrote it down' }).click();
+	await page.getByRole('button', { name: 'Start adventure' }).click();
 	await expect(page).toHaveURL(/\/play$/);
 
 	// A new player meets the first skill's lesson before its first problem.
@@ -166,6 +184,7 @@ test('sign up, take the first lesson, get help on a miss, answer three problems,
 	}
 	await expect(page.getByTestId('solved')).toContainText('3');
 
+	await page.getByRole('button', { name: 'Settings', exact: true }).click();
 	await page.getByRole('button', { name: 'Log out' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
@@ -180,6 +199,7 @@ test('sign up, take the first lesson, get help on a miss, answer three problems,
 	await expect(page.getByTestId('solved')).toHaveText(/\b3$/);
 
 	// Recovery: forgot the PIN, use the recovery word, get a NEW word shown once.
+	await page.getByRole('button', { name: 'Settings', exact: true }).click();
 	await page.getByRole('button', { name: 'Log out' }).click();
 	await expect(page).toHaveURL(/\/$/);
 	await page.getByRole('button', { name: 'Forgot your PIN?' }).click();

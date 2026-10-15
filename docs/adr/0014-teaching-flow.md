@@ -19,7 +19,7 @@ the other way round), yet both act on the same issued problems.
 **Lesson first, once.** Before the first problem of a skill that has a lesson, `next`
 returns `{type: "lesson"}` instead of a problem, until the player marks the lesson seen
 (`lessons_seen`, one row per player and skill; marking twice changes nothing). A skill
-the player has already practised (any scored problem) never gets one, so a player who
+the player has already practiced (any scored problem) never gets one, so a player who
 learned a skill before its lesson existed is not sent back to the start. A lesson can be
 replayed from any problem of its skill at any time.
 
@@ -128,7 +128,7 @@ condition, the scheduler rules) or data in entity tables (`hints_used`,
 the teaching slice.
 
 ## Alternatives rejected
-- **Show every lesson, even for skills already practised.** Interrupts a learner who
+- **Show every lesson, even for skills already practiced.** Interrupts a learner who
   is already competent with material they have used for weeks.
 - **Try-it as a `practice_only` problem instance.** One table and one answer route, but
   every reader of `problem_instances` (solved count, mastery, history, stuck log) would
@@ -158,7 +158,7 @@ the teaching slice.
   independence and makes either slice impossible to change without the other.
 
 ## Consequences
-New learners see a short lesson before each skill and can practise without penalty.
+New learners see a short lesson before each skill and can practice without penalty.
 Help is always available but never free, so mastery still reflects independent work;
 a learner who leans on hints masters a skill more slowly. Wrong answers say something
 useful when the mistake is known. Content authors get reports of exactly which problems

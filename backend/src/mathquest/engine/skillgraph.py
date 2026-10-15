@@ -44,6 +44,17 @@ class SkillGraph:
     def prerequisites(self, skill_id: str) -> tuple[str, ...]:
         return self.skills[skill_id].prerequisites
 
+    def ancestors(self, skill_id: str) -> set[str]:
+        """Every prerequisite of the skill, transitively (not the skill itself)."""
+        found: set[str] = set()
+        stack = list(self.skills[skill_id].prerequisites)
+        while stack:
+            sid = stack.pop()
+            if sid not in found:
+                found.add(sid)
+                stack.extend(self.skills[sid].prerequisites)
+        return found
+
     def topo_order(self) -> list[str]:
         return list(self._order)
 

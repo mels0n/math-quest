@@ -14,6 +14,12 @@ the session's history (passed in, newest last):
 
 Both rules are pure: the caller reads the history and stores which problems are
 warm-ups. See docs/adr/0014-teaching-flow.md.
+
+`plan_practice` chooses inside a practice session's own skills instead (see
+docs/adr/0016-practice-and-sessions.md): no review slots, runs of RUN_LENGTH on one
+skill before rotating to the weakest of the others, and the same warm-up rule.
+
+An adventure session lasts SESSION_PROBLEMS problems; the caller ends it there.
 """
 
 from collections.abc import Mapping, Sequence
@@ -28,6 +34,9 @@ WARMUP_PROBLEMS = 2
 WARMUP_STUCK = 2
 WARMUP_MISSES = 5
 FRUSTRATION_MISSES = 3
+SESSION_PROBLEMS = 12
+"""Problems in an adventure session before its summary; with a review every
+REVIEW_EVERY problems, about one in five is a review when reviews are due."""
 
 
 def _review_slot(index: int) -> bool:
@@ -151,16 +160,19 @@ def weakest_prerequisite(
     return min(prereqs, key=lambda sid: ratings.get(sid, SkillRating()).rating)
 
 
-def _warmup_tail(history: Sequence[Played], problem_index: int) -> list[Played]:
+def _warmup_tail(
+    history: Sequence[Played], problem_index: int, reviews: bool = True
+) -> list[Played]:
     """The warm-up problems at the end of ``history`` for one skill, oldest first.
 
     A review given on a review slot during a warm-up is skipped, so it neither ends nor
-    counts toward the warm-up. ``history`` is the session's latest problems, newest last,
-    so ``history[-1]`` was problem ``problem_index - 1``."""
+    counts toward the warm-up (only when ``reviews``: a practice session has none).
+    ``history`` is the session's latest problems, newest last, so ``history[-1]`` was
+    problem ``problem_index - 1``."""
     tail: list[Played] = []
     target: str | None = None
     for back, played in enumerate(reversed(history)):
-        if played.warmup_for is None and _review_slot(problem_index - 1 - back):
+        if reviews and played.warmup_for is None and _review_slot(problem_index - 1 - back):
             continue
         if played.warmup_for is None or (target is not None and played.warmup_for != target):
             break
@@ -200,6 +212,56 @@ def plan_next(
             return Pick(target)
     recent = [p.skill_id for p in history]
     skill = pick_skill(graph, ratings, mastered, due_reviews, problem_index, recent)
+    if struggling(history, skill):
+        prereq = weakest_prerequisite(graph, ratings, skill)
+        if prereq is not None:
+            return Pick(prereq, skill)
+    return Pick(skill)
+
+
+def plan_practice(
+    graph: SkillGraph,
+    ratings: Mapping[str, SkillRating],
+    focus: Sequence[str],
+    history: Sequence[Played],
+) -> Pick:
+    """The next skill of a practice session over ``focus`` (its skills, in order).
+
+    A warm-up in progress continues until it has WARMUP_PROBLEMS problems, then play
+    returns to the skill it was for. Otherwise the skill of the newest problem that was
+    not a warm-up is kept while its run is shorter than RUN_LENGTH (or it is the only
+    one); after that the lowest-rated other focus skill is picked (ties go to the
+    earlier one in ``focus``), as is the lowest-rated of all when nothing has been
+    played. A skill the learner is struggling with starts a warm-up on its weakest
+    prerequisite, as in `plan_next`. Skills missing from the graph are ignored.
+    """
+    skills = [sid for sid in focus if sid in graph.skills]
+    if not skills:
+        raise ValueError("no skills to practice")
+    tail = _warmup_tail(history, len(history), reviews=False)
+    if tail:
+        target = tail[-1].warmup_for
+        assert target is not None
+        if len(tail) < WARMUP_PROBLEMS:
+            return Pick(tail[-1].skill_id, target)
+        if target in skills:
+            return Pick(target)
+    own = [p.skill_id for p in history if p.warmup_for is None]
+
+    def weakest(choices: Sequence[str]) -> str:
+        return min(choices, key=lambda sid: ratings.get(sid, SkillRating()).rating)
+
+    if own and own[-1] in skills:
+        last = own[-1]
+        run = 0
+        for sid in reversed(own):
+            if sid != last:
+                break
+            run += 1
+        others = [sid for sid in skills if sid != last]
+        skill = last if run < RUN_LENGTH or not others else weakest(others)
+    else:
+        skill = weakest(skills)
     if struggling(history, skill):
         prereq = weakest_prerequisite(graph, ratings, skill)
         if prereq is not None:

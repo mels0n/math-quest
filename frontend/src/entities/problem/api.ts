@@ -1,14 +1,36 @@
 import { apiFetch } from '../../shared/api';
-import type { Answer, AnswerResult, Explanation, Hint, NextItem, Session } from './model';
+import type {
+	Answer,
+	AnswerResult,
+	Explanation,
+	Hint,
+	NextItem,
+	PracticeTarget,
+	Session,
+	SkillList,
+	Summary
+} from './model';
 
 export const startSession = () =>
 	apiFetch<Session>('/api/play/sessions', { method: 'POST', body: { mode: 'adventure' } });
 
+export const startPractice = (target: PracticeTarget) =>
+	apiFetch<Session>('/api/play/sessions', {
+		method: 'POST',
+		body: { mode: 'practice', ...target }
+	});
+
+export const endSession = (sessionId: string) =>
+	apiFetch<Summary>(`/api/play/sessions/${sessionId}/end`, { method: 'POST' });
+
+export const fetchSkills = () => apiFetch<SkillList>('/api/skills');
+
 /**
- * Tells `next` this client can show lessons. The server offers a lesson only to clients
- * that send it, so a page loaded before lessons existed keeps getting problems.
+ * Tells `next` this client can show lessons (2) and session summaries (3). The server
+ * offers each only to clients that send it, so a page loaded before them keeps getting
+ * problems.
  */
-export const CLIENT_HEADERS = { 'X-MathQuest-Client': '2' } as const;
+export const CLIENT_HEADERS = { 'X-MathQuest-Client': '3' } as const;
 
 export const nextProblem = (sessionId: string) =>
 	apiFetch<NextItem>(`/api/play/sessions/${sessionId}/next`, {

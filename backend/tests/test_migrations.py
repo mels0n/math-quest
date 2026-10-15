@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mathquest.entities import admin, lessons, mastery, models, problems, teaching
+from mathquest.entities import admin, lessons, mastery, models, placement, problems, teaching
 from mathquest.shared.db import Base
 from tests.conftest import (
     BACKEND_DIR,
@@ -30,6 +30,8 @@ async def test_models_match_migration(db: AsyncSession) -> None:
         lessons.LessonTry.__tablename__,
         teaching.ExplanationView.__tablename__,
         teaching.StuckEvent.__tablename__,
+        placement.PlacementRun.__tablename__,
+        problems.RevisitEvent.__tablename__,
     } <= set(Base.metadata.tables)
 
     def diff(sync_conn: Connection) -> list[object]:
@@ -176,6 +178,97 @@ def test_0008_adds_help_columns_and_tables_and_downgrades() -> None:
         old = "SELECT hints_used, warmup_for FROM problem_instances"
         assert asyncio.run(_rows(url, schema, old)) == [(0, None)]
         command.downgrade(cfg, "0007")
+        assert asyncio.run(_rows(url, schema, tables)) == []
+        assert asyncio.run(_rows(url, schema, columns)) == []
+    finally:
+        asyncio.run(_exec(url, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+
+
+def test_0009_adds_placement_and_downgrades_without_provisional_marks() -> None:
+    url = _database_url()
+    schema = f"mq_mig_{uuid.uuid4().hex[:12]}"
+    asyncio.run(_exec(url, f'CREATE SCHEMA "{schema}"'))
+    tables = (
+        "SELECT table_name FROM information_schema.tables"
+        f" WHERE table_schema = '{schema}' AND table_name = 'placement_runs'"
+    )
+    try:
+        cfg = _alembic(url, schema)
+        command.upgrade(cfg, "0009")
+        assert asyncio.run(_rows(url, schema, tables)) == [("placement_runs",)]
+        player = uuid.uuid4()
+        rows = asyncio.run(
+            _rows(
+                url,
+                schema,
+                "INSERT INTO players (id, nickname, nickname_key, recovery_hash)"
+                f" VALUES ('{player}', 'Old', 'old', 'x')",
+                "INSERT INTO skill_mastery (player_id, skill_id, state, attempts, review_due_at)"
+                f" VALUES ('{player}', 'fresh', 'provisional', 0, now()),"
+                f" ('{player}', 'played', 'provisional', 4, now()),"
+                f" ('{player}', 'known', 'mastered', 9, now())",
+                "SELECT skill_id, placed FROM skill_mastery ORDER BY skill_id",
+            )
+        )
+        assert rows == [("fresh", False), ("known", False), ("played", False)]
+        command.downgrade(cfg, "0008")
+        assert asyncio.run(_rows(url, schema, tables)) == []
+        left = asyncio.run(
+            _rows(
+                url,
+                schema,
+                "SELECT skill_id, state, review_due_at IS NULL FROM skill_mastery"
+                " ORDER BY skill_id",
+            )
+        )
+        assert left == [("known", "mastered", False), ("played", "learning", True)]
+    finally:
+        asyncio.run(_exec(url, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+
+
+def test_0010_adds_practice_columns_and_revisits_and_downgrades() -> None:
+    url = _database_url()
+    schema = f"mq_mig_{uuid.uuid4().hex[:12]}"
+    asyncio.run(_exec(url, f'CREATE SCHEMA "{schema}"'))
+    tables = (
+        "SELECT table_name FROM information_schema.tables"
+        f" WHERE table_schema = '{schema}' AND table_name = 'revisit_events'"
+    )
+    columns = (
+        "SELECT table_name, column_name FROM information_schema.columns"
+        f" WHERE table_schema = '{schema}'"
+        " AND column_name IN ('focus', 'newly_mastered') ORDER BY column_name"
+    )
+    try:
+        cfg = _alembic(url, schema)
+        command.upgrade(cfg, "0009")
+        player, session, problem = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        asyncio.run(
+            _rows(
+                url,
+                schema,
+                "INSERT INTO players (id, nickname, nickname_key, recovery_hash)"
+                f" VALUES ('{player}', 'Old', 'old', 'x')",
+                "INSERT INTO play_sessions (id, player_id, mode, started_at)"
+                f" VALUES ('{session}', '{player}', 'adventure', now())",
+                "INSERT INTO problem_instances"
+                " (id, session_id, player_id, skill_id, tier, seed, difficulty, issued_at)"
+                f" VALUES ('{problem}', '{session}', '{player}', 'add_within_10',"
+                " 0, 7, 0.0, now())",
+            )
+        )
+        command.upgrade(cfg, "0010")
+        assert asyncio.run(_rows(url, schema, tables)) == [("revisit_events",)]
+        assert asyncio.run(_rows(url, schema, columns)) == [
+            ("play_sessions", "focus"),
+            ("problem_instances", "newly_mastered"),
+        ]
+        old = (
+            "SELECT s.focus, p.newly_mastered FROM play_sessions s"
+            " JOIN problem_instances p ON p.session_id = s.id"
+        )
+        assert asyncio.run(_rows(url, schema, old)) == [(None, False)]
+        command.downgrade(cfg, "0009")
         assert asyncio.run(_rows(url, schema, tables)) == []
         assert asyncio.run(_rows(url, schema, columns)) == []
     finally:

@@ -16,6 +16,7 @@ from mathquest.engine.scheduler import (
     misses_in_a_row,
     pick_skill,
     plan_next,
+    plan_practice,
     struggling,
     weakest_prerequisite,
 )
@@ -300,3 +301,44 @@ def test_a_capped_history_uses_the_true_problem_index() -> None:
     assert plan_next(graph, ratings, _MASTERED, [], 56, full) == Pick("b")
     # Index 59 is a review slot, whatever the length of the history passed in.
     assert plan_next(graph, ratings, _MASTERED, ["a"], 59, capped[-10:]) == Pick("a")
+
+
+def _practice(focus: list[str], answers: Callable[[str, int], bool], problems: int) -> list[Pick]:
+    graph = _teaching_graph()
+    history: list[Played] = []
+    picks: list[Pick] = []
+    seen: dict[str, int] = {}
+    for _ in range(problems):
+        pick = plan_practice(graph, _RATINGS, focus, history)
+        picks.append(pick)
+        n = seen.get(pick.skill_id, 0)
+        seen[pick.skill_id] = n + 1
+        history.append(Played(pick.skill_id, answers(pick.skill_id, n), warmup_for=pick.warmup_for))
+    return picks
+
+
+def test_practice_on_one_skill_stays_on_it_with_no_reviews() -> None:
+    picks = _practice(["b"], lambda _s, _n: True, 12)
+    assert picks == [Pick("b")] * 12
+
+
+def test_practice_rotates_in_runs_starting_with_the_weakest() -> None:
+    picks = _practice(["a", "b", "p"], lambda _s, _n: True, 9)
+    # p (1.0) is weakest, then b (2.0) is the weakest of the others, then p again.
+    expected = ["p"] * RUN_LENGTH + ["b"] * RUN_LENGTH + ["p"] * RUN_LENGTH
+    assert [p.skill_id for p in picks] == expected
+
+
+def test_practice_warms_up_a_struggling_skill_and_returns_to_it() -> None:
+    picks = _practice(["c"], lambda s, _n: s != "c", WARMUP_MISSES + WARMUP_PROBLEMS + 1)
+    assert [p.skill_id for p in picks[:WARMUP_MISSES]] == ["c"] * WARMUP_MISSES
+    warmup = picks[WARMUP_MISSES : WARMUP_MISSES + WARMUP_PROBLEMS]
+    assert warmup == [Pick("p", "c")] * WARMUP_PROBLEMS
+    assert picks[-1] == Pick("c")
+
+
+def test_practice_ignores_skills_missing_from_the_graph() -> None:
+    graph = _teaching_graph()
+    assert plan_practice(graph, _RATINGS, ["gone", "b"], []) == Pick("b")
+    with pytest.raises(ValueError):
+        plan_practice(graph, _RATINGS, ["gone"], [])

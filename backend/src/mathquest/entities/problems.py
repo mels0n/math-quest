@@ -1,4 +1,4 @@
-"""Play sessions, issued problem instances and answer attempts."""
+"""Play sessions, issued problem instances, answer attempts and revisits of mastered skills."""
 
 import uuid
 from datetime import datetime
@@ -11,11 +11,13 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     Text,
+    UniqueConstraint,
     func,
     select,
     update,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -34,6 +36,11 @@ class PlaySession(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     problem_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    focus: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    """A practice session's skills, in the order chosen; None for an adventure."""
+    mastered_at_start: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    """A practice session's skills that were mastered (not provisional) when it started:
+    the only ones whose practice there counts as a revisit. None for an adventure."""
 
 
 class ProblemInstance(Base):
@@ -59,6 +66,8 @@ class ProblemInstance(Base):
     """Hint levels viewed on this problem (0 to 3)."""
     warmup_for: Mapped[str | None] = mapped_column(Text, nullable=True)
     """The skill this problem warms up for, when it is a warm-up on a prerequisite."""
+    newly_mastered: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    """Scoring this problem made its skill mastered from learning."""
 
 
 class Attempt(Base):
@@ -78,10 +87,40 @@ class Attempt(Base):
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class RevisitEvent(Base):
+    """A skill that was already mastered when a practice session started, practiced
+    again there: at most one per session and skill, at its first scored problem."""
+
+    __tablename__ = "revisit_events"
+    __table_args__ = (UniqueConstraint("session_id", "skill_id"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    player_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("players.id", ondelete="CASCADE"), index=True
+    )
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("play_sessions.id", ondelete="CASCADE")
+    )
+    skill_id: Mapped[str] = mapped_column(Text)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 async def add_session(
-    db: AsyncSession, *, player_id: uuid.UUID, mode: str, started_at: datetime
+    db: AsyncSession,
+    *,
+    player_id: uuid.UUID,
+    mode: str,
+    started_at: datetime,
+    focus: list[str] | None = None,
+    mastered_at_start: list[str] | None = None,
 ) -> PlaySession:
-    row = PlaySession(player_id=player_id, mode=mode, started_at=started_at)
+    row = PlaySession(
+        player_id=player_id,
+        mode=mode,
+        started_at=started_at,
+        focus=focus,
+        mastered_at_start=mastered_at_start,
+    )
     db.add(row)
     await db.flush()
     return row
@@ -219,3 +258,53 @@ async def count_solved(db: AsyncSession, player_id: uuid.UUID) -> int:
         .where(ProblemInstance.player_id == player_id, ProblemInstance.correct.is_(True))
     )
     return int(total or 0)
+
+
+async def get_session(db: AsyncSession, session_id: uuid.UUID) -> PlaySession:
+    """An existing session, read without a lock."""
+    row = await db.get(PlaySession, session_id)
+    assert row is not None
+    return row
+
+
+async def add_revisit(
+    db: AsyncSession,
+    *,
+    player_id: uuid.UUID,
+    session_id: uuid.UUID,
+    skill_id: str,
+    at: datetime,
+) -> None:
+    """Record a revisit; a second one for the same session and skill is ignored."""
+    await db.execute(
+        pg_insert(RevisitEvent)
+        .values(player_id=player_id, session_id=session_id, skill_id=skill_id, at=at)
+        .on_conflict_do_nothing(index_elements=["session_id", "skill_id"])
+    )
+
+
+async def session_problems(
+    db: AsyncSession, session_id: uuid.UUID
+) -> list[tuple[str, bool | None, bool, datetime]]:
+    """Every problem of the session, oldest first, as (skill_id, correct, newly_mastered,
+    issued_at)."""
+    result = await db.execute(
+        select(
+            ProblemInstance.skill_id,
+            ProblemInstance.correct,
+            ProblemInstance.newly_mastered,
+            ProblemInstance.issued_at,
+        )
+        .where(ProblemInstance.session_id == session_id)
+        .order_by(ProblemInstance.issued_at, ProblemInstance.id)
+    )
+    return [(r[0], r[1], bool(r[2]), r[3]) for r in result.all()]
+
+
+async def last_answer_at(db: AsyncSession, session_id: uuid.UUID) -> datetime | None:
+    """When the session's newest answer attempt arrived; None before the first."""
+    return await db.scalar(
+        select(func.max(Attempt.at))
+        .join(ProblemInstance, ProblemInstance.id == Attempt.problem_id)
+        .where(ProblemInstance.session_id == session_id)
+    )

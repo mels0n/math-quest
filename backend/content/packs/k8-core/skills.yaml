@@ -4,7 +4,8 @@
 #   region             map region the skill belongs to (an id from world.yaml)
 #   prerequisites      ids that must be mastered first ([] for none)
 #   fluency            true for recall-speed skills, false for concept skills
-#   anchor             true for skills used as placement anchors
+#   anchor             true for skills used as placement anchors; placement takes
+#                      them in topological order as a ladder from easiest to hardest
 #   generator          problem generator id (existing skills use their own id)
 #   tiers              one {id, label} per generator tier, ids 0, 1, 2 ... in order
 #   grade_band         K, 1 to 8, A1 or A2
@@ -23,7 +24,7 @@ skills:
     region: number_meadows
     prerequisites: []
     fluency: true
-    anchor: false
+    anchor: true
     generator: add_within_10
     tiers:
       - {id: 0, label: Totals up to 5}

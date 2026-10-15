@@ -31,11 +31,12 @@ backend/
   src/mathquest/
     app/        application factory and wiring
     api/        HTTP routes and the single error-to-HTTP mapping
-    features/   use cases (accounts, admin, play, teaching)
+    features/   use cases (accounts, admin, placement, play, teaching)
     entities/   database models and per-entity data access
     shared/     config, database, errors, logging
     engine/     pure problem engine (types, skill graph, generators, checker, mastery,
-                content pack loader, lint and coverage, templates, word problems, bank items)
+                content pack loader, lint and coverage, templates, word problems, bank items,
+                placement search)
     cli/        content tools: `uv run content-lint`, `uv run content-report`
   content/      content packs (skills, world, teaching text, word problems, bank items),
                 word-problem slot lists, the early-reader word list and account word lists

@@ -3,7 +3,13 @@
 import type { Visual } from '../../shared/visuals';
 
 export type Verdict = 'correct' | 'incorrect' | 'wrong_form' | 'unreadable';
-export type SkillState = 'locked' | 'ready' | 'learning' | 'mastered' | 'review_due';
+export type SkillState =
+	| 'locked'
+	| 'ready'
+	| 'learning'
+	| 'mastered'
+	| 'review_due'
+	| 'provisional';
 /** Keypad profiles a skill can ask for; `choice` means answer buttons, no keypad. */
 export const KEYPAD_PROFILES = [
 	'numpad',
@@ -17,12 +23,24 @@ export const KEYPAD_PROFILES = [
 ] as const;
 export type KeypadProfile = (typeof KEYPAD_PROFILES)[number];
 
+export type SessionMode = 'adventure' | 'practice';
+
+export interface SkillName {
+	skill_id: string;
+	name: string;
+}
+
 export interface Session {
 	session_id: string;
-	mode: 'adventure';
+	mode: SessionMode;
 	started_at: string;
 	problem_count: number;
+	/** A practice session's skills; empty for an adventure. */
+	focus: SkillName[];
 }
+
+/** What a practice session works on: one skill, or the player's weak spots. */
+export type PracticeTarget = { skill_id: string } | { weak_spots: true };
 
 /** One part of a prompt: words shown as wrapping text, or a math expression in LaTeX. */
 export interface PromptPart {
@@ -54,8 +72,38 @@ export interface LessonDue {
 	skill_name: string;
 }
 
+/** How a finished session went; shown when the session ends. */
+export interface Summary {
+	type: 'summary';
+	session_id: string;
+	mode: SessionMode;
+	skills_practiced: SkillName[];
+	newly_mastered: SkillName[];
+	problems_solved: number;
+	problems_scored: number;
+	/** Correct over scored problems; null when none was scored. */
+	accuracy: number | null;
+	/** From the first problem to the last answer, measured by the server. */
+	seconds: number;
+}
+
 /** What asking for the next problem returns. */
-export type NextItem = Problem | LessonDue;
+export type NextItem = Problem | LessonDue | Summary;
+
+/** One skill as the practice picker shows it. */
+export interface SkillEntry {
+	skill_id: string;
+	name: string;
+	region: string;
+	state: SkillState;
+	progress: number;
+	has_lesson: boolean;
+}
+
+export interface SkillList {
+	regions: { id: string; name: string }[];
+	skills: SkillEntry[];
+}
 
 /** What the learner sends: typed LaTeX, or the index of a choice. */
 export type Answer = { latex: string } | { choice: number };

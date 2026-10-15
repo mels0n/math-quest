@@ -79,6 +79,7 @@ type = "independence"
 modules = [
     "mathquest.features.accounts",
     "mathquest.features.admin",
+    "mathquest.features.placement",
     "mathquest.features.play",
     "mathquest.features.teaching",
 ]

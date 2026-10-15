@@ -29,6 +29,13 @@ class SkillState(StrEnum):
     LEARNING = "learning"
     MASTERED = "mastered"
     REVIEW_DUE = "review_due"
+    PROVISIONAL = "provisional"
+    """Placement says the learner knows it; counts as mastered until its first scored
+    review confirms it (MASTERED) or not (LEARNING). See docs/adr/0015-placement.md."""
+
+
+PROVISIONAL_REVIEW_DAYS = 1
+"""A provisional skill comes up for review this many days after placement."""
 
 
 @dataclass(frozen=True)
@@ -138,6 +145,18 @@ def is_mastered(r: SkillRating, top_difficulty: float, top_tier: int = TOP_TIER)
         1 for correct, tier in r.recent[-MASTERY_STREAK_WINDOW:] if correct and tier == top_tier
     )
     return streak >= MASTERY_STREAK_NEEDED
+
+
+def placed_keeps_mastery(after: SkillRating, correct: bool) -> bool:
+    """Whether a skill mastered through placement (not yet by the rating rule) stays
+    mastered after this outcome: always on a correct answer, and on the first miss among
+    the last MASTERY_STREAK_WINDOW outcomes (``after`` includes this one), like a real
+    mastered skill's one slip. A second miss in that window reverts it. See
+    docs/adr/0015-placement.md."""
+    if correct:
+        return True
+    misses = sum(1 for ok, _tier in after.recent[-MASTERY_STREAK_WINDOW:] if not ok)
+    return misses <= 1
 
 
 def next_review_days(previous: int | None, success: bool) -> int:

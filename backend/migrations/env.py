@@ -10,6 +10,7 @@ from mathquest.entities import (  # noqa: F401  (registers tables)
     lessons,
     mastery,
     models,
+    placement,
     problems,
     teaching,
 )

@@ -3,9 +3,10 @@
 import re
 import secrets
 from collections.abc import AsyncGenerator
-from typing import Annotated
+from typing import Annotated, Self
 
 from fastapi import Depends, Request, Response
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from mathquest.api import ratelimit
@@ -170,8 +171,55 @@ async def limit_session(request: Request, player: CurrentPlayer) -> None:
     )
 
 
+async def limit_placement_start(request: Request, player: CurrentPlayer) -> None:
+    """Placement rounds started (first rounds and retakes) are limited per player."""
+    _limiter(request).hit(
+        "placement-start",
+        str(player.id),
+        limit=ratelimit.PLACEMENT_START_LIMIT,
+        window_s=ratelimit.PLACEMENT_START_WINDOW_S,
+    )
+
+
 async def limit_next(request: Request, player: CurrentPlayer) -> None:
     """Problem requests are limited per player."""
     _limiter(request).hit(
         "next", str(player.id), limit=ratelimit.PLAY_LIMIT, window_s=ratelimit.PLAY_WINDOW_S
     )
+
+
+MAX_BODY_LATEX = 1000
+"""Wide enough for any real answer; services store 200 characters and the checker
+rejects longer input as unreadable."""
+MAX_CHOICE = 99
+"""Far above any real number of choices; services reject an index past the shown ones."""
+
+
+class AnswerBody(BaseModel):
+    """An answer: exactly one of ``latex`` (typed) or ``choice`` (a choice index). Text
+    with NUL or that UTF-8 cannot encode is rejected, since Postgres text cannot store
+    either."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    latex: str | None = Field(default=None, max_length=MAX_BODY_LATEX)
+    choice: StrictInt | None = Field(default=None, ge=0, le=MAX_CHOICE)
+
+    @model_validator(mode="after")
+    def _exactly_one(self) -> Self:
+        if (self.latex is None) == (self.choice is None):
+            raise ValueError("send exactly one of latex or choice")
+        return self
+
+    @field_validator("latex")
+    @classmethod
+    def _storable(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if "\x00" in value:
+            raise ValueError("NUL is not allowed")
+        try:
+            value.encode("utf-8")
+        except UnicodeEncodeError:
+            raise ValueError("not valid UTF-8 text") from None
+        return value

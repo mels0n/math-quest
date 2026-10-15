@@ -1,10 +1,22 @@
 """Per-player skill mastery rows."""
 
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, Index, Integer, Text, func, select
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    Text,
+    delete,
+    func,
+    select,
+    update,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,6 +42,15 @@ class SkillMastery(Base):
     review_interval_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
     review_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    placed: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    """Mastered because placement marked it and its first review confirmed it, not yet
+    by the rating rule; a correct answer keeps it mastered until the rating catches up."""
+
+
+PROVISIONAL = "provisional"
+MASTERED = "mastered"
+LEARNING = "learning"
+COUNTS_AS_MASTERED = (MASTERED, PROVISIONAL)
 
 
 async def list_for_player(db: AsyncSession, player_id: uuid.UUID) -> Sequence[SkillMastery]:
@@ -38,12 +59,12 @@ async def list_for_player(db: AsyncSession, player_id: uuid.UUID) -> Sequence[Sk
 
 
 async def due_reviews(db: AsyncSession, player_id: uuid.UUID, now: datetime) -> Sequence[str]:
-    """Mastered skills whose review date has passed, oldest review first."""
+    """Mastered and provisional skills whose review date has passed, oldest review first."""
     result = await db.execute(
         select(SkillMastery.skill_id)
         .where(
             SkillMastery.player_id == player_id,
-            SkillMastery.state == "mastered",
+            SkillMastery.state.in_(COUNTS_AS_MASTERED),
             SkillMastery.review_due_at <= now,
         )
         .order_by(SkillMastery.review_due_at, SkillMastery.skill_id)
@@ -71,3 +92,64 @@ async def lock(
         .execution_options(populate_existing=True)
     )
     return result.scalar_one()
+
+
+async def mark_provisional(
+    db: AsyncSession,
+    player_id: uuid.UUID,
+    initial_ratings: Mapping[str, float],
+    review_due_at: datetime,
+    now: datetime,
+) -> list[str]:
+    """Mark each skill provisionally mastered, due for review at ``review_due_at``, in one
+    statement.
+
+    A missing row is created at its initial rating. A row with real progress is left
+    alone: a mastered skill keeps its mastery, and a skill being learned (any scored
+    attempt) keeps its state, so a retake never hides real work behind a provisional
+    mark. Returns the skills that were marked, in the order given."""
+    if not initial_ratings:
+        return []
+    insert = pg_insert(SkillMastery).values(
+        [
+            {
+                "player_id": player_id,
+                "skill_id": skill_id,
+                "rating": rating,
+                "state": PROVISIONAL,
+                "review_due_at": review_due_at,
+                "updated_at": now,
+            }
+            for skill_id, rating in initial_ratings.items()
+        ]
+    )
+    statement = insert.on_conflict_do_update(
+        index_elements=["player_id", "skill_id"],
+        set_={
+            "state": PROVISIONAL,
+            "placed": False,
+            "review_interval_days": None,
+            "review_due_at": review_due_at,
+            "updated_at": now,
+        },
+        where=(SkillMastery.state != MASTERED) & (SkillMastery.attempts == 0),
+    ).returning(SkillMastery.skill_id)
+    marked = set((await db.execute(statement)).scalars().all())
+    return [skill_id for skill_id in initial_ratings if skill_id in marked]
+
+
+async def revert_provisional(db: AsyncSession, player_id: uuid.UUID) -> None:
+    """Undo provisional marks that no review has confirmed: a never-played skill loses
+    its row, one played before placement goes back to learning."""
+    await db.execute(
+        delete(SkillMastery).where(
+            SkillMastery.player_id == player_id,
+            SkillMastery.state == PROVISIONAL,
+            SkillMastery.attempts == 0,
+        )
+    )
+    await db.execute(
+        update(SkillMastery)
+        .where(SkillMastery.player_id == player_id, SkillMastery.state == PROVISIONAL)
+        .values(state=LEARNING, review_interval_days=None, review_due_at=None)
+    )
