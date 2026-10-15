@@ -45,11 +45,19 @@ async def _answer(client: httpx.AsyncClient, problem_id: str, latex: str) -> htt
     )
 
 
+async def _see_every_lesson(h: Api) -> None:
+    """Mark every lesson seen, so `next` issues problems straight away."""
+    for skill_id in h.app.state.catalog.pack.lessons:
+        r = await h.client.post(f"/api/lessons/{skill_id}/seen", headers=CSRF)
+        assert r.status_code == 200
+
+
 async def _api(api: ApiFactory, *, real_pool: bool = False, **overrides: object) -> Api:
     h = await api(real_pool=real_pool, **overrides)
     if not real_pool:
         h.app.state.checker_pool = _SyncPool()
     await _signup(h.client, "PlayerOne")
+    await _see_every_lesson(h)
     return h
 
 
@@ -67,16 +75,23 @@ async def test_next_problem_hides_answer(api: ApiFactory) -> None:
 
     assert r.status_code == 200
     body = r.json()
+    assert body["type"] == "problem"
     assert set(body) == {
+        "type",
         "problem_id",
         "skill_id",
         "skill_name",
         "prompt",
         "keypad",
         "choices",
+        "has_lesson",
+        "hint_levels",
+        "has_explanations",
         "dev_answer_latex",
         "dev_answer_choice",
     }
+    assert body["has_lesson"] is (body["skill_id"] in h.app.state.catalog.pack.lessons)
+    assert body["hint_levels"] in (0, 3)
     assert body["prompt"]
     for part in body["prompt"]:
         assert set(part) == {"kind", "value"}
@@ -219,7 +234,8 @@ async def test_session_creation_is_limited_to_120_per_player_per_minute(api: Api
 async def test_next_problem_is_limited_to_120_per_player_per_minute(api: ApiFactory) -> None:
     h = await _api(api)
     session_id = await _start(h.client)
-    for _ in range(120):
+    # Marking the lessons seen counted against the same limit.
+    for _ in range(120 - len(h.app.state.catalog.pack.lessons)):
         assert (await _next(h.client, session_id)).status_code == 200
     r = await _next(h.client, session_id)
     assert r.status_code == 429

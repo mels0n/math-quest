@@ -1,13 +1,14 @@
 # Four ways to explain adding to 20, plus feedback for each mistake the generator knows.
+# None of them shows the answer: the number line shows the start and the jumps.
 skill: add_within_20
 approaches:
   - style: visual
     body_md: >-
-      Picture a number line. Put your finger on {big}, the bigger number. Make
-      {small} small jumps to the right. The number where you stop is the answer.
+      Picture a number line. Put your finger on {big}. Count on {small}, one
+      jump at a time to the right. The number where you stop is the answer.
     visual:
       kind: number_line
-      params: {min: 0, max: 20, start: "{big}", jumps: "{small}", end: "{{= a + b }}"}
+      params: {min: 0, max: 20, start: "{big}", jumps: "{small}"}
   - style: steps
     body_md: |-
       1. Find the bigger number and say it out loud.
@@ -20,9 +21,9 @@ approaches:
       many ducks are in the pond now? That is \({a} + {b}\).
   - style: worked
     body_md: >-
-      Here is one we did together: \(7 + 6\). Take 3 from the 6 to make 10
-      with the 7. That leaves 3. Then 10 and 3 make {{= 10 + 3 }}. So
-      \(7 + 6 = {{= 7 + 6 }}\). Try the same steps with {a} and {b}.
+      Let us do yours together. Say {big}. Then count on {small} more, and
+      lift a finger for each one. When {small} fingers are up, stop. The
+      last number you said is the answer.
 misconceptions:
   subtracted_instead: >-
     It looks like you took away. The plus sign means put {a} and {b}

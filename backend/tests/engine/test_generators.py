@@ -244,7 +244,8 @@ def test_place_value_digits_and_place_by_tier(seed: int, tier: int) -> None:
 
 
 EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
-    **{("sub_within_10", t): {"added_instead"} for t in range(3)},
+    **{("add_within_10", t): {"subtracted_instead", "counted_start"} for t in range(3)},
+    **{("sub_within_10", t): {"added_instead", "counted_start"} for t in range(3)},
     **{("sub_within_20", t): {"added_instead"} for t in range(3)},
     ("sub_within_20", 1): {"added_instead", "subtracted_backwards"},
     ("sub_within_20", 2): {"added_instead", "subtracted_backwards"},

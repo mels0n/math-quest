@@ -94,4 +94,9 @@ describe('admin api', () => {
 			['GET', '/api/admin/content/skills/add_within_20']
 		]);
 	});
+
+	it('links the stuck log as JSON and as CSV', () => {
+		expect(admin.stuckLogUrl('json')).toBe('/api/admin/stuck-log');
+		expect(admin.stuckLogUrl('csv')).toBe('/api/admin/stuck-log?format=csv');
+	});
 });

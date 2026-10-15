@@ -24,12 +24,12 @@ from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
 from mathquest.engine.scheduler import RUN_LENGTH
 from mathquest.engine.transport import prompt_out
 from mathquest.engine.types import Problem
-from mathquest.entities import mastery, players, problems
+from mathquest.entities import lessons, mastery, players, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.models import Player
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance, add_problem
 from mathquest.features.play import service
-from mathquest.features.play.schema import AnswerOut, ProblemOut
+from mathquest.features.play.schema import AnswerOut, LessonDueOut, ProblemOut
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
@@ -47,7 +47,10 @@ class _SyncPool(CheckerPool):
 POOL = _SyncPool()
 
 
-async def _player(db: AsyncSession, name: str = "Tester") -> uuid.UUID:
+async def _player(
+    db: AsyncSession, name: str = "Tester", *, lessons_seen: bool = True
+) -> uuid.UUID:
+    """A new player; by default one who has seen every lesson, so `next` issues problems."""
     row = await players.add(
         db,
         nickname=f"{name}{uuid.uuid4().hex[:6]}",
@@ -55,7 +58,25 @@ async def _player(db: AsyncSession, name: str = "Tester") -> uuid.UUID:
         picture_hash=None,
         recovery_hash="x",
     )
+    if lessons_seen:
+        for skill_id in CATALOG.pack.lessons:
+            await lessons.mark_seen(db, row.id, skill_id, datetime.now(UTC))
     return row.id
+
+
+async def _next_problem(
+    db: AsyncSession,
+    catalog: Catalog,
+    player_id: uuid.UUID,
+    session_id: uuid.UUID,
+    *,
+    expose_answers: bool = False,
+) -> ProblemOut:
+    out = await service.next_problem(
+        db, catalog, player_id, session_id, expose_answers=expose_answers
+    )
+    assert isinstance(out, ProblemOut)
+    return out
 
 
 async def _issue(
@@ -269,7 +290,7 @@ async def test_other_player_problem_404(db: AsyncSession) -> None:
     with pytest.raises(NotFound):
         await _submit(db, other, inst.id, _right(inst))
     with pytest.raises(NotFound):
-        await service.next_problem(db, CATALOG, other, session.session_id)
+        await _next_problem(db, CATALOG, other, session.session_id)
     with pytest.raises(NotFound):
         await _submit(db, owner, uuid.uuid4(), "1")
     assert await mastery.get(db, owner, "add_within_10") is None
@@ -279,7 +300,7 @@ async def test_new_player_starts_on_ready_skills(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
-    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+    problem = await _next_problem(db, CATALOG, pid, session.session_id)
 
     assert problem.skill_id in GRAPH.ready(set())
     assert problem.prompt
@@ -292,11 +313,33 @@ async def test_new_player_starts_on_ready_skills(db: AsyncSession) -> None:
     assert count == 1
 
 
+async def test_a_new_skill_with_a_lesson_starts_with_the_lesson(db: AsyncSession) -> None:
+    pid = await _player(db, lessons_seen=False)
+    session = await service.start_session(db, pid, "adventure")
+    out = await service.next_problem(db, CATALOG, pid, session.session_id)
+    assert out == LessonDueOut(skill_id="add_within_10", skill_name="Add to 10")
+    issued = await db.scalar(select(func.count()).select_from(ProblemInstance))
+    assert issued == 0
+    row = await db.get(PlaySession, session.session_id)
+    assert row is not None and row.problem_count == 0
+
+
+async def test_a_skill_already_practised_gets_no_lesson(db: AsyncSession) -> None:
+    pid = await _player(db, lessons_seen=False)
+    row = await mastery.lock(db, pid, "add_within_10", -10.0)
+    row.attempts = 4
+    await db.commit()
+    session = await service.start_session(db, pid, "adventure")
+    out = await service.next_problem(db, CATALOG, pid, session.session_id)
+    assert isinstance(out, ProblemOut)
+    assert out.skill_id == "add_within_10"
+
+
 async def test_next_problem_exposes_answer_only_when_asked(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
-    problem = await service.next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
+    problem = await _next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
 
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
@@ -307,14 +350,14 @@ async def test_next_problem_counts_and_regenerates_deterministically(db: AsyncSe
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
-    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+    problem = await _next_problem(db, CATALOG, pid, session.session_id)
 
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
     regenerated = service.regenerate(CATALOG, inst)
     assert prompt_out(regenerated.prompt) == problem.prompt
     assert inst.difficulty == regenerated.difficulty
-    again = await service.next_problem(db, CATALOG, pid, session.session_id)
+    again = await _next_problem(db, CATALOG, pid, session.session_id)
     assert again.problem_id != problem.problem_id
 
 
@@ -322,7 +365,7 @@ async def test_a_skill_without_word_or_bank_content_stays_bare(db: AsyncSession)
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
 
-    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+    problem = await _next_problem(db, CATALOG, pid, session.session_id)
 
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None
@@ -350,17 +393,16 @@ async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -
     session = await service.start_session(db, pid, "adventure")
     skills: list[str] = []
     for _ in range(4):
-        problem = await service.next_problem(
-            db, CATALOG, pid, session.session_id, expose_answers=True
-        )
+        problem = await _next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
         skills.append(problem.skill_id)
         await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
 
     assert skills[0] == skills[1] == skills[2]
     assert skills[3] != skills[0]
-    recent = await problems.recent_skill_ids(db, session.session_id, limit=3)
-    assert recent == skills[1:]
-    assert service.RECENT_LOOKBACK == RUN_LENGTH * 2 + 2
+    history = await problems.session_history(db, session.session_id)
+    assert [h[0] for h in history] == skills
+    assert [h[1] for h in history] == [True] * 4
+    assert skills.count(skills[0]) == RUN_LENGTH
 
 
 async def _master(db: AsyncSession, pid: uuid.UUID, session_id: uuid.UUID, skill_id: str) -> int:
@@ -480,7 +522,7 @@ async def test_due_review_state_and_pick(db: AsyncSession) -> None:
         update(PlaySession).where(PlaySession.id == session.session_id).values(problem_count=4)
     )
 
-    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+    problem = await _next_problem(db, CATALOG, pid, session.session_id)
 
     assert problem.skill_id == "add_within_10"
     inst = await db.get(ProblemInstance, problem.problem_id)
@@ -563,8 +605,8 @@ async def test_repeating_the_previous_wrong_answer_is_free(db: AsyncSession) -> 
 async def test_next_problem_closes_the_previous_one(db: AsyncSession) -> None:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
-    first = await service.next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
-    await service.next_problem(db, CATALOG, pid, session.session_id)
+    first = await _next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
+    await _next_problem(db, CATALOG, pid, session.session_id)
 
     with pytest.raises(Conflict) as err:
         await _submit(db, pid, first.problem_id, first.dev_answer_latex or "1")
@@ -748,7 +790,7 @@ async def test_variant_and_template_are_drawn_from_the_seed_and_stored(db: Async
     source = FIXTURE.source("story")
     seen: set[str] = set()
     for _ in range(16):
-        problem = await service.next_problem(db, FIXTURE, pid, session.session_id)
+        problem = await _next_problem(db, FIXTURE, pid, session.session_id)
         inst = await db.get(ProblemInstance, problem.problem_id)
         assert inst is not None and inst.skill_id == "story"
         assert inst.variant == choose_variant(source, inst.seed)
@@ -763,7 +805,7 @@ async def test_variant_and_template_are_drawn_from_the_seed_and_stored(db: Async
 async def _choice_problem(db: AsyncSession) -> tuple[uuid.UUID, ProblemOut]:
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
-    problem = await service.next_problem(db, FIXTURE, pid, session.session_id, expose_answers=True)
+    problem = await _next_problem(db, FIXTURE, pid, session.session_id, expose_answers=True)
     return pid, problem
 
 
@@ -906,7 +948,7 @@ async def test_a_variant_that_fails_to_render_is_issued_bare(
     session = await service.start_session(db, pid, "adventure")
     variants: set[str] = set()
     for _ in range(12):
-        problem = await service.next_problem(db, catalog, pid, session.session_id)
+        problem = await _next_problem(db, catalog, pid, session.session_id)
         inst = await db.get(ProblemInstance, problem.problem_id)
         assert inst is not None and inst.skill_id == "story"
         source = catalog.source("story")
@@ -926,7 +968,7 @@ async def test_new_seeds_are_safe_javascript_integers(db: AsyncSession) -> None:
     assert service.SEED_LIMIT == 2**53
     pid = await _player(db)
     session = await service.start_session(db, pid, "adventure")
-    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+    problem = await _next_problem(db, CATALOG, pid, session.session_id)
     inst = await db.get(ProblemInstance, problem.problem_id)
     assert inst is not None and 0 <= inst.seed < 2**53
 

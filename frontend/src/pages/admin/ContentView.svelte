@@ -8,7 +8,8 @@
 		coverageCell,
 		getContent,
 		getSkillPreview,
-		parseSeed
+		parseSeed,
+		stuckLogUrl
 	} from '../../entities/admin';
 	import type {
 		ContentPack,
@@ -211,6 +212,15 @@
 			{/if}
 		{/each}
 	{/each}
+	<h3>Stuck log</h3>
+	<p class="muted">
+		Problems a player still missed after seeing every explanation of the skill. No player
+		names are included. Pass the JSON file to <code>content-report --stuck</code>.
+	</p>
+	<p class="downloads">
+		<a href={stuckLogUrl('json')} download="stuck-log.json">Download JSON</a>
+		<a href={stuckLogUrl('csv')} download="stuck-log.csv">Download CSV</a>
+	</p>
 </section>
 
 {#if preview || previewError || previewBusy}
@@ -442,5 +452,10 @@
 			content: attr(data-label) ': ';
 			font-weight: 600;
 		}
+	}
+	.downloads {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
 	}
 </style>

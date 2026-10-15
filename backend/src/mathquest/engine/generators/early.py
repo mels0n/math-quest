@@ -54,7 +54,11 @@ def _build_sub_within_10(rng: random.Random, tier: int) -> Built:
     return Built(
         prompt=math_prompt(f"{a} - {b} = ?"),
         answer=_Int(a - b),
-        wrong=(("added_instead", _Int(a + b)),),
+        wrong=(
+            ("added_instead", _Int(a + b)),
+            # Counting back from the start number counts it again: 7 - 3 as "7, 6, 5".
+            ("counted_start", _Int(a - b + 1)),
+        ),
         values={"a": a, "b": b},
     )
 
@@ -128,7 +132,9 @@ def generators() -> list[SkillGenerator]:
     form = AnswerForm.INTEGER
     return [
         SkillGenerator("add_within_10", -2.0, form, _build_add_within_10, _ADD_MISTAKES),
-        SkillGenerator("sub_within_10", -1.8, form, _build_sub_within_10, ("added_instead",)),
+        SkillGenerator(
+            "sub_within_10", -1.8, form, _build_sub_within_10, ("added_instead", "counted_start")
+        ),
         SkillGenerator("add_within_20", -1.2, form, _build_add_within_20, _ADD_MISTAKES),
         SkillGenerator(
             "sub_within_20",

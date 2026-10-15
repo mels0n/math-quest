@@ -1,9 +1,19 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { AnswerField, ChoiceField } from '../../features/answer';
-	import { MAX_ATTEMPTS, keypadProfile } from '../../entities/problem';
-	import type { Answer, Mastery, Problem } from '../../entities/problem';
-	import { MathStatic, PixelButton, PromptView, ProgressBar } from '../../shared/ui';
+	import { MAX_ATTEMPTS, PLAY_COPY, keypadProfile } from '../../entities/problem';
+	import type {
+		Answer,
+		Explanation,
+		Feedback,
+		Mastery,
+		Problem,
+		PromptPart
+	} from '../../entities/problem';
+	import { MathStatic, PixelButton, PromptView, ProgressBar, RichText } from '../../shared/ui';
+	import { VisualView } from '../../shared/visuals';
 	import type { CardFeedback } from './card-feedback';
+	import { helpButtons } from './help';
 
 	let {
 		problem,
@@ -15,7 +25,13 @@
 		finished,
 		busy,
 		onSubmit,
-		onNext
+		onNext,
+		mistakeFeedback = null,
+		hints = [],
+		explanation = null,
+		missed = false,
+		onHint,
+		onExplain
 	}: {
 		problem: Problem;
 		attemptsLeft: number;
@@ -27,9 +43,55 @@
 		busy: boolean;
 		onSubmit: (answer: Answer) => void;
 		onNext: () => void;
+		/** Feedback on the last wrong answer, shown right under the verdict line. */
+		mistakeFeedback?: Feedback | null;
+		/** Hint levels shown so far on this problem, first level first. */
+		hints?: PromptPart[][];
+		/** The latest "explain it another way". */
+		explanation?: Explanation | null;
+		/** The problem has had a wrong answer. */
+		missed?: boolean;
+		/** Without these the card shows no help buttons (a lesson's try-it). */
+		onHint?: () => void;
+		onExplain?: () => void;
 	} = $props();
 
+	const buttons = $derived(helpButtons(problem, { hintsShown: hints.length, missed, finished }));
+
 	let answer: ReturnType<typeof AnswerField> | undefined = $state();
+
+	/**
+	 * The one live region: it reads out the verdict with its feedback, each new hint and
+	 * each new explanation. The notes on screen are not live regions themselves.
+	 */
+	let announcement = $state('');
+	let hintBox: HTMLElement | undefined = $state();
+	let explainBox: HTMLElement | undefined = $state();
+	let hintsSeen = 0;
+	const spoken = (parts: readonly PromptPart[]) => parts.map((p) => p.value).join('');
+
+	$effect(() => {
+		const said = [feedback?.text ?? '', mistakeFeedback ? spoken(mistakeFeedback.text) : ''];
+		announcement = said.filter(Boolean).join(' ');
+	});
+
+	$effect(() => {
+		const count = hints.length;
+		const last = hints[count - 1];
+		if (count > hintsSeen && last) {
+			announcement = `${PLAY_COPY.hint} ${count}. ${spoken(last)}`;
+			void tick().then(() =>
+				hintBox?.querySelector<HTMLElement>('[data-testid="hint"]:last-child')?.focus()
+			);
+		}
+		hintsSeen = count;
+	});
+
+	$effect(() => {
+		if (!explanation) return;
+		announcement = `${PLAY_COPY.explanation}. ${spoken(explanation.body)}`;
+		void tick().then(() => explainBox?.focus());
+	});
 	/** Word problems read as sentences, so they use a calmer reading size. */
 	const WORDY_TEXT = 40;
 	const wordy = $derived(
@@ -85,9 +147,15 @@
 		<p class="cheer" role="status" data-testid="mastered">&#9733; Skill mastered! &#9733;</p>
 	{/if}
 
-	<p class="feedback {feedback?.tone ?? ''}" role="status" aria-live="polite" data-testid="feedback">
+	<p class="feedback {feedback?.tone ?? ''}" class:empty={!feedback && mistakeFeedback} data-testid="feedback">
 		{feedback?.text ?? ''}
 	</p>
+
+	{#if mistakeFeedback}
+		<div class="note {mistakeFeedback.kind}" data-testid="mistake-feedback">
+			<RichText parts={mistakeFeedback.text} />
+		</div>
+	{/if}
 
 	{#if revealedLatex !== null}
 		<p class="reveal">
@@ -121,10 +189,47 @@
 			/>
 		{/key}
 	{/if}
+
+	{#if (onHint && buttons.hint) || (onExplain && buttons.explain)}
+		<div class="help">
+			{#if onHint && buttons.hint}
+				<PixelButton variant="plain" onclick={onHint}>{buttons.hintLabel}</PixelButton>
+			{/if}
+			{#if onExplain && buttons.explain}
+				<PixelButton variant="plain" label={PLAY_COPY.explain} onclick={onExplain}
+					>{PLAY_COPY.anotherWay}</PixelButton
+				>
+			{/if}
+		</div>
+	{/if}
+
+	{#if hints.length > 0}
+		<div class="hints" bind:this={hintBox}>
+			{#each hints as hint, i (i)}
+				<div class="note hint" data-testid="hint" tabindex="-1">
+					<span class="label">{PLAY_COPY.hint} {i + 1}</span>
+					<RichText parts={hint} />
+				</div>
+			{/each}
+		</div>
+	{/if}
+
+	{#if explanation}
+		<div class="note explain" data-testid="explanation" tabindex="-1" bind:this={explainBox}>
+			<span class="label">{PLAY_COPY.explanation}</span>
+			<RichText parts={explanation.body} />
+			{#if explanation.visual}
+				<div class="visual"><VisualView visual={explanation.visual} /></div>
+			{/if}
+		</div>
+	{/if}
+
+	<div class="sr-only" role="status" aria-live="polite" data-testid="announcer">{announcement}</div>
 </section>
 
 <style>
 	.card {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		gap: 0.9rem;
@@ -187,6 +292,9 @@
 		font-size: 1.35rem;
 		font-weight: 700;
 	}
+	.feedback.empty {
+		display: none;
+	}
 	.feedback.good {
 		color: #04704f;
 	}
@@ -213,6 +321,68 @@
 	.next {
 		display: flex;
 		justify-content: center;
+	}
+	.note {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		padding: 0.75rem 0.9rem;
+		font-size: 1.15rem;
+		line-height: 1.4;
+		background: #fff8e1;
+		border-left: 6px solid var(--mq-gold);
+		border-radius: var(--mq-radius);
+		min-width: 0;
+	}
+	.note.misconception {
+		background: #fdecef;
+		border-left-color: var(--mq-berry);
+	}
+	.note.explain {
+		background: #e6faf4;
+		border-left-color: var(--mq-mint);
+	}
+	.note :global(p:last-child),
+	.note :global(ol:last-child),
+	.note :global(ul:last-child) {
+		margin-bottom: 0;
+	}
+	.note:focus {
+		outline: none;
+	}
+	.note:focus-visible {
+		outline: 3px solid var(--mq-navy);
+	}
+	.hints {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+	.label {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--mq-ink-soft);
+	}
+	.visual {
+		max-width: 100%;
+		overflow: hidden;
+	}
+	.help {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.75rem;
 	}
 	@keyframes pop {
 		from {

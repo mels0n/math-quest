@@ -16,13 +16,13 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
-    JsonValue,
     StrictInt,
     StringConstraints,
     model_validator,
 )
 
 from mathquest.engine.checker.latex import Unreadable, parse
+from mathquest.engine.content.visuals import Visual
 from mathquest.engine.templates import check_expression, check_template
 from mathquest.engine.types import KeypadProfile
 
@@ -53,10 +53,6 @@ GradeBand = Annotated[
     Literal["K", "1", "2", "3", "4", "5", "6", "7", "8", "A1", "A2"],
     BeforeValidator(_grade_text),
 ]
-VisualKind = Literal[
-    "number_line", "base_ten", "fraction_bars", "area_model", "algebra_tiles", "array", "clock",
-    "money",
-]  # fmt: skip
 SlotType = Literal[
     "names", "objects", "length_units", "time_units", "money_units", "contexts", "number"
 ]  # fmt: skip
@@ -118,31 +114,6 @@ class Skill(_Model):
             raise ValueError("tier ids must be 0, 1, 2, ... in order")
         if self.word_share + self.bank_share > 1.0:
             raise ValueError("word_share + bank_share must not exceed 1")
-        return self
-
-
-def _check_params(value: JsonValue) -> None:
-    if isinstance(value, str):
-        check_template(value)
-    elif isinstance(value, list):
-        for item in value:
-            _check_params(item)
-    elif isinstance(value, dict):
-        for item in value.values():
-            _check_params(item)
-
-
-class Visual(_Model):
-    """A picture drawn next to text. A string parameter is a template, so a visual can
-    show the problem's own numbers: ``start: "{big}"``, ``end: "{{= a + b }}"``."""
-
-    kind: VisualKind
-    params: dict[str, JsonValue] = Field(default_factory=dict[str, JsonValue])
-
-    @model_validator(mode="after")
-    def _templates(self) -> Self:
-        for value in self.params.values():
-            _check_params(value)
         return self
 
 

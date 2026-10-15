@@ -1,0 +1,33 @@
+# Four ways to explain subtracting from 10, plus feedback for each mistake the generator
+# knows. None of them shows the answer: pictures show the start and the hops back.
+skill: sub_within_10
+approaches:
+  - style: visual
+    body_md: >-
+      This number line starts at {a}. Each hop to the left takes one away.
+      Count back {b}, one hop at a time. The number under your last hop is
+      the answer.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: "{a}", jumps: "{{= 0 - b }}"}
+  - style: steps
+    body_md: |-
+      1. Hold up {a} fingers.
+      2. Put down {b} of them, one at a time.
+      3. Count the fingers that are still up.
+      4. That number is the answer.
+  - style: story
+    body_md: >-
+      Some birds sit on a fence. There are {a} of them. Then {b} of them fly
+      away. How many are still on the fence? That is \({a} - {b}\).
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say {a} out loud. Now count back {b}. Do not
+      say {a} again. The last number you say is the answer.
+misconceptions:
+  added_instead: >-
+    It looks like you added. The minus sign means take {b} away from {a}. So
+    the answer is less than {a}.
+  counted_start: >-
+    Nearly! It looks like you counted {a} as a hop. Start at {a}. The next
+    number you say is hop one.

@@ -31,6 +31,11 @@ warning naming the pack file, the path inside it and the rule. The rules:
     Hints, explanations and misconception feedback render for ``TEACHING_SEEDS`` seeds
     at every tier, so every ``{{= expr }}`` in them computes. Lessons and worked
     examples render once with no values, so their computed numbers use only literals.
+``reveal``
+    Hint levels 1 and 2 and every piece of mistake feedback, rendered for
+    ``TEACHING_SEEDS`` seeds at every tier, never write the answer as the result of an
+    equation (a math part ending in ``= <answer>``). Only hint level 3, the worked
+    example, may.
 ``duplicate``
     Two word templates, two bank items or two explanation approaches whose normalized
     word sequences match above ``DUPLICATE_SIMILARITY`` (``difflib`` ratio; words in
@@ -42,7 +47,8 @@ warning naming the pack file, the path inside it and the rule. The rules:
     ``vocabulary``) is a warning. Lines wrapped inside a paragraph are joined first.
 ``dashes``
     No em dash, no en dash, no ``--`` and no spaced hyphen (" - ") used as a dash in
-    kid-facing text outside math, nor any dash in the slot lists or the word list.
+    kid-facing text outside math and computed numbers, nor any dash in the slot lists
+    or the word list.
 ``slots``
     A word template names only generator values and its declared slots, and uses every
     slot it declares (slot kinds are checked by the schema).
@@ -66,15 +72,39 @@ import sympy
 from mathquest.engine.catalog import SkillSource, check_binding
 from mathquest.engine.checker.check import Verdict, check
 from mathquest.engine.content.coverage import skill_coverage
-from mathquest.engine.content.schema import GRADE_BANDS, Pack, Part, Skill, Slots
+from mathquest.engine.content.schema import (
+    GRADE_BANDS,
+    Explanations,
+    HintLadder,
+    Pack,
+    Part,
+    Skill,
+    Slots,
+)
+from mathquest.engine.content.visuals import VisualModel
 from mathquest.engine.teaching import (
     render_explanations,
     render_feedback,
     render_hints,
     render_lesson,
 )
-from mathquest.engine.templates import TemplateError, article, expression_names, names, plain
-from mathquest.engine.types import AnswerForm, Generator, Problem, TextPart, Variant
+from mathquest.engine.templates import (
+    TemplateError,
+    article,
+    expression_names,
+    names,
+    plain,
+    render,
+)
+from mathquest.engine.types import (
+    AnswerForm,
+    Generator,
+    MathPart,
+    Problem,
+    Prompt,
+    TextPart,
+    Variant,
+)
 
 Level = Literal["error", "warning"]
 
@@ -139,6 +169,9 @@ def lint(
     out += _slots(pack, sources)
     out += _answers(pack, sources, _plurals(slots))
     out += _computed(pack, sources)
+    out += _reveals(pack, sources)
+    out += _examples(pack, sources)
+    out += _teaching_grammar(pack, sources)
     texts = list(_kid_texts(pack))
     out += _duplicates(pack)
     out += _reading(texts, words)
@@ -435,6 +468,257 @@ def _render_teaching(
                 return
 
 
+# --- rule: help before the last hint never gives the answer ----------------------
+
+_FRAC = re.compile(r"\\frac\{(-?\d+)\}\{(\d+)\}")
+_NUMBER = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?(?![\w])")
+_LIST_MARKER = re.compile(r"^\s*\d+[.)]\s", re.MULTILINE)
+_AXIS_PARAMS = frozenset({"min", "max"})
+"""Number line bounds frame the picture; they are not a value the learner works out."""
+
+type _Shown = tuple[Prompt, VisualModel | None]
+
+
+def _numbers_in_text(text: str) -> set[sympy.Expr]:
+    found: set[sympy.Expr] = set()
+    for p, q in _FRAC.findall(text):
+        found.add(sympy.Rational(int(p), int(q)))
+    for token in _NUMBER.findall(_FRAC.sub(" ", text)):
+        found.add(sympy.Rational(token))
+    return found
+
+
+def _numbers_in_params(value: object, key: str = "") -> set[sympy.Expr]:
+    if key in _AXIS_PARAMS:
+        return set()
+    if isinstance(value, bool):
+        return set()
+    if isinstance(value, int):
+        return {sympy.Rational(value)}
+    if isinstance(value, str):
+        return _numbers_in_text(value)
+    if isinstance(value, list | tuple):
+        return {n for item in value for n in _numbers_in_params(item)}  # pyright: ignore[reportUnknownVariableType]
+    if isinstance(value, dict):
+        return {n for k, v in value.items() for n in _numbers_in_params(v, str(k))}  # pyright: ignore[reportUnknownVariableType]
+    return set()
+
+
+def _numbers(shown: _Shown) -> set[sympy.Expr]:
+    """Every number written in ``shown``: its text (list markers aside), its math, and
+    its visual's parameters (number line bounds aside)."""
+    prompt, visual = shown
+    found: set[sympy.Expr] = set()
+    for part in prompt:
+        if isinstance(part, TextPart):
+            found |= _numbers_in_text(_LIST_MARKER.sub(" ", part.text))
+        else:
+            found |= _numbers_in_text(part.latex)
+    if visual is not None:
+        found |= _numbers_in_params(visual.params.model_dump(mode="json"))
+    return found
+
+
+def _prompt_numbers(problem: Problem) -> set[sympy.Expr]:
+    return _numbers((problem.prompt, None))
+
+
+def _leaks(problem: Problem, found: set[sympy.Expr]) -> bool:
+    """``found`` holds the answer, and the prompt does not show that number itself (as in
+    ``7 - 0``, where saying 7 gives nothing away)."""
+    return problem.answer in found and problem.answer not in _prompt_numbers(problem)
+
+
+def _help_texts(pack: Pack, sid: str) -> list[tuple[str, str, Callable[[Problem], _Shown | None]]]:
+    """Everything shown before the worked example: hint levels but the last, mistake
+    feedback and every explanation with its visual."""
+    checks: list[tuple[str, str, Callable[[Problem], _Shown | None]]] = []
+    ladder = pack.hints.get(sid)
+    if ladder is not None:
+        for i in range(len(ladder.levels) - 1):
+            checks.append((f"hints/{sid}.yaml", f"levels[{i}]", partial(_hint, ladder, i)))
+    explanations = pack.explanations.get(sid)
+    if explanations is not None:
+        file = f"explanations/{sid}.yaml"
+        for i in range(len(explanations.approaches)):
+            checks.append((file, f"approaches[{i}]", partial(_approach, explanations, i)))
+        for key in explanations.misconceptions:
+            checks.append((file, f"misconceptions.{key}", partial(_feedback, explanations, key)))
+    return checks
+
+
+def _hint(ladder: HintLadder, level: int, problem: Problem) -> _Shown:
+    return render_hints(ladder, problem)[level], None
+
+
+def _approach(explanations: Explanations, index: int, problem: Problem) -> _Shown:
+    shown = render_explanations(explanations, problem)[index]
+    return shown.body, shown.visual
+
+
+def _feedback(explanations: Explanations, key: str, problem: Problem) -> _Shown | None:
+    text = render_feedback(explanations, problem, key)
+    return None if text is None else (text, None)
+
+
+def _reveals(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Finding]:
+    for sid, source in sources.items():
+        for file, at, run in _help_texts(pack, sid):
+            yield from _reveal_one(file, at, source, run)
+
+
+def _reveal_one(
+    file: str, at: str, source: SkillSource, run: Callable[[Problem], _Shown | None]
+) -> Iterator[Finding]:
+    """Report the first (seed, tier) where the text shows a number equal to the answer
+    that the prompt does not show itself. A number written in every rendering is a fixed
+    example, and the message says so."""
+    renders: list[set[sympy.Expr]] = []
+    leaks: list[tuple[int, int, sympy.Expr]] = []
+    for tier in range(len(source.tier_difficulties)):
+        for seed in range(TEACHING_SEEDS):
+            problem = source.generate(seed, tier)
+            try:
+                shown = run(problem)
+            except TemplateError:
+                return  # reported by the computed rule
+            if shown is None:
+                continue
+            found = _numbers(shown)
+            renders.append(found)
+            if _leaks(problem, found):
+                leaks.append((seed, tier, problem.answer))
+    if not leaks:
+        return
+    seed, tier, answer = leaks[0]
+    fixed = set.intersection(*renders)
+    origin = "a fixed example shows" if answer in fixed else "shows"
+    yield Finding(
+        "error", file, at, "reveal",
+        f"seed {seed} tier {tier}: {origin} {answer}, the answer; only the last hint may",
+    )  # fmt: skip
+
+
+# --- rule: fixed examples are not problems the skill asks ------------------------
+
+EXAMPLE_SEEDS = 300
+_MATH_SEGMENT = re.compile(r"\\\((.*?)\\\)", re.DOTALL)
+
+
+def _left(latex: str) -> str:
+    """The side of an equation before ``=`` without spaces: ``4 + 3 = ?`` -> ``4+3``."""
+    return latex.split("=")[0].replace(" ", "")
+
+
+def _asked(source: SkillSource) -> dict[str, tuple[int, int]]:
+    """The left side of every bare problem the generator gives over the sampled seeds,
+    with the first (seed, tier) that gives it."""
+    asked: dict[str, tuple[int, int]] = {}
+    for tier in range(len(source.tier_difficulties)):
+        for seed in range(EXAMPLE_SEEDS):
+            for part in source.generate(seed, tier).prompt:
+                if isinstance(part, MathPart):
+                    asked.setdefault(_left(part.latex), (seed, tier))
+    return asked
+
+
+def _fixed_math(template: str) -> Iterator[str]:
+    """The math of each ``\\( ... \\)`` in ``template`` that uses no problem values."""
+    for segment in _MATH_SEGMENT.findall(template):
+        try:
+            rendered = render(rf"\({segment}\)", {})
+        except TemplateError:
+            continue  # names a problem value: it is the learner's own problem
+        for part in rendered:
+            if isinstance(part, MathPart):
+                yield part.latex
+
+
+def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Finding]:
+    for sid, source in sources.items():
+        texts: list[tuple[str, str, list[str]]] = []
+        lesson = pack.lessons.get(sid)
+        if lesson is not None:
+            file = f"lessons/{sid}.yaml"
+            for i, screen in enumerate(lesson.screens):
+                texts.append((file, f"screens[{i}].body_md", list(_fixed_math(screen.body_md))))
+            prompt = [p.value for p in lesson.worked_example.prompt if p.kind == "math"]
+            texts.append((file, "worked_example.prompt", prompt))
+            for i, step in enumerate(lesson.worked_example.steps):
+                texts.append((file, f"worked_example.steps[{i}]", list(_fixed_math(step))))
+        explanations = pack.explanations.get(sid)
+        if explanations is not None:
+            for i, approach in enumerate(explanations.approaches):
+                texts.append((
+                    f"explanations/{sid}.yaml",
+                    f"approaches[{i}].body_md",
+                    list(_fixed_math(approach.body_md)),
+                ))  # fmt: skip
+        if not any(math for *_, math in texts):
+            continue
+        asked = _asked(source)
+        for file, at, math in texts:
+            for latex in math:
+                hit = asked.get(_left(latex))
+                if hit is not None:
+                    yield Finding(
+                        "error", file, at, "example",
+                        f"the example {latex} is a problem this skill asks (seed {hit[0]} "
+                        f"tier {hit[1]}); pick numbers it never uses",
+                    )  # fmt: skip
+
+
+# --- rule: "1" never takes a plural in teaching text ------------------------------
+
+_ONE_WORD = re.compile(r"(?<![\d.])\b1 ([A-Za-z]+)\b")
+_NOT_PLURAL = frozenset(
+    {"is", "was", "has", "plus", "minus", "less", "this", "its", "us", "yes", "as"}
+)
+
+
+def _one_plural(text: str) -> str | None:
+    for match in _ONE_WORD.finditer(text):
+        word = match.group(1).lower()
+        if word.endswith("s") and word not in _NOT_PLURAL and not word.endswith("ss"):
+            return f"'1 {match.group(1)}' needs the singular; reword so no number needs a plural"
+    return None
+
+
+def _teaching_grammar(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Finding]:
+    for sid, lesson in pack.lessons.items():
+        try:
+            shown = render_lesson(lesson)
+        except TemplateError:
+            continue
+        for i, screen in enumerate(shown.screens):
+            slip = _one_plural(plain(screen.body))
+            if slip:
+                yield Finding("error", f"lessons/{sid}.yaml", f"screens[{i}]", "grammar", slip)
+    for sid, source in sources.items():
+        checks = _help_texts(pack, sid)
+        ladder = pack.hints.get(sid)
+        if ladder is not None:
+            last = len(ladder.levels) - 1
+            checks.append((f"hints/{sid}.yaml", f"levels[{last}]", partial(_hint, ladder, last)))
+        for file, at, run in checks:
+            yield from _grammar_one(file, at, source, run)
+
+
+def _grammar_one(
+    file: str, at: str, source: SkillSource, run: Callable[[Problem], _Shown | None]
+) -> Iterator[Finding]:
+    for tier in range(len(source.tier_difficulties)):
+        for seed in range(TEACHING_SEEDS):
+            try:
+                shown = run(source.generate(seed, tier))
+            except TemplateError:
+                return
+            slip = None if shown is None else _one_plural(plain(shown[0]))
+            if slip:
+                yield Finding("error", file, at, "grammar", f"seed {seed} tier {tier}: {slip}")
+                return
+
+
 # --- kid-facing text --------------------------------------------------------------
 
 
@@ -651,7 +935,8 @@ def _dashes(texts: list[_Text]) -> Iterator[Finding]:
             yield Finding("error", text.file, text.path, "dashes", "em dash in kid-facing text")
         if "\u2013" in text.source:
             yield Finding("error", text.file, text.path, "dashes", "en dash in kid-facing text")
-        words = _MATH.sub(" ", text.source)
+        # A computed number shows only its result, so its minus sign is never a dash.
+        words = _CALC.sub(" ", _MATH.sub(" ", text.source))
         if "--" in words:
             yield Finding("error", text.file, text.path, "dashes", "'--' used as a dash")
         elif _SPACED_HYPHEN.search(words):

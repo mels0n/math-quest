@@ -2,9 +2,9 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, JsonValue
+from pydantic import BaseModel, ConfigDict
 
-from mathquest.engine.transport import PromptPartOut
+from mathquest.engine.transport import PromptPartOut, VisualOut
 from mathquest.engine.types import KeypadProfile
 
 
@@ -56,11 +56,6 @@ class ContentOverview(_Frozen):
     packs: list[PackOut]
     targets: dict[str, str]
     """Each coverage target as shown, such as "3-4" for explanations."""
-
-
-class VisualOut(_Frozen):
-    kind: str
-    params: dict[str, JsonValue]
 
 
 class LessonScreenOut(_Frozen):

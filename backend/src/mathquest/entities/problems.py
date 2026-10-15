@@ -19,6 +19,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
+from mathquest.entities.teaching import StuckEvent
 from mathquest.shared.db import Base
 
 
@@ -54,6 +55,10 @@ class ProblemInstance(Base):
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    hints_used: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    """Hint levels viewed on this problem (0 to 3)."""
+    warmup_for: Mapped[str | None] = mapped_column(Text, nullable=True)
+    """The skill this problem warms up for, when it is a warm-up on a prerequisite."""
 
 
 class Attempt(Base):
@@ -106,6 +111,7 @@ async def add_problem(
     issued_at: datetime,
     variant: str = "bare",
     template_id: str | None = None,
+    warmup_for: str | None = None,
 ) -> ProblemInstance:
     row = ProblemInstance(
         session_id=session_id,
@@ -117,6 +123,7 @@ async def add_problem(
         template_id=template_id,
         difficulty=difficulty,
         issued_at=issued_at,
+        warmup_for=warmup_for,
     )
     db.add(row)
     await db.flush()
@@ -168,15 +175,31 @@ async def attempts_for(db: AsyncSession, problem_id: uuid.UUID) -> list[Attempt]
     return list(result.scalars().all())
 
 
-async def recent_skill_ids(db: AsyncSession, session_id: uuid.UUID, *, limit: int) -> list[str]:
-    """Skill ids of the session's last `limit` problems, newest last."""
+HISTORY_LIMIT = 50
+"""The most problems of one session read back for the scheduler: enough for a run, the
+reviews inside it, a warm-up and the misses that trigger one."""
+
+
+async def session_history(
+    db: AsyncSession, session_id: uuid.UUID
+) -> list[tuple[str, bool | None, bool, str | None]]:
+    """The session's problems, oldest first, as (skill_id, correct, stuck, warmup_for);
+    ``stuck`` is whether a stuck event was recorded for the problem. At most the newest
+    HISTORY_LIMIT."""
+    stuck = select(StuckEvent.id).where(StuckEvent.problem_id == ProblemInstance.id).exists()
     result = await db.execute(
-        select(ProblemInstance.skill_id)
+        select(
+            ProblemInstance.skill_id,
+            ProblemInstance.correct,
+            stuck,
+            ProblemInstance.warmup_for,
+        )
         .where(ProblemInstance.session_id == session_id)
-        .order_by(ProblemInstance.issued_at.desc())
-        .limit(limit)
+        .order_by(ProblemInstance.issued_at.desc(), ProblemInstance.id)
+        .limit(HISTORY_LIMIT)
     )
-    return list(reversed(result.scalars().all()))
+    rows = [(r[0], r[1], bool(r[2]), r[3]) for r in result.all()]
+    return list(reversed(rows))
 
 
 async def close_open(db: AsyncSession, session_id: uuid.UUID, at: datetime) -> None:

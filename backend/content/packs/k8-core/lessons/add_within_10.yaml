@@ -1,0 +1,37 @@
+# Lesson shown the first time a learner meets Add to 10. Its examples are sums the
+# skill never asks (they go past 10), so a replayed lesson never shows a problem's answer.
+skill: add_within_10
+screens:
+  - title: Put groups together
+    body_md: >-
+      Adding means putting groups together. You have 6 blocks. You get 5
+      more. Now count them all. You have 11 blocks. So
+      \(6 + 5 = {{= 6 + 5 }}\).
+    visual:
+      kind: base_ten
+      params: {ones: 11}
+  - title: Count on
+    body_md: >-
+      You do not have to count from 1. Start at the bigger number. For
+      \(8 + 3\), start at 8. Jump 3 times. Say 9, 10, 11. You land on
+      {{= 8 + 3 }}.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 12, start: 8, jumps: [1, 1, 1], end: 11}
+  - title: Big number first
+    body_md: >-
+      You can add in any order. \(2 + 9\) is the same as \(9 + 2\). Start
+      at 9 and count on 2. Say 10, 11. So \(2 + 9 = {{= 2 + 9 }}\).
+    visual:
+      kind: number_line
+      params: {min: 0, max: 12, start: 9, jumps: 2, end: 11}
+worked_example:
+  prompt:
+    - {kind: math, value: "7 + 5 = ?"}
+  steps:
+    - Start at 7, the bigger number.
+    - Count on 5. Say 8, 9, 10, 11, 12.
+    - The last number you say is the answer.
+    - So \(7 + 5 = {{= 7 + 5 }}\).
+try_it:
+  tier: 0

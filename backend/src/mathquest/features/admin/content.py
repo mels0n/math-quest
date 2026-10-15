@@ -15,7 +15,7 @@ from mathquest.engine.content.coverage import (
     pack_coverage,
     skill_coverage,
 )
-from mathquest.engine.content.schema import Explanations, Visual
+from mathquest.engine.content.schema import Explanations
 from mathquest.engine.teaching import (
     render_explanations,
     render_feedback,
@@ -23,7 +23,7 @@ from mathquest.engine.teaching import (
     render_lesson,
 )
 from mathquest.engine.templates import TemplateError
-from mathquest.engine.transport import answer_latex, latex, prompt_out
+from mathquest.engine.transport import answer_latex, latex, prompt_out, visual_out
 from mathquest.engine.types import Generator, Problem, Variant
 from mathquest.features.admin.content_schema import (
     ApproachOut,
@@ -38,17 +38,12 @@ from mathquest.features.admin.content_schema import (
     RegionCoverageOut,
     SkillCoverageOut,
     SkillPreview,
-    VisualOut,
     WordTemplateOut,
 )
 from mathquest.shared.errors import Invalid, NotFound
 
 SAMPLE_SEEDS = (1, 2, 3)
 """Seeds shown when the admin does not pick one."""
-
-
-def _visual(visual: Visual | None) -> VisualOut | None:
-    return None if visual is None else VisualOut(kind=visual.kind, params=dict(visual.params))
 
 
 def _coverage(coverage: SkillCoverage) -> SkillCoverageOut:
@@ -184,7 +179,7 @@ def skill_preview(
             lesson = LessonOut(
                 screens=[
                     LessonScreenOut(
-                        title=s.title, body=prompt_out(s.body), visual=_visual(s.visual)
+                        title=s.title, body=prompt_out(s.body), visual=visual_out(s.visual)
                     )
                     for s in rendered.screens
                 ],
@@ -206,7 +201,7 @@ def skill_preview(
         )
         if rendered_approaches is not None:
             approaches = [
-                ApproachOut(style=a.style, body=prompt_out(a.body), visual=_visual(a.visual))
+                ApproachOut(style=a.style, body=prompt_out(a.body), visual=visual_out(a.visual))
                 for a in rendered_approaches
             ]
 

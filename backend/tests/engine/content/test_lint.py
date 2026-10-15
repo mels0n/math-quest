@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import sympy
 
 from mathquest.engine.content import Pack, load_pack
 from mathquest.engine.content.lint import Finding, errors, lint
@@ -204,6 +205,145 @@ def test_feedback_is_rendered_for_each_misconception(tmp_path: Path) -> None:
     assert finding.path == "misconceptions.subtracted_instead"
 
 
+# --- reveal: help before the last hint keeps the answer back ---
+
+
+def _hint_level(index: int, text: str) -> dict[str, Any]:
+    return _edit(
+        base(), "hints/alpha.yaml", lambda h: h["levels"][index].update({"text_template": text})
+    )
+
+
+@pytest.mark.parametrize(
+    ("level", "text", "fixed"),
+    [
+        (0, r"The answer is \(17\).", True),
+        (1, "Count on. You land on {{= a + b }}.", False),
+        (1, r"Look: \({{= a + b }} = {a} + {b}\).", False),
+        (1, r"Count on: \({a} + {b} = {{= a + b }}\).", False),
+    ],
+)
+def test_an_early_hint_showing_the_answer_is_an_error(
+    tmp_path: Path, level: int, text: str, fixed: bool
+) -> None:
+    (finding,) = _rule(_lint(load(tmp_path, _hint_level(level, text))), "reveal")
+    assert (finding.level, finding.file, finding.path) == (
+        "error",
+        "hints/alpha.yaml",
+        f"levels[{level}]",
+    )
+    assert ("a fixed example shows" in finding.message) is fixed
+
+
+def test_feedback_showing_the_answer_is_an_error(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "explanations/alpha.yaml",
+        lambda e: e["misconceptions"].update(
+            {"counted_start": r"Start at {big}. So \({a}+{b}={{= a + b }}\)."}
+        ),
+    )
+    (finding,) = _rule(_lint(load(tmp_path, files)), "reveal")
+    assert finding.path == "misconceptions.counted_start"
+
+
+def test_an_explanation_or_its_picture_showing_the_answer_is_an_error(tmp_path: Path) -> None:
+    def leak(e: dict[str, Any]) -> None:
+        e["approaches"][0]["visual"] = {
+            "kind": "number_line",
+            "params": {"min": 0, "max": 20, "start": "{a}", "jumps": "{b}", "end": "{{= a + b }}"},
+        }
+        e["approaches"][2]["body_md"] = "Ducks swim. More come. That makes {{= a + b }}."
+
+    findings = _rule(
+        _lint(load(tmp_path, _edit(base(), "explanations/alpha.yaml", leak))), "reveal"
+    )
+    assert {f.path for f in findings} == {"approaches[0]", "approaches[2]"}
+
+
+def test_a_number_the_prompt_shows_is_not_a_leak() -> None:
+    from mathquest.engine.content.lint import _leaks  # pyright: ignore[reportPrivateUsage]
+    from mathquest.engine.types import AnswerForm, MathPart, Problem
+
+    def problem(prompt: str, answer: int) -> Problem:
+        return Problem(
+            skill_id="s", tier=0, seed=0, prompt=(MathPart(prompt),), answer=sympy.Integer(answer),
+            form=AnswerForm.INTEGER, misconceptions=(), difficulty=0.0,
+        )  # fmt: skip
+
+    assert not _leaks(problem("7 - 0 = ?", 7), {sympy.Integer(7)})
+    assert _leaks(problem("9 - 2 = ?", 7), {sympy.Integer(7)})
+    assert not _leaks(problem("9 - 2 = ?", 7), {sympy.Integer(9), sympy.Integer(2)})
+
+
+def test_the_last_hint_and_list_markers_are_fine(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "explanations/alpha.yaml",
+        lambda e: e["approaches"][1].update(
+            {"body_md": "1. Say {a}.\n2. Count on {b}.\n3. Stop.\n4. Say the number."}
+        ),
+    )
+    assert _rule(_lint(load(tmp_path, files)), "reveal") == []
+
+
+# --- example: fixed examples are not problems the skill asks ---
+
+
+def test_a_lesson_example_the_skill_can_ask_is_an_error(tmp_path: Path) -> None:
+    def asked(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "math", "value": "8 + 5 = ?"}]
+        lesson["screens"][0]["body_md"] = r"Put them together. \(9 + 6 = {{= 9 + 6 }}\)."
+
+    findings = _rule(_lint(load(tmp_path, _edit(base(), "lessons/alpha.yaml", asked))), "example")
+    assert {f.path for f in findings} == {"worked_example.prompt", "screens[0].body_md"}
+    assert all("is a problem this skill asks" in f.message for f in findings)
+
+
+def test_an_explanation_example_the_skill_can_ask_is_an_error(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "explanations/alpha.yaml",
+        lambda e: e["approaches"][2].update(
+            {"body_md": r"We did \(7 + 6\) together. Now try {a} and {b}."}
+        ),
+    )
+    (finding,) = _rule(_lint(load(tmp_path, files)), "example")
+    assert finding.path == "approaches[2].body_md"
+
+
+def test_examples_outside_the_skill_and_the_learners_own_numbers_are_fine(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "explanations/alpha.yaml",
+        lambda e: e["approaches"][2].update({"body_md": r"Think of \({a} + {b}\) and \(30 + 2\)."}),
+    )
+    assert _rule(_lint(load(tmp_path, files)), "example") == []
+
+
+# --- grammar: "1" never takes a plural in teaching text ---
+
+
+def test_one_with_a_plural_in_teaching_text_is_an_error(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "lessons/alpha.yaml",
+        lambda lesson: lesson["screens"][1].update({"body_md": "Start at 3. Jump 1 times."}),
+    )
+    files = _edit(
+        files,
+        "hints/alpha.yaml",
+        lambda h: h["levels"][1].update({"text_template": "Make {{= a - a + 1 }} hops first."}),
+    )
+    findings = [
+        f for f in _rule(_lint(load(tmp_path, files)), "grammar") if "singular" in f.message
+    ]
+    assert {(f.file, f.path) for f in findings} == {
+        ("lessons/alpha.yaml", "screens[1]"),
+        ("hints/alpha.yaml", "levels[1]"),
+    }
+
+
 # --- rule 6: duplicates ---
 
 
@@ -312,6 +452,12 @@ def test_dashes_in_kid_text(tmp_path: Path, dash: str) -> None:
 
 def test_double_minus_inside_math_is_not_a_dash(tmp_path: Path) -> None:
     text = r"Put {a} and {b} together: \({a} - -{b}\) is not it."
+    files = _edit(base(), "hints/alpha.yaml", lambda h: h["levels"][0].update(text_template=text))
+    assert _rule(_lint(load(tmp_path, files)), "dashes") == []
+
+
+def test_minus_inside_a_computed_number_is_not_a_dash(tmp_path: Path) -> None:
+    text = "Take {b} from {a}. You land on {{= a - b }}."
     files = _edit(base(), "hints/alpha.yaml", lambda h: h["levels"][0].update(text_template=text))
     assert _rule(_lint(load(tmp_path, files)), "dashes") == []
 

@@ -19,6 +19,8 @@ STREAK_BONUS_MAX = 2
 RATING_CAP_ABOVE_TOP = 1.5
 TOP_TIER = 2
 REVIEW_STEPS = (1, 3, 7, 21)
+HELP_CAP = 3
+"""Help beyond this many steps (hints viewed plus wrong tries) costs nothing more."""
 
 
 class SkillState(StrEnum):
@@ -45,6 +47,14 @@ class Outcome:
     seconds: float
     fluency: bool
     tier: int = 0
+
+
+def help_used(wrong_tries: int, hints_viewed: int) -> int:
+    """The help count a correct answer is credited with: wrong tries before it plus hint
+    levels viewed, capped at HELP_CAP. ``score`` gives ``max(0.25, 1 - 0.25 * help)``, so
+    each step of help costs a quarter and a solve after the full worked example (or any
+    three steps) still earns a quarter."""
+    return min(HELP_CAP, max(0, wrong_tries) + max(0, hints_viewed))
 
 
 def predict(rating: float, difficulty: float) -> float:

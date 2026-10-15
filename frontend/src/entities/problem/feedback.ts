@@ -8,8 +8,9 @@ const COPY: Record<'CORRECT' | 'INCORRECT' | 'WRONG_FORM' | 'UNREADABLE', string
 };
 
 /**
- * Kid-facing line for a verdict. Misconception keys are accepted for later
- * targeted hints; until those exist they use the INCORRECT copy.
+ * Kid-facing verdict line. The misconception key is not used here: feedback on a wrong
+ * answer (about the mistake, or pointing to a hint) comes from the server with the
+ * answer result, and the play page shows it instead of the INCORRECT line.
  */
 export function feedbackMessage(verdict: Verdict | Uppercase<Verdict>, misconception: string | null) {
 	void misconception;
@@ -23,5 +24,11 @@ export const PLAY_COPY = {
 	loading: 'Getting your quest ready',
 	rateLimited: 'Whoa, slow down!',
 	retry: 'Try again',
-	ok: 'OK'
+	ok: 'OK',
+	replayLesson: 'See the lesson again',
+	hint: 'Hint',
+	nextHint: 'Next hint',
+	explain: 'Explain it another way',
+	anotherWay: 'Another way',
+	explanation: 'Another way to see it'
 } as const;

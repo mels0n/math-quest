@@ -31,7 +31,7 @@ backend/
   src/mathquest/
     app/        application factory and wiring
     api/        HTTP routes and the single error-to-HTTP mapping
-    features/   use cases (accounts, play)
+    features/   use cases (accounts, admin, play, teaching)
     entities/   database models and per-entity data access
     shared/     config, database, errors, logging
     engine/     pure problem engine (types, skill graph, generators, checker, mastery,

@@ -20,6 +20,8 @@ export class ApiError extends Error {
 export interface ApiOptions {
 	method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
 	body?: unknown;
+	/** Extra request headers. */
+	headers?: Record<string, string>;
 	fetchImpl?: typeof fetch;
 }
 
@@ -44,7 +46,7 @@ async function errorCode(response: Response): Promise<string> {
 
 export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
 	const { method = 'GET', body, fetchImpl = fetch } = options;
-	const headers = new Headers({ [CSRF_HEADER]: CSRF_VALUE });
+	const headers = new Headers({ ...options.headers, [CSRF_HEADER]: CSRF_VALUE });
 	const init: RequestInit = { method, headers, credentials: 'same-origin' };
 	if (body !== undefined) {
 		headers.set('Content-Type', 'application/json');

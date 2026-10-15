@@ -19,6 +19,18 @@ describe('apiFetch', () => {
 		expect(calls[0]?.init.credentials).toBe('same-origin');
 	});
 
+	it('adds extra headers but never lets them replace the CSRF header', async () => {
+		const { calls, fetchImpl } = recorder(Response.json({ ok: true }));
+		await apiFetch('/api/x', {
+			method: 'POST',
+			headers: { 'X-MathQuest-Client': '2', 'X-Requested-With': 'other' },
+			fetchImpl
+		});
+		const headers = new Headers(calls[0]?.init.headers);
+		expect(headers.get('X-MathQuest-Client')).toBe('2');
+		expect(headers.get('X-Requested-With')).toBe('mathquest');
+	});
+
 	it('sends a JSON body with a content type', async () => {
 		const { calls, fetchImpl } = recorder(Response.json({ ok: true }));
 		await apiFetch('/api/x', { method: 'POST', body: { a: 1 }, fetchImpl });

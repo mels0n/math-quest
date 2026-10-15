@@ -4,8 +4,10 @@
 from typing import Literal
 
 import sympy
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, JsonValue
 
+from mathquest.engine.content.visuals import VisualKind, VisualModel
+from mathquest.engine.teaching import Feedback, FeedbackKind
 from mathquest.engine.types import Problem, Prompt, TextPart
 
 
@@ -25,6 +27,39 @@ def prompt_out(prompt: Prompt) -> list[PromptPartOut]:
         else PromptPartOut(kind="math", value=part.latex)
         for part in prompt
     ]
+
+
+class VisualOut(BaseModel):
+    """A visual to draw: its kind and its params with every template filled in."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: VisualKind
+    params: dict[str, JsonValue]
+
+
+def visual_out(visual: VisualModel | None) -> VisualOut | None:
+    if visual is None:
+        return None
+    return VisualOut(kind=visual.kind, params=visual.params.model_dump(mode="json"))
+
+
+class FeedbackOut(BaseModel):
+    """What to tell the learner after a wrong answer. ``text`` is words and math; it
+    never states the answer."""
+
+    model_config = ConfigDict(frozen=True)
+
+    kind: FeedbackKind
+    text: list[PromptPartOut]
+
+
+def feedback_out(feedback: Feedback | None) -> FeedbackOut | None:
+    return (
+        None
+        if feedback is None
+        else FeedbackOut(kind=feedback.kind, text=prompt_out(feedback.text))
+    )
 
 
 def latex(value: sympy.Expr) -> str:

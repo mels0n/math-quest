@@ -56,10 +56,10 @@ def test_reference_skill_has_every_kind_of_content() -> None:
 def test_lesson_renders_with_correct_static_numbers() -> None:
     lesson = render_lesson(PACK.lessons[SKILL])
     text = " ".join(plain(s.body) for s in lesson.screens)
-    assert "You land on 13." in text
-    assert "8 + 5 = 13" in text
-    assert plain(lesson.worked_prompt) == "9 + 6 = ?"
-    assert plain(lesson.worked_steps[-1]) == "So 9 + 6 = 15."
+    assert "You land on 21." in text
+    assert "18 + 5 = 23" in text
+    assert plain(lesson.worked_prompt) == "19 + 4 = ?"
+    assert plain(lesson.worked_steps[-1]) == "So 19 + 4 = 23."
     assert lesson.try_it_tier == 0
 
 
@@ -72,7 +72,7 @@ def test_hints_are_ordered_and_the_last_works_the_answer() -> None:
         assert str(problem.answer) not in plain(hints[0]).split()
         assert MathPart(f"{a} + {b} = {problem.answer}") in hints[2]
         big, small = max(int(a), int(b)), min(int(a), int(b))
-        assert plain(hints[1]).startswith(f"Start at {big}, the bigger number. Count on {small}")
+        assert plain(hints[1]).startswith(f"Start at {big}. Count on {small}")
         assert plain(hints[2]).startswith(f"Start at {big} and count on {small}.")
 
 
@@ -81,9 +81,10 @@ def test_the_number_line_shows_this_problem() -> None:
         visual = render_explanations(PACK.explanations[SKILL], problem)[0].visual
         assert visual is not None and visual.kind == "number_line"
         a, b = int(problem.values["a"]), int(problem.values["b"])
-        assert visual.params == {
-            "min": 0, "max": 20, "start": max(a, b), "jumps": min(a, b), "end": a + b,
+        assert visual.params.model_dump() == {
+            "min": 0, "max": 20, "start": max(a, b), "jumps": min(a, b), "end": None,
         }  # fmt: skip
+        # The learner counts the jumps: the picture never marks the answer.
 
 
 def test_explanations_and_feedback_render_for_every_problem() -> None:
@@ -92,7 +93,8 @@ def test_explanations_and_feedback_render_for_every_problem() -> None:
         approaches = render_explanations(explanations, problem)
         assert len(approaches) == 4
         worked = plain(approaches[3].body)
-        assert "7 + 6 = 13" in worked
+        assert str(problem.answer) not in worked.split()
+        assert f"Say {max(int(problem.values['a']), int(problem.values['b']))}." in worked
         for misconception in problem.misconceptions:
             feedback = render_feedback(explanations, problem, misconception.key)
             assert feedback is not None

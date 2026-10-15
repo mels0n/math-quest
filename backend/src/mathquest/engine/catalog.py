@@ -23,7 +23,7 @@ from mathquest.engine.content import ContentError, Pack, Skill, Slots, load_pack
 from mathquest.engine.content.schema import Bank, WordProblems
 from mathquest.engine.generators import all_generators
 from mathquest.engine.skillgraph import SkillGraph
-from mathquest.engine.types import Generator, Problem, Variant
+from mathquest.engine.types import VARIANTS, Generator, Problem, Variant
 from mathquest.engine.wordproblems import find_template, pick_template, render_word
 
 
@@ -79,6 +79,20 @@ class SkillSource:
                 return render_bank(item, problem)
         return problem
 
+    def shows_generator(self, problem: Problem) -> bool:
+        """``problem`` keeps the generator's numbers and answer: it is bare, or a word
+        problem whose template does not compute its own answer. Hints, explanations and
+        mistake feedback are written over the generator's values, so only such a problem
+        gets them; a bank item or an expression template has an answer of its own."""
+        if problem.variant == "bare":
+            return True
+        if problem.variant != "word" or self.word_problems is None:
+            return False
+        if problem.template_id is None:
+            return False
+        template = find_template(self.word_problems, problem.template_id)
+        return template is not None and template.expression is None
+
 
 @dataclass(frozen=True)
 class Catalog:
@@ -90,6 +104,17 @@ class Catalog:
     def source(self, skill_id: str) -> SkillSource:
         """The problem source of ``skill_id``; KeyError for an unknown skill."""
         return self.sources[skill_id]
+
+    def regenerate(
+        self, skill_id: str, seed: int, tier: int, variant: str, template_id: str | None
+    ) -> Problem:
+        """An issued problem again from what is stored for it; an unknown variant name is
+        read as bare. KeyError for an unknown skill."""
+        chosen: Variant = "bare"
+        for known in VARIANTS:
+            if known == variant:
+                chosen = known
+        return self.sources[skill_id].generate(seed, tier, chosen, template_id)
 
 
 @dataclass(frozen=True)
