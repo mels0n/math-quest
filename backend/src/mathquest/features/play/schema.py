@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mathquest.engine.checker.check import Verdict
 from mathquest.engine.mastery import SkillState
+from mathquest.engine.teaching import FeedbackKind
 from mathquest.engine.transport import PromptPartOut
 from mathquest.engine.types import KeypadProfile
 
@@ -36,6 +37,10 @@ class ProblemOut(_Frozen):
     choices: list[list[PromptPartOut]] | None = None
     has_lesson: bool = False
     """The skill has a lesson the player can replay (GET /api/lessons/{skill_id})."""
+    hint_levels: int = 0
+    """How many hint levels this problem offers (POST .../hint); 0 for none."""
+    has_explanations: bool = False
+    """The problem offers "explain it another way" (POST .../explain)."""
     dev_answer_latex: str | None = None
     dev_answer_choice: int | None = None
 
@@ -59,9 +64,18 @@ class MasteryOut(_Frozen):
     progress: float
 
 
+class FeedbackOut(_Frozen):
+    """What to tell the learner after a wrong answer. ``text`` is words and math; it
+    never states the answer."""
+
+    kind: FeedbackKind
+    text: list[PromptPartOut]
+
+
 class AnswerOut(_Frozen):
     verdict: Verdict
     misconception: str | None
+    feedback: FeedbackOut | None = None
     solved: bool
     attempts_left: int
     mastery: MasteryOut

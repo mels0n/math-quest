@@ -85,10 +85,13 @@ async def test_next_problem_hides_answer(api: ApiFactory) -> None:
         "keypad",
         "choices",
         "has_lesson",
+        "hint_levels",
+        "has_explanations",
         "dev_answer_latex",
         "dev_answer_choice",
     }
     assert body["has_lesson"] is (body["skill_id"] in h.app.state.catalog.pack.lessons)
+    assert body["hint_levels"] in (0, 3)
     assert body["prompt"]
     for part in body["prompt"]:
         assert set(part) == {"kind", "value"}

@@ -35,8 +35,29 @@ The first three WRONG_FORM or UNREADABLE verdicts on a problem are free; later o
 up a try like INCORRECT does (the verdict returned is still WRONG_FORM or UNREADABLE).
 Re-sending the previous wrong answer verbatim returns the stored result without using a
 try. Input over 200 characters is UNREADABLE without reaching the checker. Mastery
-changes once per problem: on the first correct answer (hints_used is the number of
-tries used before it) or when the third try is used up (scored incorrect).
+changes once per problem: on the first correct answer or when the last try is used up
+(scored incorrect).
+
+Hint credit: a correct answer is scored as if it took `help_used(wrong tries before it,
+hint levels viewed)` hints, the two added and capped at 3, so the score is
+`max(0.25, 1 - 0.25 * help)`: every wrong try and every hint level costs a quarter, and
+a solve after the full worked example (level 3) still counts as a hinted solve worth a
+quarter. Hints are viewed through the teaching slice, which counts them in the problem's
+`hints_used` under the problem's row lock; this module only reads the count.
+
+Feedback: an INCORRECT answer carries `feedback`. A mistake the checker recognised gets
+the skill's feedback for it, rendered with the problem's numbers; otherwise an open
+problem gets a short generic line ("hint" while a hint is left to ask for, else
+"retry"), and a problem just scored wrong gets none (its answer is revealed). Hints,
+explanations and feedback are only offered for a problem that shows the generator's
+numbers and answer (`SkillSource.shows_generator`): never for a bank item or a word
+problem that computes its own answer. A problem scored wrong after every explanation of
+its skill was shown in this session (explanations are shown by the teaching slice and
+recorded in `explanation_views`) records a stuck event with its wrong answers.
+
+The skill is chosen by `scheduler.plan_next` from the session's history, which can insert
+a short warm-up on a weaker prerequisite (stored as `warmup_for`), and the tier by
+`choose_tier` lowered by `scheduler.guard_tier` after three misses in a row.
 
 Before the first problem of a skill that has a lesson, `next` returns a lesson to show
 instead of a problem (the skill and its name, no problem issued, the session's count
@@ -96,21 +117,24 @@ from mathquest.engine.mastery import (
     SkillRating,
     SkillState,
     choose_tier,
+    help_used,
     initial_rating,
     is_mastered,
     next_review_days,
     predict,
     update,
 )
-from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
+from mathquest.engine.scheduler import Played, guard_tier, plan_next
+from mathquest.engine.teaching import all_approaches_shown, answer_feedback
 from mathquest.engine.templates import TemplateError
 from mathquest.engine.transport import answer_latex, prompt_out
-from mathquest.engine.types import VARIANTS, KeypadProfile, Problem, Variant
-from mathquest.entities import lessons, mastery, problems
+from mathquest.engine.types import KeypadProfile, Problem
+from mathquest.entities import lessons, mastery, problems, teaching
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, ProblemInstance
 from mathquest.features.play.schema import (
     AnswerOut,
+    FeedbackOut,
     LessonDueOut,
     MasteryOut,
     ProblemOut,
@@ -123,9 +147,9 @@ MAX_ATTEMPTS = 3
 MAX_CHOICE_ATTEMPTS = 2
 FREE_VERDICTS = 3
 STORED_LATEX_MAX = 200
+STUCK_ANSWER_MAX = 200
+"""Wrong answers in a stuck event are cut to this length (the export allows 256)."""
 CHOICE_PREFIX = "choice:"
-# Room for a whole run plus the reviews (every fifth problem) that can sit inside it.
-RECENT_LOOKBACK = RUN_LENGTH * 2 + 2
 SEED_LIMIT = 2**53
 """New seeds are below this, so they are exact as JavaScript numbers."""
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
@@ -241,13 +265,17 @@ async def next_problem(
     ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
     mastered = {r.skill_id for r in rows if r.state == SkillState.MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
-    recent = await problems.recent_skill_ids(db, session_id, limit=RECENT_LOOKBACK)
-    skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count, recent)
+    history = [
+        Played(skill_id=sid, correct=correct, stuck=stuck, warmup_for=warmup_for)
+        for sid, correct, stuck, warmup_for in await problems.session_history(db, session_id)
+    ]
+    pick = plan_next(graph, ratings, mastered, due, session.problem_count, history)
+    skill_id = pick.skill_id
     if await _lesson_due(db, catalog, player_id, skill_id, by_skill.get(skill_id)):
         await db.commit()
         return LessonDueOut(skill_id=skill_id, skill_name=graph.skills[skill_id].name)
     source = catalog.source(skill_id)
-    tier = choose_tier(ratings[skill_id], source.tier_difficulties)
+    tier = guard_tier(choose_tier(ratings[skill_id], source.tier_difficulties), history, skill_id)
     seed = secrets.randbelow(SEED_LIMIT)
     variant = choose_variant(source, seed)
     try:
@@ -268,8 +296,10 @@ async def next_problem(
         template_id=problem.template_id,
         difficulty=problem.difficulty,
         issued_at=now,
+        warmup_for=pick.warmup_for,
     )
     session.problem_count += 1
+    teachable = source.shows_generator(problem)
     out = ProblemOut(
         problem_id=instance.id,
         skill_id=skill_id,
@@ -278,6 +308,8 @@ async def next_problem(
         keypad=_keypad(problem, graph.skills[skill_id].keypad),
         choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
         has_lesson=skill_id in catalog.pack.lessons,
+        hint_levels=_hint_count(catalog, skill_id) if teachable else 0,
+        has_explanations=teachable and skill_id in catalog.pack.explanations,
         dev_answer_latex=answer_latex(problem) if expose_answers else None,
         dev_answer_choice=problem.correct_choice if expose_answers else None,
     )
@@ -320,12 +352,9 @@ def _apply_score(
 
 def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
     """The issued problem again, from its stored seed, tier, variant and template."""
-    variant: Variant = "bare"
-    for known in VARIANTS:
-        if known == instance.variant:
-            variant = known
-    source = catalog.source(instance.skill_id)
-    return source.generate(instance.seed, instance.tier, variant, instance.template_id)
+    return catalog.regenerate(
+        instance.skill_id, instance.seed, instance.tier, instance.variant, instance.template_id
+    )
 
 
 def _allowed(problem: Problem) -> int:
@@ -355,10 +384,69 @@ async def _load(
     return instance, await problems.attempts_for(db, instance.id)
 
 
+def _hint_count(catalog: Catalog, skill_id: str) -> int:
+    ladder = catalog.pack.hints.get(skill_id)
+    return 0 if ladder is None else len(ladder.levels)
+
+
+def _feedback(
+    catalog: Catalog,
+    instance: ProblemInstance,
+    problem: Problem,
+    verdict: Verdict,
+    misconception: str | None,
+    scored: bool,
+) -> FeedbackOut | None:
+    """Teaching feedback after an incorrect answer (see ``engine.teaching.answer_feedback``)."""
+    if verdict is not Verdict.INCORRECT:
+        return None
+    source = catalog.source(instance.skill_id)
+    teachable = source.shows_generator(problem)
+    hint_available = teachable and instance.hints_used < _hint_count(catalog, instance.skill_id)
+    shown = answer_feedback(
+        catalog.pack.explanations.get(instance.skill_id) if teachable else None,
+        problem,
+        misconception,
+        scored=scored,
+        hint_available=hint_available,
+    )
+    return None if shown is None else FeedbackOut(kind=shown.kind, text=prompt_out(shown.text))
+
+
+async def _record_stuck(
+    db: AsyncSession,
+    catalog: Catalog,
+    instance: ProblemInstance,
+    attempts: list[Attempt],
+    now: datetime,
+) -> None:
+    """Record a stuck event when every explanation of the skill was shown in this session."""
+    explanations = catalog.pack.explanations.get(instance.skill_id)
+    if explanations is None:
+        return
+    shown = await teaching.approaches_shown(db, instance.session_id, instance.skill_id)
+    if not all_approaches_shown(len(explanations.approaches), shown):
+        return
+    await teaching.add_stuck(
+        db,
+        player_id=instance.player_id,
+        problem_id=instance.id,
+        skill_id=instance.skill_id,
+        generator=catalog.source(instance.skill_id).generator.generator_id,
+        tier=instance.tier,
+        seed=instance.seed,
+        wrong_answers=[
+            a.latex[:STUCK_ANSWER_MAX] for a in attempts if a.verdict == Verdict.INCORRECT.value
+        ],
+        created_at=now,
+    )
+
+
 async def _stored(
     db: AsyncSession,
     catalog: Catalog,
     instance: ProblemInstance,
+    problem: Problem,
     attempts: list[Attempt],
     reveal: _Reveal | None,
     now: datetime,
@@ -368,9 +456,12 @@ async def _stored(
     last = attempts[-1]
     used = _tries_used(attempts)
     row = await mastery.get(db, instance.player_id, instance.skill_id)
+    verdict = Verdict(last.verdict)
+    scored = instance.answered_at is not None
     out = AnswerOut(
-        verdict=Verdict(last.verdict),
+        verdict=verdict,
         misconception=last.misconception,
+        feedback=_feedback(catalog, instance, problem, verdict, last.misconception, scored),
         solved=bool(instance.correct),
         attempts_left=max(0, allowed - used),
         mastery=_mastery_out(catalog, instance.skill_id, row, now),
@@ -427,9 +518,9 @@ async def submit_answer(
     reveal = _Reveal(answer_latex(problem), problem.correct_choice)
     allowed = _allowed(problem)
     if instance.answered_at is not None:
-        return await _stored(db, catalog, instance, attempts, reveal, received, allowed)
+        return await _stored(db, catalog, instance, problem, attempts, reveal, received, allowed)
     if _repeat_of_last_wrong(attempts, given):
-        return await _stored(db, catalog, instance, attempts, None, received, allowed)
+        return await _stored(db, catalog, instance, problem, attempts, None, received, allowed)
     await db.commit()
 
     if choice is not None:
@@ -441,9 +532,9 @@ async def submit_answer(
 
     instance, attempts = await _load(db, player_id, problem_id)
     if instance.answered_at is not None:
-        return await _stored(db, catalog, instance, attempts, reveal, received, allowed)
+        return await _stored(db, catalog, instance, problem, attempts, reveal, received, allowed)
     if _repeat_of_last_wrong(attempts, given):
-        return await _stored(db, catalog, instance, attempts, None, received, allowed)
+        return await _stored(db, catalog, instance, problem, attempts, None, received, allowed)
 
     verdict = result.verdict
     misconception = result.misconception if verdict is Verdict.INCORRECT else None
@@ -467,7 +558,7 @@ async def submit_answer(
         row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
         outcome = Outcome(
             correct=solved,
-            hints_used=tried,
+            hints_used=help_used(tried, instance.hints_used),
             seconds=seconds,
             fluency=catalog.graph.skills[skill_id].fluency,
             tier=instance.tier,
@@ -475,12 +566,15 @@ async def submit_answer(
         _apply_score(catalog, row, skill_id, instance.difficulty, outcome, received)
         instance.answered_at = received
         instance.correct = solved
+        if not solved:
+            await _record_stuck(db, catalog, instance, [*attempts, attempt], received)
     else:
         row = await mastery.get(db, player_id, skill_id)
 
     out = AnswerOut(
         verdict=verdict,
         misconception=misconception,
+        feedback=_feedback(catalog, instance, problem, verdict, misconception, scored),
         solved=solved,
         attempts_left=allowed - used,
         mastery=_mastery_out(catalog, skill_id, row, received),

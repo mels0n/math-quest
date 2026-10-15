@@ -5,6 +5,7 @@ import uuid
 from pydantic import BaseModel, ConfigDict
 
 from mathquest.engine.checker.check import Verdict
+from mathquest.engine.content.schema import ApproachStyle
 from mathquest.engine.transport import PromptPartOut, VisualOut
 from mathquest.engine.types import KeypadProfile
 
@@ -64,3 +65,33 @@ class TryAnswerOut(_Frozen):
     attempts_left: int
     answer_latex: str | None
     """Sent once the practice problem is solved or out of tries."""
+
+
+class HintOut(_Frozen):
+    """One hint level for a play problem, gentlest first; level 3 works the problem."""
+
+    level: int
+    levels: int
+    text: PromptOut
+
+
+class ExplanationOut(_Frozen):
+    """One way of explaining a play problem's skill, rendered with the problem's numbers."""
+
+    approach: int
+    """Which of the skill's approaches this is (0-based, in file order)."""
+    approaches: int
+    style: ApproachStyle
+    body: PromptOut
+    visual: VisualOut | None
+
+
+class StuckProblemOut(_Frozen):
+    """One stuck problem in the export: what the content coverage report reads with
+    ``--stuck``. It carries no player identity."""
+
+    skill: str
+    generator: str
+    tier: int
+    seed: int
+    wrong_answers: list[str]

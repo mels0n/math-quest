@@ -149,9 +149,7 @@ def _simulate(answers: Callable[[str, int], bool], problems: int) -> list[Pick]:
         picks.append(pick)
         n = seen.get(pick.skill_id, 0)
         seen[pick.skill_id] = n + 1
-        history.append(
-            Played(pick.skill_id, answers(pick.skill_id, n), warmup_for=pick.warmup_for)
-        )
+        history.append(Played(pick.skill_id, answers(pick.skill_id, n), warmup_for=pick.warmup_for))
     return picks
 
 

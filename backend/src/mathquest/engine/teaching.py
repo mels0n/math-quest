@@ -10,9 +10,11 @@ schema again (``content.visuals.resolve``). A visual that fails raises TemplateE
 any other text that does not render.
 """
 
+import hashlib
 import re
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
+from typing import Literal
 
 from pydantic import JsonValue
 
@@ -25,7 +27,7 @@ from mathquest.engine.content.schema import (
 )
 from mathquest.engine.content.visuals import UnresolvedVisual, VisualModel, resolve
 from mathquest.engine.templates import TemplateError, Value, plain, render
-from mathquest.engine.types import Problem, Prompt
+from mathquest.engine.types import Problem, Prompt, TextPart
 
 
 @dataclass(frozen=True)
@@ -112,3 +114,63 @@ def render_feedback(explanations: Explanations, problem: Problem, key: str) -> P
     """Feedback for misconception ``key`` on ``problem``; None when there is none."""
     template = explanations.misconceptions.get(key)
     return None if template is None else render(template, problem.values)
+
+
+FeedbackKind = Literal["misconception", "hint", "retry"]
+
+FEEDBACK_COPY: Mapping[Literal["hint", "retry"], str] = {
+    "hint": "Not yet. Tap Hint for a clue.",
+    "retry": "Not yet. Read it again and have another go.",
+}
+"""The generic lines after a wrong answer that matched no known mistake: ``hint`` when a
+hint is still there to ask for, ``retry`` otherwise. Kid-facing; no dashes."""
+
+
+@dataclass(frozen=True)
+class Feedback:
+    kind: FeedbackKind
+    text: Prompt
+
+
+def answer_feedback(
+    explanations: Explanations | None,
+    problem: Problem,
+    misconception: str | None,
+    *,
+    scored: bool,
+    hint_available: bool,
+) -> Feedback | None:
+    """What to say after an incorrect answer to ``problem``.
+
+    A matched mistake with feedback written gets that feedback, rendered with the
+    problem's values. Otherwise, while the problem is still open, a short generic line
+    (``FEEDBACK_COPY``). A problem just scored wrong with no matched mistake gets None:
+    its answer is revealed instead. Call it only for an INCORRECT verdict. None of these
+    texts states the answer (the content lint checks the written feedback).
+    """
+    if misconception is not None and explanations is not None:
+        text = render_feedback(explanations, problem, misconception)
+        if text is not None:
+            return Feedback("misconception", text)
+    if scored:
+        return None
+    kind: Literal["hint", "retry"] = "hint" if hint_available else "retry"
+    return Feedback(kind, (TextPart(FEEDBACK_COPY[kind]),))
+
+
+def first_approach(player_key: str, skill_id: str, count: int) -> int:
+    """Where a player's rotation through a skill's ``count`` approaches starts: a stable
+    hash of the player and skill, so different players meet a different one first."""
+    digest = hashlib.sha256(f"{player_key}:{skill_id}".encode()).digest()
+    return int.from_bytes(digest[:8], "big") % count
+
+
+def next_approach(player_key: str, skill_id: str, count: int, shown_before: int) -> int:
+    """The index of the approach to show after ``shown_before`` were shown to this player
+    for this skill: the rotation moves on by one each time and wraps around."""
+    return (first_approach(player_key, skill_id, count) + shown_before) % count
+
+
+def all_approaches_shown(count: int, shown: Collection[int]) -> bool:
+    """Every one of a skill's ``count`` approaches is among ``shown``."""
+    return count > 0 and set(range(count)) <= set(shown)

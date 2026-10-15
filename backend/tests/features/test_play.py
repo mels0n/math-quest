@@ -399,9 +399,10 @@ async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -
 
     assert skills[0] == skills[1] == skills[2]
     assert skills[3] != skills[0]
-    recent = await problems.recent_skill_ids(db, session.session_id, limit=3)
-    assert recent == skills[1:]
-    assert service.RECENT_LOOKBACK == RUN_LENGTH * 2 + 2
+    history = await problems.session_history(db, session.session_id)
+    assert [h[0] for h in history] == skills
+    assert [h[1] for h in history] == [True] * 4
+    assert skills.count(skills[0]) == RUN_LENGTH
 
 
 async def _master(db: AsyncSession, pid: uuid.UUID, session_id: uuid.UUID, skill_id: str) -> int:

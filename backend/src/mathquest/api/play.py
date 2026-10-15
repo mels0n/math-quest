@@ -14,8 +14,9 @@ from mathquest.api.deps import (
     limit_next,
     limit_session,
 )
-from mathquest.features import play
+from mathquest.features import play, teaching
 from mathquest.features.play import AnswerOut, NextOut, SessionOut
+from mathquest.features.teaching import ExplanationOut, HintOut
 
 router = APIRouter(prefix="/api/play")
 
@@ -95,3 +96,15 @@ async def answer(
         body.latex,
         choice=body.choice,
     )
+
+
+@router.post("/problems/{problem_id}/hint", dependencies=[Depends(limit_answer)])
+async def hint(problem_id: uuid.UUID, request: Request, player: CurrentPlayer, db: Db) -> HintOut:
+    return await teaching.next_hint(db, request.app.state.catalog, player.id, problem_id)
+
+
+@router.post("/problems/{problem_id}/explain", dependencies=[Depends(limit_answer)])
+async def explain(
+    problem_id: uuid.UUID, request: Request, player: CurrentPlayer, db: Db
+) -> ExplanationOut:
+    return await teaching.next_explanation(db, request.app.state.catalog, player.id, problem_id)

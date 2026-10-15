@@ -1,10 +1,11 @@
 """Admin login, logout and session check. LAN-only: off-LAN clients see 404 on every route."""
 
 import uuid
-from typing import Annotated
+from datetime import UTC, datetime
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Path, Query, Request, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
 from mathquest.api.deps import (
     ADMIN_COOKIE,
@@ -16,7 +17,7 @@ from mathquest.api.deps import (
     limit_admin_login,
 )
 from mathquest.engine.catalog import Catalog
-from mathquest.features import admin
+from mathquest.features import admin, teaching
 from mathquest.shared.config import Settings
 from mathquest.shared.errors import Unauthorized
 
@@ -186,3 +187,30 @@ async def content_skill(
     tier: Annotated[int, Query(ge=0, le=MAX_TIER)] = 0,
 ) -> admin.SkillPreview:
     return admin.skill_preview(_catalog(request), skill_id, seed=seed, tier=tier)
+
+
+@router.get("/stuck-log", response_model=list[teaching.StuckProblemOut])
+async def stuck_log(
+    _: CurrentAdmin,
+    db: Db,
+    since: Annotated[datetime | None, Query()] = None,
+    fmt: Annotated[Literal["json", "csv"], Query(alias="format")] = "json",
+) -> Response:
+    """Stuck problems (at or after ``since``) as the JSON list ``content-report --stuck``
+    reads, or as CSV with ``format=csv``. No player identity is included. A ``since``
+    without a time zone is read as UTC."""
+    if since is not None and since.tzinfo is None:
+        since = since.replace(tzinfo=UTC)
+    entries = await teaching.stuck_log(db, since)
+    if fmt == "csv":
+        return Response(
+            teaching.stuck_csv(entries),
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": 'attachment; filename="stuck-log.csv"'},
+        )
+    body = TypeAdapter(list[teaching.StuckProblemOut]).dump_json(entries)
+    return Response(
+        body,
+        media_type="application/json",
+        headers={"Content-Disposition": 'attachment; filename="stuck-log.json"'},
+    )
