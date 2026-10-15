@@ -25,9 +25,15 @@ describe('admin api', () => {
 		const { calls, fetchImpl } = recorder();
 		await admin.adminLogin('pw', fetchImpl);
 		await admin.adminLogout(fetchImpl);
-		expect(calls[0]).toMatchObject({ url: '/api/admin/login', init: { method: 'POST' } });
+		expect(calls[0]).toMatchObject({
+			url: '/api/admin/login',
+			init: { method: 'POST' }
+		});
 		expect(calls[0]?.init.body).toBe('{"password":"pw"}');
-		expect(calls[1]).toMatchObject({ url: '/api/admin/logout', init: { method: 'POST' } });
+		expect(calls[1]).toMatchObject({
+			url: '/api/admin/logout',
+			init: { method: 'POST' }
+		});
 	});
 
 	it('lists players with an encoded query, offset and limit', async () => {
@@ -67,10 +73,25 @@ describe('admin api', () => {
 		const { calls, fetchImpl } = recorder({ set: true });
 		await admin.signupWordState(fetchImpl);
 		await admin.setSignupWord('tiger', fetchImpl);
-		expect(calls[0]).toMatchObject({ url: '/api/admin/signup-word', init: { method: 'GET' } });
+		expect(calls[0]).toMatchObject({
+			url: '/api/admin/signup-word',
+			init: { method: 'GET' }
+		});
 		expect(calls[1]).toMatchObject({
 			url: '/api/admin/signup-word',
 			init: { method: 'PUT', body: '{"word":"tiger"}' }
 		});
+	});
+
+	it('reads the content overview and a skill preview with seed and tier', async () => {
+		const { calls, fetchImpl } = recorder({ packs: [] });
+		await admin.getContent(fetchImpl);
+		await admin.getSkillPreview('add_within_20', { seed: 42, tier: 1 }, fetchImpl);
+		await admin.getSkillPreview('add_within_20', {}, fetchImpl);
+		expect(calls.map((c) => [c.init.method, c.url])).toEqual([
+			['GET', '/api/admin/content'],
+			['GET', '/api/admin/content/skills/add_within_20?seed=42&tier=1'],
+			['GET', '/api/admin/content/skills/add_within_20']
+		]);
 	});
 });
