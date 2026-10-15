@@ -125,6 +125,11 @@ def _open_probe(row: PlacementRun) -> Probe:
     return probes[-1]
 
 
+def _hint(row: PlacementRun) -> int | None:
+    """The grade hint's anchor, which shapes the search's prior; None without a hint."""
+    return None if row.grade_hint is None else int(row.state["start"])
+
+
 def _answers(probes: list[Probe]) -> list[Answer]:
     return [Answer(p["anchor"], p["correct"]) for p in probes if p["correct"] is not None]
 
@@ -218,7 +223,7 @@ async def _finish(
     graph = catalog.graph
     if any(sid not in graph.skills for sid in anchors):
         raise Conflict("placement_closed")
-    result = outcome(graph, anchors, _answers(probes))
+    result = outcome(graph, anchors, _answers(probes), _hint(row))
     await mastery.revert_provisional(db, row.player_id)
     ratings = {
         sid: initial_rating(catalog.source(sid).tier_difficulties) for sid in result.provisional
@@ -303,7 +308,7 @@ async def answer(
     if current["correct"] is not None:
         state = row.state
         anchors: list[str] = state["anchors"]
-        nxt = next_probe(len(anchors), state["start"], _answers(probes))
+        nxt = next_probe(len(anchors), state["start"], _answers(probes), _hint(row))
         if nxt is not None and anchors[nxt] in catalog.graph.skills:
             probes.append(_new_probe(catalog, anchors[nxt], nxt))
             row.state = {**state, "probes": probes}

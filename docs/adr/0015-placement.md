@@ -29,41 +29,64 @@ anchor gets the bare generator problem, since placement measures the skill, not 
 **The first probe.** A grade hint (K to 8) picks the first anchor of that grade band, or
 the last anchor of an earlier band when the spine has none for that grade. Without a
 hint the round starts at the middle anchor of the K to 2 bands, the likeliest place for
-a player who gave no hint. The hint only picks the first probe; it changes nothing else.
+a player who gave no hint. The hint also sets a mild prior (below); it never sets the
+outcome.
 
-**The search** (`engine/placement.py`, a pure function of the answers so far).
-Every decision comes from the split that best agrees with the answers: the highest
-passed anchor (or none) that disagrees with the fewest answers, counting correct answers
-above it and misses at or below it.
+**The search** (`engine/placement.py`, a pure function of the answers so far). The round
+keeps a probability for every level from "no anchor passed" to "every anchor passed"
+and updates it with Bayes' rule after each answer. The update uses a deliberately loose
+learner model: a learner at level L answers anchor A right with probability
+`0.12 + 0.80 * logistic(L - A)`, more guessing and slipping and a gentler slope than most
+real learners, so a single surprising answer moves the estimate without deciding it.
 
-- While several splits agree equally well, the next probe is the middle of their
-  range. With consistent answers this is a plain binary search: a correct answer moves
-  the probe up, a miss moves it down. When a later answer contradicts an earlier one,
-  the range widens again and the search resumes inside it instead of stepping one anchor
-  at a time.
-- Once one split is best, its boundary is confirmed: the anchor below needs two more
-  correct answers than misses, the anchor above two more misses than correct answers.
-  The anchor furthest from its margin is asked next. So an anchor gets one problem while
-  searching and a second at the boundary, more only while its answers disagree.
-- The round stops after 15 answers; or when both sides are confirmed and at least 12
-  were asked; or when both sides are confirmed and the split is at an end of the spine
-  (nothing passed, or everything passed), where more questions would only repeat what
-  is known. A child who cannot do the easiest anchor is not asked a dozen questions.
-- A tie between splits at the end goes to the lower one: when placement cannot tell, it
-  places lower.
+- **Prior.** Flat without a hint. With a hint, each level's weight falls by 0.3 (in log
+  terms) per anchor away from the hint's anchor: a head start that three or four answers
+  outweigh, so a child who overstates their grade is not placed by it.
+- **Next question.** When the answers point above every anchor passed so far, the next
+  anchor up is asked, so a child is never placed above an anchor they were not shown.
+  Otherwise the anchor whose answer is expected to leave the least uncertainty
+  (posterior entropy) is asked, the lower one on a tie.
+- **Stop.** After 15 answers; after 12 once the placement is 99% likely to be within one
+  anchor; or as soon as "nothing passed" is 95% likely (a child who cannot do the
+  easiest anchor is not asked a dozen questions), or "everything passed" is, once the
+  last anchor was answered right. In practice inner levels take 15 and the ends 10 to 12.
+- **Placement.** The level with the least expected cost: the right level costs nothing,
+  one off costs 0.15, two or more too low costs 1 and two or more too high costs 3.
+  Placing too high is worse because the child meets gaps; placing too low only means a
+  few easy reviews. The placement is never above the highest anchor answered right, and
+  ties go to the lower level.
 
-**The bar.** The algorithm is tested against simulated learners on a synthetic graph
-with one anchor per grade K to 8, so the test does not depend on how much content
-exists. A learner at level L answers anchor A correctly with probability
-`0.10 + 0.85 * logistic(2 * (L - A) + 1)`: 10% guessing, 5% slips, and in between a
-logistic of how far the anchor is above what they have mastered (about 0.72 at their own
-level, 0.33 one above, 0.14 two above). For true levels K, 2, 4, 6 and 8, placement
-must land within one anchor of the true level in at least 95% of 1000 seeded runs, with
-no hint, with a hint one grade above the level and with a hint at the level. It does in
-96.8% or more of runs in every case, at about 13 questions inside the spine. The same
-learners on the real four-anchor pack land within one anchor in 98% or more of runs.
+**The bar.** The search is tested against simulated learners on a synthetic graph with
+one anchor per grade K to 8, at every grade, with no hint, a hint at the learner's grade
+and a hint one grade above, 1000 seeded runs each. A simulated learner at level L
+answers anchor A right with probability `guess + (1 - guess - slip) * logistic(slope *
+(L - A) + offset)`, under six models that deliberately differ from the search's own:
 
-**The outcome.** The frontier is the highest anchor of the best split. Every anchor up
+| Model (slope, offset, slip, guess) | no hint | hint at grade | hint one above | worst over-placement |
+| --- | --- | --- | --- | --- |
+| reference (1, 0, 0.05, 0.10) | 93.8% | 96.8% | 95.4% | 1.8% |
+| steep (2, 1, 0.05, 0.10) | 99.1% | 99.5% | 98.4% | 1.5% |
+| no guessing (2, 1, 0.05, 0) | 99.3% | 99.7% | 99.8% | 0.1% |
+| slips 15% (2, 1, 0.15, 0.10) | 91.5% | 96.1% | 95.1% | 0.9% |
+| slope 1.5 (1.5, 0, 0.05, 0.10) | 98.0% | 99.2% | 98.7% | 0.7% |
+| guess 25%, choice anchors (2, 1, 0.05, 0.25) | 84.7% | 91.6% | 91.4% | 15.3% |
+
+Each figure is the share placed within one anchor of the true level at the worst grade;
+over-placement is the share placed two or more anchors too high. The reference model,
+where a learner has even odds on their own level's anchor, must reach 95% with a hint
+and keep over-placement at or below 2% at every grade, and does. Without a hint it
+reaches 93.8% at worst (grade 2): that is the limit of fifteen one-problem questions for
+so noisy a learner. Even a search told the true level in advance, asking every question
+at that level's anchor, lands within one anchor in only about 93% of runs. The other
+rows are asserted at their measured values less a small margin, so a change that makes
+any of them worse fails. A hint three grades too high costs at most two points (93.6%
+worst for the reference model). With a quarter of guesses landing, low-level learners
+are placed too high in up to 15% of runs; choice anchors should therefore stay rare on
+the spine, and the first review of each provisional skill catches what slips through.
+On the real four-anchor pack the reference learner lands within one anchor in 97.4% or
+more of runs (over-placement at most 1.7%) at about 13.5 questions.
+
+**The outcome.** The frontier is the highest anchor of the placement. Every anchor up
 to the frontier and all of their prerequisites, transitively, become provisionally
 mastered. Taking every anchor below the frontier, not only the frontier's own
 prerequisites, matters when the spine is not a single chain: the fractions anchor does
@@ -112,8 +135,15 @@ real mastery is never removed.
   near the top of the spine sent the boundary to the bottom, and stepping back up
   exhausted the budget; hinted rounds fell below 95%. Searching the range of equally good
   splits fixed it.
-- **A Bayesian model of the learner.** Accurate, but it would assume the very model the
-  test simulates, and its choices are hard to explain to a parent or a reviewer.
+- **The first version: the split that disagrees with the fewest answers, confirmed by a
+  margin of two.** It met the bar for the steep learner it was tuned on, but for the
+  reference learner it landed within one anchor in only 83 to 89% of runs, mostly too
+  low, because it counted every answer as equally decisive.
+- **A Bayesian search that assumes the simulated learners' own model.** It would pass its
+  own test by construction. The search uses a looser model than any simulated one and is
+  tested against six, which answers the earlier objection that a Bayesian search only
+  proves the model it assumes. Its choices are still explainable: "the answers point
+  above what you have shown, so we ask the next one up".
 - **Mark only the frontier's own prerequisites.** On a spine that is not one chain,
   passing a high anchor would leave lower anchors locked.
 - **Mark provisional skills as mastered outright.** Nothing would ever check a lucky
@@ -131,6 +161,6 @@ A wrong placement costs little: too high, and missed reviews send skills back to
 learning; too low, and the normal ramp moves on quickly. Anchors are now content
 decisions with algorithmic weight: a pack should keep its anchors ordered as a ladder
 and spread across grades, and adding anchors makes placement finer at no cost to the
-code. The numbers (15 and 12 questions, a margin of two, one day to the first review,
-three free retries) are module constants with tests, and the simulation test guards any
-change to them.
+code. The numbers (15 and 12 questions, the search's learner model, the hint prior, the
+stopping confidences and costs, one day to the first review, three free retries) are
+module constants with tests, and the simulation matrix guards any change to them.
