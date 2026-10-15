@@ -5,7 +5,7 @@
 	import type { SkillList } from '../../entities/problem';
 	import { PICKER_COPY, SkillPicker } from '../../features/skill-picker';
 	import { ApiError, commonErrorMessage } from '../../shared/api';
-	import { PixelButton, PixelFrame } from '../../shared/ui';
+	import { PixelButton, PixelFrame, SettingsIcon } from '../../shared/ui';
 
 	let list = $state<SkillList | null>(null);
 	let notice = $state<string | null>(null);
@@ -30,7 +30,7 @@
 
 <PixelFrame title="PRACTICE">
 	{#snippet hud()}
-		<PixelButton variant="plain" label="Settings" onclick={() => void goto('/settings')}>&#9881;</PixelButton>
+		<PixelButton variant="plain" label="Settings" onclick={() => void goto('/settings')}><SettingsIcon /></PixelButton>
 	{/snippet}
 
 	{#if notice}

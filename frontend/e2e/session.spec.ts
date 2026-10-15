@@ -69,7 +69,7 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 	expect(signupWord).not.toBe('');
 	await page.setViewportSize({ width: 320, height: 740 });
 
-	await test.step('sign up, name a grade and take the warm-up', async () => {
+	await test.step('sign up, name a grade and find their level', async () => {
 		await page.goto('/');
 		await page.getByRole('button', { name: 'New player', exact: true }).click();
 		await expect(page.getByLabel('Nickname', { exact: true })).not.toHaveValue('');
@@ -109,7 +109,6 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 		const summary = page.getByTestId('summary');
 		await expect(summary).toBeVisible();
 		await expect(summary.getByRole('heading', { name: 'QUEST COMPLETE!' })).toBeVisible();
-		await expect(page.getByTestId('summary-solved')).toHaveText('12');
 		await expect(page.getByTestId('summary-accuracy')).toHaveText('12 of 12 (100%)');
 		await expect(page.getByTestId('summary-skills').locator('li').first()).toBeVisible();
 		await expect(page.getByTestId('prompt')).toHaveCount(0);
@@ -120,17 +119,22 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 	await test.step('practice a skill from the picker', async () => {
 		await page.getByRole('button', { name: 'Practice', exact: true }).click();
 		await expect(page).toHaveURL(/\/practice$/);
-		await expect(page.getByRole('heading', { name: 'Number Meadows' })).toBeVisible();
-		// States are shown in words, and a locked skill cannot be picked.
+		await expect(page.getByTestId('region-number_meadows')).toContainText('Number Meadows');
+		// States are shown in words, and locked skills fold into one line per region.
+		const meadows = page.getByTestId('region-number_meadows');
+		if ((await meadows.getAttribute('open')) === null) await meadows.locator('summary').click();
 		const add = page.getByTestId('skill-add_within_10');
 		await expect(add).toContainText('Add to 10');
-		await expect(add).toContainText(/Known, check coming up|Mastered|Learning/);
+		await expect(add).toContainText(/You know this! Quick check soon|Mastered|Learning/);
+		await expect(page.getByTestId('region-fraction_forest')).toContainText('1 more to unlock');
 		expect(await page.evaluate(fits)).toBe(true);
 		if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/practice-picker.png`, fullPage: true });
+		// Compact enough for a phone: the whole picker in about a screen and a half.
+		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(1050);
 
 		const started = page.waitForResponse(isStart);
 		const first = page.waitForResponse(isNext);
-		await add.getByRole('button', { name: 'Practice Add to 10' }).click();
+		await add.getByRole('button', { name: /^Practice Add to 10, / }).click();
 		await expect(page).toHaveURL(/\/play\?skill=add_within_10$/);
 		const session = (await (await started).json()) as { mode: string };
 		expect(session.mode).toBe('practice');
@@ -144,7 +148,8 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 		// Ending early shows the practice summary.
 		await page.getByRole('button', { name: "I'm done" }).click();
 		await expect(page.getByTestId('summary').getByRole('heading', { name: 'PRACTICE DONE!' })).toBeVisible();
-		await expect(page.getByTestId('summary-solved')).toHaveText('1');
+		await expect(page.getByTestId('summary-accuracy')).toHaveText('1 of 1 (100%)');
+		await expect(page.getByRole('heading', { name: 'PRACTICE DONE!' })).toBeFocused();
 
 		// Play again starts a fresh adventure.
 		const again = page.waitForResponse(isStart);
@@ -152,5 +157,10 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 		expect(((await (await again).json()) as { mode: string }).mode).toBe('adventure');
 		await expect(page).toHaveURL(/\/play$/);
 		await expect(page.getByTestId('prompt')).toBeVisible();
+
+		// Practice is also reachable mid-adventure, from settings.
+		await page.getByRole('button', { name: 'Settings', exact: true }).click();
+		await page.getByRole('button', { name: 'Practice a skill' }).click();
+		await expect(page).toHaveURL(/\/practice$/);
 	});
 });

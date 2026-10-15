@@ -101,7 +101,7 @@ export interface SkillEntry {
 }
 
 export interface SkillList {
-	regions: { region_id: string; name: string }[];
+	regions: { id: string; name: string }[];
 	skills: SkillEntry[];
 }
 
