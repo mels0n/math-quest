@@ -34,6 +34,8 @@ class ProblemOut(_Frozen):
     prompt: list[PromptPartOut]
     keypad: KeypadProfile
     choices: list[list[PromptPartOut]] | None = None
+    has_lesson: bool = False
+    """The skill has a lesson the player can replay (GET /api/lessons/{skill_id})."""
     dev_answer_latex: str | None = None
     dev_answer_choice: int | None = None
 

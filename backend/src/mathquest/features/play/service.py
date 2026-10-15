@@ -277,6 +277,7 @@ async def next_problem(
         prompt=prompt_out(problem.prompt),
         keypad=_keypad(problem, graph.skills[skill_id].keypad),
         choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
+        has_lesson=skill_id in catalog.pack.lessons,
         dev_answer_latex=answer_latex(problem) if expose_answers else None,
         dev_answer_choice=problem.correct_choice if expose_answers else None,
     )
