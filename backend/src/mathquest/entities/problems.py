@@ -48,7 +48,7 @@ class ProblemInstance(Base):
     skill_id: Mapped[str] = mapped_column(Text)
     tier: Mapped[int] = mapped_column(Integer)
     seed: Mapped[int] = mapped_column(BigInteger)
-    variant: Mapped[str] = mapped_column(Text, server_default="bare")
+    variant: Mapped[str] = mapped_column(Text, nullable=False, server_default="bare")
     template_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     difficulty: Mapped[float] = mapped_column(Float)
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
