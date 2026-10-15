@@ -90,7 +90,10 @@ _BASE: dict[str, Any] = {
             {"style": "steps", "body_md": "1. Say the bigger number.\n2. Count on the other one."},
             {"style": "story", "body_md": "{a} ducks swim. {b} more ducks come. How many now?"},
         ],
-        "misconceptions": {"subtracted_instead": "It looks like you took away. Put them together."},
+        "misconceptions": {
+            "subtracted_instead": "It looks like you took away. Put them together.",
+            "counted_start": "Start at {big}. The next number is jump one.",
+        },
     },
     "word_problems/alpha.yaml": {
         "skill": "alpha",
@@ -103,7 +106,7 @@ _BASE: dict[str, Any] = {
             },
             {
                 "id": "birds",
-                "text_template": "{a} birds sit on a fence. {b} birds land. How many birds?",
+                "text_template": "There are {a} birds on a fence. Then {b} land. How many birds?",
                 "grade_band": 1,
             },
             {

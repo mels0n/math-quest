@@ -104,7 +104,6 @@ def test_coverage_gaps_are_errors_only_in_a_complete_region(tmp_path: Path) -> N
     found = _rule(_lint(pack.model_copy(update={"complete_regions": ("meadow",)})), "coverage")
     assert {f.level for f in found} == {"error"}
     text = " ".join(f.message for f in found)
-    assert "misconceptions 1 of 2" in text
     assert "word templates 3 of 15" in text
     assert "bank items 2 of 30" in text
 
@@ -138,11 +137,36 @@ def test_template_leaving_out_a_number_is_a_warning(tmp_path: Path) -> None:
     files = _edit(
         base(),
         "word_problems/alpha.yaml",
-        lambda w: w["templates"][1].update({"text_template": "{a} birds sit. Then more land."}),
+        lambda w: w["templates"][1].update({"text_template": "There are {a} birds. More land."}),
     )
     (finding,) = _rule(_lint(load(tmp_path, files)), "answers")
     assert finding.level == "warning"
-    assert "never shows b" in finding.message
+    assert finding.message.endswith("never shows b, big, small")
+
+
+def test_a_number_always_equal_to_a_shown_one_counts_as_shown(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "word_problems/alpha.yaml",
+        lambda w: w["templates"][1].update(
+            {"text_template": "Start at {big}. Count on {small}. Where do you land?"}
+        ),
+    )
+    assert _rule(_lint(load(tmp_path, files)), "answers") == []
+
+
+def test_a_template_that_fails_to_render_for_some_seed(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "word_problems/alpha.yaml",
+        lambda w: w["templates"][1].update(
+            {"text_template": r"There are {a} birds and {b} more. Half is {{= \frac{a}{2} }}?"}
+        ),
+    )
+    (finding,) = _rule(_lint(load(tmp_path, files)), "answers")
+    assert finding.level == "error"
+    assert finding.path == "templates[1].text_template"
+    assert "must be inside a math part" in finding.message
 
 
 # --- rule 5: computed numbers ---
@@ -190,7 +214,7 @@ def test_near_duplicate_templates_in_one_skill(tmp_path: Path) -> None:
         lambda w: w["templates"].append(
             {
                 "id": "birds_again",
-                "text_template": "{b} birds sit on a fence! {a} birds land. How many birds??",
+                "text_template": "There are {b} birds on a fence! Then {a} land. How many birds??",
                 "grade_band": 1,
             }
         ),
@@ -324,3 +348,114 @@ def test_slot_hiding_a_generator_value(tmp_path: Path) -> None:
     )
     found = _rule(_lint(load(tmp_path, files)), "slots")
     assert any("hides the generator value" in f.message for f in found)
+
+
+# --- review fixtures: copies with one word changed, grammar, wrapping, dashes ---
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (
+            "There are {a} birds on a fence. Then {b} more birds land. How many birds now?",
+            "There are {a} ducks on a fence. Then {b} more ducks land. How many ducks now?",
+        ),
+        (
+            "{name} picks {a} apples. {friend} picks {b} apples. How many apples did they pick?",
+            "{name} picks {a} apples. {friend} grabs {b} apples. How many apples did they pick?",
+        ),
+    ],
+    ids=["noun swapped", "verb swapped"],
+)
+def test_one_word_swaps_are_duplicates(tmp_path: Path, first: str, second: str) -> None:
+    files = base()
+    slots = {"name": "names", "friend": "names"} if "{name}" in first else {}
+    files["word_problems/alpha.yaml"]["templates"] = [
+        {"id": "one", "text_template": first, "slots": slots, "grade_band": 1},
+        {"id": "two", "text_template": second, "slots": slots, "grade_band": 1},
+    ]
+    (finding,) = _rule(_lint(load(tmp_path, files)), "duplicate")
+    assert finding.level == "error"
+
+
+def test_the_real_word_problems_are_not_duplicates() -> None:
+    findings = _lint(load_pack(CONTENT / "packs" / "k8-core"))
+    assert _rule(findings, "duplicate") == []
+
+
+def test_one_with_a_plural_is_a_grammar_error(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "word_problems/alpha.yaml",
+        lambda w: w["templates"][1].update(
+            {"text_template": "There are {a} birds and {b} more. {name} has 1 {obj} too?",
+             "slots": {"name": "names", "obj": "objects"}}
+        ),
+    )  # fmt: skip
+    (finding,) = _rule(_lint(load(tmp_path, files)), "grammar")
+    assert finding.level == "error"
+    assert "needs the singular" in finding.message
+
+
+@pytest.mark.parametrize("text", ["{name} finds a {obj.one}.", "{name} finds an {obj.one}."])
+def test_wrong_article_is_a_grammar_error(tmp_path: Path, text: str) -> None:
+    files = _edit(
+        base(),
+        "word_problems/alpha.yaml",
+        lambda w: w["templates"][1].update(
+            {"text_template": f"{text} There are {{a}} and {{b}} more. How many?",
+             "slots": {"name": "names", "obj": "objects"}}
+        ),
+    )  # fmt: skip
+    (finding,) = _rule(_lint(load(tmp_path, files)), "grammar")
+    assert "should be" in finding.message
+
+
+def test_article_and_count_forms_pass_the_grammar_check(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "word_problems/alpha.yaml",
+        lambda w: w["templates"][1].update(
+            {"text_template": "{name} finds {obj.a}. Then {a obj} and {b} more. How many?",
+             "slots": {"name": "names", "obj": "objects"}}
+        ),
+    )  # fmt: skip
+    assert _rule(_lint(load(tmp_path, files)), "grammar") == []
+
+
+def test_a_sentence_starting_with_a_number_is_a_warning(tmp_path: Path) -> None:
+    files = _edit(
+        base(),
+        "word_problems/alpha.yaml",
+        lambda w: w["templates"][1].update({"text_template": "{a} birds sit. {b} land. How many?"}),
+    )
+    (finding,) = _rule(_lint(load(tmp_path, files)), "grammar")
+    assert finding.level == "warning"
+
+
+def test_wrapped_lines_are_one_sentence(tmp_path: Path) -> None:
+    body = (
+        "Start at the bigger number and then count on the other number\n"
+        "one jump at a time to the very end."
+    )
+    files = _edit(
+        base(), "explanations/alpha.yaml", lambda e: e["approaches"][1].update(body_md=body)
+    )
+    (finding,) = _rule(_lint(load(tmp_path, files)), "reading")
+    assert finding.level == "error"
+    assert "21 words" in finding.message
+
+
+def test_spaced_hyphen_is_a_dash(tmp_path: Path) -> None:
+    text = r"Put {a} and {b} together - then count. \(9 - 3\) is fine."
+    files = _edit(base(), "hints/alpha.yaml", lambda h: h["levels"][0].update(text_template=text))
+    (finding,) = _rule(_lint(load(tmp_path, files)), "dashes")
+    assert "' - '" in finding.message
+
+
+def test_dashes_in_slot_lists_and_word_list(tmp_path: Path) -> None:
+    pack = load(tmp_path, base())
+    slots = SLOTS.model_copy(update={"contexts": (*SLOTS.contexts, "at camp -- by the lake")})
+    words = WORDS | {"grown-up"}
+    found = _rule(lint(pack, REGISTRY, slots=slots, words=words), "dashes")
+    assert sorted(f.file for f in found) == ["../../lint/k2_words.txt", "../../slots.yaml"]
