@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import type { Lesson } from '../../entities/problem';
 	import { PixelButton, PromptView } from '../../shared/ui';
 	import { VisualView } from '../../shared/visuals';
@@ -37,6 +37,21 @@
 		shownSteps = 1;
 	});
 
+	let stepList: HTMLElement | undefined = $state();
+	let nav: HTMLElement | undefined = $state();
+
+	/** Shows the next worked step and moves focus to it, or to Next after the last one. */
+	async function showStep() {
+		shownSteps += 1;
+		await tick();
+		if (shownSteps >= lesson.worked_example.steps.length) {
+			const buttons = nav?.querySelectorAll('button');
+			buttons?.[buttons.length - 1]?.focus();
+		} else {
+			stepList?.querySelector<HTMLElement>('li:last-child')?.focus();
+		}
+	}
+
 	function go(to: number) {
 		at = Math.max(0, Math.min(steps.length - 1, to));
 		// Move focus to the new page's heading so screen readers read it.
@@ -47,7 +62,8 @@
 <section class="lesson" aria-label="Lesson: {lesson.skill_name}" data-testid="lesson">
 	<div class="top">
 		<span class="skill">{lesson.skill_name}</span>
-		<ol class="dots" aria-label="Page {at + 1} of {steps.length}">
+		<span class="count" data-testid="lesson-count">{LESSON_COPY.screenOf(at + 1, steps.length)}</span>
+		<ol class="dots" aria-hidden="true">
 			{#each steps as _, i (i)}
 				<li class:on={i === at} class:past={i < at}></li>
 			{/each}
@@ -66,14 +82,14 @@
 	{:else if step.kind === 'worked'}
 		<h2 class="title" tabindex="-1" bind:this={heading}>{LESSON_COPY.worked}</h2>
 		<div class="worked-prompt"><PromptView parts={lesson.worked_example.prompt} /></div>
-		<ol class="worked-steps" data-testid="worked-steps" aria-live="polite">
+		<ol class="worked-steps" data-testid="worked-steps" bind:this={stepList}>
 			{#each lesson.worked_example.steps.slice(0, shownSteps) as parts, i (i)}
-				<li><PromptView {parts} /></li>
+				<li tabindex="-1"><PromptView {parts} /></li>
 			{/each}
 		</ol>
 		{#if !workedDone}
 			<div class="center">
-				<PixelButton variant="gold" onclick={() => (shownSteps += 1)}>{LESSON_COPY.nextStep}</PixelButton>
+				<PixelButton variant="gold" onclick={showStep}>{LESSON_COPY.nextStep}</PixelButton>
 			</div>
 		{/if}
 	{:else}
@@ -81,7 +97,7 @@
 		<div class="try" data-testid="lesson-try">{@render tryIt()}</div>
 	{/if}
 
-	<div class="nav">
+	<div class="nav" bind:this={nav}>
 		<PixelButton variant="plain" disabled={at === 0 || busy} onclick={() => go(at - 1)}>
 			{LESSON_COPY.back}
 		</PixelButton>
@@ -124,6 +140,16 @@
 	.skill {
 		font-weight: 700;
 		color: var(--mq-ink-soft);
+	}
+	.count {
+		font-size: 0.95rem;
+		color: var(--mq-ink-soft);
+	}
+	.worked-steps li {
+		outline: none;
+	}
+	.worked-steps li:focus-visible {
+		outline: 3px solid var(--mq-gold);
 	}
 	.dots {
 		display: flex;

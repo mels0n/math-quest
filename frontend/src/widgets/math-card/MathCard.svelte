@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { AnswerField, ChoiceField } from '../../features/answer';
 	import { MAX_ATTEMPTS, PLAY_COPY, keypadProfile } from '../../entities/problem';
 	import type {
@@ -25,7 +26,7 @@
 		busy,
 		onSubmit,
 		onNext,
-		teach = null,
+		mistakeFeedback = null,
 		hints = [],
 		explanation = null,
 		missed = false,
@@ -42,8 +43,8 @@
 		busy: boolean;
 		onSubmit: (answer: Answer) => void;
 		onNext: () => void;
-		/** Feedback on the last wrong answer, shown under the answer field. */
-		teach?: Feedback | null;
+		/** Feedback on the last wrong answer, shown right under the verdict line. */
+		mistakeFeedback?: Feedback | null;
 		/** Hint levels shown so far on this problem, first level first. */
 		hints?: PromptPart[][];
 		/** The latest "explain it another way". */
@@ -58,6 +59,39 @@
 	const buttons = $derived(helpButtons(problem, { hintsShown: hints.length, missed, finished }));
 
 	let answer: ReturnType<typeof AnswerField> | undefined = $state();
+
+	/**
+	 * The one live region: it reads out the verdict with its feedback, each new hint and
+	 * each new explanation. The notes on screen are not live regions themselves.
+	 */
+	let announcement = $state('');
+	let hintBox: HTMLElement | undefined = $state();
+	let explainBox: HTMLElement | undefined = $state();
+	let hintsSeen = 0;
+	const spoken = (parts: readonly PromptPart[]) => parts.map((p) => p.value).join('');
+
+	$effect(() => {
+		const said = [feedback?.text ?? '', mistakeFeedback ? spoken(mistakeFeedback.text) : ''];
+		announcement = said.filter(Boolean).join(' ');
+	});
+
+	$effect(() => {
+		const count = hints.length;
+		const last = hints[count - 1];
+		if (count > hintsSeen && last) {
+			announcement = `${PLAY_COPY.hint} ${count}. ${spoken(last)}`;
+			void tick().then(() =>
+				hintBox?.querySelector<HTMLElement>('[data-testid="hint"]:last-child')?.focus()
+			);
+		}
+		hintsSeen = count;
+	});
+
+	$effect(() => {
+		if (!explanation) return;
+		announcement = `${PLAY_COPY.explanation}. ${spoken(explanation.body)}`;
+		void tick().then(() => explainBox?.focus());
+	});
 	/** Word problems read as sentences, so they use a calmer reading size. */
 	const WORDY_TEXT = 40;
 	const wordy = $derived(
@@ -113,9 +147,15 @@
 		<p class="cheer" role="status" data-testid="mastered">&#9733; Skill mastered! &#9733;</p>
 	{/if}
 
-	<p class="feedback {feedback?.tone ?? ''}" role="status" aria-live="polite" data-testid="feedback">
+	<p class="feedback {feedback?.tone ?? ''}" class:empty={!feedback && mistakeFeedback} data-testid="feedback">
 		{feedback?.text ?? ''}
 	</p>
+
+	{#if mistakeFeedback}
+		<div class="note {mistakeFeedback.kind}" data-testid="mistake-feedback">
+			<RichText parts={mistakeFeedback.text} />
+		</div>
+	{/if}
 
 	{#if revealedLatex !== null}
 		<p class="reveal">
@@ -153,31 +193,29 @@
 	{#if (onHint && buttons.hint) || (onExplain && buttons.explain)}
 		<div class="help">
 			{#if onHint && buttons.hint}
-				<PixelButton variant="plain" disabled={busy} onclick={onHint}>{buttons.hintLabel}</PixelButton>
+				<PixelButton variant="plain" onclick={onHint}>{buttons.hintLabel}</PixelButton>
 			{/if}
 			{#if onExplain && buttons.explain}
-				<PixelButton variant="plain" disabled={busy} label={PLAY_COPY.explain} onclick={onExplain}
+				<PixelButton variant="plain" label={PLAY_COPY.explain} onclick={onExplain}
 					>{PLAY_COPY.anotherWay}</PixelButton
 				>
 			{/if}
 		</div>
 	{/if}
 
-	{#if teach}
-		<div class="note {teach.kind}" data-testid="teach-feedback">
-			<RichText parts={teach.text} />
+	{#if hints.length > 0}
+		<div class="hints" bind:this={hintBox}>
+			{#each hints as hint, i (i)}
+				<div class="note hint" data-testid="hint" tabindex="-1">
+					<span class="label">{PLAY_COPY.hint} {i + 1}</span>
+					<RichText parts={hint} />
+				</div>
+			{/each}
 		</div>
 	{/if}
 
-	{#each hints as hint, i (i)}
-		<div class="note hint" data-testid="hint">
-			<span class="label">{PLAY_COPY.hint} {i + 1}</span>
-			<RichText parts={hint} />
-		</div>
-	{/each}
-
 	{#if explanation}
-		<div class="note explain" data-testid="explanation" aria-live="polite">
+		<div class="note explain" data-testid="explanation" tabindex="-1" bind:this={explainBox}>
 			<span class="label">{PLAY_COPY.explanation}</span>
 			<RichText parts={explanation.body} />
 			{#if explanation.visual}
@@ -186,10 +224,12 @@
 		</div>
 	{/if}
 
+	<div class="sr-only" role="status" aria-live="polite" data-testid="announcer">{announcement}</div>
 </section>
 
 <style>
 	.card {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		gap: 0.9rem;
@@ -252,6 +292,9 @@
 		font-size: 1.35rem;
 		font-weight: 700;
 	}
+	.feedback.empty {
+		display: none;
+	}
 	.feedback.good {
 		color: #04704f;
 	}
@@ -303,6 +346,28 @@
 	.note :global(ol:last-child),
 	.note :global(ul:last-child) {
 		margin-bottom: 0;
+	}
+	.note:focus {
+		outline: none;
+	}
+	.note:focus-visible {
+		outline: 3px solid var(--mq-navy);
+	}
+	.hints {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 	.label {
 		font-size: 0.9rem;

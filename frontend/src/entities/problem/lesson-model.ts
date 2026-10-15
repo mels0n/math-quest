@@ -1,7 +1,7 @@
 /** Wire shapes of the lesson routes. */
 
 import type { Visual } from '../../shared/visuals';
-import type { KeypadProfile, PromptPart, Verdict } from './model';
+import type { Feedback, KeypadProfile, PromptPart, Verdict } from './model';
 
 export interface LessonScreen {
 	title: string;
@@ -30,6 +30,8 @@ export interface TryProblem {
 export interface TryResult {
 	verdict: Verdict;
 	misconception: string | null;
+	/** Feedback on a wrong answer, as in play. */
+	feedback: Feedback | null;
 	solved: boolean;
 	attempts_left: number;
 	/** Sent once the practice problem is solved or out of tries. */

@@ -20,5 +20,6 @@ export const LESSON_COPY = {
 	worked: "Let's do one together",
 	tryIt: 'Your turn!',
 	done: 'Start playing',
-	doneReplay: 'Back to my problem'
+	doneReplay: 'Back to my problem',
+	screenOf: (n: number, total: number) => `Screen ${n} of ${total}`
 } as const;

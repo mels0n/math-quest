@@ -27,15 +27,16 @@ describe('helpButtons', () => {
 		expect(helpButtons(problem, { ...fresh, missed: true }).explain).toBe(true);
 	});
 
-	it('steps through the hint levels and then offers another way', () => {
+	it('steps through the hint levels; another way still needs a miss', () => {
 		expect(helpButtons(problem, { ...fresh, hintsShown: 1 })).toMatchObject({
 			hint: true,
 			hintLabel: 'Next hint'
 		});
 		expect(helpButtons(problem, { ...fresh, hintsShown: 3 })).toMatchObject({
 			hint: false,
-			explain: true
+			explain: false
 		});
+		expect(helpButtons(problem, { ...fresh, hintsShown: 3, missed: true }).explain).toBe(true);
 	});
 
 	it('shows nothing once the problem is finished', () => {

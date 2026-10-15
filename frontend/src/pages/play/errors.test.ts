@@ -12,6 +12,15 @@ async function failWith(response: Response | Error): Promise<unknown> {
 }
 
 describe('classifyPlayError', () => {
+	it('ignores help asked for too late or too early', () => {
+		for (const code of ['problem_scored', 'no_more_hints', 'explain_after_a_try']) {
+			expect(classifyPlayError(new ApiError(409, code, null))).toEqual({ kind: 'ignore' });
+		}
+		expect(classifyPlayError(new ApiError(409, 'problem_closed', null))).toEqual({
+			kind: 'reload'
+		});
+	});
+
 	it('turns a 429 from the client into a kind wait message', async () => {
 		const err = await failWith(
 			Response.json({ error: 'rate_limited' }, { status: 429, headers: { 'Retry-After': '20' } })

@@ -49,7 +49,7 @@
 	let notice = $state<{ text: string; retry: () => Promise<void>; label: string } | null>(null);
 	let card: MathCard | undefined = $state();
 	/** Help on the problem on screen: feedback on the last miss, hints shown, explanation. */
-	let teach = $state<Feedback | null>(null);
+	let mistake = $state<Feedback | null>(null);
 	let hints = $state<PromptPart[][]>([]);
 	let explanation = $state<Explanation | null>(null);
 	let missed = $state(false);
@@ -60,6 +60,7 @@
 	let practice = $state<Problem | null>(null);
 	let practiceLeft = $state(MAX_ATTEMPTS);
 	let practiceFeedback = $state<CardFeedback | null>(null);
+	let practiceMistake = $state<Feedback | null>(null);
 	let practiceRevealed = $state<string | null>(null);
 	let practiceFinished = $state(false);
 	let practiceCard: MathCard | undefined = $state();
@@ -87,6 +88,7 @@
 			practice = null;
 			practiceLeft = MAX_ATTEMPTS;
 			practiceFeedback = null;
+			practiceMistake = null;
 			practiceRevealed = null;
 			practiceFinished = false;
 			lessonReplay = replay;
@@ -106,6 +108,7 @@
 		try {
 			const result = await answerTry(practice.problem_id, answer.latex);
 			practiceLeft = result.attempts_left;
+			practiceMistake = result.solved ? null : result.feedback;
 			if (result.solved) {
 				practiceFeedback = { tone: 'good', text: feedbackMessage(result.verdict, null) };
 				practiceFinished = true;
@@ -114,10 +117,13 @@
 				practiceRevealed = result.answer_latex;
 				practiceFinished = true;
 			} else {
-				practiceFeedback = {
-					tone: result.verdict === 'incorrect' ? 'try' : 'info',
-					text: feedbackMessage(result.verdict, result.misconception)
-				};
+				// Feedback from the server replaces the generic verdict line.
+				practiceFeedback = result.feedback
+					? null
+					: {
+							tone: result.verdict === 'incorrect' ? 'try' : 'info',
+							text: feedbackMessage(result.verdict, result.misconception)
+						};
 				if (result.verdict === 'incorrect') practiceCard?.resetInput();
 			}
 		} catch (err) {
@@ -159,6 +165,7 @@
 			return 'handled';
 		}
 		if (failure.kind === 'reload' && allowReload) return 'reload';
+		if (failure.kind === 'ignore') return 'handled';
 		notice = {
 			text: failure.kind === 'notice' ? failure.text : ERROR_COPY.fallback,
 			retry,
@@ -180,7 +187,7 @@
 			problem = next;
 			attemptsLeft = MAX_ATTEMPTS;
 			feedback = null;
-			teach = null;
+			mistake = null;
 			hints = [];
 			explanation = null;
 			missed = false;
@@ -219,7 +226,7 @@
 			mastery = result.mastery;
 			attemptsLeft = result.attempts_left;
 			solvedCount = result.total_solved;
-			teach = result.solved ? null : result.feedback;
+			mistake = result.solved ? null : result.feedback;
 			if (result.verdict === 'incorrect') missed = true;
 			if (result.solved) {
 				feedback = { tone: 'good', text: feedbackMessage(result.verdict, result.misconception) };
@@ -231,10 +238,13 @@
 				finished = true;
 			} else {
 				const verdict = result.verdict;
-				feedback = {
-					tone: verdict === 'incorrect' ? 'try' : 'info',
-					text: feedbackMessage(verdict, result.misconception)
-				};
+				// Feedback from the server replaces the generic verdict line.
+				feedback = result.feedback
+					? null
+					: {
+							tone: verdict === 'incorrect' ? 'try' : 'info',
+							text: feedbackMessage(verdict, result.misconception)
+						};
 				if (verdict === 'incorrect') card?.resetInput();
 			}
 		} catch (err) {
@@ -248,7 +258,10 @@
 		}
 	}
 
-	/** Asks for help on the open problem; a problem already over is simply moved past. */
+	/**
+	 * Asks for help on the open problem. A repeat tap while busy is ignored; a problem
+	 * already scored or out of hints changes nothing, and a closed one moves on.
+	 */
 	async function help(kind: 'hint' | 'explain') {
 		if (!problem || busy) return;
 		const id = problem.problem_id;
@@ -312,6 +325,7 @@
 						problem={practice}
 						attemptsLeft={practiceLeft}
 						feedback={practiceFeedback}
+						mistakeFeedback={practiceMistake}
 						mastery={null}
 						revealedLatex={practiceRevealed}
 						finished={practiceFinished}
@@ -322,34 +336,38 @@
 				{/if}
 			{/snippet}
 		</LessonView>
-	{:else if problem}
-		<MathCard
-			bind:this={card}
-			{problem}
-			{attemptsLeft}
-			{feedback}
-			{mastery}
-			{revealedLatex}
-			{revealedChoice}
-			{finished}
-			{busy}
-			{teach}
-			{hints}
-			{explanation}
-			{missed}
-			onSubmit={submit}
-			onNext={loadNext}
-			onHint={() => help('hint')}
-			onExplain={() => help('explain')}
-		/>
-		{#if problem.has_lesson}
-			<div class="replay">
-				<PixelButton variant="plain" disabled={busy} onclick={() => problem && openLesson(problem.skill_id, true)}>
-					{PLAY_COPY.replayLesson}
-				</PixelButton>
-			</div>
-		{/if}
-	{:else if !notice}
+	{/if}
+	{#if problem}
+		<!-- Kept mounted while a lesson is replayed, so a half-typed answer survives. -->
+		<div class="problem" hidden={lesson !== null}>
+			<MathCard
+				bind:this={card}
+				{problem}
+				{attemptsLeft}
+				{feedback}
+				{mastery}
+				{revealedLatex}
+				{revealedChoice}
+				{finished}
+				{busy}
+				mistakeFeedback={mistake}
+				{hints}
+				{explanation}
+				{missed}
+				onSubmit={submit}
+				onNext={loadNext}
+				onHint={() => help('hint')}
+				onExplain={() => help('explain')}
+			/>
+			{#if problem.has_lesson}
+				<div class="replay">
+					<PixelButton variant="plain" disabled={busy} onclick={() => problem && openLesson(problem.skill_id, true)}>
+						{PLAY_COPY.replayLesson}
+					</PixelButton>
+				</div>
+			{/if}
+		</div>
+	{:else if !lesson && !notice}
 		<p class="note">{PLAY_COPY.loading}{player ? `, ${player.nickname}` : ''}...</p>
 	{/if}
 </PixelFrame>

@@ -126,8 +126,8 @@ def hint_count(pack: Pack, skill_id: str) -> int:
 FeedbackKind = Literal["misconception", "hint", "retry"]
 
 FEEDBACK_COPY: Mapping[Literal["hint", "retry"], str] = {
-    "hint": "Not yet. Tap Hint for a clue.",
-    "retry": "Not yet. Read it again and have another go.",
+    "hint": "Not quite. Try a hint.",
+    "retry": "Not quite. Read it again and have one more go.",
 }
 """The generic lines after a wrong answer that matched no known mistake: ``hint`` when a
 hint is still there to ask for, ``retry`` otherwise. Kid-facing; no dashes."""
