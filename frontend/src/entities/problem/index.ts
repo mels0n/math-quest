@@ -1,9 +1,18 @@
 export { PLAY_COPY, feedbackMessage } from './feedback';
-export { nextProblem, startSession, submitAnswer } from './api';
+export {
+	nextProblem,
+	requestExplanation,
+	requestHint,
+	startSession,
+	submitAnswer
+} from './api';
 export { KEYPAD_PROFILES, MAX_ATTEMPTS, keypadProfile } from './model';
 export type {
 	Answer,
 	AnswerResult,
+	Explanation,
+	Feedback,
+	Hint,
 	KeypadProfile,
 	LessonDue,
 	Mastery,

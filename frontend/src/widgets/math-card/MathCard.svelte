@@ -1,9 +1,18 @@
 <script lang="ts">
 	import { AnswerField, ChoiceField } from '../../features/answer';
-	import { MAX_ATTEMPTS, keypadProfile } from '../../entities/problem';
-	import type { Answer, Mastery, Problem } from '../../entities/problem';
-	import { MathStatic, PixelButton, PromptView, ProgressBar } from '../../shared/ui';
+	import { MAX_ATTEMPTS, PLAY_COPY, keypadProfile } from '../../entities/problem';
+	import type {
+		Answer,
+		Explanation,
+		Feedback,
+		Mastery,
+		Problem,
+		PromptPart
+	} from '../../entities/problem';
+	import { MathStatic, PixelButton, PromptView, ProgressBar, RichText } from '../../shared/ui';
+	import { VisualView } from '../../shared/visuals';
 	import type { CardFeedback } from './card-feedback';
+	import { helpButtons } from './help';
 
 	let {
 		problem,
@@ -15,7 +24,13 @@
 		finished,
 		busy,
 		onSubmit,
-		onNext
+		onNext,
+		teach = null,
+		hints = [],
+		explanation = null,
+		missed = false,
+		onHint,
+		onExplain
 	}: {
 		problem: Problem;
 		attemptsLeft: number;
@@ -27,7 +42,20 @@
 		busy: boolean;
 		onSubmit: (answer: Answer) => void;
 		onNext: () => void;
+		/** Feedback on the last wrong answer, shown under the answer field. */
+		teach?: Feedback | null;
+		/** Hint levels shown so far on this problem, first level first. */
+		hints?: PromptPart[][];
+		/** The latest "explain it another way". */
+		explanation?: Explanation | null;
+		/** The problem has had a wrong answer. */
+		missed?: boolean;
+		/** Without these the card shows no help buttons (a lesson's try-it). */
+		onHint?: () => void;
+		onExplain?: () => void;
 	} = $props();
+
+	const buttons = $derived(helpButtons(problem, { hintsShown: hints.length, missed, finished }));
 
 	let answer: ReturnType<typeof AnswerField> | undefined = $state();
 	/** Word problems read as sentences, so they use a calmer reading size. */
@@ -121,6 +149,43 @@
 			/>
 		{/key}
 	{/if}
+
+	{#if (onHint && buttons.hint) || (onExplain && buttons.explain)}
+		<div class="help">
+			{#if onHint && buttons.hint}
+				<PixelButton variant="plain" disabled={busy} onclick={onHint}>{buttons.hintLabel}</PixelButton>
+			{/if}
+			{#if onExplain && buttons.explain}
+				<PixelButton variant="plain" disabled={busy} label={PLAY_COPY.explain} onclick={onExplain}
+					>{PLAY_COPY.anotherWay}</PixelButton
+				>
+			{/if}
+		</div>
+	{/if}
+
+	{#if teach}
+		<div class="note {teach.kind}" data-testid="teach-feedback">
+			<RichText parts={teach.text} />
+		</div>
+	{/if}
+
+	{#each hints as hint, i (i)}
+		<div class="note hint" data-testid="hint">
+			<span class="label">{PLAY_COPY.hint} {i + 1}</span>
+			<RichText parts={hint} />
+		</div>
+	{/each}
+
+	{#if explanation}
+		<div class="note explain" data-testid="explanation" aria-live="polite">
+			<span class="label">{PLAY_COPY.explanation}</span>
+			<RichText parts={explanation.body} />
+			{#if explanation.visual}
+				<div class="visual"><VisualView visual={explanation.visual} /></div>
+			{/if}
+		</div>
+	{/if}
+
 </section>
 
 <style>
@@ -213,6 +278,46 @@
 	.next {
 		display: flex;
 		justify-content: center;
+	}
+	.note {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		padding: 0.75rem 0.9rem;
+		font-size: 1.15rem;
+		line-height: 1.4;
+		background: #fff8e1;
+		border-left: 6px solid var(--mq-gold);
+		border-radius: var(--mq-radius);
+		min-width: 0;
+	}
+	.note.misconception {
+		background: #fdecef;
+		border-left-color: var(--mq-berry);
+	}
+	.note.explain {
+		background: #e6faf4;
+		border-left-color: var(--mq-mint);
+	}
+	.note :global(p:last-child),
+	.note :global(ol:last-child),
+	.note :global(ul:last-child) {
+		margin-bottom: 0;
+	}
+	.label {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--mq-ink-soft);
+	}
+	.visual {
+		max-width: 100%;
+		overflow: hidden;
+	}
+	.help {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.75rem;
 	}
 	@keyframes pop {
 		from {

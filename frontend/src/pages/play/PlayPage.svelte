@@ -9,11 +9,22 @@
 		fetchLesson,
 		markLessonSeen,
 		nextProblem,
+		requestExplanation,
+		requestHint,
 		startSession,
 		startTry,
 		submitAnswer
 	} from '../../entities/problem';
-	import type { Answer, Lesson, Mastery, Problem, TryProblem } from '../../entities/problem';
+	import type {
+		Answer,
+		Explanation,
+		Feedback,
+		Lesson,
+		Mastery,
+		Problem,
+		PromptPart,
+		TryProblem
+	} from '../../entities/problem';
 	import { fetchMe, logout } from '../../entities/player';
 	import type { Player } from '../../entities/player';
 	import { ERROR_COPY } from '../../shared/api';
@@ -37,6 +48,11 @@
 	let solvedCount = $state(0);
 	let notice = $state<{ text: string; retry: () => Promise<void>; label: string } | null>(null);
 	let card: MathCard | undefined = $state();
+	/** Help on the problem on screen: feedback on the last miss, hints shown, explanation. */
+	let teach = $state<Feedback | null>(null);
+	let hints = $state<PromptPart[][]>([]);
+	let explanation = $state<Explanation | null>(null);
+	let missed = $state(false);
 
 	/** The lesson on screen: one due before a new skill, or one replayed from a problem. */
 	let lesson = $state<Lesson | null>(null);
@@ -58,7 +74,9 @@
 			prompt: t.prompt,
 			keypad: t.keypad,
 			choices: null,
-			has_lesson: false
+			has_lesson: false,
+			hint_levels: 0,
+			has_explanations: false
 		};
 	}
 
@@ -162,6 +180,10 @@
 			problem = next;
 			attemptsLeft = MAX_ATTEMPTS;
 			feedback = null;
+			teach = null;
+			hints = [];
+			explanation = null;
+			missed = false;
 			mastery = null;
 			revealedLatex = null;
 			revealedChoice = null;
@@ -197,6 +219,8 @@
 			mastery = result.mastery;
 			attemptsLeft = result.attempts_left;
 			solvedCount = result.total_solved;
+			teach = result.solved ? null : result.feedback;
+			if (result.verdict === 'incorrect') missed = true;
 			if (result.solved) {
 				feedback = { tone: 'good', text: feedbackMessage(result.verdict, result.misconception) };
 				finished = true;
@@ -212,6 +236,30 @@
 					text: feedbackMessage(verdict, result.misconception)
 				};
 				if (verdict === 'incorrect') card?.resetInput();
+			}
+		} catch (err) {
+			if (fail(err, dismiss, true, PLAY_COPY.ok) === 'reload') {
+				busy = false;
+				await loadNext();
+				return;
+			}
+		} finally {
+			busy = false;
+		}
+	}
+
+	/** Asks for help on the open problem; a problem already over is simply moved past. */
+	async function help(kind: 'hint' | 'explain') {
+		if (!problem || busy) return;
+		const id = problem.problem_id;
+		busy = true;
+		try {
+			if (kind === 'hint') {
+				const hint = await requestHint(id);
+				if (problem?.problem_id === id) hints = [...hints, hint.text];
+			} else {
+				const shown = await requestExplanation(id);
+				if (problem?.problem_id === id) explanation = shown;
 			}
 		} catch (err) {
 			if (fail(err, dismiss, true, PLAY_COPY.ok) === 'reload') {
@@ -285,8 +333,14 @@
 			{revealedChoice}
 			{finished}
 			{busy}
+			{teach}
+			{hints}
+			{explanation}
+			{missed}
 			onSubmit={submit}
 			onNext={loadNext}
+			onHint={() => help('hint')}
+			onExplain={() => help('explain')}
 		/>
 		{#if problem.has_lesson}
 			<div class="replay">

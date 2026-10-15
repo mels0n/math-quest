@@ -1,5 +1,5 @@
 import { apiFetch } from '../../shared/api';
-import type { Answer, AnswerResult, NextItem, Session } from './model';
+import type { Answer, AnswerResult, Explanation, Hint, NextItem, Session } from './model';
 
 export const startSession = () =>
 	apiFetch<Session>('/api/play/sessions', { method: 'POST', body: { mode: 'adventure' } });
@@ -12,3 +12,9 @@ export const submitAnswer = (problemId: string, answer: Answer) =>
 		method: 'POST',
 		body: answer
 	});
+
+export const requestHint = (problemId: string) =>
+	apiFetch<Hint>(`/api/play/problems/${problemId}/hint`, { method: 'POST' });
+
+export const requestExplanation = (problemId: string) =>
+	apiFetch<Explanation>(`/api/play/problems/${problemId}/explain`, { method: 'POST' });

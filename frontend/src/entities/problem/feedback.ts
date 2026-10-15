@@ -24,5 +24,9 @@ export const PLAY_COPY = {
 	rateLimited: 'Whoa, slow down!',
 	retry: 'Try again',
 	ok: 'OK',
-	replayLesson: 'See the lesson again'
+	replayLesson: 'See the lesson again',
+	hint: 'Hint',
+	explain: 'Explain it another way',
+	anotherWay: 'Another way',
+	explanation: 'Another way to see it'
 } as const;
