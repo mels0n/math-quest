@@ -41,7 +41,12 @@ def test_load_slice_pack() -> None:
         for prereq in graph.prerequisites(skill_id):
             assert order.index(prereq) < order.index(skill_id)
     anchors = {s.id for s in graph.skills.values() if s.anchor}
-    assert anchors == {"add_within_20", "add_2digit_regroup", "add_fractions_unlike"}
+    assert anchors == {
+        "add_within_10",
+        "add_within_20",
+        "add_2digit_regroup",
+        "add_fractions_unlike",
+    }
 
 
 def test_cycle_rejected() -> None:
