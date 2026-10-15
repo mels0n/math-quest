@@ -12,7 +12,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
 from mathquest.api import admin as admin_api
-from mathquest.api import auth, health, lessons, play
+from mathquest.api import auth, health, lessons, placement, play
 from mathquest.api.admingate import AdminGate
 from mathquest.api.clientip import parse_networks
 from mathquest.api.deps import (
@@ -137,6 +137,7 @@ def create_app(
     app.include_router(auth.router)
     app.include_router(play.router)
     app.include_router(lessons.router)
+    app.include_router(placement.router)
     app.include_router(admin_api.router)
 
     if cfg.static_dir is not None:
