@@ -20,11 +20,16 @@ def _sum(a: int, b: int) -> Built:
 
 
 def _add(a: int, b: int) -> Built:
+    """``big`` and ``small`` name the addends by size, for count-on hints."""
     return Built(
         prompt=math_prompt(f"{a} + {b} = ?"),
         answer=_Int(a + b),
-        wrong=(("subtracted_instead", _Int(abs(a - b))),),
-        values={"a": a, "b": b},
+        wrong=(
+            ("subtracted_instead", _Int(abs(a - b))),
+            # Counting on from the start number counts it again: 8 + 5 as "8, 9, 10, 11, 12".
+            ("counted_start", _Int(a + b - 1)),
+        ),
+        values={"a": a, "b": b, "big": max(a, b), "small": min(a, b)},
     )
 
 
@@ -116,12 +121,15 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
     )
 
 
+_ADD_MISTAKES = ("subtracted_instead", "counted_start")
+
+
 def generators() -> list[SkillGenerator]:
     form = AnswerForm.INTEGER
     return [
-        SkillGenerator("add_within_10", -2.0, form, _build_add_within_10, ("subtracted_instead",)),
+        SkillGenerator("add_within_10", -2.0, form, _build_add_within_10, _ADD_MISTAKES),
         SkillGenerator("sub_within_10", -1.8, form, _build_sub_within_10, ("added_instead",)),
-        SkillGenerator("add_within_20", -1.2, form, _build_add_within_20, ("subtracted_instead",)),
+        SkillGenerator("add_within_20", -1.2, form, _build_add_within_20, _ADD_MISTAKES),
         SkillGenerator(
             "sub_within_20",
             -1.0,

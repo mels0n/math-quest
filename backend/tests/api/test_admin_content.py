@@ -45,6 +45,7 @@ async def test_overview_shows_the_live_pack_and_coverage(
     r = await h.client.get("/api/admin/content")
     assert r.status_code == 200
     (pack,) = r.json()["packs"]
+    assert r.json()["targets"]["explanations"] == "3-4"
     assert pack["id"] == "k8-core"
     assert pack["live"] is True
     assert pack["version"] == h.app.state.catalog.pack.version
@@ -52,11 +53,13 @@ async def test_overview_shows_the_live_pack_and_coverage(
     assert meadows["region_id"] == "number_meadows"
     skill = next(s for s in meadows["skills"] if s["skill_id"] == "add_within_20")
     assert set(skill) == {
-        "skill_id", "name", "tiers", "misconceptions", "word_templates", "bank_items",
+        "skill_id", "name", "tiers", "misconceptions", "feedback", "word_templates", "bank_items",
         "lesson", "hints", "explanations", "gaps",
     }  # fmt: skip
     assert (skill["word_templates"], skill["lesson"], skill["hints"]) == (15, True, 3)
-    assert {"field": "misconceptions", "have": 1, "want": 2} in skill["gaps"]
+    assert (skill["misconceptions"], skill["feedback"], skill["gaps"]) == (2, 2, [])
+    first = next(s for s in meadows["skills"] if s["skill_id"] == "add_within_10")
+    assert {"field": "misconception feedback", "have": 0, "want": 2} in first["gaps"]
 
 
 async def test_skill_preview_renders_every_item_with_answers(
@@ -74,9 +77,10 @@ async def test_skill_preview_renders_every_item_with_answers(
     expected = h.app.state.catalog.source("add_within_20").generate(42, 1)
     assert problem["answer_latex"] == str(int(expected.answer))
     assert problem["prompt"] == [{"kind": "math", "value": expected.prompt[0].latex}]
-    (mistake,) = problem["misconceptions"]
-    assert mistake["key"] == "subtracted_instead"
-    assert mistake["feedback"][0]["kind"] == "text"
+    assert [m["key"] for m in problem["misconceptions"]] == ["subtracted_instead", "counted_start"]
+    assert all(m["feedback"][0]["kind"] == "text" for m in problem["misconceptions"])
+    visual = data["explanations"][0]["visual"]
+    assert visual["params"]["start"] == max(expected.values["a"], expected.values["b"])
     assert len(data["lesson"]["screens"]) == 3
     assert data["lesson"]["screens"][1]["visual"]["kind"] == "number_line"
     assert len(data["hints"]) == 3

@@ -51,11 +51,11 @@
   },
   "add_within_20-word": {
     "tier": 0,
-    "seed": 95,
+    "seed": 134,
     "prompt": [
       {
         "kind": "text",
-        "value": "Malik has 10 puzzle pieces. Eli has 4 puzzle pieces. How many puzzle pieces do they have together?"
+        "value": "Fatima reads 10 pages in the morning. Then Fatima reads 3 pages at night. How many pages does Fatima read in all?"
       }
     ]
   },

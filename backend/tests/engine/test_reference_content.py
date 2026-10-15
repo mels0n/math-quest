@@ -71,6 +71,19 @@ def test_hints_are_ordered_and_the_last_works_the_answer() -> None:
         assert f"{a}" in plain(hints[0]) and f"{b}" in plain(hints[0])
         assert str(problem.answer) not in plain(hints[0]).split()
         assert MathPart(f"{a} + {b} = {problem.answer}") in hints[2]
+        big, small = max(int(a), int(b)), min(int(a), int(b))
+        assert plain(hints[1]).startswith(f"Start at {big}, the bigger number. Count on {small}")
+        assert plain(hints[2]).startswith(f"Start at {big} and count on {small}.")
+
+
+def test_the_number_line_shows_this_problem() -> None:
+    for problem in _problems():
+        visual = render_explanations(PACK.explanations[SKILL], problem)[0].visual
+        assert visual is not None and visual.kind == "number_line"
+        a, b = int(problem.values["a"]), int(problem.values["b"])
+        assert visual.params == {
+            "min": 0, "max": 20, "start": max(a, b), "jumps": min(a, b), "end": a + b,
+        }  # fmt: skip
 
 
 def test_explanations_and_feedback_render_for_every_problem() -> None:
@@ -84,6 +97,8 @@ def test_explanations_and_feedback_render_for_every_problem() -> None:
             feedback = render_feedback(explanations, problem, misconception.key)
             assert feedback is not None
             assert str(problem.values["a"]) in plain(feedback)
+            if misconception.key == "counted_start":
+                assert misconception.answer == problem.answer - 1
     assert render_feedback(explanations, SOURCE.generate(1, 0), "unknown_key") is None
 
 

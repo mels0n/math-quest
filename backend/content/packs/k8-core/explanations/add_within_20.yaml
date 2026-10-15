@@ -3,11 +3,11 @@ skill: add_within_20
 approaches:
   - style: visual
     body_md: >-
-      Picture a number line. Put your finger on {a}. Make {b} small jumps to
-      the right. The number where you stop is the answer.
+      Picture a number line. Put your finger on {big}, the bigger number. Make
+      {small} small jumps to the right. The number where you stop is the answer.
     visual:
       kind: number_line
-      params: {min: 0, max: 20}
+      params: {min: 0, max: 20, start: "{big}", jumps: "{small}", end: "{{= a + b }}"}
   - style: steps
     body_md: |-
       1. Find the bigger number and say it out loud.
@@ -27,3 +27,6 @@ misconceptions:
   subtracted_instead: >-
     It looks like you took away. The plus sign means put {a} and {b}
     together. So the answer is bigger than both.
+  counted_start: >-
+    You were close! It looks like you counted {big} as a jump. For
+    \({a} + {b}\), start at {big}. The next number you say is jump one.
