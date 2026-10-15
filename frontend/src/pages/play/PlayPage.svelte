@@ -425,16 +425,21 @@
 				onHint={() => help('hint')}
 				onExplain={() => help('explain')}
 			/>
-			<div class="replay">
-				{#if problem.has_lesson}
-					<PixelButton variant="plain" disabled={busy} onclick={() => problem && openLesson(problem.skill_id, true)}>
-						{PLAY_COPY.replayLesson}
-					</PixelButton>
-				{/if}
-				<PixelButton variant="plain" disabled={busy} onclick={() => void finish()}>
-					{SESSION_COPY.finish}
-				</PixelButton>
-			</div>
+			{#if problem.has_lesson || finished}
+				<div class="replay">
+					{#if problem.has_lesson}
+						<PixelButton variant="plain" disabled={busy} onclick={() => problem && openLesson(problem.skill_id, true)}>
+							{PLAY_COPY.replayLesson}
+						</PixelButton>
+					{/if}
+					<!-- Offered between problems, so it never moves the card while answering. -->
+					{#if finished}
+						<PixelButton variant="plain" disabled={busy} onclick={() => void finish()}>
+							{SESSION_COPY.finish}
+						</PixelButton>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	{:else if !lesson && !notice && !summary}
 		<p class="note">{PLAY_COPY.loading}{player ? `, ${player.nickname}` : ''}...</p>
