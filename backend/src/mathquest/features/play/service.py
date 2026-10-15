@@ -11,10 +11,9 @@ first-try solve still reports 3 and a wrong-then-right solve reports 2.
 The first three WRONG_FORM or UNREADABLE verdicts on a problem are free; later ones use
 up a try like INCORRECT does (the verdict returned is still WRONG_FORM or UNREADABLE).
 Re-sending the previous wrong answer verbatim returns the stored result without using a
-try. Input over 200 characters is UNREADABLE without
-reaching the checker. Mastery changes once per problem: on the first correct answer
-(hints_used is the number of tries used before it) or when the third try is used up
-(scored incorrect).
+try. Input over 200 characters is UNREADABLE without reaching the checker. Mastery
+changes once per problem: on the first correct answer (hints_used is the number of
+tries used before it) or when the third try is used up (scored incorrect).
 
 `total_solved` on every answer is the player's saved count of solved problems after
 that answer, the same number `total_solved` returns for the header on any device.
