@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 content-lint = "mathquest.cli.content_lint:main"
+content-report = "mathquest.cli.content_report:main"
 
 [dependency-groups]
 dev = [
