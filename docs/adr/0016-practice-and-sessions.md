@@ -69,7 +69,7 @@ session. The session stores its skills (`focus`).
   started records a `revisit_events` row (player, session, skill, time), at most one
   per session and skill. The session stores which of its skills were mastered at the
   start, so a skill mastered or confirmed during the session is not a revisit. Later
-  features reward returning to old skills; bond stars (R5) must count distinct days
+  features reward returning to old skills: bond stars must count distinct days
   with a revisit, not raw rows, so several short sessions on one afternoon count once.
 
 **The skill list.** `GET /api/skills` returns every skill with the player's state
