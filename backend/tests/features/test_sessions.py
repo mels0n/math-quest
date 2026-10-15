@@ -211,6 +211,36 @@ async def test_practising_a_mastered_skill_records_one_revisit_per_session(
     assert await _revisits(db, pid) == ["add_within_10", "add_within_10"]
 
 
+async def test_a_skill_mastered_or_confirmed_during_practice_is_not_a_revisit(
+    db: AsyncSession,
+) -> None:
+    pid = await _player(db)
+    skill_id = "add_within_10"
+    top = service._top_tier(CATALOG, skill_id)
+    await _set_row(
+        db,
+        pid,
+        skill_id,
+        state="learning",
+        attempts=6,
+        rating=service._top_difficulty(CATALOG, skill_id) + 1.5,
+        recent=[[1, top]] * 5,
+    )
+    await _mark_provisional(db, pid, "sub_within_10")
+    learning = await service.start_practice(db, CATALOG, pid, skill_id=skill_id)
+    for _ in range(3):
+        inst = await _issue(db, pid, learning.session_id, skill_id, tier=top)
+        await _submit(db, pid, inst.id, _right(inst))
+    assert (await _row(db, pid, skill_id)).state == "mastered"
+    provisional = await service.start_practice(db, CATALOG, pid, skill_id="sub_within_10")
+    for _ in range(3):
+        inst = await _issue(db, pid, provisional.session_id, "sub_within_10", tier=1)
+        await _submit(db, pid, inst.id, _right(inst))
+    assert (await _row(db, pid, "sub_within_10")).state == "mastered"
+
+    assert await _revisits(db, pid) == []
+
+
 # Skill list
 
 

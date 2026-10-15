@@ -65,9 +65,12 @@ session. The session stores its skills (`focus`).
 - Practice has no set length and no automatic summary. "I'm done" ends it with the
   summary; the same button ends an adventure early. It appears once the problem on
   screen is scored, so it never moves the card while a child is answering.
-- Practising a skill that is mastered records a `revisit_events` row (player, session,
-  skill, time), at most one per session and skill. Later features reward returning to old
-  skills, and one row per visit, not per problem, is what they need.
+- Practicing a skill that was already mastered (not provisional) when the session
+  started records a `revisit_events` row (player, session, skill, time), at most one
+  per session and skill. The session stores which of its skills were mastered at the
+  start, so a skill mastered or confirmed during the session is not a revisit. Later
+  features reward returning to old skills; bond stars (R5) must count distinct days
+  with a revisit, not raw rows, so several short sessions on one afternoon count once.
 
 **The skill list.** `GET /api/skills` returns every skill with the player's state
 (locked, ready, learning, provisional, mastered, review due), progress, region and

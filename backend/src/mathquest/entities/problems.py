@@ -38,6 +38,9 @@ class PlaySession(Base):
     problem_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     focus: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
     """A practice session's skills, in the order chosen; None for an adventure."""
+    mastered_at_start: Mapped[list[str] | None] = mapped_column(JSONB, nullable=True)
+    """A practice session's skills that were mastered (not provisional) when it started:
+    the only ones whose practice there counts as a revisit. None for an adventure."""
 
 
 class ProblemInstance(Base):
@@ -85,8 +88,8 @@ class Attempt(Base):
 
 
 class RevisitEvent(Base):
-    """A mastered skill practised again in a practice session: at most one per session
-    and skill, at its first scored problem there."""
+    """A skill that was already mastered when a practice session started, practiced
+    again there: at most one per session and skill, at its first scored problem."""
 
     __tablename__ = "revisit_events"
     __table_args__ = (UniqueConstraint("session_id", "skill_id"),)
@@ -109,8 +112,15 @@ async def add_session(
     mode: str,
     started_at: datetime,
     focus: list[str] | None = None,
+    mastered_at_start: list[str] | None = None,
 ) -> PlaySession:
-    row = PlaySession(player_id=player_id, mode=mode, started_at=started_at, focus=focus)
+    row = PlaySession(
+        player_id=player_id,
+        mode=mode,
+        started_at=started_at,
+        focus=focus,
+        mastered_at_start=mastered_at_start,
+    )
     db.add(row)
     await db.flush()
     return row
@@ -250,11 +260,11 @@ async def count_solved(db: AsyncSession, player_id: uuid.UUID) -> int:
     return int(total or 0)
 
 
-async def session_mode(db: AsyncSession, session_id: uuid.UUID) -> str:
-    """The mode of an existing session."""
-    mode = await db.scalar(select(PlaySession.mode).where(PlaySession.id == session_id))
-    assert mode is not None
-    return mode
+async def get_session(db: AsyncSession, session_id: uuid.UUID) -> PlaySession:
+    """An existing session, read without a lock."""
+    row = await db.get(PlaySession, session_id)
+    assert row is not None
+    return row
 
 
 async def add_revisit(

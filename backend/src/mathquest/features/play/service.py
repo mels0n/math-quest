@@ -127,8 +127,10 @@ the WEAK_SPOTS learning skills with the lowest progress followed by the due revi
 of either is a Conflict("no_weak_spots")). The skill comes from `scheduler.plan_practice`;
 lessons, hints, explanations, warm-ups and the frustration guard work as in an adventure.
 A practice session has no set length and no review slots. It is untimed: a fluency
-skill's speed does not change the score. The first scored problem of a skill that was
-MASTERED when it was scored records a revisit event (one per session and skill).
+skill's speed does not change the score. The first scored problem of a focus skill that
+was mastered (not provisional) when the session started, and still is, records a
+revisit event (one per session and skill); a skill mastered or confirmed during the
+session is not a revisit.
 
 Row locks are always taken problem instance first, then skill_mastery, so concurrent
 submissions cannot deadlock; the skill_mastery row is created with ON CONFLICT DO
@@ -387,8 +389,15 @@ async def start_practice(
         focus = await _weak_spots(db, player_id, states, now)
         if not focus:
             raise Conflict("no_weak_spots")
+    rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
+    mastered = [sid for sid in focus if sid in rows and rows[sid].state == SkillState.MASTERED]
     row = await problems.add_session(
-        db, player_id=player_id, mode=PRACTICE, started_at=now, focus=focus
+        db,
+        player_id=player_id,
+        mode=PRACTICE,
+        started_at=now,
+        focus=focus,
+        mastered_at_start=mastered,
     )
     out = _session_out(catalog, row)
     await db.commit()
@@ -825,9 +834,14 @@ async def submit_answer(
     scored = solved or used >= allowed
 
     if scored:
-        practice = await problems.session_mode(db, instance.session_id) == PRACTICE
+        session = await problems.get_session(db, instance.session_id)
+        practice = session.mode == PRACTICE
         row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
-        if practice and row.state == SkillState.MASTERED:
+        if (
+            practice
+            and skill_id in (session.mastered_at_start or [])
+            and row.state == SkillState.MASTERED
+        ):
             await problems.add_revisit(
                 db,
                 player_id=player_id,
