@@ -19,6 +19,7 @@ from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check
 from mathquest.engine.generators import get_generator
 from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
+from mathquest.engine.scheduler import RUN_LENGTH
 from mathquest.engine.skillgraph import SkillGraph, load_pack
 from mathquest.engine.types import Problem
 from mathquest.entities import mastery, players, problems
@@ -324,7 +325,7 @@ async def test_next_problem_stays_on_a_skill_for_a_short_run(db: AsyncSession) -
     assert skills[3] != skills[0]
     recent = await problems.recent_skill_ids(db, session.session_id, limit=3)
     assert recent == skills[1:]
-    assert service.RECENT_LOOKBACK == 8
+    assert service.RECENT_LOOKBACK == RUN_LENGTH * 2 + 2
 
 
 async def _master(db: AsyncSession, pid: uuid.UUID, session_id: uuid.UUID, skill_id: str) -> int:
