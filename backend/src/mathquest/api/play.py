@@ -54,6 +54,9 @@ class AnswerIn(BaseModel):
             return None
         if "\x00" in value:
             raise ValueError("NUL is not allowed")
+        if value.startswith(play.CHOICE_PREFIX):
+            # Reserved for stored choice attempts; keeps the attempts column unambiguous.
+            raise ValueError("not an answer")
         try:
             value.encode("utf-8")
         except UnicodeEncodeError:

@@ -231,7 +231,11 @@ def test_near_duplicate_explanations_and_bank_items(tmp_path: Path) -> None:
             "id": "bigger_again",
             "prompt": [{"kind": "text", "value": "Which number is bigger?"}],
             "answer": {"kind": "choice", "value": 0},
-            "choices": [[{"kind": "math", "value": "9"}], [{"kind": "math", "value": "2"}]],
+            "choices": [
+                [{"kind": "math", "value": "9"}],
+                [{"kind": "math", "value": "2"}],
+                [{"kind": "math", "value": "4"}],
+            ],
         }
     )
     found = _rule(_lint(load(tmp_path, files)), "duplicate")

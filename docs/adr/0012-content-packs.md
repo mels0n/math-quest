@@ -83,8 +83,16 @@ problem.
 `choice`. A choice problem accepts only a choice within its shown range, and every
 other problem only LaTeX; anything else is rejected with 422 and records nothing. A
 choice attempt is stored in the existing `latex` column as `choice:<index>`. Only choice
-problems store that form, and the LaTeX parser rejects `:`, so the column stays
-unambiguous without a migration.
+problems store that form: the answer route rejects typed LaTeX starting with `choice:`,
+so the column stays unambiguous without a migration. A choice item has at least three
+choices, and a choice problem allows two tries instead of three, so a miss cannot be
+followed by a sure guess.
+
+**A shipped bank item is immutable.** An item carries its own answer, and an open
+problem stores only its id. Changing a shipped item's prompt meaning, its choices
+(including their order) or its answer means adding a new item with a new id and
+removing the old one. A problem whose bank item is gone is closed when it is answered
+(`problem_closed`), and the client moves on to a new problem.
 
 ## Alternatives rejected
 - **A general template engine (Jinja2 or similar).** Loops, filters and attribute

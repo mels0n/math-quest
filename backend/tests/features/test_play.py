@@ -19,6 +19,7 @@ from mathquest.engine.catalog import Catalog, build_catalog, load_catalog
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check
 from mathquest.engine.content import load_pack
+from mathquest.engine.content.schema import Bank, WordProblems, WordTemplate
 from mathquest.engine.mastery import SkillState, choose_tier, is_mastered
 from mathquest.engine.scheduler import RUN_LENGTH
 from mathquest.engine.types import Problem
@@ -328,7 +329,7 @@ async def test_a_skill_without_word_or_bank_content_stays_bare(db: AsyncSession)
 
 
 @pytest.mark.parametrize(
-    ("variant", "template_id"), [("word", "removed_template"), ("bank", None), ("nonsense", "x")]
+    ("variant", "template_id"), [("word", "removed_template"), ("nonsense", "x")]
 )
 async def test_unknown_variant_or_template_falls_back_to_bare(
     db: AsyncSession, variant: str, template_id: str | None
@@ -774,9 +775,9 @@ async def test_a_choice_problem_is_answered_by_index(db: AsyncSession) -> None:
     wrong = (right + 1) % len(problem.choices)
 
     miss = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
-    assert (miss.verdict, miss.attempts_left, miss.answer_choice) == (Verdict.INCORRECT, 2, None)
+    assert (miss.verdict, miss.attempts_left, miss.answer_choice) == (Verdict.INCORRECT, 1, None)
     again = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=wrong)
-    assert again.attempts_left == 2
+    assert again.attempts_left == 1
 
     hit = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=right)
     assert hit.verdict is Verdict.CORRECT and hit.solved
@@ -827,3 +828,111 @@ async def test_a_choice_for_a_typed_problem_is_invalid(db: AsyncSession) -> None
     inst = await _issue(db, pid, session.session_id)
     with pytest.raises(Invalid, match="latex_expected"):
         await service.submit_answer(db, POOL, CATALOG, pid, inst.id, choice=0)
+
+
+async def test_a_second_miss_on_a_choice_problem_scores_it(db: AsyncSession) -> None:
+    pid, problem = await _choice_problem(db)
+    assert problem.choices and problem.dev_answer_choice is not None
+    right = problem.dev_answer_choice
+    first, second = ((right + k) % len(problem.choices) for k in (1, 2))
+
+    await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=first)
+    out = await service.submit_answer(db, POOL, FIXTURE, pid, problem.problem_id, choice=second)
+    assert (out.solved, out.attempts_left, out.answer_choice) == (False, 0, right)
+    assert service.MAX_CHOICE_ATTEMPTS == 2
+
+
+def _without_bank_item(item_id: str) -> Catalog:
+    pack = FIXTURE.pack
+    bank = pack.bank["pick"]
+    kept = Bank(skill="pick", items=tuple(i for i in bank.items if i.id != item_id))
+    return build_catalog(
+        pack.model_copy(update={"bank": {**pack.bank, "pick": kept}}), FIXTURE.slots
+    )
+
+
+@pytest.mark.parametrize("send", ["choice", "latex"])
+async def test_a_problem_whose_bank_item_is_gone_is_closed(db: AsyncSession, send: str) -> None:
+    pid, problem = await _choice_problem(db)
+    inst = await db.get(ProblemInstance, problem.problem_id)
+    assert inst is not None and inst.variant == "bank" and inst.template_id is not None
+    changed = _without_bank_item(inst.template_id)
+    latex, choice = (None, 0) if send == "choice" else ("1", None)
+
+    for _ in range(2):
+        with pytest.raises(Conflict, match="problem_closed"):
+            await service.submit_answer(
+                db, POOL, changed, pid, problem.problem_id, latex, choice=choice
+            )
+        await db.rollback()
+    await db.refresh(inst)
+    assert inst.answered_at is not None and inst.correct is None
+    count = await db.scalar(
+        select(func.count()).select_from(Attempt).where(Attempt.problem_id == inst.id)
+    )
+    assert count == 0
+
+
+def _failing_word_catalog() -> Catalog:
+    """`story` always draws a word problem whose text breaks for an odd `a`."""
+    pack = FIXTURE.pack
+    story = pack.skills["story"].model_copy(update={"word_share": 1.0, "bank_share": 0.0})
+    template = WordTemplate(
+        id="halves", text_template=r"Half of {a} is {{= \frac{a}{2} }}.", grade_band="1"
+    )
+    words = WordProblems(skill="story", templates=(template,))
+    return build_catalog(
+        pack.model_copy(
+            update={
+                "skills": {**pack.skills, "story": story},
+                "word_problems": {**pack.word_problems, "story": words},
+            }
+        ),
+        FIXTURE.slots,
+    )
+
+
+async def test_a_variant_that_fails_to_render_is_issued_bare(
+    db: AsyncSession, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    catalog = _failing_word_catalog()
+    seeds = iter(range(12))
+    monkeypatch.setattr(service.secrets, "randbelow", lambda _limit: next(seeds))  # pyright: ignore[reportUnknownLambdaType]
+    pid = await _player(db)
+    row = await mastery.lock(db, pid, "pick", 0.0)
+    row.state = SkillState.MASTERED
+    await db.commit()
+    session = await service.start_session(db, pid, "adventure")
+    variants: set[str] = set()
+    for _ in range(12):
+        problem = await service.next_problem(db, catalog, pid, session.session_id)
+        inst = await db.get(ProblemInstance, problem.problem_id)
+        assert inst is not None and inst.skill_id == "story"
+        source = catalog.source("story")
+        a = source.generate(inst.seed, inst.tier).values["a"]
+        assert isinstance(a, int)
+        expected = "word" if a % 2 == 0 else "bare"
+        assert (inst.variant, inst.template_id) == (
+            (expected, "halves") if expected == "word" else ("bare", None)
+        )
+        regenerated = service.regenerate(catalog, inst)
+        assert service._prompt_out(regenerated.prompt) == problem.prompt  # pyright: ignore[reportPrivateUsage]
+        variants.add(inst.variant)
+    assert variants == {"word", "bare"}
+
+
+async def test_new_seeds_are_safe_javascript_integers(db: AsyncSession) -> None:
+    assert service.SEED_LIMIT == 2**53
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    problem = await service.next_problem(db, CATALOG, pid, session.session_id)
+    inst = await db.get(ProblemInstance, problem.problem_id)
+    assert inst is not None and 0 <= inst.seed < 2**53
+
+
+async def test_a_stored_seed_above_the_new_limit_still_regenerates(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, seed=2**62 - 1)
+    out = await _submit(db, pid, inst.id, _right(inst))
+    assert out.solved

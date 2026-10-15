@@ -8,18 +8,28 @@ word_share and bank_share (see `variants`); the template or bank item is picked 
 seed too, and its id is stored. A word problem keeps the generator's answer unless its
 template computes one from an expression. If a stored template or item no longer exists
 (removed from the content pack, say), regeneration falls back to the bare problem.
+A bank item carries its own answer, so a problem issued from a bank item that is gone is
+stale: answering it closes it as Conflict("problem_closed"), and the client moves on to
+the next problem. Shipped bank items are never edited in place (ADR-0012), so an item
+that still exists is the one the learner saw. If rendering a word or bank variant fails
+when a problem is issued (a template that breaks for this seed), the failure is logged
+and the problem is issued and stored as the bare variant instead.
+
+Seeds are drawn below 2**53, so they survive a round trip through JavaScript numbers.
 
 A bank item can be multiple choice. Its problem is answered with a choice index, never
 LaTeX: sending LaTeX to a choice problem, a choice to any other problem, or an index
 outside the shown choices is Invalid (422) and records nothing. A choice attempt is
 stored in the attempts table's latex column as `choice:<index>`; a choice problem only
-ever stores that form and no other problem ever does (the LaTeX parser rejects `:`), so
-the column stays unambiguous. When a choice problem is scored, `answer_choice` reveals
-the right index instead of `answer_latex`.
+ever stores that form, and the answer route rejects typed LaTeX that starts with
+`choice:`, so no other problem ever does and the column stays unambiguous. When a choice
+problem is scored, `answer_choice` reveals the right index instead of `answer_latex`.
 
-A problem allows three tries. `attempts_left` (the hearts on the play screen) is
-MAX_ATTEMPTS minus the tries used up by misses; a correct answer does not use one, so a
-first-try solve still reports 3 and a wrong-then-right solve reports 2.
+A typed problem allows three tries (MAX_ATTEMPTS); a choice problem allows two
+(MAX_CHOICE_ATTEMPTS), since with three or more choices a third try would be a free
+guess. `attempts_left` (the hearts on the play screen) is the problem's allowance minus
+the tries used up by misses; a correct answer does not use one, so a first-try solve of
+a typed problem still reports 3 and a wrong-then-right solve reports 2.
 
 The first three WRONG_FORM or UNREADABLE verdicts on a problem are free; later ones use
 up a try like INCORRECT does (the verdict returned is still WRONG_FORM or UNREADABLE).
@@ -61,6 +71,7 @@ submissions cannot deadlock; the skill_mastery row is created with ON CONFLICT D
 NOTHING before it is locked.
 """
 
+import logging
 import secrets
 import uuid
 from dataclasses import dataclass
@@ -86,6 +97,7 @@ from mathquest.engine.mastery import (
     update,
 )
 from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
+from mathquest.engine.templates import TemplateError
 from mathquest.engine.types import VARIANTS, KeypadProfile, Problem, Prompt, TextPart, Variant
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
@@ -101,13 +113,18 @@ from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 
 MAX_ATTEMPTS = 3
+MAX_CHOICE_ATTEMPTS = 2
 FREE_VERDICTS = 3
 STORED_LATEX_MAX = 200
 CHOICE_PREFIX = "choice:"
 # Room for a whole run plus the reviews (every fifth problem) that can sit inside it.
 RECENT_LOOKBACK = RUN_LENGTH * 2 + 2
-_SEED_LIMIT = 2**62
+SEED_LIMIT = 2**53
+"""New seeds are below this, so they are exact as JavaScript numbers."""
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
+
+
+log = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -220,8 +237,15 @@ async def next_problem(
     skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count, recent)
     source = catalog.source(skill_id)
     tier = choose_tier(ratings[skill_id], source.tier_difficulties)
-    seed = secrets.randbelow(_SEED_LIMIT)
-    problem = source.generate(seed, tier, choose_variant(source, seed))
+    seed = secrets.randbelow(SEED_LIMIT)
+    variant = choose_variant(source, seed)
+    try:
+        problem = source.generate(seed, tier, variant)
+    except TemplateError:
+        log.exception(
+            "%s variant of %s failed for seed %d; issuing it bare", variant, skill_id, seed
+        )
+        problem = source.generate(seed, tier)
     instance = await problems.add_problem(
         db,
         session_id=session_id,
@@ -292,6 +316,15 @@ def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
     return source.generate(instance.seed, instance.tier, variant, instance.template_id)
 
 
+def _allowed(problem: Problem) -> int:
+    return MAX_CHOICE_ATTEMPTS if problem.choices is not None else MAX_ATTEMPTS
+
+
+def _stale(instance: ProblemInstance, problem: Problem) -> bool:
+    """Issued from a bank item that no longer exists, so its answer is unknown."""
+    return instance.variant == "bank" and problem.variant != "bank"
+
+
 def _tries_used(attempts: list[Attempt]) -> int:
     wrong = sum(1 for a in attempts if a.verdict == Verdict.INCORRECT.value)
     free = sum(1 for a in attempts if a.verdict in _FREE)
@@ -317,6 +350,7 @@ async def _stored(
     attempts: list[Attempt],
     reveal: _Reveal | None,
     now: datetime,
+    allowed: int,
 ) -> AnswerOut:
     """The result already on record for this problem; commits to release the lock."""
     last = attempts[-1]
@@ -326,7 +360,7 @@ async def _stored(
         verdict=Verdict(last.verdict),
         misconception=last.misconception,
         solved=bool(instance.correct),
-        attempts_left=max(0, MAX_ATTEMPTS - used),
+        attempts_left=max(0, allowed - used),
         mastery=_mastery_out(catalog, instance.skill_id, row, now),
         answer_latex=reveal.latex if reveal else None,
         answer_choice=reveal.choice if reveal else None,
@@ -372,12 +406,18 @@ async def submit_answer(
     instance, attempts = await _load(db, player_id, problem_id)
     skill_id = instance.skill_id
     problem = regenerate(catalog, instance)
+    if _stale(instance, problem):
+        if instance.answered_at is None:
+            instance.answered_at = received
+            await db.commit()
+        raise Conflict("problem_closed")
     given = _given(problem, latex, choice)
     reveal = _Reveal(_answer_latex(problem), problem.correct_choice)
+    allowed = _allowed(problem)
     if instance.answered_at is not None:
-        return await _stored(db, catalog, instance, attempts, reveal, received)
+        return await _stored(db, catalog, instance, attempts, reveal, received, allowed)
     if _repeat_of_last_wrong(attempts, given):
-        return await _stored(db, catalog, instance, attempts, None, received)
+        return await _stored(db, catalog, instance, attempts, None, received, allowed)
     await db.commit()
 
     if choice is not None:
@@ -389,9 +429,9 @@ async def submit_answer(
 
     instance, attempts = await _load(db, player_id, problem_id)
     if instance.answered_at is not None:
-        return await _stored(db, catalog, instance, attempts, reveal, received)
+        return await _stored(db, catalog, instance, attempts, reveal, received, allowed)
     if _repeat_of_last_wrong(attempts, given):
-        return await _stored(db, catalog, instance, attempts, None, received)
+        return await _stored(db, catalog, instance, attempts, None, received, allowed)
 
     verdict = result.verdict
     misconception = result.misconception if verdict is Verdict.INCORRECT else None
@@ -409,7 +449,7 @@ async def submit_answer(
         at=received,
     )
     used = _tries_used([*attempts, attempt])
-    scored = solved or used >= MAX_ATTEMPTS
+    scored = solved or used >= allowed
 
     if scored:
         row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
@@ -430,7 +470,7 @@ async def submit_answer(
         verdict=verdict,
         misconception=misconception,
         solved=solved,
-        attempts_left=MAX_ATTEMPTS - used,
+        attempts_left=allowed - used,
         mastery=_mastery_out(catalog, skill_id, row, received),
         answer_latex=reveal.latex if scored else None,
         answer_choice=reveal.choice if scored else None,

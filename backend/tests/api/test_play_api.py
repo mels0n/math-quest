@@ -169,6 +169,15 @@ async def test_nul_and_lone_surrogate_answers_are_422(api: ApiFactory) -> None:
         assert r.json() == {"error": "invalid_request"}
 
 
+async def test_typed_answers_cannot_take_the_stored_choice_form(api: ApiFactory) -> None:
+    h = await _api(api)
+    problem = (await _next(h.client, await _start(h.client))).json()
+    r = await _answer(h.client, problem["problem_id"], "choice:0")
+    assert (r.status_code, r.json()) == (422, {"error": "invalid_request"})
+    ok = await _answer(h.client, problem["problem_id"], "1000")
+    assert ok.json()["attempts_left"] == 2
+
+
 async def test_answers_are_rate_limited_per_player(api: ApiFactory) -> None:
     h = await _api(api)
     missing = str(uuid.uuid4())
@@ -234,7 +243,7 @@ async def test_choice_answer_round_trip(api: ApiFactory) -> None:
     assert problem["keypad"] == "choice"
     assert problem["dev_answer_latex"] is None
     choices = problem["choices"]
-    assert len(choices) >= 2
+    assert len(choices) >= 3
     assert all(part["kind"] in ("text", "math") for choice in choices for part in choice)
     right = problem["dev_answer_choice"]
     wrong = (right + 1) % len(choices)
@@ -247,6 +256,7 @@ async def test_choice_answer_round_trip(api: ApiFactory) -> None:
         {"choice": "1"},
         {"latex": "1"},
         {"latex": "1", "choice": right},
+        {"latex": f"choice:{right}"},
         {},
     ):
         r = await _choose(h.client, pid, bad)
@@ -254,7 +264,7 @@ async def test_choice_answer_round_trip(api: ApiFactory) -> None:
 
     miss = (await _choose(h.client, pid, {"choice": wrong})).json()
     assert miss["verdict"] == "incorrect"
-    assert miss["attempts_left"] == 2
+    assert miss["attempts_left"] == 1
     assert miss["answer_choice"] is None
 
     hit = (await _choose(h.client, pid, {"choice": right})).json()

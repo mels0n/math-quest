@@ -122,7 +122,11 @@ _BASE: dict[str, Any] = {
                 "id": "bigger",
                 "prompt": [{"kind": "text", "value": "Which number is bigger?"}],
                 "answer": {"kind": "choice", "value": 1},
-                "choices": [[{"kind": "math", "value": "3"}], [{"kind": "math", "value": "7"}]],
+                "choices": [
+                    [{"kind": "math", "value": "3"}],
+                    [{"kind": "math", "value": "7"}],
+                    [{"kind": "math", "value": "5"}],
+                ],
             },
             {
                 "id": "double",

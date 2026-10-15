@@ -117,6 +117,7 @@ def _base() -> dict[str, Any]:
                     "choices": [
                         [{"kind": "math", "value": "3"}],
                         [{"kind": "math", "value": "7"}],
+                        [{"kind": "math", "value": "5"}],
                     ],
                 },
                 {
@@ -281,8 +282,16 @@ INVALID: list[tuple[str, dict[str, Any], str]] = [
     ),
     (
         "choice index out of range",
-        _mutated(["bank/beta.yaml", "items", 0, "answer", "value"], 2),
-        "bank/beta.yaml: items[0]: Value error, choice index 2 is out of range",
+        _mutated(["bank/beta.yaml", "items", 0, "answer", "value"], 3),
+        "bank/beta.yaml: items[0]: Value error, choice index 3 is out of range",
+    ),
+    (
+        "only two choices",
+        _mutated(
+            ["bank/beta.yaml", "items", 0, "choices"],
+            [[{"kind": "math", "value": "3"}], [{"kind": "math", "value": "7"}]],
+        ),
+        "bank/beta.yaml: items[0]: Value error, a choice answer needs at least 3 choices",
     ),
     (
         "expr answer that does not parse",

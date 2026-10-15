@@ -38,6 +38,9 @@ Template = Annotated[str, StringConstraints(min_length=1), AfterValidator(check_
 """Kid-facing text in the template language of ``mathquest.engine.templates``."""
 Expression = Annotated[str, StringConstraints(min_length=1), AfterValidator(check_expression)]
 
+MIN_CHOICES = 3
+"""Fewer choices make guessing too easy, even with only two tries."""
+
 GRADE_BANDS = ("K", "1", "2", "3", "4", "5", "6", "7", "8", "A1", "A2")
 
 
@@ -221,8 +224,8 @@ class BankItem(_Model):
             return self
         if not isinstance(value, int):
             raise ValueError("a choice answer is the index of the right choice")
-        if self.choices is None or len(self.choices) < 2:
-            raise ValueError("a choice answer needs at least two choices")
+        if self.choices is None or len(self.choices) < MIN_CHOICES:
+            raise ValueError(f"a choice answer needs at least {MIN_CHOICES} choices")
         if not 0 <= value < len(self.choices):
             raise ValueError(f"choice index {value} is out of range")
         if len(set(self.choices)) != len(self.choices):
