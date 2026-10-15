@@ -2,7 +2,7 @@
 	import { AnswerField } from '../../features/answer';
 	import { MAX_ATTEMPTS, keypadProfile } from '../../entities/problem';
 	import type { Mastery, Problem } from '../../entities/problem';
-	import { MathStatic, PixelButton, ProgressBar } from '../../shared/ui';
+	import { MathStatic, PixelButton, PromptView, ProgressBar } from '../../shared/ui';
 	import type { CardFeedback } from './card-feedback';
 
 	let {
@@ -46,7 +46,7 @@
 	</div>
 
 	<div class="prompt" data-testid="prompt">
-		<MathStatic latex={problem.prompt_latex} />
+		<PromptView latex={problem.prompt_latex} />
 	</div>
 
 	{#if mastery}
@@ -124,6 +124,7 @@
 		text-align: center;
 		padding: 0.75rem 0;
 		min-height: 5rem;
+		min-width: 0;
 	}
 	.mastery {
 		padding: 0 0.25rem;

@@ -12,7 +12,5 @@
 <style>
 	.math {
 		display: inline-block;
-		max-width: 100%;
-		overflow-x: auto;
 	}
 </style>
