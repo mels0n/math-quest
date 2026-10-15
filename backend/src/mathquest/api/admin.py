@@ -3,7 +3,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, Response
+from fastapi import APIRouter, Depends, Path, Query, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from mathquest.api.deps import (
@@ -15,6 +15,7 @@ from mathquest.api.deps import (
     Db,
     limit_admin_login,
 )
+from mathquest.engine.catalog import Catalog
 from mathquest.features import admin
 from mathquest.shared.config import Settings
 from mathquest.shared.errors import Unauthorized
@@ -160,3 +161,28 @@ async def signup_word_state(_: CurrentAdmin, db: Db) -> SignupWordState:
 async def set_signup_word(body: SignupWordIn, session: CurrentAdmin, db: Db) -> Done:
     await admin.set_signup_word(db, session.id, body.word)
     return Done()
+
+
+MAX_SEED = 2**31 - 1
+MAX_TIER = 20
+
+
+def _catalog(request: Request) -> Catalog:
+    catalog: Catalog = request.app.state.catalog
+    return catalog
+
+
+@router.get("/content")
+async def content(_: CurrentAdmin, request: Request) -> admin.ContentOverview:
+    return admin.overview(_catalog(request))
+
+
+@router.get("/content/skills/{skill_id}")
+async def content_skill(
+    skill_id: Annotated[str, Path(pattern=r"^[a-z][a-z0-9_]*$", max_length=64)],
+    _: CurrentAdmin,
+    request: Request,
+    seed: Annotated[int | None, Query(ge=0, le=MAX_SEED)] = None,
+    tier: Annotated[int, Query(ge=0, le=MAX_TIER)] = 0,
+) -> admin.SkillPreview:
+    return admin.skill_preview(_catalog(request), skill_id, seed=seed, tier=tier)
