@@ -63,7 +63,8 @@ session. The session stores its skills (`focus`).
   child who slows down to think is never penalised for it. Mastery otherwise updates
   normally, which also means a practice session can confirm or revert a provisional skill.
 - Practice has no set length and no automatic summary. "I'm done" ends it with the
-  summary; the same button ends an adventure early.
+  summary; the same button ends an adventure early. It appears once the problem on
+  screen is scored, so it never moves the card while a child is answering.
 - Practising a skill that is mastered records a `revisit_events` row (player, session,
   skill, time), at most one per session and skill. Later features reward returning to old
   skills, and one row per visit, not per problem, is what they need.
