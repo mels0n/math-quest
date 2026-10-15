@@ -28,7 +28,9 @@ export interface FitContainer {
 	querySelectorAll(selector: string): Iterable<FitRun>;
 }
 
-export const MATH_RUN_SELECTOR = '.run.math';
+/** Class a prompt's math runs carry; the fit finds them by it. */
+export const MATH_RUN_CLASS = 'math-run';
+export const MATH_RUN_SELECTOR = `.${MATH_RUN_CLASS}`;
 
 /**
  * Measures every math run at full size and shrinks the ones wider than the container.
@@ -37,12 +39,14 @@ export const MATH_RUN_SELECTOR = '.run.math';
 export function fitRuns(container: FitContainer): void {
 	const available = container.clientWidth;
 	const runs = [...container.querySelectorAll(MATH_RUN_SELECTOR)];
+	// Reset, then read every width, then write every size: one layout, no thrashing.
 	for (const run of runs) run.style.fontSize = '';
-	for (const run of runs) {
-		const width = Math.max(run.getBoundingClientRect().width, run.scrollWidth);
+	const widths = runs.map((run) => Math.max(run.getBoundingClientRect().width, run.scrollWidth));
+	runs.forEach((run, i) => {
+		const width = widths[i] as number;
 		const scale = width > available ? fitScale(width, available - SLACK_PX) : 1;
 		if (scale < 1) run.style.fontSize = `${scale}em`;
-	}
+	});
 }
 
 /**

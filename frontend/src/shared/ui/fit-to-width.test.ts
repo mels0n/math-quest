@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MIN_SCALE, fitRuns, fitScale, type FitRun } from './fit-to-width';
+import { MATH_RUN_SELECTOR, MIN_SCALE, fitRuns, fitScale, type FitRun } from './fit-to-width';
 
 describe('fitScale', () => {
 	it('leaves content that fits at full size', () => {
@@ -41,6 +41,30 @@ function fakeRun(fullWidth: number): FitRun {
 }
 
 describe('fitRuns', () => {
+	it('reads every width before writing any font size', () => {
+		const log: string[] = [];
+		const run = (name: string): FitRun => {
+			const style = { fontSize: '' };
+			return {
+				style: new Proxy(style, {
+					set(target, key, value) {
+						if (value !== '') log.push(`write ${name}`);
+						return Reflect.set(target, key, value);
+					}
+				}),
+				get scrollWidth() {
+					return 600;
+				},
+				getBoundingClientRect: () => {
+					log.push(`read ${name}`);
+					return { width: 600 };
+				}
+			};
+		};
+		fitRuns({ clientWidth: 300, querySelectorAll: () => [run('a'), run('b')] });
+		expect(log).toEqual(['read a', 'read b', 'write a', 'write b']);
+	});
+
 	it('shrinks only the runs wider than the container, and they then fit', () => {
 		const wide = fakeRun(600);
 		const narrow = fakeRun(80);
@@ -74,6 +98,6 @@ describe('fitRuns', () => {
 				return [];
 			}
 		});
-		expect(selectors).toEqual(['.run.math']);
+		expect(selectors).toEqual([MATH_RUN_SELECTOR]);
 	});
 });
