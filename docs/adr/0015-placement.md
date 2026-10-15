@@ -97,16 +97,31 @@ first anchor's region when nothing was passed), in map order.
 **Provisional mastery.** `provisional` is a new skill state, stored like the others.
 It counts as mastered for the scheduler's ready set, so the skills it unlocks are
 playable at once, and the skill is due for review one day later. Its lesson is not
-offered before that review. Its first scored problem decides it: a correct answer makes
-it mastered with the normal first review interval, a wrong one makes it learning. A
-skill already mastered is never marked; a skill being learned keeps its rating and
-attempts. REVIEW_DUE stays derived on read, for mastered skills only.
+offered before that review. Only real progress is protected: a skill already mastered is
+never marked, and neither is a skill with any scored attempt, so a retake can never hide
+a skill being learned behind a provisional mark. Marking is one bulk upsert that skips
+those rows.
+
+**Confirmation.** A provisional skill is decided by its first scored problem that can
+confirm it: the generator's own problem (not a bank item, whose answer might be guessed
+from the choices; a skill answered only by choices has nothing else) at the placement
+probe's tier or above. Reviews and practice problems of a provisional skill are issued
+that way, so in practice the first review decides it. A correct answer makes it
+mastered with the normal first review interval; a wrong one makes it learning; a correct
+answer on a problem that cannot confirm it leaves it provisional and still due. Players
+see a provisional skill past its review date as review due, like a mastered one, so it
+counts toward "my weak spots".
 
 A skill confirmed this way has a rating with one attempt behind it, which the mastery
-rule (six attempts and a top-tier streak) does not accept. Without care, its second
-review would drop it back to learning even when correct. A `placed` flag on the mastery
-row covers that gap: a placed mastered skill stays mastered on a correct answer, a
-wrong one is judged by the normal rule, and the flag clears once the rating rule agrees.
+rule (six attempts and a top-tier streak) does not accept. A `placed` flag on the
+mastery row covers that gap: a placed mastered skill stays mastered on a correct answer,
+and, like a real mastered skill's slip, its first miss among the last six outcomes only
+resets the review interval to one day; a second miss in that window sends it back to
+learning. The flag clears once the rating rule agrees, and the normal rule applies from
+then on. Seeding a fake history at confirmation was considered instead, but the rating's
+streak bonus makes a single miss after a long seeded streak drop the rating below the
+mastery line, so the seed would not survive a slip either, and invented attempts would
+mislead every later reader of the row.
 
 **What placement does not touch.** No hearts, no hints, no lessons, no explanations,
 and the round never says which answers were right, so the answer never leaves the

@@ -98,13 +98,17 @@ Skill state machine, applied when a problem is scored:
   `review_due_at` has passed. The scheduler's mastered set is MASTERED plus REVIEW_DUE
   plus PROVISIONAL.
 - PROVISIONAL is written by placement (docs/adr/0015-placement.md): the skill counts as
-  mastered and is due for review a day later. Its first scored problem decides it: a
-  correct answer makes it MASTERED with `placed` set and the normal first review
-  interval; a wrong one makes it LEARNING. Its lesson is never offered before that
-  review, since placement found the learner already knows it.
-- A `placed` MASTERED skill stays mastered on a correct answer even while
-  `is_mastered` does not yet hold (the rating has few attempts behind it); once it does,
-  `placed` is cleared. A wrong answer is judged by `is_mastered` like any mastered skill.
+  mastered and is due for review a day later. Its first scored problem that can confirm
+  it (`_confirms`: a generator problem, not a bank item, at the placement probe's tier
+  or above; a provisional skill's problems are issued that way) decides it: a correct
+  answer makes it MASTERED with `placed` set and the normal first review interval; a
+  wrong one makes it LEARNING. A correct answer on a problem that cannot confirm it
+  leaves it provisional and due. Its lesson is never offered before that review, since
+  placement found the learner already knows it.
+- A `placed` MASTERED skill (`placed_keeps_mastery`) stays mastered on a correct answer
+  even while `is_mastered` does not yet hold, and survives its first miss in the recent
+  window with its review interval reset; a second miss in the window reverts it. Once
+  `is_mastered` holds, `placed` is cleared and the normal rule applies.
 
 Sessions (docs/adr/0016-practice-and-sessions.md). An adventure session lasts
 SESSION_PROBLEMS problems: once that many were issued, `next` ends it and returns its
@@ -159,9 +163,11 @@ from mathquest.engine.mastery import (
     initial_rating,
     is_mastered,
     next_review_days,
+    placed_keeps_mastery,
     predict,
     update,
 )
+from mathquest.engine.placement import probe_tier
 from mathquest.engine.scheduler import (
     SESSION_PROBLEMS,
     Pick,
@@ -507,6 +513,12 @@ async def next_problem(
     tier = guard_tier(choose_tier(ratings[skill_id], source.tier_difficulties), history, skill_id)
     seed = secrets.randbelow(SEED_LIMIT)
     variant = choose_variant(source, seed)
+    row = by_skill.get(skill_id)
+    if row is not None and row.state == SkillState.PROVISIONAL:
+        # A problem that can confirm placement's mark: the generator's, at its tier.
+        tier = max(tier, probe_tier(graph.skills[skill_id]))
+        if graph.skills[skill_id].keypad != "choice":
+            variant = "bare"
     try:
         problem = source.generate(seed, tier, variant)
     except TemplateError:
@@ -546,6 +558,15 @@ async def next_problem(
     return out
 
 
+def _confirms(catalog: Catalog, skill_id: str, variant: str, tier: int) -> bool:
+    """Whether a correct answer on this problem can confirm a provisional skill: the
+    generator's problem (a skill answered only by choices has only bank items) at the
+    placement probe's tier or above."""
+    skill = catalog.graph.skills[skill_id]
+    generator = variant != "bank" or skill.keypad == "choice"
+    return generator and tier >= probe_tier(skill)
+
+
 def _apply_score(
     catalog: Catalog,
     row: SkillMastery,
@@ -553,9 +574,15 @@ def _apply_score(
     difficulty: float,
     outcome: Outcome,
     now: datetime,
+    *,
+    confirms: bool = True,
 ) -> bool:
-    """Apply a scored outcome to the skill; True when it became mastered from learning."""
+    """Apply a scored outcome to the skill; True when it became mastered from learning.
+
+    ``confirms`` says whether the problem can confirm a provisional skill: a generator
+    problem (not a bank item) at the placement probe's tier or above."""
     top = _top_difficulty(catalog, skill_id)
+    top_tier = _top_tier(catalog, skill_id)
     after = update(_rating(catalog, row, skill_id), difficulty, outcome, top)
     was_mastered = row.state == SkillState.MASTERED
     was_provisional = row.state == SkillState.PROVISIONAL
@@ -564,14 +591,18 @@ def _apply_score(
     row.attempts = after.attempts
     row.recent = [[int(correct), tier] for correct, tier in after.recent]
     row.updated_at = now
-    by_rating = is_mastered(after, top, _top_tier(catalog, skill_id))
+    if was_provisional and outcome.correct and not confirms:
+        # Right, but on a problem that cannot confirm it: stays provisional and due.
+        return False
+    by_rating = is_mastered(after, top, top_tier)
     if was_provisional:
-        # The first scored review after placement confirms or reverts the mark.
         mastered = outcome.correct
         row.placed = outcome.correct and not by_rating
+    elif was_mastered and row.placed:
+        mastered = by_rating or placed_keeps_mastery(after, outcome.correct)
+        row.placed = mastered and not by_rating
     else:
-        mastered = by_rating or (was_mastered and row.placed and outcome.correct)
-        row.placed = row.placed and mastered and not by_rating
+        mastered = by_rating
     if not mastered or (not was_mastered and not was_provisional and not outcome.correct):
         row.state = SkillState.LEARNING
         row.placed = False
@@ -815,8 +846,9 @@ async def submit_answer(
             fluency=catalog.graph.skills[skill_id].fluency and not practice,
             tier=instance.tier,
         )
+        confirms = _confirms(catalog, skill_id, instance.variant, instance.tier)
         instance.newly_mastered = _apply_score(
-            catalog, row, skill_id, instance.difficulty, outcome, received
+            catalog, row, skill_id, instance.difficulty, outcome, received, confirms=confirms
         )
         instance.answered_at = received
         instance.correct = solved

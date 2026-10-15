@@ -97,6 +97,19 @@ async def test_practice_accepts_learning_provisional_and_mastered_skills(db: Asy
         assert [f.skill_id for f in session.focus] == [skill_id]
 
 
+async def test_practicing_a_provisional_skill_confirms_it_by_the_same_rule(
+    db: AsyncSession,
+) -> None:
+    pid = await _player(db)
+    await _mark_provisional(db, pid, "add_within_10")
+    session = await service.start_practice(db, CATALOG, pid, skill_id="add_within_10")
+    out = await _problem(db, pid, session.session_id)
+    inst = await db.get(ProblemInstance, out.problem_id)
+    assert inst is not None and inst.variant == "bare" and inst.tier >= 1
+    await _answer_right(db, pid, out)
+    assert (await _row(db, pid, "add_within_10")).state == "mastered"
+
+
 async def test_weak_spots_are_the_three_weakest_learning_skills_then_due_reviews(
     db: AsyncSession,
 ) -> None:
@@ -344,7 +357,7 @@ async def test_the_summary_lists_skills_newly_mastered_in_the_session(db: AsyncS
     out = await _submit(db, pid, inst.id, _right(inst))
     assert out.mastery.state is SkillState.MASTERED
     # Confirming a provisional skill is not new mastery.
-    review = await _issue(db, pid, session.session_id, "sub_within_10")
+    review = await _issue(db, pid, session.session_id, "sub_within_10", tier=1)
     assert (await _submit(db, pid, review.id, _right(review))).mastery.state is SkillState.MASTERED
 
     summary = await service.end_session(db, CATALOG, pid, session.session_id)
