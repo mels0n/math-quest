@@ -8,8 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from mathquest.engine.checker.check import Verdict
 from mathquest.engine.mastery import SkillState
-from mathquest.engine.teaching import FeedbackKind
-from mathquest.engine.transport import PromptPartOut
+from mathquest.engine.transport import FeedbackOut, PromptPartOut
 from mathquest.engine.types import KeypadProfile
 
 
@@ -62,14 +61,6 @@ class MasteryOut(_Frozen):
     skill_id: str
     state: SkillState
     progress: float
-
-
-class FeedbackOut(_Frozen):
-    """What to tell the learner after a wrong answer. ``text`` is words and math; it
-    never states the answer."""
-
-    kind: FeedbackKind
-    text: list[PromptPartOut]
 
 
 class AnswerOut(_Frozen):

@@ -1,9 +1,9 @@
 """Adventure play routes."""
 
 import uuid
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Header, Request
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator, model_validator
 
 from mathquest.api.deps import (
@@ -25,6 +25,15 @@ router = APIRouter(prefix="/api/play")
 MAX_BODY_LATEX = 1000
 # Far above any real number of choices; the service rejects an index past the shown ones.
 MAX_CHOICE = 99
+LESSON_CLIENT = 2
+"""The first client version that shows lessons. `next` offers a lesson only to a client
+that sends `X-MathQuest-Client: 2` or later, so a page loaded before lessons existed
+keeps getting problems. Remove the header check one release after lessons ship
+(ADR-0014)."""
+
+
+def _client_version(raw: str | None) -> int:
+    return int(raw) if raw is not None and raw.isdecimal() and len(raw) <= 4 else 0
 
 
 class StartIn(BaseModel):
@@ -72,7 +81,12 @@ async def start_session(body: StartIn, player: CurrentPlayer, db: Db) -> Session
 
 @router.post("/sessions/{session_id}/next", dependencies=[Depends(limit_next)])
 async def next_problem(
-    session_id: uuid.UUID, request: Request, player: CurrentPlayer, db: Db, settings: AppSettings
+    session_id: uuid.UUID,
+    request: Request,
+    player: CurrentPlayer,
+    db: Db,
+    settings: AppSettings,
+    client: Annotated[str | None, Header(alias="X-MathQuest-Client", max_length=8)] = None,
 ) -> NextOut:
     return await play.next_problem(
         db,
@@ -80,6 +94,7 @@ async def next_problem(
         player.id,
         session_id,
         expose_answers=settings.dev_expose_answers,
+        offer_lessons=_client_version(client) >= LESSON_CLIENT,
     )
 
 

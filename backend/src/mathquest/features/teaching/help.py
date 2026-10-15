@@ -15,16 +15,21 @@ level 3 is the full worked example on this problem's numbers. The play slice rea
 ``hints_used`` when it scores the problem: each level viewed costs credit like a wrong
 try (``engine.mastery.help_used``).
 
-Explanations. Each request returns the next of the skill's 3 or 4 approaches in a
-rotation per player (``engine.teaching.next_approach``): it starts at a place drawn from
-the player and skill, so different players meet a different approach first, and moves
-on by one with every explanation the player has seen for that skill. Every view is
-recorded with its session; once every approach was shown in the session, a problem of
-that skill scored wrong records a stuck event (play slice). Explanations cost no credit.
+Explanations. Only after the learner has missed the problem at least once (a wrong
+answer that used a try); before that, Conflict("explain_after_a_try"). Each request
+returns the next of the skill's 3 or 4 approaches in a rotation per player
+(``engine.teaching.next_approach``): it starts at a place drawn from the player and
+skill, so different players meet a different approach first, and moves on by one with
+every explanation the player has seen for that skill. Every view is recorded with its
+session; once every approach was shown in the session, a problem of that skill scored
+wrong records a stuck event (play slice). Each explanation shown on a problem costs
+credit like a hint level (``engine.mastery.help_used``, still capped at 3). Explanations
+never show the answer (the content lint checks every one).
 
-Stuck log. The admin export lists stuck events as ``StuckProblemOut``: skill, generator,
-tier, seed and wrong answers, the exact shape ``content-report --stuck`` reads, with no
-player id, nickname or time. See docs/adr/0014-teaching-flow.md.
+Stuck log. The admin export lists at most ``limit`` stuck events, oldest first, as
+``StuckProblemOut``: skill, generator, tier, seed and wrong answers, the exact shape
+``content-report --stuck`` reads, with no player id, nickname or time. See
+docs/adr/0014-teaching-flow.md.
 """
 
 import csv
@@ -36,6 +41,7 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mathquest.engine.catalog import Catalog, SkillSource
+from mathquest.engine.checker.check import Verdict
 from mathquest.engine.teaching import next_approach, render_explanations, render_hints
 from mathquest.engine.transport import prompt_out, visual_out
 from mathquest.engine.types import Problem
@@ -97,6 +103,9 @@ async def next_explanation(
     explanations = catalog.pack.explanations.get(source.skill_id)
     if explanations is None:
         raise NotFound()
+    attempts = await problems.attempts_for(db, instance.id)
+    if not any(a.verdict == Verdict.INCORRECT.value for a in attempts):
+        raise Conflict("explain_after_a_try")
     count = len(explanations.approaches)
     before = await teaching.count_views(db, player_id, source.skill_id)
     index = next_approach(str(player_id), source.skill_id, count, before)
@@ -121,9 +130,15 @@ async def next_explanation(
     return out
 
 
-async def stuck_log(db: AsyncSession, since: datetime | None = None) -> list[StuckProblemOut]:
-    """Every stuck event (at or after ``since``), oldest first, without identity."""
-    rows = await teaching.stuck_since(db, since)
+STUCK_LOG_LIMIT = 5000
+STUCK_LOG_MAX = 20000
+
+
+async def stuck_log(
+    db: AsyncSession, since: datetime | None = None, limit: int = STUCK_LOG_LIMIT
+) -> list[StuckProblemOut]:
+    """Up to ``limit`` stuck events (at or after ``since``), oldest first, without identity."""
+    rows = await teaching.stuck_since(db, since, limit=limit)
     out = [
         StuckProblemOut(
             skill=r.skill_id,

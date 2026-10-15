@@ -195,13 +195,14 @@ async def stuck_log(
     db: Db,
     since: Annotated[datetime | None, Query()] = None,
     fmt: Annotated[Literal["json", "csv"], Query(alias="format")] = "json",
+    limit: Annotated[int, Query(ge=1, le=teaching.STUCK_LOG_MAX)] = teaching.STUCK_LOG_LIMIT,
 ) -> Response:
-    """Stuck problems (at or after ``since``) as the JSON list ``content-report --stuck``
-    reads, or as CSV with ``format=csv``. No player identity is included. A ``since``
-    without a time zone is read as UTC."""
+    """Up to ``limit`` stuck problems (at or after ``since``, oldest first) as the JSON
+    list ``content-report --stuck`` reads, or as CSV with ``format=csv``. No player
+    identity is included. A ``since`` without a time zone is read as UTC."""
     if since is not None and since.tzinfo is None:
         since = since.replace(tzinfo=UTC)
-    entries = await teaching.stuck_log(db, since)
+    entries = await teaching.stuck_log(db, since, limit)
     if fmt == "csv":
         return Response(
             teaching.stuck_csv(entries),

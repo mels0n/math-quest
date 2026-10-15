@@ -66,6 +66,15 @@ async def test_hints_explanations_and_the_stuck_log(api: ApiFactory, password_fi
     r = await h.client.post(f"{base}/hint", headers=CSRF)
     assert (r.status_code, r.json()) == (409, {"error": "no_more_hints"})
 
+    r = await h.client.post(f"{base}/explain", headers=CSRF)
+    assert (r.status_code, r.json()) == (409, {"error": "explain_after_a_try"})
+    wrong = str(int(problem["dev_answer_latex"]) + 1000)
+    r = await h.client.post(f"{base}/answer", json={"latex": wrong}, headers=CSRF)
+    assert r.json()["feedback"] == {
+        "kind": "retry",
+        "text": [{"kind": "text", "value": r.json()["feedback"]["text"][0]["value"]}],
+    }
+
     count = len(h.app.state.catalog.pack.explanations[problem["skill_id"]].approaches)
     styles: set[str] = set()
     for _ in range(count):
@@ -75,12 +84,6 @@ async def test_hints_explanations_and_the_stuck_log(api: ApiFactory, password_fi
         styles.add(r.json()["style"])
     assert len(styles) == count
 
-    wrong = str(int(problem["dev_answer_latex"]) + 1000)
-    r = await h.client.post(f"{base}/answer", json={"latex": wrong}, headers=CSRF)
-    assert r.json()["feedback"] == {
-        "kind": "retry",
-        "text": [{"kind": "text", "value": r.json()["feedback"]["text"][0]["value"]}],
-    }
     for k in (1, 2):
         r = await h.client.post(f"{base}/answer", json={"latex": str(int(wrong) + k)}, headers=CSRF)
     assert r.json()["answer_latex"] == problem["dev_answer_latex"]
@@ -108,6 +111,9 @@ async def test_hints_explanations_and_the_stuck_log(api: ApiFactory, password_fi
     assert lines[0] == "skill,generator,tier,seed,wrong_answers"
     assert len(lines) == 2 and NICKNAME not in r.text
 
+    limited = await h.client.get("/api/admin/stuck-log", params={"limit": 1})
+    assert len(limited.json()) == 1
+    assert (await h.client.get("/api/admin/stuck-log", params={"limit": 0})).status_code == 422
     future = await h.client.get("/api/admin/stuck-log", params={"since": "2999-01-01T00:00:00"})
     assert future.json() == []
     bad = await h.client.get("/api/admin/stuck-log", params={"format": "xml"})

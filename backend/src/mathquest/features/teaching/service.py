@@ -10,7 +10,9 @@ whose lesson the player has not seen (``features.play``, which reads the same
 The practice problem is a real generated problem at the lesson's ``try_it.tier``, from
 ``try_it.seed_hint`` when the lesson pins one and a random seed otherwise, checked by the
 same checker as play. It lives in ``lesson_tries``, apart from ``problem_instances``, so
-it never reaches mastery, the solved count or the scheduler's history. It allows
+it never reaches mastery, the solved count or the scheduler's history. Asking for the
+try-it again (a replayed lesson) returns the player's open try-it of that skill instead
+of making a new one. It allows
 TRY_ATTEMPTS misses, like a typed play problem; a wrong form or an unreadable answer
 costs nothing. Its answer is sent only once it is solved or out of tries, and answering
 it again after that returns the stored outcome. The checker runs with no transaction
@@ -28,8 +30,9 @@ from mathquest.engine.catalog import Catalog, SkillSource
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict
 from mathquest.engine.content.schema import Lesson
-from mathquest.engine.teaching import render_lesson
-from mathquest.engine.transport import answer_latex, prompt_out, visual_out
+from mathquest.engine.limits import MAX_ATTEMPTS, SEED_LIMIT, STORED_LATEX_MAX
+from mathquest.engine.teaching import answer_feedback, render_lesson
+from mathquest.engine.transport import answer_latex, feedback_out, prompt_out, visual_out
 from mathquest.engine.types import Problem
 from mathquest.entities import lessons
 from mathquest.entities.lessons import LessonTry
@@ -44,10 +47,8 @@ from mathquest.features.teaching.schema import (
 )
 from mathquest.shared.errors import NotFound
 
-TRY_ATTEMPTS = 3
-STORED_LATEX_MAX = 200
-SEED_LIMIT = 2**53
-"""Seeds are below this, so they are exact as JavaScript numbers."""
+TRY_ATTEMPTS = MAX_ATTEMPTS
+"""A try-it allows the same tries as a typed play problem."""
 
 
 def _now() -> datetime:
@@ -103,13 +104,15 @@ async def start_try(
     expose_answers: bool = False,
 ) -> TryProblemOut:
     source, lesson = _lesson(catalog, skill_id)
-    tier = _try_tier(source, lesson)
-    hint = lesson.try_it.seed_hint
-    seed = secrets.randbelow(SEED_LIMIT) if hint is None else hint
-    problem = source.generate(seed, tier)
-    row = await lessons.add_try(
-        db, player_id=player_id, skill_id=skill_id, tier=tier, seed=seed, issued_at=_now()
-    )
+    row = await lessons.open_try(db, player_id, skill_id)
+    if row is None:
+        tier = _try_tier(source, lesson)
+        hint = lesson.try_it.seed_hint
+        seed = secrets.randbelow(SEED_LIMIT) if hint is None else hint
+        row = await lessons.add_try(
+            db, player_id=player_id, skill_id=skill_id, tier=tier, seed=seed, issued_at=_now()
+        )
+    problem = source.generate(row.seed, row.tier)
     out = TryProblemOut(
         try_id=row.id,
         skill_id=skill_id,
@@ -129,8 +132,11 @@ def _problem(catalog: Catalog, row: LessonTry) -> Problem:
     return source.generate(row.seed, row.tier)
 
 
-def _outcome(row: LessonTry, problem: Problem, result: CheckResult | None) -> TryAnswerOut:
-    """The answer response; ``result`` is None when reporting a finished problem again."""
+def _outcome(
+    catalog: Catalog, row: LessonTry, problem: Problem, result: CheckResult | None
+) -> TryAnswerOut:
+    """The answer response; ``result`` is None when reporting a finished problem again.
+    A wrong answer gets the same feedback as in play (a try-it has no hints)."""
     done = row.answered_at is not None
     if result is None:
         verdict = Verdict.CORRECT if row.correct else Verdict.INCORRECT
@@ -138,9 +144,19 @@ def _outcome(row: LessonTry, problem: Problem, result: CheckResult | None) -> Tr
     else:
         verdict = result.verdict
         misconception = result.misconception if verdict is Verdict.INCORRECT else None
+    feedback = None
+    if result is not None and verdict is Verdict.INCORRECT:
+        feedback = answer_feedback(
+            catalog.pack.explanations.get(row.skill_id),
+            problem,
+            misconception,
+            scored=done,
+            hint_available=False,
+        )
     return TryAnswerOut(
         verdict=verdict,
         misconception=misconception,
+        feedback=feedback_out(feedback),
         solved=bool(row.correct),
         attempts_left=max(0, TRY_ATTEMPTS - row.misses),
         answer_latex=answer_latex(problem) if done else None,
@@ -160,7 +176,7 @@ async def answer_try(
         raise NotFound()
     problem = _problem(catalog, row)
     if row.answered_at is not None:
-        out = _outcome(row, problem, None)
+        out = _outcome(catalog, row, problem, None)
         await db.commit()
         return out
     await db.commit()
@@ -174,7 +190,7 @@ async def answer_try(
     if row is None:
         raise NotFound()
     if row.answered_at is not None:
-        out = _outcome(row, problem, None)
+        out = _outcome(catalog, row, problem, None)
         await db.commit()
         return out
     if result.verdict is Verdict.CORRECT:
@@ -185,6 +201,6 @@ async def answer_try(
         if row.misses >= TRY_ATTEMPTS:
             row.correct = False
             row.answered_at = _now()
-    out = _outcome(row, problem, result)
+    out = _outcome(catalog, row, problem, result)
     await db.commit()
     return out

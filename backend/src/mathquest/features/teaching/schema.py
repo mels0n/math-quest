@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict
 
 from mathquest.engine.checker.check import Verdict
 from mathquest.engine.content.schema import ApproachStyle
-from mathquest.engine.transport import PromptPartOut, VisualOut
+from mathquest.engine.transport import FeedbackOut, PromptPartOut, VisualOut
 from mathquest.engine.types import KeypadProfile
 
 
@@ -61,6 +61,7 @@ class TryProblemOut(_Frozen):
 class TryAnswerOut(_Frozen):
     verdict: Verdict
     misconception: str | None
+    feedback: FeedbackOut | None = None
     solved: bool
     attempts_left: int
     answer_latex: str | None

@@ -90,6 +90,16 @@ async def count_views(db: AsyncSession, player_id: uuid.UUID, skill_id: str) -> 
     return int(total or 0)
 
 
+async def views_on_problem(db: AsyncSession, problem_id: uuid.UUID) -> int:
+    """How many explanations were shown on one problem."""
+    total = await db.scalar(
+        select(func.count())
+        .select_from(ExplanationView)
+        .where(ExplanationView.problem_id == problem_id)
+    )
+    return int(total or 0)
+
+
 async def approaches_shown(db: AsyncSession, session_id: uuid.UUID, skill_id: str) -> set[int]:
     """The approaches of the skill shown in the session."""
     result = await db.execute(
@@ -127,9 +137,11 @@ async def add_stuck(
     await db.flush()
 
 
-async def stuck_since(db: AsyncSession, since: datetime | None) -> Sequence[StuckEvent]:
-    """Stuck events, oldest first; only those at or after ``since`` when given."""
-    query = select(StuckEvent).order_by(StuckEvent.created_at, StuckEvent.id)
+async def stuck_since(
+    db: AsyncSession, since: datetime | None, *, limit: int
+) -> Sequence[StuckEvent]:
+    """At most ``limit`` stuck events, oldest first; only those at or after ``since``."""
+    query = select(StuckEvent).order_by(StuckEvent.created_at, StuckEvent.id).limit(limit)
     if since is not None:
         query = query.where(StuckEvent.created_at >= since)
     result = await db.execute(query)

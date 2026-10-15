@@ -1,6 +1,8 @@
 """Teaching slice: lessons and their try-its, hints, explanations and the stuck log."""
 
 from mathquest.features.teaching.help import (
+    STUCK_LOG_LIMIT,
+    STUCK_LOG_MAX,
     next_explanation,
     next_hint,
     stuck_csv,
@@ -23,6 +25,8 @@ from mathquest.features.teaching.service import (
 )
 
 __all__ = [
+    "STUCK_LOG_LIMIT",
+    "STUCK_LOG_MAX",
     "ExplanationOut",
     "HintOut",
     "LessonOut",

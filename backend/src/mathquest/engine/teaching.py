@@ -24,6 +24,7 @@ from mathquest.engine.content.schema import (
     Explanations,
     HintLadder,
     Lesson,
+    Pack,
 )
 from mathquest.engine.content.visuals import UnresolvedVisual, VisualModel, resolve
 from mathquest.engine.templates import TemplateError, Value, plain, render
@@ -114,6 +115,12 @@ def render_feedback(explanations: Explanations, problem: Problem, key: str) -> P
     """Feedback for misconception ``key`` on ``problem``; None when there is none."""
     template = explanations.misconceptions.get(key)
     return None if template is None else render(template, problem.values)
+
+
+def hint_count(pack: Pack, skill_id: str) -> int:
+    """How many hint levels the skill has; 0 without a hint ladder."""
+    ladder = pack.hints.get(skill_id)
+    return 0 if ladder is None else len(ladder.levels)
 
 
 FeedbackKind = Literal["misconception", "hint", "retry"]

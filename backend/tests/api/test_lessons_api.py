@@ -10,6 +10,8 @@ from mathquest.engine.types import Problem
 from tests.conftest import SIGNUP_WORD, Api, ApiFactory
 
 CSRF = {"X-Requested-With": "mathquest"}
+LESSON_CLIENT = {**CSRF, "X-MathQuest-Client": "2"}
+"""What a client that can show lessons sends with `next`."""
 FIRST_SKILL = "add_within_10"
 """The skill a new player starts on: it has a lesson."""
 NO_LESSON = "place_value_tens_ones"
@@ -36,8 +38,10 @@ async def _api(api: ApiFactory, nickname: str = "Learner", **overrides: object) 
     return h
 
 
-async def _next(client: httpx.AsyncClient, session_id: str) -> dict[str, object]:
-    r = await client.post(f"/api/play/sessions/{session_id}/next", headers=CSRF)
+async def _next(
+    client: httpx.AsyncClient, session_id: str, headers: dict[str, str] = LESSON_CLIENT
+) -> dict[str, object]:
+    r = await client.post(f"/api/play/sessions/{session_id}/next", headers=headers)
     assert r.status_code == 200
     return r.json()
 
@@ -71,6 +75,16 @@ async def test_first_encounter_is_a_lesson_then_the_problem(api: ApiFactory) -> 
     assert again["type"] == "problem"
 
 
+async def test_a_client_that_cannot_show_lessons_gets_problems(api: ApiFactory) -> None:
+    h = await _api(api)
+    session_id = await _session(h.client)
+    for headers in (CSRF, {**CSRF, "X-MathQuest-Client": "1"}, {**CSRF, "X-MathQuest-Client": "x"}):
+        problem = await _next(h.client, session_id, headers)
+        assert problem["type"] == "problem" and problem["skill_id"] == FIRST_SKILL
+    # The lesson is still waiting for a client that can show it.
+    assert (await _next(h.client, session_id))["type"] == "lesson"
+
+
 async def test_seen_is_per_player_and_idempotent(api: ApiFactory) -> None:
     h = await _api(api, "First")
     assert (await _seen(h.client, FIRST_SKILL)).status_code == 200
@@ -100,9 +114,9 @@ async def test_lesson_replays_whether_seen_or_not(api: ApiFactory) -> None:
         assert screen["body"]
     visuals = [s["visual"] for s in body["screens"] if s["visual"] is not None]
     assert {"kind": "number_line", "params": {
-        "min": 0, "max": 10, "start": 3, "jumps": [1, 1], "end": 5,
+        "min": 0, "max": 12, "start": 8, "jumps": [1, 1, 1], "end": 11,
     }} in visuals  # fmt: skip
-    assert body["worked_example"]["prompt"] == [{"kind": "math", "value": "4 + 3 = ?"}]
+    assert body["worked_example"]["prompt"] == [{"kind": "math", "value": "7 + 5 = ?"}]
     assert len(body["worked_example"]["steps"]) == 4
     assert body["try_it"] == {"tier": 0}
 
@@ -147,14 +161,17 @@ async def test_try_it_is_checked_but_changes_nothing(api: ApiFactory, db: AsyncS
 
     missed = (await _answer_try(h.client, problem["try_id"], wrong)).json()
     assert missed["verdict"] == "incorrect"
+    # Feedback like play's; a try-it has no hints, so the generic line is "retry".
+    assert missed["feedback"]["kind"] == "retry"
+    assert answer not in [p["value"] for p in missed["feedback"]["text"]]
     assert missed["solved"] is False
     assert missed["attempts_left"] == 2
     assert missed["answer_latex"] is None
 
     solved = (await _answer_try(h.client, problem["try_id"], answer)).json()
     assert solved == {
-        "verdict": "correct", "misconception": None, "solved": True, "attempts_left": 2,
-        "answer_latex": answer,
+        "verdict": "correct", "misconception": None, "feedback": None, "solved": True,
+        "attempts_left": 2, "answer_latex": answer,
     }  # fmt: skip
     # Answering again returns the stored outcome.
     assert (await _answer_try(h.client, problem["try_id"], wrong)).json()["solved"] is True
@@ -165,6 +182,33 @@ async def test_try_it_is_checked_but_changes_nothing(api: ApiFactory, db: AsyncS
     assert count == 0
     issued = await db.scalar(text("SELECT count(*) FROM problem_instances"))
     assert issued == 0
+
+
+async def test_a_try_it_mistake_gets_its_feedback(api: ApiFactory) -> None:
+    h = await _api(api, dev_expose_answers=True)
+    problem = await _try(h.client)
+    catalog = h.app.state.catalog
+    prompt = str(problem["prompt"][0]["value"])  # type: ignore[index]
+    a, b = (int(n) for n in prompt.split("=")[0].split("+"))
+    if a == b:
+        return  # the subtracted mistake would read 0; covered by other seeds
+    r = (await _answer_try(h.client, problem["try_id"], str(abs(a - b)))).json()
+    assert r["misconception"] == "subtracted_instead"
+    assert r["feedback"]["kind"] == "misconception"
+    assert r["feedback"]["text"][0]["value"].startswith("It looks like you took away")
+    assert FIRST_SKILL in catalog.pack.explanations
+
+
+async def test_asking_for_the_try_it_again_reuses_the_open_one(
+    api: ApiFactory, db: AsyncSession
+) -> None:
+    h = await _api(api, dev_expose_answers=True)
+    first = await _try(h.client)
+    assert (await _try(h.client)) == first
+    rows = await db.scalar(text("SELECT count(*) FROM lesson_tries"))
+    assert rows == 1
+    await _answer_try(h.client, first["try_id"], str(first["dev_answer_latex"]))
+    assert (await _try(h.client))["try_id"] != first["try_id"]
 
 
 async def test_try_it_reveals_the_answer_after_three_misses(api: ApiFactory) -> None:

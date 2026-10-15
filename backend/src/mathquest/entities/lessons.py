@@ -71,6 +71,21 @@ async def add_try(
     return row
 
 
+async def open_try(db: AsyncSession, player_id: uuid.UUID, skill_id: str) -> LessonTry | None:
+    """The player's newest unfinished try-it of the skill, if any."""
+    result = await db.execute(
+        select(LessonTry)
+        .where(
+            LessonTry.player_id == player_id,
+            LessonTry.skill_id == skill_id,
+            LessonTry.answered_at.is_(None),
+        )
+        .order_by(LessonTry.issued_at.desc())
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_try(db: AsyncSession, player_id: uuid.UUID, try_id: uuid.UUID) -> LessonTry | None:
     result = await db.execute(
         select(LessonTry).where(LessonTry.id == try_id, LessonTry.player_id == player_id)

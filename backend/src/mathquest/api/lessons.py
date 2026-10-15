@@ -30,13 +30,13 @@ class TryAnswerIn(BaseModel):
         return value
 
 
-@router.get("/{skill_id}")
+@router.get("/{skill_id}", dependencies=[Depends(limit_next)])
 async def get_lesson(skill_id: SkillId, request: Request, player: CurrentPlayer) -> LessonOut:
     del player  # signed-in players only
     return teaching.get_lesson(request.app.state.catalog, skill_id)
 
 
-@router.post("/{skill_id}/seen")
+@router.post("/{skill_id}/seen", dependencies=[Depends(limit_next)])
 async def mark_seen(skill_id: SkillId, request: Request, player: CurrentPlayer, db: Db) -> SeenOut:
     return await teaching.mark_seen(db, request.app.state.catalog, player.id, skill_id)
 

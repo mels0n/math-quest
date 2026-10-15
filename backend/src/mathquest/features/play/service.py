@@ -39,11 +39,12 @@ changes once per problem: on the first correct answer or when the last try is us
 (scored incorrect).
 
 Hint credit: a correct answer is scored as if it took `help_used(wrong tries before it,
-hint levels viewed)` hints, the two added and capped at 3, so the score is
-`max(0.25, 1 - 0.25 * help)`: every wrong try and every hint level costs a quarter, and
-a solve after the full worked example (level 3) still counts as a hinted solve worth a
-quarter. Hints are viewed through the teaching slice, which counts them in the problem's
-`hints_used` under the problem's row lock; this module only reads the count.
+hint levels viewed + explanations viewed)` hints, added and capped at 3, so the score is
+`max(0.25, 1 - 0.25 * help)`: every wrong try, hint level and explanation costs a
+quarter, and a solve after the full worked example (level 3) still counts as a hinted
+solve worth a quarter. Hints and explanations are shown by the teaching slice, which
+counts hints in the problem's `hints_used` and records each explanation in
+`explanation_views`, both under the problem's row lock; this module only reads them.
 
 Feedback: an INCORRECT answer carries `feedback`. A mistake the checker recognised gets
 the skill's feedback for it, rendered with the problem's numbers; otherwise an open
@@ -60,6 +61,8 @@ a short warm-up on a weaker prerequisite (stored as `warmup_for`), and the tier 
 `choose_tier` lowered by `scheduler.guard_tier` after three misses in a row.
 
 Before the first problem of a skill that has a lesson, `next` returns a lesson to show
+(only to a client that asked for lessons with `offer_lessons`; an older client that
+cannot show one gets the problem)
 instead of a problem (the skill and its name, no problem issued, the session's count
 unchanged) until the player has marked that lesson seen (`lessons_seen`, written by the
 teaching slice). A skill with a scored problem never gets one, so a player who practised
@@ -111,6 +114,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mathquest.engine.catalog import Catalog
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict, check_choice
+from mathquest.engine.limits import (
+    MAX_ATTEMPTS,
+    MAX_CHOICE_ATTEMPTS,
+    SEED_LIMIT,
+    STORED_LATEX_MAX,
+)
 from mathquest.engine.mastery import (
     MASTERY_PREDICT,
     Outcome,
@@ -125,16 +134,15 @@ from mathquest.engine.mastery import (
     update,
 )
 from mathquest.engine.scheduler import Played, guard_tier, plan_next
-from mathquest.engine.teaching import all_approaches_shown, answer_feedback
+from mathquest.engine.teaching import all_approaches_shown, answer_feedback, hint_count
 from mathquest.engine.templates import TemplateError
-from mathquest.engine.transport import answer_latex, prompt_out
+from mathquest.engine.transport import FeedbackOut, answer_latex, feedback_out, prompt_out
 from mathquest.engine.types import KeypadProfile, Problem
 from mathquest.entities import lessons, mastery, problems, teaching
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.problems import Attempt, ProblemInstance
 from mathquest.features.play.schema import (
     AnswerOut,
-    FeedbackOut,
     LessonDueOut,
     MasteryOut,
     ProblemOut,
@@ -143,15 +151,8 @@ from mathquest.features.play.schema import (
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 
-MAX_ATTEMPTS = 3
-MAX_CHOICE_ATTEMPTS = 2
 FREE_VERDICTS = 3
-STORED_LATEX_MAX = 200
-STUCK_ANSWER_MAX = 200
-"""Wrong answers in a stuck event are cut to this length (the export allows 256)."""
 CHOICE_PREFIX = "choice:"
-SEED_LIMIT = 2**53
-"""New seeds are below this, so they are exact as JavaScript numbers."""
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
 
 
@@ -253,7 +254,10 @@ async def next_problem(
     session_id: uuid.UUID,
     *,
     expose_answers: bool = False,
+    offer_lessons: bool = True,
 ) -> ProblemOut | LessonDueOut:
+    """The next problem, or the lesson to show first when ``offer_lessons`` (clients
+    that do not understand lessons get the problem)."""
     session = await problems.lock_session(db, player_id, session_id)
     if session is None:
         raise NotFound()
@@ -271,7 +275,9 @@ async def next_problem(
     ]
     pick = plan_next(graph, ratings, mastered, due, session.problem_count, history)
     skill_id = pick.skill_id
-    if await _lesson_due(db, catalog, player_id, skill_id, by_skill.get(skill_id)):
+    if offer_lessons and await _lesson_due(
+        db, catalog, player_id, skill_id, by_skill.get(skill_id)
+    ):
         await db.commit()
         return LessonDueOut(skill_id=skill_id, skill_name=graph.skills[skill_id].name)
     source = catalog.source(skill_id)
@@ -308,7 +314,7 @@ async def next_problem(
         keypad=_keypad(problem, graph.skills[skill_id].keypad),
         choices=None if problem.choices is None else [prompt_out(c) for c in problem.choices],
         has_lesson=skill_id in catalog.pack.lessons,
-        hint_levels=_hint_count(catalog, skill_id) if teachable else 0,
+        hint_levels=hint_count(catalog.pack, skill_id) if teachable else 0,
         has_explanations=teachable and skill_id in catalog.pack.explanations,
         dev_answer_latex=answer_latex(problem) if expose_answers else None,
         dev_answer_choice=problem.correct_choice if expose_answers else None,
@@ -384,11 +390,6 @@ async def _load(
     return instance, await problems.attempts_for(db, instance.id)
 
 
-def _hint_count(catalog: Catalog, skill_id: str) -> int:
-    ladder = catalog.pack.hints.get(skill_id)
-    return 0 if ladder is None else len(ladder.levels)
-
-
 def _feedback(
     catalog: Catalog,
     instance: ProblemInstance,
@@ -402,7 +403,7 @@ def _feedback(
         return None
     source = catalog.source(instance.skill_id)
     teachable = source.shows_generator(problem)
-    hint_available = teachable and instance.hints_used < _hint_count(catalog, instance.skill_id)
+    hint_available = teachable and instance.hints_used < hint_count(catalog.pack, instance.skill_id)
     shown = answer_feedback(
         catalog.pack.explanations.get(instance.skill_id) if teachable else None,
         problem,
@@ -410,19 +411,23 @@ def _feedback(
         scored=scored,
         hint_available=hint_available,
     )
-    return None if shown is None else FeedbackOut(kind=shown.kind, text=prompt_out(shown.text))
+    return feedback_out(shown)
 
 
 async def _record_stuck(
     db: AsyncSession,
     catalog: Catalog,
     instance: ProblemInstance,
+    problem: Problem,
     attempts: list[Attempt],
     now: datetime,
 ) -> None:
-    """Record a stuck event when every explanation of the skill was shown in this session."""
+    """Record a stuck event when every explanation of the skill was shown in this session.
+
+    Only for a problem that shows the generator's numbers and answer, so the event's
+    (generator, tier, seed) is exactly the problem the learner saw."""
     explanations = catalog.pack.explanations.get(instance.skill_id)
-    if explanations is None:
+    if explanations is None or not catalog.source(instance.skill_id).shows_generator(problem):
         return
     shown = await teaching.approaches_shown(db, instance.session_id, instance.skill_id)
     if not all_approaches_shown(len(explanations.approaches), shown):
@@ -436,7 +441,7 @@ async def _record_stuck(
         tier=instance.tier,
         seed=instance.seed,
         wrong_answers=[
-            a.latex[:STUCK_ANSWER_MAX] for a in attempts if a.verdict == Verdict.INCORRECT.value
+            a.latex[:STORED_LATEX_MAX] for a in attempts if a.verdict == Verdict.INCORRECT.value
         ],
         created_at=now,
     )
@@ -558,7 +563,10 @@ async def submit_answer(
         row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
         outcome = Outcome(
             correct=solved,
-            hints_used=help_used(tried, instance.hints_used),
+            hints_used=help_used(
+                tried,
+                instance.hints_used + await teaching.views_on_problem(db, instance.id),
+            ),
             seconds=seconds,
             fluency=catalog.graph.skills[skill_id].fluency,
             tier=instance.tier,
@@ -567,7 +575,7 @@ async def submit_answer(
         instance.answered_at = received
         instance.correct = solved
         if not solved:
-            await _record_stuck(db, catalog, instance, [*attempts, attempt], received)
+            await _record_stuck(db, catalog, instance, problem, [*attempts, attempt], received)
     else:
         row = await mastery.get(db, player_id, skill_id)
 

@@ -1,8 +1,8 @@
 """Play slice: adventure sessions, adaptive problems and answer checking."""
 
+from mathquest.engine.transport import FeedbackOut
 from mathquest.features.play.schema import (
     AnswerOut,
-    FeedbackOut,
     LessonDueOut,
     MasteryOut,
     NextOut,

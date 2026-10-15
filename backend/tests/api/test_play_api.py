@@ -234,7 +234,8 @@ async def test_session_creation_is_limited_to_120_per_player_per_minute(api: Api
 async def test_next_problem_is_limited_to_120_per_player_per_minute(api: ApiFactory) -> None:
     h = await _api(api)
     session_id = await _start(h.client)
-    for _ in range(120):
+    # Marking the lessons seen counted against the same limit.
+    for _ in range(120 - len(h.app.state.catalog.pack.lessons)):
         assert (await _next(h.client, session_id)).status_code == 200
     r = await _next(h.client, session_id)
     assert r.status_code == 429
