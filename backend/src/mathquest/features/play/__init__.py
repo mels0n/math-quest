@@ -1,4 +1,5 @@
-"""Play slice: adventure sessions, adaptive problems and answer checking."""
+"""Play slice: adventure and practice sessions, adaptive problems, answer checking,
+session summaries and the player's skill list."""
 
 from mathquest.engine.transport import FeedbackOut
 from mathquest.features.play.schema import (
@@ -7,11 +8,19 @@ from mathquest.features.play.schema import (
     MasteryOut,
     NextOut,
     ProblemOut,
+    RegionNameOut,
     SessionOut,
+    SkillNameOut,
+    SkillOut,
+    SkillsOut,
+    SummaryOut,
 )
 from mathquest.features.play.service import (
     CHOICE_PREFIX,
+    end_session,
+    list_skills,
     next_problem,
+    start_practice,
     start_session,
     submit_answer,
     total_solved,
@@ -25,8 +34,16 @@ __all__ = [
     "MasteryOut",
     "NextOut",
     "ProblemOut",
+    "RegionNameOut",
     "SessionOut",
+    "SkillNameOut",
+    "SkillOut",
+    "SkillsOut",
+    "SummaryOut",
+    "end_session",
+    "list_skills",
     "next_problem",
+    "start_practice",
     "start_session",
     "submit_answer",
     "total_solved",

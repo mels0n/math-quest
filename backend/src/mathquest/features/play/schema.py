@@ -16,11 +16,21 @@ class _Frozen(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
+Mode = Literal["adventure", "practice"]
+
+
+class SkillNameOut(_Frozen):
+    skill_id: str
+    name: str
+
+
 class SessionOut(_Frozen):
     session_id: uuid.UUID
-    mode: Literal["adventure"]
+    mode: Mode
     started_at: datetime
     problem_count: int
+    focus: list[SkillNameOut] = []
+    """A practice session's skills; empty for an adventure."""
 
 
 class ProblemOut(_Frozen):
@@ -53,8 +63,25 @@ class LessonDueOut(_Frozen):
     skill_name: str
 
 
-NextOut = Annotated[ProblemOut | LessonDueOut, Field(discriminator="type")]
-"""What ``next`` returns: a problem, or a lesson to show first."""
+class SummaryOut(_Frozen):
+    """How a finished session went. ``accuracy`` is correct over scored problems (None
+    when none was scored); ``seconds`` runs from the first problem issued to the last
+    answer received, as the server measured them."""
+
+    type: Literal["summary"] = "summary"
+    session_id: uuid.UUID
+    mode: Mode
+    skills_practiced: list[SkillNameOut]
+    newly_mastered: list[SkillNameOut]
+    problems_solved: int
+    problems_scored: int
+    accuracy: float | None
+    seconds: int
+
+
+NextOut = Annotated[ProblemOut | LessonDueOut | SummaryOut, Field(discriminator="type")]
+"""What ``next`` returns: a problem, a lesson to show first, or the summary of a
+session that has ended."""
 
 
 class MasteryOut(_Frozen):
@@ -73,3 +100,27 @@ class AnswerOut(_Frozen):
     answer_latex: str | None = None
     answer_choice: int | None = None
     total_solved: int
+
+
+class SkillOut(_Frozen):
+    """One skill as the practice picker shows it."""
+
+    skill_id: str
+    name: str
+    region: str
+    state: SkillState
+    progress: float
+    has_lesson: bool
+
+
+class RegionNameOut(_Frozen):
+    region_id: str
+    name: str
+
+
+class SkillsOut(_Frozen):
+    """Every skill of the pack in map order (regions by their order, skills in
+    topological order inside each), with the player's state of each."""
+
+    regions: list[RegionNameOut]
+    skills: list[SkillOut]

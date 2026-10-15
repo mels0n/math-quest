@@ -29,7 +29,7 @@ from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.models import Player
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance, add_problem
 from mathquest.features.play import service
-from mathquest.features.play.schema import AnswerOut, LessonDueOut, ProblemOut
+from mathquest.features.play.schema import AnswerOut, LessonDueOut, ProblemOut, SummaryOut
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
 from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
@@ -999,6 +999,7 @@ async def test_provisional_skills_count_as_mastered_for_the_ready_set(db: AsyncS
     session = await service.start_session(db, pid, "adventure")
 
     out = await service.next_problem(db, CATALOG, pid, session.session_id)
+    assert not isinstance(out, SummaryOut)
 
     # Not yet due, so not reviewed: play moves on to what they unlock.
     assert out.skill_id not in {"add_within_10", "sub_within_10", "place_value_tens_ones"}
