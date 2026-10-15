@@ -16,7 +16,7 @@ from mathquest.api.deps import (
     limit_signup,
     set_cookie,
 )
-from mathquest.features import accounts
+from mathquest.features import accounts, play
 from mathquest.features.accounts import PlayerOut
 from mathquest.shared.errors import Unauthorized
 
@@ -49,6 +49,11 @@ class RecoverIn(_In):
 
 class PlayerEnvelope(BaseModel):
     player: PlayerOut
+
+
+class MeOut(BaseModel):
+    player: PlayerOut
+    total_solved: int
 
 
 class SignupOut(BaseModel):
@@ -158,5 +163,6 @@ async def logout(request: Request, response: Response, db: Db, settings: AppSett
 
 
 @router.get("/me")
-async def me(player: CurrentPlayer) -> PlayerEnvelope:
-    return PlayerEnvelope(player=player)
+async def me(player: CurrentPlayer, db: Db) -> MeOut:
+    """The signed-in player and their saved count of solved problems."""
+    return MeOut(player=player, total_solved=await play.total_solved(db, player.id))

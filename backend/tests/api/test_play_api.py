@@ -92,6 +92,7 @@ async def test_full_round_trip(api: ApiFactory) -> None:
     assert wrong.json()["verdict"] == "incorrect"
     assert wrong.json()["attempts_left"] == 2
     assert wrong.json()["answer_latex"] is None
+    assert wrong.json()["total_solved"] == 0
 
     right = await _answer(h.client, problem["problem_id"], problem["dev_answer_latex"])
     body = right.json()
@@ -100,6 +101,11 @@ async def test_full_round_trip(api: ApiFactory) -> None:
     assert body["answer_latex"] == problem["dev_answer_latex"]
     assert body["mastery"]["skill_id"] == problem["skill_id"]
     assert 0 <= body["mastery"]["progress"] <= 1
+    assert body["attempts_left"] == 2
+    assert body["total_solved"] == 1
+    me = (await h.client.get("/api/me")).json()
+    assert set(me) == {"player", "total_solved"}
+    assert me["total_solved"] == 1
 
 
 async def test_real_checker_pool_end_to_end(api: ApiFactory) -> None:

@@ -43,3 +43,4 @@ class AnswerOut(_Frozen):
     attempts_left: int
     mastery: MasteryOut
     answer_latex: str | None = None
+    total_solved: int

@@ -4,13 +4,19 @@
 Problems are stored as (skill, tier, seed) and regenerated on demand, so no answer
 is ever persisted or sent before the problem is solved or out of tries.
 
-A problem allows three tries. The first three WRONG_FORM or UNREADABLE verdicts on a
-problem are free; later ones use up a try like INCORRECT does (the verdict returned is
-still WRONG_FORM or UNREADABLE). Re-sending the previous wrong answer verbatim returns the
-stored result without using a try. Input over 200 characters is UNREADABLE without
-reaching the checker. Mastery changes once per problem: on the first correct answer
-(hints_used is the number of tries used before it) or when the third try is used up
-(scored incorrect).
+A problem allows three tries. `attempts_left` (the hearts on the play screen) is
+MAX_ATTEMPTS minus the tries used up by misses; a correct answer does not use one, so a
+first-try solve still reports 3 and a wrong-then-right solve reports 2.
+
+The first three WRONG_FORM or UNREADABLE verdicts on a problem are free; later ones use
+up a try like INCORRECT does (the verdict returned is still WRONG_FORM or UNREADABLE).
+Re-sending the previous wrong answer verbatim returns the stored result without using a
+try. Input over 200 characters is UNREADABLE without reaching the checker. Mastery
+changes once per problem: on the first correct answer (hints_used is the number of
+tries used before it) or when the third try is used up (scored incorrect).
+
+`total_solved` on every answer is the player's saved count of solved problems after
+that answer, the same number `total_solved` returns for the header on any device.
 
 Starting a new problem closes the session's unanswered ones (answered_at set, correct
 NULL, no mastery change); answering a closed problem is a Conflict("problem_closed").
@@ -24,9 +30,11 @@ reports them as UNREADABLE, so this module does not wrap it.
 Skill state machine, applied when a problem is scored:
 - A skill's first rating is `initial_rating` (base difficulty + 1.0).
 - A skill with any scored problem that is not mastered is LEARNING.
-- After the rating update, `is_mastered` against the top tier difficulty makes the
-  skill MASTERED with `review_interval_days = next_review_days(None, True)` and
-  `review_due_at = now + interval`.
+- The rating update is capped at the top tier difficulty + RATING_CAP_ABOVE_TOP.
+- After the rating update, `is_mastered` against the top tier difficulty makes a
+  LEARNING skill MASTERED, with `review_interval_days = next_review_days(None, True)`
+  and `review_due_at = now + interval`. Only a correct answer does this: a wrong answer
+  never promotes a skill.
 - Scoring a skill that was already MASTERED: a wrong answer, or a correct one once the
   review is due, takes `next_review_days(previous, correct)` as the new interval (a wrong
   answer resets it to 1); a correct answer before the review is due leaves the schedule
@@ -52,6 +60,7 @@ from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, Verdict
 from mathquest.engine.generators import get_generator
 from mathquest.engine.mastery import (
+    MASTERY_PREDICT,
     Outcome,
     SkillRating,
     SkillState,
@@ -62,7 +71,7 @@ from mathquest.engine.mastery import (
     predict,
     update,
 )
-from mathquest.engine.scheduler import pick_skill
+from mathquest.engine.scheduler import RUN_LENGTH, pick_skill
 from mathquest.engine.skillgraph import SkillGraph
 from mathquest.entities import mastery, problems
 from mathquest.entities.mastery import SkillMastery
@@ -73,7 +82,8 @@ from mathquest.shared.errors import Conflict, NotFound
 MAX_ATTEMPTS = 3
 FREE_VERDICTS = 3
 STORED_LATEX_MAX = 200
-MASTERY_TARGET = 0.7
+# Room for a whole run plus the reviews (every fifth problem) that can sit inside it.
+RECENT_LOOKBACK = RUN_LENGTH * 2 + 2
 _SEED_LIMIT = 2**62
 _FREE = (Verdict.WRONG_FORM.value, Verdict.UNREADABLE.value)
 
@@ -113,8 +123,15 @@ def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> Mast
     if state in (SkillState.MASTERED, SkillState.REVIEW_DUE):
         progress = 1.0
     else:
-        progress = min(1.0, max(0.0, predict(_rating(row, skill_id).rating, top) / MASTERY_TARGET))
+        progress = min(1.0, max(0.0, predict(_rating(row, skill_id).rating, top) / MASTERY_PREDICT))
     return MasteryOut(skill_id=skill_id, state=state, progress=progress)
+
+
+async def total_solved(db: AsyncSession, player_id: uuid.UUID) -> int:
+    """The player's saved count of solved problems; commits to end the read."""
+    total = await problems.count_solved(db, player_id)
+    await db.commit()
+    return total
 
 
 async def start_session(
@@ -146,7 +163,8 @@ async def next_problem(
     ratings = {sid: _rating(by_skill.get(sid), sid) for sid in graph.skills}
     mastered = {r.skill_id for r in rows if r.state == SkillState.MASTERED}
     due = await mastery.due_reviews(db, player_id, now)
-    skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count)
+    recent = await problems.recent_skill_ids(db, session_id, limit=RECENT_LOOKBACK)
+    skill_id = pick_skill(graph, ratings, mastered, due, session.problem_count, recent)
     generator = get_generator(skill_id)
     tier = choose_tier(ratings[skill_id], generator.tier_difficulties)
     seed = secrets.randbelow(_SEED_LIMIT)
@@ -177,14 +195,16 @@ async def next_problem(
 def _apply_score(
     row: SkillMastery, skill_id: str, difficulty: float, outcome: Outcome, now: datetime
 ) -> None:
-    after = update(_rating(row, skill_id), difficulty, outcome)
+    top = _top_difficulty(skill_id)
+    after = update(_rating(row, skill_id), difficulty, outcome, top)
     was_mastered = row.state == SkillState.MASTERED
     review_due = was_mastered and row.review_due_at is not None and row.review_due_at <= now
     row.rating = after.rating
     row.attempts = after.attempts
     row.recent = [[int(correct), tier] for correct, tier in after.recent]
     row.updated_at = now
-    if not is_mastered(after, _top_difficulty(skill_id), _top_tier(skill_id)):
+    mastered = is_mastered(after, top, _top_tier(skill_id))
+    if not mastered or (not was_mastered and not outcome.correct):
         row.state = SkillState.LEARNING
         row.review_interval_days = None
         row.review_due_at = None
@@ -233,9 +253,10 @@ async def _stored(
         verdict=Verdict(last.verdict),
         misconception=last.misconception,
         solved=bool(instance.correct),
-        attempts_left=max(0, MAX_ATTEMPTS - used - (1 if instance.correct else 0)),
+        attempts_left=max(0, MAX_ATTEMPTS - used),
         mastery=_mastery_out(instance.skill_id, row, now),
         answer_latex=answer_latex,
+        total_solved=await problems.count_solved(db, instance.player_id),
     )
     await db.commit()
     return out
@@ -316,9 +337,10 @@ async def submit_answer(
         verdict=verdict,
         misconception=misconception,
         solved=solved,
-        attempts_left=MAX_ATTEMPTS - used - (1 if solved else 0),
+        attempts_left=MAX_ATTEMPTS - used,
         mastery=_mastery_out(skill_id, row, received),
         answer_latex=answer_latex if scored else None,
+        total_solved=await problems.count_solved(db, player_id),
     )
     await db.commit()
     return out

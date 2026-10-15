@@ -46,7 +46,10 @@ async def test_signup_sets_cookies_and_me_returns_nickname(api: ApiFactory) -> N
 
     me = await c.get("/api/me")
     assert me.status_code == 200
-    assert me.json() == {"player": {"id": body["player"]["id"], "nickname": NICK}}
+    assert me.json() == {
+        "player": {"id": body["player"]["id"], "nickname": NICK},
+        "total_solved": 0,
+    }
     assert "recovery_word" not in me.text
 
 

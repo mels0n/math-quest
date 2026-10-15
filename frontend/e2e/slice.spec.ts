@@ -107,6 +107,8 @@ test('sign up, see the recovery word, answer three problems, log back in', async
 	await page.getByRole('button', { name: 'Play', exact: true }).click();
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(page.getByTestId('prompt')).toBeVisible();
+	// The star total is the saved one, not a per-page counter.
+	await expect(page.getByTestId('solved')).toHaveText(/\b3$/);
 
 	// Recovery: forgot the PIN, use the recovery word, get a NEW word shown once.
 	await page.getByRole('button', { name: 'Log out' }).click();

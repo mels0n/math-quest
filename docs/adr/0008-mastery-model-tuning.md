@@ -1,6 +1,6 @@
 # 0008. Tune the mastery model for short practice sessions
 
-- Status: accepted
+- Status: accepted, superseded in part by [ADR-0010](0010-faster-mastery-ramp.md)
 - Date: 2026-10-13
 
 ## Context

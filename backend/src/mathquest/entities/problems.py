@@ -162,6 +162,17 @@ async def attempts_for(db: AsyncSession, problem_id: uuid.UUID) -> list[Attempt]
     return list(result.scalars().all())
 
 
+async def recent_skill_ids(db: AsyncSession, session_id: uuid.UUID, *, limit: int) -> list[str]:
+    """Skill ids of the session's last `limit` problems, newest last."""
+    result = await db.execute(
+        select(ProblemInstance.skill_id)
+        .where(ProblemInstance.session_id == session_id)
+        .order_by(ProblemInstance.issued_at.desc())
+        .limit(limit)
+    )
+    return list(reversed(result.scalars().all()))
+
+
 async def close_open(db: AsyncSession, session_id: uuid.UUID, at: datetime) -> None:
     """Close the session's unanswered problems: answered_at set, correct left NULL."""
     await db.execute(
@@ -169,3 +180,13 @@ async def close_open(db: AsyncSession, session_id: uuid.UUID, at: datetime) -> N
         .where(ProblemInstance.session_id == session_id, ProblemInstance.answered_at.is_(None))
         .values(answered_at=at)
     )
+
+
+async def count_solved(db: AsyncSession, player_id: uuid.UUID) -> int:
+    """How many problems the player has solved (correct is true), across all sessions."""
+    total = await db.scalar(
+        select(func.count())
+        .select_from(ProblemInstance)
+        .where(ProblemInstance.player_id == player_id, ProblemInstance.correct.is_(True))
+    )
+    return int(total or 0)
