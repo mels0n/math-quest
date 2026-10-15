@@ -4,10 +4,14 @@
 Problems are stored as (skill, tier, seed) and regenerated on demand, so no answer
 is ever persisted or sent before the problem is solved or out of tries.
 
-A problem allows three tries. The first three WRONG_FORM or UNREADABLE verdicts on a
-problem are free; later ones use up a try like INCORRECT does (the verdict returned is
-still WRONG_FORM or UNREADABLE). Re-sending the previous wrong answer verbatim returns the
-stored result without using a try. Input over 200 characters is UNREADABLE without
+A problem allows three tries. `attempts_left` (the hearts on the play screen) is
+MAX_ATTEMPTS minus the tries used up by misses; a correct answer does not use one, so a
+first-try solve still reports 3 and a wrong-then-right solve reports 2.
+
+The first three WRONG_FORM or UNREADABLE verdicts on a problem are free; later ones use
+up a try like INCORRECT does (the verdict returned is still WRONG_FORM or UNREADABLE).
+Re-sending the previous wrong answer verbatim returns the stored result without using a
+try. Input over 200 characters is UNREADABLE without
 reaching the checker. Mastery changes once per problem: on the first correct answer
 (hints_used is the number of tries used before it) or when the third try is used up
 (scored incorrect).
@@ -233,7 +237,7 @@ async def _stored(
         verdict=Verdict(last.verdict),
         misconception=last.misconception,
         solved=bool(instance.correct),
-        attempts_left=max(0, MAX_ATTEMPTS - used - (1 if instance.correct else 0)),
+        attempts_left=max(0, MAX_ATTEMPTS - used),
         mastery=_mastery_out(instance.skill_id, row, now),
         answer_latex=answer_latex,
     )
@@ -316,7 +320,7 @@ async def submit_answer(
         verdict=verdict,
         misconception=misconception,
         solved=solved,
-        attempts_left=MAX_ATTEMPTS - used - (1 if solved else 0),
+        attempts_left=MAX_ATTEMPTS - used,
         mastery=_mastery_out(skill_id, row, received),
         answer_latex=answer_latex if scored else None,
     )

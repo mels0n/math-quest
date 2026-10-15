@@ -109,7 +109,7 @@ async def test_correct_answer_updates_mastery_once(db: AsyncSession) -> None:
 
     assert out.verdict is Verdict.CORRECT
     assert out.solved is True
-    assert out.attempts_left == 2
+    assert out.attempts_left == 3
     assert out.answer_latex == _right(inst)
     assert out.mastery.skill_id == "add_within_10"
     assert out.mastery.state is SkillState.LEARNING
@@ -159,7 +159,7 @@ async def test_wrong_form_does_not_consume_attempt(db: AsyncSession) -> None:
 
     ok = await _submit(db, pid, inst.id, _right(inst))
     assert ok.verdict is Verdict.CORRECT
-    assert ok.attempts_left == 2
+    assert ok.attempts_left == 3
     row = await _row(db, pid, "add_fractions_unlike")
     assert row.attempts == 1
     assert row.recent == [[1, 0]]
@@ -189,6 +189,21 @@ async def test_three_misses_reveals_answer_and_scores_incorrect(db: AsyncSession
     again = await _submit(db, pid, inst.id, _right(inst))
     assert again == third
     assert (await _row(db, pid, "add_within_10")).attempts == 1
+
+
+async def test_wrong_then_right_leaves_exactly_one_grey_heart(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id)
+
+    miss = await _submit(db, pid, inst.id, _wrong(inst))
+    hit = await _submit(db, pid, inst.id, _right(inst))
+
+    assert miss.attempts_left == 2
+    assert hit.solved is True
+    assert hit.attempts_left == 2
+    replay = await _submit(db, pid, inst.id, _right(inst))
+    assert replay.attempts_left == 2
 
 
 async def test_correct_after_misses_uses_hints_penalty(db: AsyncSession) -> None:
