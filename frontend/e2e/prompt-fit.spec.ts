@@ -63,7 +63,7 @@ async function expectFits(page: Page, label: string, expectedText?: string) {
 		const box = prompt.getBoundingClientRect();
 		const runs = [...prompt.querySelectorAll<HTMLElement>('.run')].map((el) => {
 			const r = el.getBoundingClientRect();
-			return { left: r.left, right: r.right };
+			return { left: r.left, right: r.right, scroll: el.scrollWidth, client: el.clientWidth };
 		});
 		return {
 			promptLeft: box.left,
@@ -78,6 +78,8 @@ async function expectFits(page: Page, label: string, expectedText?: string) {
 	for (const run of m.runs) {
 		expect(run.right, `${label}: run right edge`).toBeLessThanOrEqual(m.promptRight + 0.5);
 		expect(run.left, `${label}: run left edge`).toBeGreaterThanOrEqual(m.promptLeft - 0.5);
+		// A math run that only fits by scrolling inside itself would hide digits.
+		expect(run.scroll, `${label}: run scrolls`).toBeLessThanOrEqual(run.client + 1);
 	}
 	expect(m.scrollWidth, `${label}: page scroll width`).toBeLessThanOrEqual(m.innerWidth);
 	if (expectedText) expect(m.text, label).toContain(expectedText);
