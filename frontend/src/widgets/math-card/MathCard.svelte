@@ -30,6 +30,12 @@
 	} = $props();
 
 	let answer: ReturnType<typeof AnswerField> | undefined = $state();
+	/** Word problems read as sentences, so they use a calmer reading size. */
+	const WORDY_TEXT = 40;
+	const wordy = $derived(
+		problem.prompt.reduce((n, part) => n + (part.kind === 'text' ? part.value.length : 0), 0) >
+			WORDY_TEXT
+	);
 	/** Choices of this problem answered wrong so far, and the one awaiting a verdict. */
 	let wrongChoices = $state<number[]>([]);
 	let pendingChoice: number | null = null;
@@ -65,7 +71,7 @@
 		</span>
 	</div>
 
-	<div class="prompt" data-testid="prompt">
+	<div class="prompt" class:wordy data-testid="prompt">
 		<PromptView parts={problem.prompt} />
 	</div>
 
@@ -157,6 +163,10 @@
 		padding: 0.75rem 0;
 		min-height: 5rem;
 		min-width: 0;
+	}
+	.prompt.wordy {
+		font-size: 1.75rem;
+		line-height: 1.35;
 	}
 	.mastery {
 		padding: 0 0.25rem;

@@ -12,6 +12,7 @@ interface PromptPart {
 }
 
 const CSRF = { 'X-Requested-With': 'mathquest' };
+const SHOT_DIR = process.env.E2E_SHOT_DIR;
 const PROMPT: PromptPart[] = [{ kind: 'text', value: 'Which fraction is the same as one half?' }];
 const CHOICES: PromptPart[][] = [
 	[{ kind: 'math', value: String.raw`\frac{2}{4}` }],
@@ -81,6 +82,7 @@ async function expectButtonsFit(page: Page, width: number) {
 	}
 	const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
 	expect(scroll, `${width}: page scroll width`).toBeLessThanOrEqual(width);
+	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/choice-${width}.png`, fullPage: true });
 }
 
 // One player for the whole file: sign-ups are rate limited per client.
