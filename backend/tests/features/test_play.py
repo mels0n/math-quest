@@ -21,7 +21,7 @@ from mathquest.engine.generators import get_generator
 from mathquest.engine.mastery import SkillState, choose_tier
 from mathquest.engine.skillgraph import SkillGraph, load_pack
 from mathquest.engine.types import Problem
-from mathquest.entities import mastery, players
+from mathquest.entities import mastery, players, problems
 from mathquest.entities.mastery import SkillMastery
 from mathquest.entities.models import Player
 from mathquest.entities.problems import Attempt, PlaySession, ProblemInstance, add_problem
@@ -131,6 +131,7 @@ async def test_double_submit_idempotent(db: AsyncSession) -> None:
 
     assert second == first
     assert third == first
+    assert (first.total_solved, second.total_solved, third.total_solved) == (1, 1, 1)
     row = await _row(db, pid, "add_within_10")
     assert row.attempts == 1
     assert row.rating == rating
@@ -220,6 +221,35 @@ async def test_correct_after_misses_uses_hints_penalty(db: AsyncSession) -> None
     assert (await _row(db, pid, "add_within_10")).rating < (
         await _row(db, pid, "sub_within_10")
     ).rating
+
+
+async def test_solved_total_is_per_player_and_counts_only_solved(db: AsyncSession) -> None:
+    me = await _player(db, "Me")
+    other = await _player(db, "Other")
+    mine = await service.start_session(db, me, "adventure")
+    theirs = await service.start_session(db, other, "adventure")
+    solved = await _issue(db, me, mine.session_id, seed=1)
+    missed = await _issue(db, me, mine.session_id, seed=2)
+    pending = await _issue(db, me, mine.session_id, seed=3)
+    elsewhere = await _issue(db, other, theirs.session_id, seed=4)
+
+    assert await service.total_solved(db, me) == 0
+    first = await _submit(db, me, solved.id, _right(solved))
+    assert first.total_solved == 1
+    for k in range(3):
+        out = await _submit(db, me, missed.id, _wrong(missed, k))
+        assert out.total_solved == 1
+    tried = await _submit(db, me, pending.id, _wrong(pending))
+    assert tried.total_solved == 1
+    theirs_out = await _submit(db, other, elsewhere.id, _right(elsewhere))
+    assert theirs_out.total_solved == 1
+
+    assert await problems.count_solved(db, me) == 1
+    assert await problems.count_solved(db, other) == 1
+    assert await service.total_solved(db, me) == 1
+    again = await _issue(db, me, mine.session_id, seed=5)
+    assert (await _submit(db, me, again.id, _right(again))).total_solved == 2
+    assert await service.total_solved(db, other) == 1
 
 
 async def test_other_player_problem_404(db: AsyncSession) -> None:

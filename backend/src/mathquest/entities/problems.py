@@ -169,3 +169,13 @@ async def close_open(db: AsyncSession, session_id: uuid.UUID, at: datetime) -> N
         .where(ProblemInstance.session_id == session_id, ProblemInstance.answered_at.is_(None))
         .values(answered_at=at)
     )
+
+
+async def count_solved(db: AsyncSession, player_id: uuid.UUID) -> int:
+    """How many problems the player has solved (correct is true), across all sessions."""
+    total = await db.scalar(
+        select(func.count())
+        .select_from(ProblemInstance)
+        .where(ProblemInstance.player_id == player_id, ProblemInstance.correct.is_(True))
+    )
+    return int(total or 0)

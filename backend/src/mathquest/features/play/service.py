@@ -16,6 +16,9 @@ reaching the checker. Mastery changes once per problem: on the first correct ans
 (hints_used is the number of tries used before it) or when the third try is used up
 (scored incorrect).
 
+`total_solved` on every answer is the player's saved count of solved problems after
+that answer, the same number `total_solved` returns for the header on any device.
+
 Starting a new problem closes the session's unanswered ones (answered_at set, correct
 NULL, no mastery change); answering a closed problem is a Conflict("problem_closed").
 
@@ -119,6 +122,13 @@ def _mastery_out(skill_id: str, row: SkillMastery | None, now: datetime) -> Mast
     else:
         progress = min(1.0, max(0.0, predict(_rating(row, skill_id).rating, top) / MASTERY_TARGET))
     return MasteryOut(skill_id=skill_id, state=state, progress=progress)
+
+
+async def total_solved(db: AsyncSession, player_id: uuid.UUID) -> int:
+    """The player's saved count of solved problems; commits to end the read."""
+    total = await problems.count_solved(db, player_id)
+    await db.commit()
+    return total
 
 
 async def start_session(
@@ -240,6 +250,7 @@ async def _stored(
         attempts_left=max(0, MAX_ATTEMPTS - used),
         mastery=_mastery_out(instance.skill_id, row, now),
         answer_latex=answer_latex,
+        total_solved=await problems.count_solved(db, instance.player_id),
     )
     await db.commit()
     return out
@@ -323,6 +334,7 @@ async def submit_answer(
         attempts_left=MAX_ATTEMPTS - used,
         mastery=_mastery_out(skill_id, row, received),
         answer_latex=answer_latex if scored else None,
+        total_solved=await problems.count_solved(db, player_id),
     )
     await db.commit()
     return out
