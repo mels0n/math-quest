@@ -32,8 +32,10 @@ backend/
     features/   use cases (accounts, play)
     entities/   database models and per-entity data access
     shared/     config, database, errors, logging
-    engine/     pure problem engine (types, skill graph, generators, checker, mastery)
-  content/      skill packs and word lists
+    engine/     pure problem engine (types, skill graph, generators, checker, mastery,
+                content pack loader, templates, word problems, bank items)
+  content/      content packs (skills, world, teaching text, word problems, bank items),
+                word-problem slot lists and account word lists
   migrations/   Alembic revisions
   tests/
 frontend/
