@@ -24,7 +24,7 @@ next `next` ends the session: it closes any open problem, sets `ended_at` and re
 not count toward the twelve.
 
 **The summary** is computed on the server from the session's own rows:
-skills practised (skills with a scored problem, in the order first met), skills newly
+skills practiced (skills with a scored problem, in the order first met), skills newly
 mastered (see below), problems solved, problems scored, accuracy (solved over scored,
 null when nothing was scored), and the time from the first problem issued to the last
 answer received. The time is measured by the server so a sleeping tablet or a changed
@@ -48,7 +48,7 @@ can go one release after summaries ship, together with the lesson check.
 session. The session stores its skills (`focus`).
 
 - A chosen skill must be ready, learning, provisional or mastered (including due for
-  review); a locked one is a 409 `skill_locked`. Practising ahead of the map would skip
+  review); a locked one is a 409 `skill_locked`. Practicing ahead of the map would skip
   the prerequisites the warm-up rule relies on.
 - "My weak spots" is the three learning skills with the lowest progress (predicted
   top-tier success, which is comparable across skills where raw ratings are not)
@@ -74,9 +74,16 @@ session. The session stores its skills (`focus`).
 
 **The skill list.** `GET /api/skills` returns every skill with the player's state
 (locked, ready, learning, provisional, mastered, review due), progress, region and
-whether it has a lesson, grouped in map order with empty regions left out. The practice
-page shows it as a picker, each state with an icon and words (colour is never the only
-signal), with a lesson button that opens the lesson before the first practice problem.
+whether it has a lesson, with the regions in map order (each `{id, name}`, the shape
+placement uses) and empty regions left out. A provisional skill past its review date
+reads as review due, so "my weak spots" is offered for it. The practice page shows the
+list compactly enough for a phone: each region folds open only when it has a skill being
+learned or due for review; each skill is one button (named "Practice {name}, {state}")
+with its state as an icon and words (colour is never the only signal) and its progress
+bar inside, plus a 44 px lesson button beside it that opens the lesson before the first
+practice problem; locked skills fold into one "N more to unlock" line per region.
+Practice is reached from the summary and, mid-adventure, from the settings page, so the
+play header stays within a 320 px screen.
 
 ## Alternatives rejected
 - **End adventures by time instead of by count.** Children work at very different
@@ -91,7 +98,7 @@ signal), with a lesson button that opens the lesson before the first practice pr
   immediately send the child back down.
 - **Weak spots by lowest raw rating.** Ratings sit on each skill's own difficulty scale,
   so the weakest-rated skill would nearly always be the easiest one.
-- **Count every practised problem as a revisit.** A ten-problem practice run would look
+- **Count every practiced problem as a revisit.** A ten-problem practice run would look
   like ten visits; one row per session and skill is what "came back to it" means.
 - **Store summaries.** Everything in them is derivable from the session's problems and
   attempts; storing them would only add a second source of truth.
@@ -101,5 +108,5 @@ Every adventure now has a beginning, an end and a short report, and a child can 
 their own practice without losing the teaching help. The client header version is now 3,
 and the play page must handle three `next` types. The summary needs one extra boolean per
 problem and one JSON column per session; revisit events are a new small table that only
-grows when mastered skills are practised. The numbers (twelve problems, three weak
+grows when mastered skills are practiced. The numbers (twelve problems, three weak
 spots) are module constants with tests.

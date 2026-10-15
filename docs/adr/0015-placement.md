@@ -133,12 +133,19 @@ a session's history. A placement round is a feature slice of its own; it shares 
 with play except the engine and the mastery table.
 
 **Flow and retake.** After signup a new player is asked their grade (or skips the
-question) and takes the round, then starts the adventure. A settings page (reached
-from the play screen, and now also holding log out, which keeps the play header narrow
-enough for a 320 px screen) offers a retake. Starting a round ends any unfinished one. When a retake finishes, provisional
-marks that no review has confirmed are undone (a skill never played loses its row, one
-played before goes back to learning) before the new outcome is applied; confirmed and
-real mastery is never removed.
+question) and takes the round, then starts the adventure. The round is called "Find my
+level" on screen: "warm-up" already names the prerequisite problems inserted during play
+([ADR-0014](0014-teaching-flow.md)). Its progress reads "Puzzle 3", not "3 of up to 15",
+since the round may end early. A settings page (reached from the play screen, and also
+holding log out, which keeps the play header narrow enough for a 320 px screen) offers
+"Find my level again". Starting a round ends any unfinished one, under a lock on the
+player's row so two starts at once cannot both stay open. Rounds are limited to six
+starts an hour per player, and a completed round cannot be retaken within ten minutes
+(409 `retake_too_soon`, shown as a friendly line), since back-to-back retakes only
+reshuffle provisional marks. When a retake finishes, provisional marks that no review
+has confirmed are undone (a skill never played loses its row, one played before goes
+back to learning) before the new outcome is applied; confirmed and real mastery, and
+any skill with real attempts, is never touched.
 
 ## Alternatives rejected
 - **Plain binary search with one problem per anchor.** About four questions on nine
