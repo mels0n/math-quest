@@ -363,6 +363,11 @@ INVALID: list[tuple[str, dict[str, Any], str]] = [
         "word_problems/alpha.yaml: skill: alpha has word_problems_fit: false",
     ),
     (
+        "bank item tier beyond the skill's tiers",
+        _mutated(["bank/beta.yaml", "items", 0, "tier"], 5),
+        "bank/beta.yaml: items[0].tier: skill beta has only 3 tiers",
+    ),
+    (
         "bank for a skill that is not banked",
         _mutated(["skills.yaml", "skills", 1, "banked"], False),
         "bank/beta.yaml: skill: beta has banked: false",

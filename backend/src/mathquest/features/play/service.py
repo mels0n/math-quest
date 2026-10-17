@@ -533,7 +533,7 @@ async def next_problem(
     source = catalog.source(skill_id)
     tier = guard_tier(choose_tier(ratings[skill_id], source.tier_difficulties), history, skill_id)
     seed = secrets.randbelow(SEED_LIMIT)
-    variant = choose_variant(source, seed)
+    variant = choose_variant(source, seed, tier)
     row = by_skill.get(skill_id)
     if row is not None and row.state == SkillState.PROVISIONAL:
         # A problem that can confirm placement's mark: the generator's, at its tier.

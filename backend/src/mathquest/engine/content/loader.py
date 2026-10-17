@@ -141,6 +141,15 @@ def _check_teaching(pack: Pack) -> None:
             raise _fail(
                 f"word_problems/{sid}.yaml", ("skill",), f"{sid} has word_problems_fit: false"
             )
+    for sid, bank in pack.bank.items():
+        tiers = len(pack.skills[sid].tiers)
+        for i, item in enumerate(bank.items):
+            if item.tier is not None and item.tier >= tiers:
+                raise _fail(
+                    f"bank/{sid}.yaml",
+                    ("items", i, "tier"),
+                    f"skill {sid} has only {tiers} tiers",
+                )
     for sid in pack.bank:
         if not pack.skills[sid].banked:
             raise _fail(f"bank/{sid}.yaml", ("skill",), f"{sid} has banked: false")
