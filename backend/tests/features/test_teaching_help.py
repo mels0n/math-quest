@@ -166,8 +166,8 @@ async def test_hint_for_another_player_or_a_skill_without_hints_is_not_found(
     inst = await _issue(db, pid, session_id)
     with pytest.raises(NotFound):
         await teaching.next_hint(db, CATALOG, other, inst.id)
-    bare = await _issue(db, pid, session_id, "place_value_tens_ones", 0)
-    assert "place_value_tens_ones" not in PACK.hints
+    bare = await _issue(db, pid, session_id, "equivalent_fractions", 0)
+    assert "equivalent_fractions" not in PACK.hints
     with pytest.raises(NotFound):
         await teaching.next_hint(db, CATALOG, pid, bare.id)
     with pytest.raises(NotFound):

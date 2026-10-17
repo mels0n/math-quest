@@ -60,8 +60,9 @@ async def test_overview_shows_the_live_pack_and_coverage(
     assert (skill["misconceptions"], skill["feedback"], skill["gaps"]) == (2, 2, [])
     first = next(s for s in meadows["skills"] if s["skill_id"] == "add_within_10")
     assert first["gaps"] == []
-    tens = next(s for s in meadows["skills"] if s["skill_id"] == "place_value_tens_ones")
-    assert {"field": "misconception feedback", "have": 0, "want": 2} in tens["gaps"]
+    forest = next(r for r in pack["regions"] if r["region_id"] == "fraction_forest")
+    fractions = next(s for s in forest["skills"] if s["skill_id"] == "equivalent_fractions")
+    assert {"field": "misconception feedback", "have": 0, "want": 3} in fractions["gaps"]
 
 
 async def test_skill_preview_renders_every_item_with_answers(

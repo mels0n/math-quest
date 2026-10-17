@@ -14,7 +14,7 @@ LESSON_CLIENT = {**CSRF, "X-MathQuest-Client": "2"}
 """What a client that can show lessons sends with `next`."""
 FIRST_SKILL = "add_within_10"
 """The skill a new player starts on: it has a lesson."""
-NO_LESSON = "place_value_tens_ones"
+NO_LESSON = "equivalent_fractions"
 
 
 class _SyncPool(CheckerPool):
