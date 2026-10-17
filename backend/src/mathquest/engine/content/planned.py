@@ -15,13 +15,14 @@ into ``skills.yaml`` when their generators exist.
     Every region is in ``world.yaml`` and in the plan's scope; every grade band is in
     the scope.
 ``planned-graph``
-    Every prerequisite and ``unlocks`` target exists, the combined graph has no cycle
-    and every skill can be reached from a root, a skill without prerequisites belongs
-    in batch 1, and no prerequisite lies in a later region or grade band.
+    Every prerequisite and ``unlocks`` target exists, the combined graph has no cycle,
+    a skill without prerequisites belongs in the first batch still in the plan, and no
+    prerequisite lies in a later region or grade band.
 ``planned-batch``
-    Batches are numbered 1 to N without gaps and every prerequisite is built in the same
-    or an earlier batch (or is already built). A batch of more than ``MAX_BATCH`` skills
-    is a warning.
+    Batch numbers are permanent labels: the plan starts at its lowest remaining batch
+    (earlier ones are built and gone) and runs to the highest without gaps, and every
+    prerequisite is built in the same or an earlier batch (or is already built). A batch
+    of more than ``MAX_BATCH`` skills is a warning.
 ``planned-anchors``
     Within the scope's regions, an anchor is never on an earlier grade band than an anchor
     it builds on (only anchors joined by a prerequisite path are compared), and every
@@ -29,8 +30,8 @@ into ``skills.yaml`` when their generators exist.
 ``planned-tiers``
     At least ``MIN_TIERS`` tiers.
 ``planned-standards``
-    A skill, planned or built, does not cite a standard from a later grade or the same
-    one twice.
+    A planned skill does not cite a standard from a later grade or the same one twice
+    (built skills get the same check from ``lint`` under the rule ``standards``).
 ``planned-text``
     Names and tier labels are short and use no dash (em dash, en dash, ``--`` or a
     spaced hyphen).
@@ -47,7 +48,7 @@ from pathlib import Path
 from mathquest.engine.content.coverage import MIN_TIERS
 from mathquest.engine.content.errors import ContentError
 from mathquest.engine.content.graph import find_cycle
-from mathquest.engine.content.lint import Finding
+from mathquest.engine.content.lint import Finding, standard_problems
 from mathquest.engine.content.loader import load_validated
 from mathquest.engine.content.schema import GRADE_BANDS, Pack, PlannedList, PlannedSkill
 
@@ -81,11 +82,6 @@ def load_planned(pack_dir: Path) -> PlannedList | None:
 
 def _band(label: str) -> int:
     return GRADE_BANDS.index(label)
-
-
-def _standard_band(code: str) -> int:
-    grade = code.split(".", 1)[0]
-    return 0 if grade == "K" else int(grade)
 
 
 def _first_by_id(plan: PlannedList) -> dict[str, tuple[int, PlannedSkill]]:
@@ -128,7 +124,7 @@ def lint_planned(pack: Pack, plan: PlannedList) -> list[Finding]:
     if find_cycle(nodes) is None:
         out += _anchors(plan, nodes)
     out += _tiers(plan)
-    out += _standards(pack, plan)
+    out += _standards(plan)
     out += _text(plan)
     return out
 
@@ -207,18 +203,15 @@ def _graph(pack: Pack, plan: PlannedList, nodes: Mapping[str, _Node]) -> Iterato
     if cycle is not None:
         yield _error("planned", "planned-graph", f"prerequisite cycle: {' -> '.join(cycle)}")
         return
-    reached = _reachable(nodes)
+    first = min((p.batch for p in plan.planned), default=1)
     batch = {p.id: p.batch for _, p in _first_by_id(plan).values()}
     for i, p in enumerate(plan.planned):
-        if p.id not in reached:
-            yield _error(
-                f"planned[{i}]", "planned-graph", f"{p.id} cannot be reached from a root skill"
-            )
-        elif not nodes[p.id].prerequisites and batch[p.id] != 1:
+        if not nodes[p.id].prerequisites and batch[p.id] != first:
             yield _error(
                 f"planned[{i}].prerequisites",
                 "planned-graph",
-                f"{p.id} has no prerequisites, so it belongs in batch 1",
+                f"{p.id} has no prerequisites, so it belongs in batch {first}, "
+                "the first batch in the plan",
             )
 
 
@@ -241,28 +234,17 @@ def _direction(
         )
 
 
-def _reachable(nodes: Mapping[str, _Node]) -> set[str]:
-    """Skills whose prerequisites can all be learned, starting from the roots."""
-    learned: set[str] = set()
-    grew = True
-    while grew:
-        grew = False
-        for node in nodes.values():
-            if node.id not in learned and all(p in learned for p in node.prerequisites):
-                learned.add(node.id)
-                grew = True
-    return learned
-
-
 # --- batches ---------------------------------------------------------------------
 
 
 def _batches(pack: Pack, plan: PlannedList) -> Iterator[Finding]:
     planned = {p.id: p for _, p in _first_by_id(plan).values()}
     present = sorted({p.batch for p in plan.planned})
-    if present and present != list(range(1, present[-1] + 1)):
+    if present and present != list(range(present[0], present[-1] + 1)):
         yield _error(
-            "planned", "planned-batch", f"batches must run 1 to {present[-1]} with none missing"
+            "planned",
+            "planned-batch",
+            f"batches must run {present[0]} to {present[-1]} with none missing",
         )
     sizes = {b: sum(1 for p in plan.planned if p.batch == b) for b in present}
     for b, size in sizes.items():
@@ -341,23 +323,10 @@ def _tiers(plan: PlannedList) -> Iterator[Finding]:
             )
 
 
-def _standard_problems(band: int, standards: Sequence[str]) -> Iterator[tuple[int, str]]:
-    for j, code in enumerate(standards):
-        if _standard_band(code) > band:
-            yield j, f"{code} is from a later grade than the skill"
-        if code in standards[:j]:
-            yield j, f"{code} is listed twice"
-
-
-def _standards(pack: Pack, plan: PlannedList) -> Iterator[Finding]:
+def _standards(plan: PlannedList) -> Iterator[Finding]:
     for i, p in enumerate(plan.planned):
-        for j, message in _standard_problems(_band(p.grade_band), p.standards):
+        for j, message in standard_problems(p.grade_band, p.standards):
             yield _error(f"planned[{i}].standards[{j}]", "planned-standards", message)
-    for i, skill in enumerate(pack.skills.values()):
-        for j, message in _standard_problems(_band(skill.grade_band), skill.standards):
-            yield Finding(
-                "error", "skills.yaml", f"skills[{i}].standards[{j}]", "planned-standards", message
-            )
 
 
 def _dashed(text: str) -> bool:

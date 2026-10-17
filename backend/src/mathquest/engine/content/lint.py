@@ -49,6 +49,8 @@ warning naming the pack file, the path inside it and the rule. The rules:
     No em dash, no en dash, no ``--`` and no spaced hyphen (" - ") used as a dash in
     kid-facing text outside math and computed numbers, nor any dash in the slot lists
     or the word list.
+``standards``
+    A built skill does not cite a Common Core standard from a later grade, or one twice.
 ``slots``
     A word template names only generator values and its declared slots, and uses every
     slot it declares (slot kinds are checked by the schema).
@@ -60,7 +62,7 @@ prerequisites. It binds the pack to a generator registry passed in, through the 
 """
 
 import re
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from functools import lru_cache, partial
@@ -165,6 +167,7 @@ def lint(
     sources, generator_findings = _sources(pack, registry, slots)
     out += generator_findings
     out += _teaching(pack)
+    out += _standards(pack)
     out += _coverage(pack, registry)
     out += _slots(pack, sources)
     out += _answers(pack, sources, _plurals(slots))
@@ -178,6 +181,26 @@ def lint(
     out += _dashes(texts)
     out += _list_dashes(slots, words)
     return out
+
+
+def standard_problems(grade_band: str, standards: Sequence[str]) -> Iterator[tuple[int, str]]:
+    """``(index, message)`` for each standards code that is from a later grade than
+    ``grade_band`` or listed twice."""
+    band = GRADE_BANDS.index(grade_band)
+    for j, code in enumerate(standards):
+        grade = code.split(".", 1)[0]
+        if (0 if grade == "K" else int(grade)) > band:
+            yield j, f"{code} is from a later grade than the skill"
+        if code in standards[:j]:
+            yield j, f"{code} is listed twice"
+
+
+def _standards(pack: Pack) -> Iterator[Finding]:
+    for i, skill in enumerate(pack.skills.values()):
+        for j, message in standard_problems(skill.grade_band, skill.standards):
+            yield Finding(
+                "error", "skills.yaml", f"skills[{i}].standards[{j}]", "standards", message
+            )
 
 
 def errors(findings: list[Finding]) -> list[Finding]:

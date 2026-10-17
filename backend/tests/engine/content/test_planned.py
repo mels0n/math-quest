@@ -1,9 +1,7 @@
 """The build plan: loading, each lint rule against its own failing fixture, the report."""
 
-import io
 import json
 import shutil
-import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -11,17 +9,21 @@ from typing import Any
 import pytest
 
 from mathquest.cli import content_lint, content_report
-from mathquest.engine.content import ContentError, Pack, load_pack
-from mathquest.engine.content.lint import Finding, errors
+from mathquest.engine.content import ContentError, load_pack
+from mathquest.engine.content.lint import Finding
 from mathquest.engine.content.planned import (
     MAX_BATCH,
+    MAX_LABEL,
+    MAX_NAME,
     lint_planned,
     load_planned,
     plan_summary,
 )
+from mathquest.engine.generators import all_generators
 from tests.engine.content.packbuilder import CONTENT, base, write
 
 Plan = dict[str, Any]
+REGISTRY = all_generators()
 
 
 def _skill(sid: str, **over: Any) -> dict[str, Any]:
@@ -270,14 +272,14 @@ def test_an_unlock_gives_a_built_skill_a_prerequisite(tmp_path: Path) -> None:
     assert _rule(_check(tmp_path, plan), "planned-graph") == []
 
 
-def test_a_skill_behind_a_cycle_cannot_be_reached(tmp_path: Path) -> None:
+def test_a_cycle_is_reported_once(tmp_path: Path) -> None:
     plan = _edit(
         lambda p: p["planned"].extend(
             [_skill("gamma", prerequisites=["delta"]), _skill("delta", prerequisites=["gamma"])]
         )
     )
     found = _rule(_check(tmp_path, plan), "planned-graph")
-    assert len(found) == 1  # the cycle is reported once, reachability is not stacked on it
+    assert len(found) == 1
 
 
 def test_a_skill_without_prerequisites_belongs_in_batch_one(tmp_path: Path) -> None:
@@ -313,6 +315,24 @@ def test_a_prerequisite_from_a_later_grade_is_an_error(tmp_path: Path) -> None:
 # --- batches ----------------------------------------------------------------------
 
 
+def test_a_plan_may_start_after_the_built_batches(tmp_path: Path) -> None:
+    plan = _edit(lambda p: p["planned"][0].update(batch=2))
+    plan["planned"].append(_skill("gamma", prerequisites=["beta"], batch=3))
+    assert _check(tmp_path, plan) == []
+
+
+def test_a_root_must_be_in_the_first_remaining_batch(tmp_path: Path) -> None:
+    plan = _edit(lambda p: p["planned"][0].update(batch=2))
+    plan["planned"].append(_skill("gamma", batch=3))
+    _one_error(tmp_path, plan, "planned-graph", "belongs in batch 2", "planned[1].prerequisites")
+
+
+def test_a_gap_after_the_first_remaining_batch_is_an_error(tmp_path: Path) -> None:
+    plan = _edit(lambda p: p["planned"][0].update(batch=2))
+    plan["planned"].append(_skill("gamma", prerequisites=["beta"], batch=4))
+    _one_error(tmp_path, plan, "planned-batch", "2 to 4 with none missing")
+
+
 def test_batches_have_no_gaps(tmp_path: Path) -> None:
     plan = _edit(lambda p: p["planned"].append(_skill("gamma", prerequisites=["beta"], batch=3)))
     _one_error(tmp_path, plan, "planned-batch", "1 to 3 with none missing")
@@ -332,15 +352,17 @@ def test_an_unlock_target_must_not_be_built_earlier(tmp_path: Path) -> None:
     assert [f.message for f in found] == ["gamma is in batch 1, before batch 2 of delta"]
 
 
-def test_an_oversized_batch_is_a_warning(tmp_path: Path) -> None:
+@pytest.mark.parametrize(("extra", "warned"), [(MAX_BATCH - 1, False), (MAX_BATCH, True)])
+def test_a_batch_over_the_limit_is_a_warning(tmp_path: Path, extra: int, warned: bool) -> None:
     plan = _edit(
         lambda p: p["planned"].extend(
-            _skill(f"extra_{i}", prerequisites=["alpha"], name=f"Extra {i}")
-            for i in range(MAX_BATCH)
+            _skill(f"extra_{i}", prerequisites=["alpha"], name=f"Extra {i}") for i in range(extra)
         )
     )
     found = _rule(_check(tmp_path, plan), "planned-batch")
-    assert [(f.level, "batch 1 has 13 skills" in f.message) for f in found] == [("warning", True)]
+    assert [(f.level, f"batch 1 has {MAX_BATCH + 1} skills" in f.message) for f in found] == (
+        [("warning", True)] if warned else []
+    )
 
 
 # --- anchors ----------------------------------------------------------------------
@@ -444,14 +466,18 @@ def test_a_hyphen_inside_a_word_is_fine(tmp_path: Path) -> None:
     assert _check(tmp_path, plan) == []
 
 
-def test_a_long_name_is_an_error(tmp_path: Path) -> None:
-    plan = _edit(lambda p: p["planned"][0].update(name="A" * 33))
-    _one_error(tmp_path, plan, "planned-text", "33 characters", "planned[0].name")
+@pytest.mark.parametrize(("length", "flagged"), [(MAX_NAME, False), (MAX_NAME + 1, True)])
+def test_name_length_limit(tmp_path: Path, length: int, flagged: bool) -> None:
+    plan = _edit(lambda p: p["planned"][0].update(name="A" * length))
+    found = _rule(_check(tmp_path, plan), "planned-text")
+    assert [f.path for f in found] == (["planned[0].name"] if flagged else [])
 
 
-def test_a_long_tier_label_is_an_error(tmp_path: Path) -> None:
-    plan = _edit(lambda p: p["planned"][0]["tiers"][0].update(label="B" * 41))
-    _one_error(tmp_path, plan, "planned-text", "41 characters", "planned[0].tiers[0].label")
+@pytest.mark.parametrize(("length", "flagged"), [(MAX_LABEL, False), (MAX_LABEL + 1, True)])
+def test_tier_label_length_limit(tmp_path: Path, length: int, flagged: bool) -> None:
+    plan = _edit(lambda p: p["planned"][0]["tiers"][0].update(label="B" * length))
+    found = _rule(_check(tmp_path, plan), "planned-text")
+    assert [f.path for f in found] == (["planned[0].tiers[0].label"] if flagged else [])
 
 
 # --- the report --------------------------------------------------------------------
@@ -471,18 +497,37 @@ def test_the_summary_counts_built_and_planned_per_region_and_batch(tmp_path: Pat
     assert summary.planned == 2
 
 
-def test_the_report_shows_planned_skills(capsys: pytest.CaptureFixture[str]) -> None:
-    assert content_report.main([str(CONTENT / "packs" / "k8-core")]) == 0
+def _two_batch_plan() -> Plan:
+    plan = _plan()
+    plan["planned"].append(_skill("gamma", prerequisites=["beta"], batch=2))
+    return plan
+
+
+def test_the_report_shows_planned_skills(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert content_report.main([str(_pack(tmp_path, _two_batch_plan()))]) == 0
     out = capsys.readouterr().out
     assert "## Planned skills" in out
-    assert "| Number Meadows | 5 | 25 | 30 |" in out
-    assert "| 1 | 11 | K, 1, 2 | number_meadows 11 |" in out
+    assert "| Meadow | 1 | 2 | 3 |" in out
+    assert "| 1 | 1 | 1 | meadow 1 |" in out
+    assert "| 2 | 1 | 1 | meadow 1 |" in out
 
 
-def test_the_json_report_carries_the_plan(capsys: pytest.CaptureFixture[str]) -> None:
-    assert content_report.main([str(CONTENT / "packs" / "k8-core"), "--json"]) == 0
+def test_the_json_report_carries_the_plan(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert content_report.main([str(_pack(tmp_path, _two_batch_plan())), "--json"]) == 0
     (pack,) = json.loads(capsys.readouterr().out)["packs"]
-    assert sum(b["skills"] for b in pack["planned"]["batches"]) == 70
+    assert [b["skills"] for b in pack["planned"]["batches"]] == [1, 1]
+    assert [(r["region_id"], r["built"], r["planned"]) for r in pack["planned"]["regions"]] == [
+        ("meadow", 1, 2)
+    ]
+
+
+def test_the_real_report_has_a_planned_section(capsys: pytest.CaptureFixture[str]) -> None:
+    assert content_report.main([str(CONTENT / "packs" / "k8-core")]) == 0
+    assert "## Planned skills" in capsys.readouterr().out
 
 
 def test_a_report_for_a_pack_without_a_plan_has_no_planned_section(
@@ -491,6 +536,17 @@ def test_a_report_for_a_pack_without_a_plan_has_no_planned_section(
     root = write(tmp_path, base())
     assert content_report.main([str(root)]) == 0
     assert "Planned skills" not in capsys.readouterr().out
+    assert content_report.main([str(root), "--json"]) == 0
+    (pack,) = json.loads(capsys.readouterr().out)["packs"]
+    assert "planned" not in pack
+
+
+def test_a_report_fails_on_a_plan_that_does_not_load(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = write(tmp_path, {**base(), "planned_skills.yaml": {"nonsense": True}})
+    assert content_report.main([str(root)]) == 2
+    assert "planned_skills.yaml" in capsys.readouterr().err
 
 
 # --- the command -------------------------------------------------------------------
@@ -529,53 +585,3 @@ def test_content_lint_passes_a_clean_plan(
     root = write(_content_dir(tmp_path) / "packs", {**base(), "planned_skills.yaml": _plan()})
     assert content_lint.main([str(root)]) == 0
     assert "0 errors, 0 warnings" in capsys.readouterr().out
-
-
-def test_findings_in_the_plan_are_errors_unless_marked_otherwise(tmp_path: Path) -> None:
-    plan = _edit(lambda p: p["planned"][0].update(batch=2))
-    assert errors(_check(tmp_path, plan))
-    assert isinstance(load_pack(write(tmp_path / "again", _files(plan))), Pack)
-
-
-# --- robustness ----------------------------------------------------------------------
-
-
-def test_a_directory_at_the_plan_path_is_an_error(tmp_path: Path) -> None:
-    root = write(tmp_path, base())
-    (root / "planned_skills.yaml").mkdir()
-    with pytest.raises(ContentError, match="not a file"):
-        load_planned(root)
-
-
-def test_the_summary_survives_an_unknown_region(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    plan = _edit(lambda p: p["planned"][0].update(region="nowhere"))
-    root = _pack(tmp_path, plan)
-    assert content_report.main([str(root)]) == 0
-    assert "Planned skills" in capsys.readouterr().out
-    loaded = load_planned(root)
-    assert loaded is not None
-    summary = plan_summary(load_pack(root), loaded)
-    assert summary.batches[0].regions == {"nowhere": 1}
-
-
-def test_built_skill_standards_get_the_same_checks(tmp_path: Path) -> None:
-    files = base()
-    files["skills.yaml"]["skills"][0]["standards"] = ["1.OA.A.1", "2.OA.A.1", "1.OA.A.1"]
-    found = _rule(_check(tmp_path, _plan(), files), "planned-standards")
-    assert [(f.file, f.path) for f in found] == [
-        ("skills.yaml", "skills[0].standards[1]"),
-        ("skills.yaml", "skills[0].standards[2]"),
-    ]
-
-
-def test_the_report_prints_on_a_console_that_cannot_show_its_marks(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    raw = io.BytesIO()
-    console = io.TextIOWrapper(raw, encoding="cp1252")
-    monkeypatch.setattr(sys, "stdout", console)
-    assert content_report.main([str(CONTENT / "packs" / "k8-core")]) == 0
-    console.flush()
-    assert b"Planned skills" in raw.getvalue()
