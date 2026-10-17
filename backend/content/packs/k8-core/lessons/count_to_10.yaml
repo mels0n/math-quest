@@ -1,0 +1,32 @@
+# Lesson for Count to 10. The worked example is written in words, so it is never a
+# problem the skill asks.
+skill: count_to_10
+screens:
+  - title: Counting up
+    body_md: >-
+      Counting goes up one at a time. After 3 comes 4. After 4 comes 5. Say the numbers in order.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 3, jumps: [1, 1], end: 5}
+  - title: Counting back
+    body_md: >-
+      Counting back goes down one at a time. Before 6 comes 5. The number before is one less.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 6, jumps: [-1], end: 5}
+  - title: Missing numbers
+    body_md: >-
+      Sometimes a number hides. Look at 7, 8, _, 10. Say them in order. The number that fits is 9.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 7, jumps: [1, 1, 1], end: 10}
+worked_example:
+  prompt:
+    - {kind: text, value: "What number comes after seven?"}
+  steps:
+    - Say the numbers in order. Six, seven, and then the next one.
+    - Count up one number from seven.
+    - The next number is eight.
+    - So eight comes after seven.
+try_it:
+  tier: 0

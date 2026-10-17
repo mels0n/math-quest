@@ -1,0 +1,26 @@
+# Four ways to explain number pairs. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: pairs_to_10
+approaches:
+  - style: visual
+    body_md: >-
+      Hold up {total} fingers. Fold down {known} of them. Count the fingers that are still up.
+  - style: steps
+    body_md: |-
+      1. Find the total. It is the number after the equals sign.
+      2. Find the part you know.
+      3. Count on from that part to the total.
+      4. The number of counts is the missing part.
+  - style: story
+    body_md: >-
+      You have {total} cookies to share. You give {known} to a friend. How many are left for you?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Start at {known}. Count on, one at a time, until you say {total}. Hold up a finger for each count. The fingers you hold up are the answer.
+misconceptions:
+  gave_the_known_number: >-
+    It looks like you said the number you already know. Look for the part that is missing.
+  gave_the_total: >-
+    It looks like you said the total. The total is the whole. Find the missing part.
+  counted_start: >-
+    Nearly! It looks like you counted {known} as one. Start at {known}. The next number you say is one.

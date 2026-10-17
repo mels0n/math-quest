@@ -1,0 +1,26 @@
+# Four ways to explain comparing numbers to 100. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: compare_numbers_100
+approaches:
+  - style: visual
+    body_md: >-
+      Picture sticks of ten and loose cubes for each number. Set the sticks of {a} next to the sticks of {b}. The pile with more sticks is bigger. If the piles match, check the cubes.
+  - style: steps
+    body_md: |-
+      1. Say the tens digit of {a}.
+      2. Say the tens digit of {b}.
+      3. The bigger tens digit wins.
+      4. If the tens are the same, compare the ones. Then pick the {which} number.
+  - style: story
+    body_md: >-
+      Two shops sell eggs in boxes of ten. One shop has {a} eggs. The other has {b}. Count the full boxes first. Which number is {which}?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Cover the ones digit of each number with your finger. Look at the tens. Which side has more? If they match, look at the ones.
+misconceptions:
+  confused_bigger_smaller: >-
+    It looks like you picked the other number. The question asks for the {which} one. Read it again.
+  compared_ones_only: >-
+    It looks like you looked only at the ones. Look at the tens first. More tens means a bigger number.
+  gave_the_difference: >-
+    It looks like you found how far apart they are. The question asks which number is {which}. Pick one of the two numbers.

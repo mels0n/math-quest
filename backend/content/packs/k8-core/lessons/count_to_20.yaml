@@ -1,0 +1,32 @@
+# Lesson for Count to 20. The worked example is written in words, so it is never a
+# problem the skill asks.
+skill: count_to_20
+screens:
+  - title: Past ten
+    body_md: >-
+      Numbers after 10 keep going up by one. After 10 comes 11. Then 12, 13 and 14.
+    visual:
+      kind: number_line
+      params: {min: 10, max: 20, start: 11, jumps: [1, 1, 1], end: 14}
+  - title: Going back
+    body_md: >-
+      Counting back goes down by one. Before 16 comes 15. Before 20 comes 19.
+    visual:
+      kind: number_line
+      params: {min: 10, max: 20, start: 16, jumps: [-1], end: 15}
+  - title: Missing numbers
+    body_md: >-
+      Look at 12, 13, _, 15. Say 12 and 13. Then the missing number fits in order. It is 14.
+    visual:
+      kind: number_line
+      params: {min: 10, max: 20, start: 12, jumps: [1, 1, 1], end: 15}
+worked_example:
+  prompt:
+    - {kind: text, value: "What number comes after seventeen?"}
+  steps:
+    - Start at the number in the question. It is seventeen.
+    - Count up one number.
+    - You say eighteen.
+    - So eighteen comes after seventeen.
+try_it:
+  tier: 0

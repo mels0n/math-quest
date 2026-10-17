@@ -1,0 +1,24 @@
+# Four ways to explain comparing groups. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: compare_groups
+approaches:
+  - style: visual
+    body_md: >-
+      Line the two groups up in two rows. Pair each one with one in the other row. Cross out each pair. The row with things left over has more.
+  - style: steps
+    body_md: |-
+      1. Count the first group.
+      2. Count the second group.
+      3. Think about which number is bigger.
+      4. The question asks for the group with {more}. Say how many are in that group.
+  - style: story
+    body_md: >-
+      Two kids share a snack. One kid has {a}. The other kid has {b}. Count the grapes each kid has. Who has {more}?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Count the first group out loud. Then count the second group. Which group has {more}? Say how many are in it.
+misconceptions:
+  confused_more_fewer: >-
+    It looks like you picked the other group. The question asks for the group with {more}. Read it again.
+  counted_both_groups: >-
+    It looks like you counted every one. The question asks about one group. Say how many are in just that group.

@@ -1,0 +1,32 @@
+# Four ways to explain counting to 100. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: count_to_100
+approaches:
+  - style: visual
+    body_md: >-
+      Picture a hundred chart with ten rows. Put your finger on {near}. The answer is {rel} {near}. Slide {dir}. At the end of a row, move to the next row.
+  - style: steps
+    body_md: |-
+      1. Say the number in the question out loud.
+      2. Count {dir} in your head.
+      3. At the end of a ten, the ones start over.
+      4. Stop at the number that is {rel} {near}.
+  - style: story
+    body_md: >-
+      A bus driver counts the seats. Seat {near} is full. Which seat is {rel} {near}? The number on that seat is the answer.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say {near}. Then count {dir} one at a time. Tap a finger each time. Look at the tens digit as you go. The last number you say is the answer.
+misconceptions:
+  repeated_number: >-
+    It looks like you said {near} again. You start at {near}. Count {dir} to the next number.
+  wrong_direction: >-
+    It looks like you counted the other way. Start at {near} and count {dir}.
+  skipped_a_number: >-
+    It looks like you jumped over a number. Count {dir} from {near} and say every number.
+  kept_the_tens: >-
+    Look at the tens digit. When you pass the end of a ten, the tens digit changes. The ones start over.
+  counted_start: >-
+    Nearly! It looks like you counted {near} as one. Start at {near}. The next number you say is one.
+  went_one_too_far: >-
+    Nearly! You went one number too far. The answer is {rel} {near}. Stop there.

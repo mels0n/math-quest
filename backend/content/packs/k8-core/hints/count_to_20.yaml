@@ -1,0 +1,9 @@
+# Three hints for Count to 20: a nudge, the next step, then the whole answer worked out.
+skill: count_to_20
+levels:
+  - text_template: >-
+      Look at {near}. The answer is {rel} {near}.
+  - text_template: >-
+      Count {dir} from {near}. Say each number in your head.
+  - text_template: >-
+      {near} is where you start. Count {dir} and say {answer}. The answer is {answer}.

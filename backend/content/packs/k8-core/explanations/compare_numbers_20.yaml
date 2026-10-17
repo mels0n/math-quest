@@ -1,0 +1,24 @@
+# Four ways to explain comparing numbers to 20. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: compare_numbers_20
+approaches:
+  - style: visual
+    body_md: >-
+      Draw a number line in your mind. Put {a} on it. Put {b} on it too. The number on the right is bigger. The number on the left is smaller.
+  - style: steps
+    body_md: |-
+      1. Say {a} out loud.
+      2. Say {b} out loud.
+      3. Count up from one. Which one do you say first?
+      4. The one you say first is smaller. Pick the {which} number.
+  - style: story
+    body_md: >-
+      Two kids climb stairs. One climbs to step {a}. The other climbs to step {b}. The bigger number is higher up. Which number is {which}?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Count up from one in your head. Listen for {a}. Then listen for {b}. Which did you hear first? Now find the {which} one.
+misconceptions:
+  confused_bigger_smaller: >-
+    It looks like you picked the other number. The question asks for the {which} one. Read it again.
+  gave_the_difference: >-
+    It looks like you found how far apart they are. The question asks which number is {which}. Pick one of the two numbers.

@@ -1,0 +1,32 @@
+# Lesson for Hundreds Bundles. The worked example is in words, so it is never a problem
+# the skill asks.
+skill: place_value_hundreds
+screens:
+  - title: Bundles of ten
+    body_md: >-
+      Ten ones make a bundle of ten. This picture shows 3 bundles of ten. That is 30.
+    visual:
+      kind: base_ten
+      params: {tens: 3}
+  - title: Hundreds
+    body_md: >-
+      Ten bundles of ten make one hundred. This picture shows 3 hundreds. That is 300. The 3 is in the hundreds place.
+    visual:
+      kind: base_ten
+      params: {hundreds: 3}
+  - title: Hundreds, tens and ones
+    body_md: >-
+      345 is 3 hundreds, 4 tens and 5 ones. A zero holds a place. 305 has 3 hundreds and 5 ones, and no tens.
+    visual:
+      kind: base_ten
+      params: {hundreds: 3, tens: 4, ones: 5}
+worked_example:
+  prompt:
+    - {kind: text, value: "What number is six hundreds, two tens and nine ones?"}
+  steps:
+    - Six hundreds is 600.
+    - Two tens is 20.
+    - Nine ones is 9.
+    - Put them together to make 629.
+try_it:
+  tier: 2

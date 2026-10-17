@@ -1,0 +1,9 @@
+# Three hints for One More, One Less: a nudge, the next step, then the whole answer worked out.
+skill: one_more_one_less
+levels:
+  - text_template: >-
+      You need one {direction} than {n}.
+  - text_template: >-
+      Count {dir} one number from {n}. Say it out loud.
+  - text_template: >-
+      One {direction} than {n} is {answer}. So the answer is {answer}.

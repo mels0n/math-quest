@@ -1,0 +1,32 @@
+# Four ways to explain hundreds, tens and ones. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: place_value_hundreds
+approaches:
+  - style: visual
+    body_md: >-
+      Draw a chart with three boxes. Name them hundreds, tens and ones. Put each part in its own box. A box with nothing in it gets a zero. Read the boxes from left to right.
+  - style: steps
+    body_md: |-
+      1. Find what the question asks for.
+      2. Remember that ten ones make a ten. Ten tens make a hundred.
+      3. Work out one place at a time.
+      4. Check that every place has a digit.
+  - style: story
+    body_md: >-
+      A shop packs crayons in boxes of ten. A big crate holds ten of those boxes. Think about the crates, boxes and loose crayons in the question.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say the name of each place. Write the parts side by side. Read your answer out loud.
+misconceptions:
+  gave_the_number: >-
+    It looks like you said the number in the question. Look at what the question asks for. Count only that.
+  off_by_one: >-
+    So close! Count the bundles again, one at a time. Do not skip one.
+  confused_hundreds_tens: >-
+    A hundred is not the same as a ten. Ten tens make one hundred.
+  added_the_digits: >-
+    It looks like you added the digits. Do not add them. Write them side by side.
+  swapped_tens_and_ones: >-
+    The tens and the ones changed places. The tens go on the left of the ones.
+  left_out_the_zero: >-
+    A zero holds a place. Write it, so every place has a digit.

@@ -1,0 +1,26 @@
+# Four ways to explain counting to 10. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: count_to_10
+approaches:
+  - style: visual
+    body_md: >-
+      Picture stairs with a number on each step. Stand on step {near}. The answer is {rel} {near}. Walk {dir} to find it.
+  - style: steps
+    body_md: |-
+      1. Find the number you know in the question.
+      2. Say it out loud.
+      3. Count {dir} from it, one number at a time.
+      4. Stop at the number that is {rel} {near}.
+  - style: story
+    body_md: >-
+      A frog hops on stones with numbers on them. It sits on stone {near}. Which stone does it need? It is the stone that is {rel} {near}.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say {near} out loud. Now count {dir}, and hold up a finger for each number. The last number you say is the answer.
+misconceptions:
+  repeated_number: >-
+    It looks like you said {near} again. {near} is where you start. Count {dir} to the next number.
+  wrong_direction: >-
+    It looks like you counted the other way. Start at {near} and count {dir}.
+  skipped_a_number: >-
+    It looks like you jumped over a number. Count {dir} from {near}, one at a time. Say every number.

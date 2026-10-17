@@ -1,0 +1,9 @@
+# Three hints for Hundreds Bundles: a nudge, the next step, then the whole answer worked out.
+skill: place_value_hundreds
+levels:
+  - text_template: >-
+      Think about each place. Ten ones make a ten. Ten tens make a hundred.
+  - text_template: >-
+      Look at the question. Work out each part, one place at a time.
+  - text_template: >-
+      Work it out place by place. The answer is {answer}.

@@ -1,0 +1,32 @@
+# Lesson for One More, One Less. The worked example is in words, so it is never a problem
+# the skill asks.
+skill: one_more_one_less
+screens:
+  - title: One more
+    body_md: >-
+      One more means count up one. One more than 5 is 6. You say the next number.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 5, jumps: [1], end: 6}
+  - title: One less
+    body_md: >-
+      One less means count back one. One less than 9 is 8. You say the number before.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 9, jumps: [-1], end: 8}
+  - title: At a new ten
+    body_md: >-
+      Watch the tens. One more than 29 is 30. One less than 40 is 39.
+    visual:
+      kind: number_line
+      params: {min: 25, max: 45, start: 29, jumps: [1], end: 30}
+worked_example:
+  prompt:
+    - {kind: text, value: "What is one more than twelve?"}
+  steps:
+    - One more means count up one.
+    - Start at twelve.
+    - The next number is thirteen.
+    - So one more than twelve is thirteen.
+try_it:
+  tier: 0

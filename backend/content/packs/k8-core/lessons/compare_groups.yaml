@@ -1,0 +1,26 @@
+# Lesson for More, Fewer, Same. The worked example is a story about bags, so it is never
+# a problem the skill asks.
+skill: compare_groups
+screens:
+  - title: Match them up
+    body_md: >-
+      To compare two groups, match them one to one. Put one cube from each group in a pair. The group with cubes left over has more.
+    visual:
+      kind: base_ten
+      params: {ones: 7}
+  - title: More, fewer, same
+    body_md: >-
+      More means a bigger group. Fewer means a smaller group. Same means no cubes are left over.
+  - title: Count to check
+    body_md: >-
+      Counting helps too. One group has 8. The other group has 5. 8 is more than 5. So the first group has more and the other has fewer.
+worked_example:
+  prompt:
+    - {kind: text, value: "One bag has nine cubes. Another bag has six cubes. Which bag has more?"}
+  steps:
+    - Count the cubes in the first bag. There are nine.
+    - Count the cubes in the other bag. There are six.
+    - Nine is more than six.
+    - So the first bag has more.
+try_it:
+  tier: 0

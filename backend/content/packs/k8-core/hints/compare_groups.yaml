@@ -1,0 +1,9 @@
+# Three hints for More, Fewer, Same: a nudge, the next step, then the whole answer worked out.
+skill: compare_groups
+levels:
+  - text_template: >-
+      Look for the group with {more}. Count each group.
+  - text_template: >-
+      Match the groups one to one. Or count each group and compare the two numbers.
+  - text_template: >-
+      You count {a} and {b}. The group with {more} has {answer}. So the answer is {answer}.

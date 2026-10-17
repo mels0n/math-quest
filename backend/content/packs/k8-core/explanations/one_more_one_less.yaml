@@ -1,0 +1,28 @@
+# Four ways to explain one more and one less. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: one_more_one_less
+approaches:
+  - style: visual
+    body_md: >-
+      Think of a number line. Stand on {n}. Take one small step {dir}. Where you stop is one {direction} than {n}.
+  - style: steps
+    body_md: |-
+      1. Find {n} in the question.
+      2. Read the key word. It is more or less.
+      3. More means count up. Less means count back.
+      4. Move one number only.
+  - style: story
+    body_md: >-
+      A tower is made of blocks. You count them and say {n}. The question says one {direction}. Add one block, or take one away. How tall is the tower now?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say {n} out loud. Now count {dir} one number. Do not say more than one. That number is the answer.
+misconceptions:
+  wrong_direction: >-
+    It looks like you went the other way. Count {dir} from {n}. That is what one {direction} means.
+  skipped_a_number: >-
+    It looks like you moved two numbers. One {direction} is only one step from {n}.
+  changed_the_tens: >-
+    It looks like you moved a whole ten. One {direction} is only one small step from {n}.
+  kept_the_tens: >-
+    Careful at a new ten. The tens digit can change when you count past a ten.

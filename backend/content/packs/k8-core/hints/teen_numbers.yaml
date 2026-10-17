@@ -1,0 +1,9 @@
+# Three hints for Teen Numbers: a nudge, the next step, then the whole answer worked out.
+skill: teen_numbers
+levels:
+  - text_template: >-
+      A teen number is one ten and some ones.
+  - text_template: >-
+      Your job is to {task}. Look at {shown}.
+  - text_template: >-
+      Ten and {ones} more make {teen}. So the answer is {answer}.

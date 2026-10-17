@@ -1,0 +1,9 @@
+# Three hints for Count by Tens: a nudge, the next step, then the whole answer worked out.
+skill: skip_count_10
+levels:
+  - text_template: >-
+      Each number is ten more than the one before. Look at {previous}.
+  - text_template: >-
+      Add ten to {previous}. Say the next number of tens.
+  - text_template: >-
+      Ten more than {previous} is {answer}. So the answer is {answer}.

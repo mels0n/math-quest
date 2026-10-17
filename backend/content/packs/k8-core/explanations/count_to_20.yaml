@@ -1,0 +1,28 @@
+# Four ways to explain counting to 20. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: count_to_20
+approaches:
+  - style: visual
+    body_md: >-
+      Imagine a row of number cards on a wall. Your finger is on card {near}. Which card is {rel} {near}? Slide your finger {dir} along the row.
+  - style: steps
+    body_md: |-
+      1. Find the number that is already in the question.
+      2. Touch it with your finger.
+      3. Count {dir} from there, saying each number.
+      4. The number you land on is {rel} {near}. That is your answer.
+  - style: story
+    body_md: >-
+      A train has cars with numbers on them. You see car {near}. Which car is {rel} {near}? The number on that car is the answer.
+  - style: worked
+    body_md: >-
+      Let us try yours together. Tap {near} on your desk. Now count {dir}, and tap once for each number. Say them out loud. The last number you say is the answer.
+misconceptions:
+  repeated_number: >-
+    It looks like you said {near} again. You start at {near}. Count {dir} to the next number.
+  wrong_direction: >-
+    It looks like you went the other way. Start at {near} and count {dir}.
+  skipped_a_number: >-
+    It looks like you skipped a number. Go slowly from {near}. Say every number on the way.
+  kept_the_tens: >-
+    Careful when you pass a ten. The tens digit changes, and the ones start over.

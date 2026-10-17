@@ -1,0 +1,32 @@
+# Lesson for Count to 100. The worked example is written in words, so it is never a
+# problem the skill asks.
+skill: count_to_100
+screens:
+  - title: Past twenty
+    body_md: >-
+      Keep counting up. After 29 comes 30. After 39 comes 40. The ones start over at each new ten.
+    visual:
+      kind: number_line
+      params: {min: 25, max: 45, start: 28, jumps: [1, 1, 1, 1], end: 32}
+  - title: A new ten
+    body_md: >-
+      At the end of a ten, the tens digit goes up. After 49 comes 50. Before 60 comes 59.
+    visual:
+      kind: number_line
+      params: {min: 45, max: 65, start: 58, jumps: [1, 1, 1], end: 61}
+  - title: Start anywhere
+    body_md: >-
+      You can start at any number. Start at 74 and count on 3 more. Say 75, 76, 77. You stop at 77.
+    visual:
+      kind: number_line
+      params: {min: 70, max: 80, start: 74, jumps: [1, 1, 1], end: 77}
+worked_example:
+  prompt:
+    - {kind: text, value: "Start at ninety. Count on two more numbers. Which number do you say last?"}
+  steps:
+    - Start at ninety. Do not say ninety as a count.
+    - Count on one. You say 91.
+    - Count on two. You say 92.
+    - The last number you say is 92.
+try_it:
+  tier: 2
