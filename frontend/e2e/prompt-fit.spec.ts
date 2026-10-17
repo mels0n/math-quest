@@ -95,7 +95,10 @@ async function expectFits(page: Page, label: string, expectedText?: string) {
 		const box = prompt.getBoundingClientRect();
 		const runs = [...prompt.querySelectorAll<HTMLElement>('.run')].map((el) => {
 			const r = el.getBoundingClientRect();
-			return { left: r.left, right: r.right, scroll: el.scrollWidth, client: el.clientWidth };
+			const overflowY = getComputedStyle(el).overflowY;
+			const scrollsY =
+				(overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight + 1;
+			return { left: r.left, right: r.right, scroll: el.scrollWidth, client: el.clientWidth, scrollsY };
 		});
 		return {
 			promptLeft: box.left,
@@ -112,6 +115,7 @@ async function expectFits(page: Page, label: string, expectedText?: string) {
 		expect(run.left, `${label}: run left edge`).toBeGreaterThanOrEqual(m.promptLeft - 0.5);
 		// A math run that only fits by scrolling inside itself would hide digits.
 		expect(run.scroll, `${label}: run scrolls`).toBeLessThanOrEqual(run.client + 1);
+		expect(run.scrollsY, `${label}: run scrolls vertically`).toBe(false);
 	}
 	expect(m.scrollWidth, `${label}: page scroll width`).toBeLessThanOrEqual(m.innerWidth);
 	if (expectedText) expect(m.text, label).toContain(expectedText);
@@ -128,13 +132,20 @@ async function expectNoOverflow(page: Page, label: string) {
 			.filter((el) => getComputedStyle(el).display !== 'inline')
 			.filter((el) => el.scrollWidth > el.clientWidth + 1)
 			.map((el) => `${el.tagName.toLowerCase()}.${el.className}: ${el.scrollWidth}>${el.clientWidth}`);
+		// A box that scrolls vertically shows a scrollbar beside the math and hides part of it.
+		const scrollers = [card, ...card.querySelectorAll<HTMLElement>('*')]
+			.filter((el) => ['auto', 'scroll'].includes(getComputedStyle(el).overflowY))
+			.filter((el) => el.scrollHeight > el.clientHeight + 1)
+			.map((el) => `${el.tagName.toLowerCase()}.${el.className}: ${el.scrollHeight}>${el.clientHeight}`);
 		return {
 			over,
+			scrollers,
 			scrollWidth: document.documentElement.scrollWidth,
 			innerWidth: window.innerWidth
 		};
 	});
 	expect(m.over, `${label}: elements wider than their box`).toEqual([]);
+	expect(m.scrollers, `${label}: elements scrolling vertically`).toEqual([]);
 	expect(m.scrollWidth, `${label}: page scroll width`).toBeLessThanOrEqual(m.innerWidth);
 	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/longest-${label}.png`, fullPage: true });
 }

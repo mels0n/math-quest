@@ -17,8 +17,11 @@
 	.math {
 		display: inline-block;
 		max-width: 100%;
-		overflow-x: auto;
-		/* A scrolling inline-block sits on its bottom edge; centre it on the text instead. */
+		/* Prompts are shrunk to fit their width (fit-to-width), so this only guards the
+		   extreme case. It must be clip, not auto: auto turns the vertical axis into a
+		   scroller too, and a stacked fraction is taller than the line box, so every
+		   fraction prompt grew its own scrollbar and lost the tops of its numerators. */
+		overflow-x: clip;
 		vertical-align: middle;
 	}
 </style>
