@@ -1,4 +1,4 @@
-# 0017. A digit of a shown number counts as shown in word problems
+# 0018. A digit of a shown number counts as shown in word problems
 
 - Status: accepted
 - Date: 2026-10-17
