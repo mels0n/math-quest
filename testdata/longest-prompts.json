@@ -9,6 +9,16 @@
       }
     ]
   },
+  "add_2digit_no_regroup-word": {
+    "tier": 0,
+    "seed": 104,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Hugo collects 14 puzzle pieces in a box. A cousin adds 40 puzzle pieces to the box. How many puzzle pieces are in the box now?"
+      }
+    ]
+  },
   "add_2digit_regroup": {
     "tier": 0,
     "seed": 0,
@@ -16,6 +26,16 @@
       {
         "kind": "math",
         "value": "27 + 19 = ?"
+      }
+    ]
+  },
+  "add_2digit_regroup-word": {
+    "tier": 0,
+    "seed": 1,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Aisha packs 13 puzzle pieces in a box. Mia packs 29 puzzle pieces in another box. How many puzzle pieces is that in all?"
       }
     ]
   },
@@ -104,6 +124,16 @@
       {
         "kind": "math",
         "value": "17 - 7 = ?"
+      }
+    ]
+  },
+  "sub_within_20-word": {
+    "tier": 1,
+    "seed": 165,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Aisha has 11 puzzle pieces in a bag. Aisha loses 2 puzzle pieces in the grass. How many puzzle pieces are in the bag now?"
       }
     ]
   }

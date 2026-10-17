@@ -1,0 +1,61 @@
+# Word problems for Add Big Numbers. Every template uses the generator's {a} and {b}
+# and asks for their sum, so each story puts two groups together. Both numbers are
+# two-digit, so nouns after them are always plural. Short sentences (12 words or
+# fewer), simple words, no sentence that starts with a number.
+skill: add_2digit_no_regroup
+templates:
+  - id: friend_gives_more
+    text_template: "{name} collects {a obj} in a box. A cousin adds {b obj} to the box. How many {obj} are in the box now?"
+    slots: {name: names, obj: objects}
+    grade_band: 2
+  - id: farm_animals
+    text_template: "A farm has {a} cows and {b} sheep. How many cows and sheep does the farm have in all?"
+    grade_band: 2
+  - id: parking_lot
+    text_template: "A lot has {a} red cars and {b} blue cars. How many cars are in the lot?"
+    grade_band: 2
+  - id: walking_steps
+    text_template: "{name} counts {a} steps to the pool. Then {name} counts {b} steps to the slide. How many steps is that in all?"
+    slots: {name: names}
+    grade_band: 2
+  - id: library_shelves
+    text_template: "The library has {a} picture books and {b} story books. How many books does the library have?"
+    grade_band: 2
+  - id: jump_rope
+    text_template: "{name} jumps rope {a} times before lunch. {name} jumps {b} times after lunch. How many jumps is that in all?"
+    slots: {name: names}
+    grade_band: 2
+  - id: crayon_box
+    text_template: "A box holds {a} red crayons and {b} green crayons. How many crayons are in the box?"
+    grade_band: 2
+  - id: saving_coins
+    text_template: "{name} saves {a} coins. {friend} saves {b} coins. How many coins do they have together?"
+    slots: {name: names, friend: names}
+    grade_band: 2
+  - id: class_reading
+    text_template: "The class reads {a} pages on Monday. The class reads {b} pages on Tuesday. How many pages is that in all?"
+    grade_band: 2
+  - id: bakery_muffins
+    text_template: "A bakery makes {a} muffins in the morning. It makes {b} more at noon. How many muffins does the bakery make?"
+    grade_band: 2
+  - id: berry_bushes
+    text_template: "{name} picks {a} berries from one bush. {name} picks {b} from another. How many berries does {name} pick?"
+    slots: {name: names}
+    grade_band: 2
+  - id: two_ponds
+    text_template: "The big pond has {a} fish. The small pond has {b} fish. How many fish live in both ponds?"
+    grade_band: 2
+  - id: fruit_stand
+    text_template: "A stand sells {a} apples on Friday. It sells {b} apples on Saturday. How many apples does the stand sell?"
+    grade_band: 2
+  - id: park_trees
+    text_template: "The park has {a} trees by the lake. It has {b} trees by the hill. How many trees does the park have?"
+    grade_band: 2
+  - id: block_wall
+    text_template: "A wall in the game has {a} bricks. {name} adds {b} more bricks. How many bricks does the wall have?"
+    slots: {name: names}
+    grade_band: 2
+  - id: bike_ride
+    text_template: "{name} rides {a} minutes to the park. The ride home takes {b} minutes. How many minutes is that in all?"
+    slots: {name: names}
+    grade_band: 2

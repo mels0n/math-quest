@@ -1,0 +1,37 @@
+# Lesson shown the first time a learner meets Tens and Ones. The numbers are written as
+# plain words in the text, so a replayed lesson never shows a question the skill asks.
+skill: place_value_tens_ones
+screens:
+  - title: Tens and ones
+    body_md: >-
+      A number is built from tens and ones. A ten is a stick. A one is a small
+      cube. This picture shows 4 tens and 7 ones. That is the number 47.
+    visual:
+      kind: base_ten
+      params: {tens: 4, ones: 7}
+  - title: Which place is it?
+    body_md: >-
+      Each digit sits in a place. Start from the right. The last digit is in
+      the ones place. The next digit is in the tens place. In 47, the 7 is in
+      the ones place. The 4 is in the tens place.
+    visual:
+      kind: base_ten
+      params: {tens: 4, ones: 7}
+  - title: More places
+    body_md: >-
+      Keep going left for bigger numbers. Next is the hundreds place, then
+      the thousands place. In 352, the 3 is in the hundreds place. It means 3
+      hundreds.
+    visual:
+      kind: base_ten
+      params: {hundreds: 3, tens: 5, ones: 2}
+worked_example:
+  prompt:
+    - {kind: text, value: "Which digit is in the tens place of 68?"}
+  steps:
+    - Start from the right. The 8 is in the ones place.
+    - The next digit to the left is in the tens place.
+    - That digit is 6.
+    - So the 6 is in the tens place.
+try_it:
+  tier: 0

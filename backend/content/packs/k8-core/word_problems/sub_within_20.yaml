@@ -1,0 +1,69 @@
+# Word problems for Subtract from 20. Every template uses the generator's {a} and {b}
+# and asks for what is left, so each story takes something away. The amount taken is
+# never followed by a noun (it can be 1), or it uses {n obj} so the noun agrees.
+# Short sentences (12 words or fewer), simple words, no sentence that starts with a
+# number, and a question that says whose things are counted.
+skill: sub_within_20
+templates:
+  - id: gives_away
+    text_template: "{name} owns {a obj}. Then {name} hands {b obj} to {friend}. How many {obj} are left with {name}?"
+    slots: {name: names, friend: names, obj: objects}
+    grade_band: 1
+  - id: birds_scared
+    text_template: "Birds sit on a wire, {a} in all. A cat chases {b} away. How many birds are still on the wire?"
+    grade_band: 1
+  - id: eats_grapes
+    text_template: "{name} has {a} grapes. {name} eats {b} of them. How many grapes does {name} have left?"
+    slots: {name: names}
+    grade_band: 1
+  - id: bus_stop
+    text_template: "A bus has {a} kids on it. It drops {b} off at school. How many kids are still on the bus?"
+    grade_band: 1
+  - id: balloons_pop
+    text_template: "{name} has {a} balloons. The wind pops {b} of them. How many balloons does {name} have left?"
+    slots: {name: names}
+    grade_band: 1
+  - id: library_return
+    text_template: "{name} has {a} books from the library. {name} brings {b} back. How many books does {name} still have?"
+    slots: {name: names}
+    grade_band: 1
+  - id: cookie_jar
+    text_template: "A jar has {a} cookies. {name} takes {b} out. How many cookies are in the jar now?"
+    slots: {name: names}
+    grade_band: 1
+  - id: fish_tank
+    text_template: "Some fish swim in a tank, {a} in all. {name} moves {b} to a new tank. How many fish stay in the first tank?"
+    slots: {name: names}
+    grade_band: 1
+  - id: lost_marbles
+    text_template: "{name} has {a obj} in a bag. {name} loses {b obj} in the grass. How many {obj} are in the bag now?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: party_cupcakes
+    text_template: "There are {a} cupcakes at the party. The kids eat {b}. How many cupcakes are left?"
+    grade_band: 1
+  - id: frogs_log
+    text_template: "There are {a} frogs on a log. Then {b} hop into the pond. How many frogs are on the log now?"
+    grade_band: 1
+  - id: apple_tree
+    text_template: "An apple tree has {a} apples. The wind blows {b} to the ground. How many apples are still on the tree?"
+    grade_band: 1
+  - id: pages_left
+    text_template: "A book has {a} pages. {name} has read {b} of them. How many pages are left to read?"
+    slots: {name: names}
+    grade_band: 1
+  - id: puzzle_pieces
+    text_template: "A puzzle has {a} pieces. {name} puts in {b}. How many pieces are left to put in?"
+    slots: {name: names}
+    grade_band: 1
+  - id: nest_eggs
+    text_template: "A nest has {a} eggs. Then {b} of them hatch. How many eggs are still in the nest?"
+    grade_band: 1
+  - id: pencil_case
+    text_template: "{name} has {a} pencils in a case. {friend} borrows {b}. How many pencils are in the case now?"
+    slots: {name: names, friend: names}
+    grade_band: 1
+  - id: muffin_tray
+    text_template: "A tray has {a} muffins. {name} sells {b} of them. How many muffins are left on the tray?"
+    slots: {name: names}
+    grade_band: 1
