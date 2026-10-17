@@ -3,13 +3,19 @@
 import dataclasses
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 import sympy
 
 from mathquest.engine.content import Pack, load_pack
-from mathquest.engine.content.lint import Finding, errors, lint
+from mathquest.engine.content.lint import (
+    Finding,
+    _always_shown,  # pyright: ignore[reportPrivateUsage]
+    errors,
+    lint,
+)
 from mathquest.engine.generators import all_generators
 from mathquest.engine.types import Generator
 from tests.engine.content.packbuilder import CONTENT, SLOTS, WORDS, base, load
@@ -154,6 +160,20 @@ def test_a_number_always_equal_to_a_shown_one_counts_as_shown(tmp_path: Path) ->
         ),
     )
     assert _rule(_lint(load(tmp_path, files)), "answers") == []
+
+
+def test_a_digit_of_a_shown_number_counts_as_shown() -> None:
+    generator = REGISTRY["add_2digit_no_regroup"]
+    source: Any = SimpleNamespace(
+        generator=generator, tier_difficulties=generator.tier_difficulties
+    )
+    # The tens and ones of the shown numbers are always digits of them.
+    shown = frozenset({"a", "b"})
+    for name in ("a_tens", "a_ones", "b_tens", "b_ones"):
+        assert _always_shown(source, shown, name)
+    # A digit of a number that is not shown is still left out.
+    assert not _always_shown(source, frozenset({"a"}), "b_tens")
+    assert not _always_shown(source, frozenset({"a"}), "b")
 
 
 def test_a_template_that_fails_to_render_for_some_seed(tmp_path: Path) -> None:

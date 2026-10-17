@@ -322,13 +322,22 @@ def _plurals(slots: Slots) -> frozenset[str]:
     return frozenset(n.many.lower() for n in nouns if n.many != n.one)
 
 
+def _digit(number: object, place: int) -> int | None:
+    """The digit of a whole ``number`` ``place`` places from the right (0 = ones)."""
+    if isinstance(number, bool) or not isinstance(number, int):
+        return None
+    return number // 10**place % 10
+
+
 def _always_shown(source: SkillSource, used: frozenset[str], name: str) -> bool:
-    """``name`` is not used but always equals a number the template does show."""
+    """``name`` is not used but always equals a number the template does show, or one
+    digit of it (the tens of a shown ``a``): the learner still sees what it stands for."""
     for tier in range(len(source.tier_difficulties)):
         for seed in range(20):
             values = source.generator.generate(seed, tier).values
             shown = {values[u] for u in used if u in values}
-            if values[name] not in shown:
+            digits = {_digit(v, place) for v in shown for place in range(4)}
+            if values[name] not in shown | digits:
                 return False
     return True
 
