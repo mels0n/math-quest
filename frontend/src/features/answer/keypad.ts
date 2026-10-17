@@ -76,7 +76,7 @@ const CLOSE = insert(')', 'Close bracket', ')');
 const EXTRAS: Record<Exclude<KeypadProfile, 'choice'>, Key[]> = {
 	numpad: [],
 	numpad_neg: [MINUS],
-	fraction: [FRACTION, LEFT, RIGHT],
+	fraction: [FRACTION, MIXED, LEFT, RIGHT],
 	mixed: [MIXED, FRACTION_AFTER_WHOLE, LEFT, RIGHT],
 	decimal: [POINT, MINUS],
 	exponent: [POWER, ROOT, MINUS, OPEN, CLOSE, LEFT, RIGHT],

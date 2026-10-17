@@ -77,8 +77,12 @@ test('each keypad profile types the LaTeX the checker reads', async ({ page }) =
 				}
 				expect(await fieldValue(page), `${profile}: ${sample.keys.join(' ')}`).toBe(sample.latex);
 			}
-			const width = await page.evaluate(() => document.documentElement.scrollWidth);
-			expect(width, `${profile}: page scroll width`).toBeLessThanOrEqual(375);
+			for (const viewport of [375, 320]) {
+				await page.setViewportSize({ width: viewport, height: 812 });
+				const width = await page.evaluate(() => document.documentElement.scrollWidth);
+				expect(width, `${profile}: page scroll width at ${viewport}`).toBeLessThanOrEqual(viewport);
+			}
+			await page.setViewportSize({ width: 375, height: 812 });
 		});
 	}
 });

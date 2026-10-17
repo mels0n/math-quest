@@ -13,7 +13,8 @@
 		"fraction": [
 			{ "keys": ["Fraction", "3", "Move right", "4"], "latex": "\\frac34", "value": "3/4" },
 			{ "keys": ["Fraction", "1", "2", "Move right", "5"], "latex": "\\frac{12}{5}", "value": "12/5" },
-			{ "keys": ["1", "5", "Fraction", "3", "4"], "latex": "\\frac{15}{34}", "value": "15/34" }
+			{ "keys": ["1", "5", "Fraction", "3", "4"], "latex": "\\frac{15}{34}", "value": "15/34" },
+			{ "keys": ["Mixed number", "1", "Move right", "1", "1", "Move right", "2", "0"], "latex": "1\\frac{11}{20}", "value": "31/20" }
 		],
 		"mixed": [
 			{ "keys": ["2", "Fraction", "1", "Move right", "3"], "latex": "2\\frac13", "value": "7/3" },

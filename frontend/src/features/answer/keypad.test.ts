@@ -19,8 +19,8 @@ describe('keypad profiles', () => {
 		expect(layoutFor('numpad_neg')?.extras.map((k) => k.name)).toEqual(['Minus']);
 	});
 
-	it('fraction adds a fraction template', () => {
-		expect(names('fraction')).toContain('Fraction');
+	it('fraction adds a fraction template and the mixed-number key', () => {
+		expect(names('fraction')).toEqual(expect.arrayContaining(['Fraction', 'Mixed number']));
 		expect(names('fraction')).not.toContain('x');
 	});
 
@@ -87,6 +87,7 @@ describe('keypad layout', () => {
 		expect(layoutFor('numpad')?.extras).toEqual([]);
 		expect(layoutFor('fraction')?.extras.map((k) => k.name)).toEqual([
 			'Fraction',
+			'Mixed number',
 			'Move left',
 			'Move right'
 		]);
@@ -104,7 +105,11 @@ describe('insert keys', () => {
 	it('inserts the exact latex for every key', () => {
 		expect(inserts('numpad')).toEqual(digits);
 		expect(inserts('numpad_neg')).toEqual({ ...digits, Minus: '-' });
-		expect(inserts('fraction')).toEqual({ ...digits, Fraction: String.raw`\frac{#0}{#?}` });
+		expect(inserts('fraction')).toEqual({
+			...digits,
+			Fraction: String.raw`\frac{#0}{#?}`,
+			'Mixed number': String.raw`#?\frac{#?}{#?}`
+		});
 		expect(inserts('mixed')).toEqual({
 			...digits,
 			'Mixed number': String.raw`#?\frac{#?}{#?}`,
