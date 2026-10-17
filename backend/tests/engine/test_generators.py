@@ -203,6 +203,26 @@ def test_regroup_always_carries(seed: int, tier: int) -> None:
 
 @prop
 @given(seed=seeds, tier=tiers)
+def test_no_regroup_mistakes_fail_and_are_matched(seed: int, tier: int) -> None:
+    problem = get_generator("add_2digit_no_regroup").generate(seed, tier)
+    a, b = addends("add_2digit_no_regroup", seed, tier)
+    assert check(problem, str(a + b)).verdict is Verdict.CORRECT
+    rules = {
+        "subtracted_instead": abs(a - b),
+        "added_digits": sum(int(d) for d in f"{a}{b}"),
+        "left_out_tens": a + b % 10,
+    }
+    for key, wrong in rules.items():
+        result = check(problem, str(wrong))
+        assert result.verdict is Verdict.INCORRECT
+        # A wrong answer shared by two mistakes is reported as the first one declared.
+        assert result.misconception in rules
+        if wrong not in [v for k, v in rules.items() if k != key]:
+            assert result.misconception == key
+
+
+@prop
+@given(seed=seeds, tier=tiers)
 def test_sub_within_20_borrow_by_tier(seed: int, tier: int) -> None:
     a, b = addends("sub_within_20", seed, tier)
     assert (b > a % 10) == (tier >= 1)
@@ -260,6 +280,10 @@ EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
             "copied_numerator",
             "wrote_whole_fraction",
         }
+        for t in range(3)
+    },
+    **{
+        ("add_2digit_no_regroup", t): {"subtracted_instead", "added_digits", "left_out_tens"}
         for t in range(3)
     },
     ("place_value_tens_ones", 0): {"confused_tens_ones"},
