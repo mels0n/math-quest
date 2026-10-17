@@ -1,7 +1,15 @@
 import type { KeypadProfile } from '../../entities/problem';
 
 export type KeyAction =
-	| { kind: 'insert'; latex: string }
+	| {
+			kind: 'insert';
+			latex: string;
+			/**
+			 * The digits just before the caret become the template's `#0`, so tapping 1 5, the
+			 * key, then 3 4 writes 15 over 34.
+			 */
+			wrapNumber?: boolean;
+	  }
 	| { kind: 'command'; command: 'deleteBackward' | 'moveToPreviousChar' | 'moveToNextChar' }
 	| { kind: 'go' };
 
@@ -13,12 +21,14 @@ export interface Key {
 }
 
 const digit = (d: string): Key => ({ label: d, name: d, action: { kind: 'insert', latex: d } });
-const insert = (label: string, name: string, latex: string): Key => ({
+const insert = (label: string, name: string, latex: string, wrapNumber?: boolean): Key => ({
 	label,
 	name,
-	action: { kind: 'insert', latex },
+	action: wrapNumber ? { kind: 'insert', latex, wrapNumber } : { kind: 'insert', latex },
 	tone: 'aux'
 });
+
+const FRAC = String.raw`\frac{#0}{#?}`;
 
 /** Calculator order: 7 8 9 / 4 5 6 / 1 2 3, then 0 and delete on the bottom row. */
 const DIGITS = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0'].map(digit);
@@ -43,7 +53,12 @@ const RIGHT: Key = {
 	tone: 'aux'
 };
 
-const FRACTION = insert('⁄', 'Fraction', '\\frac{#0}{#?}');
+const FRACTION = insert('⁄', 'Fraction', FRAC, true);
+/**
+ * On the mixed keypad 2, Fraction, 1, move right, 3 means 2 and one third (the shared
+ * samples pin that), so its Fraction key never wraps the digits before it.
+ */
+const FRACTION_AFTER_WHOLE = insert('⁄', 'Fraction', FRAC);
 const MIXED = insert('▢⁄', 'Mixed number', '#?\\frac{#?}{#?}');
 const MINUS = insert('−', 'Minus', '-');
 const PLUS = insert('+', 'Plus', '+');
@@ -61,8 +76,8 @@ const CLOSE = insert(')', 'Close bracket', ')');
 const EXTRAS: Record<Exclude<KeypadProfile, 'choice'>, Key[]> = {
 	numpad: [],
 	numpad_neg: [MINUS],
-	fraction: [FRACTION, LEFT, RIGHT],
-	mixed: [MIXED, FRACTION, LEFT, RIGHT],
+	fraction: [FRACTION, MIXED, LEFT, RIGHT],
+	mixed: [MIXED, FRACTION_AFTER_WHOLE, LEFT, RIGHT],
 	decimal: [POINT, MINUS],
 	exponent: [POWER, ROOT, MINUS, OPEN, CLOSE, LEFT, RIGHT],
 	algebra: [
@@ -100,4 +115,14 @@ export function keysFor(profile: KeypadProfile): Key[] {
 	const layout = layoutFor(profile);
 	if (!layout) return [];
 	return [...layout.digits, ...layout.extras, layout.go];
+}
+
+/**
+ * Where the run of digits ending at `position` starts. `charBefore(i)` is the LaTeX of
+ * the atom between offsets i - 1 and i. Returns `position` when no digit precedes it.
+ */
+export function numberStart(position: number, charBefore: (offset: number) => string): number {
+	let start = position;
+	while (start > 0 && /^[0-9]$/.test(charBefore(start))) start -= 1;
+	return start;
 }
