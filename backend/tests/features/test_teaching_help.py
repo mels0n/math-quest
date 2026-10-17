@@ -531,3 +531,23 @@ async def test_no_stuck_event_for_a_problem_with_its_own_answer(db: AsyncSession
         wrong = sympy.latex(problem.answer + 1000 + k)
         await service.submit_answer(db, POOL, catalog, pid, worded.id, wrong)
     assert await _stuck_count(db, pid) == 0
+
+
+async def test_help_for_a_problem_on_a_skill_the_pack_lacks_is_closed(db: AsyncSession) -> None:
+    """A rolled-back release leaves stored problems for skills the older pack does not know."""
+    pid = await _player(db)
+    session_id = await _session(db, pid)
+    ghost = await problems.add_problem(
+        db,
+        session_id=session_id,
+        player_id=pid,
+        skill_id="ghost_skill",
+        tier=0,
+        seed=1,
+        difficulty=0.0,
+        issued_at=datetime.now(UTC),
+    )
+    for ask in (teaching.next_hint, teaching.next_explanation):
+        with pytest.raises(Conflict) as err:
+            await ask(db, CATALOG, pid, ghost.id)
+        assert err.value.code == "problem_closed"

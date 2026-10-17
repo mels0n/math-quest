@@ -336,3 +336,19 @@ async def test_two_starts_at_once_leave_one_round_open(db_schema: str) -> None:
         assert open_rounds == 1
     finally:
         await engine.dispose()
+
+
+def test_a_placement_probe_on_a_skill_the_pack_lacks_is_closed() -> None:
+    probe = {
+        "id": str(uuid.uuid4()),
+        "skill_id": "ghost_skill",
+        "tier": 1,
+        "seed": 1,
+        "variant": "bare",
+        "template_id": None,
+        "free": 0,
+        "correct": None,
+    }
+    with pytest.raises(Conflict) as err:
+        service._problem(CATALOG, probe)  # type: ignore[arg-type]  # pyright: ignore[reportPrivateUsage]
+    assert err.value.code == "placement_closed"

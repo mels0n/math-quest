@@ -68,7 +68,8 @@ async def _open_problem(
         raise Conflict("problem_closed" if instance.correct is None else "problem_scored")
     source = catalog.sources.get(instance.skill_id)
     if source is None:
-        raise NotFound()
+        # Issued for a skill the pack no longer has (a release rolled back).
+        raise Conflict("problem_closed")
     problem = catalog.regenerate(
         instance.skill_id, instance.seed, instance.tier, instance.variant, instance.template_id
     )

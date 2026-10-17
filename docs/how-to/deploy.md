@@ -278,15 +278,28 @@ Deploy a new commit by changing only the image on the running service:
 docker service update --image <registry-image-tag> math-quest
 ```
 
-`--update-order stop-first` replaces the single replica without running two at once,
-and migrations run on start. If the new task fails its health check, roll back:
+`--update-order stop-first` replaces the single replica without running two at once.
+The image runs `alembic upgrade head` on start, so a release's database migrations are
+applied when its first task starts.
 
-```sh
-docker service rollback math-quest
-```
+## Roll back, or roll forward
 
-A release that adds skills must not be rolled back once learners have played them: their
-progress, reviews and open problems name skills the older image does not know. If the new
-version has a problem, fix it and deploy a new commit (roll forward). The app ignores a
-stored review or problem for a skill missing from its pack rather than failing, but the
-learner's progress on that skill is invisible until the skill returns.
+- **A release without a migration:** if the new task fails its health check, roll back
+  right away:
+
+  ```sh
+  docker service rollback math-quest
+  ```
+
+- **A release with a migration:** once the migration has run, the previous image cannot
+  start (Alembic cannot find the database's revision), so `docker service rollback` does
+  not help. Fix the problem and deploy a new commit (roll forward). To go back anyway,
+  first run `alembic downgrade <previous revision>` with the new image, in a one-off
+  container or service that uses the same image and the database secret, and only then roll
+  the service back. A downgrade can drop data added by the migration, so take a dump first
+  (step 4).
+- **A release that adds skills** must not be rolled back once learners have played them:
+  their progress, reviews and open problems name skills the older image does not know. The
+  app ignores a stored review or problem for a skill missing from its pack rather than
+  failing, but the learner's progress on that skill is invisible until the skill returns.
+  Roll forward instead.

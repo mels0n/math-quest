@@ -654,13 +654,12 @@ def _apply_score(
 
 def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
     """The issued problem again, from its stored seed, tier, variant and template."""
-    try:
-        return catalog.regenerate(
-            instance.skill_id, instance.seed, instance.tier, instance.variant, instance.template_id
-        )
-    except KeyError:
+    if instance.skill_id not in catalog.graph.skills:
         # Issued for a skill the pack no longer has: closed, and the client moves on.
-        raise Conflict("problem_closed") from None
+        raise Conflict("problem_closed")
+    return catalog.regenerate(
+        instance.skill_id, instance.seed, instance.tier, instance.variant, instance.template_id
+    )
 
 
 def _allowed(problem: Problem) -> int:
