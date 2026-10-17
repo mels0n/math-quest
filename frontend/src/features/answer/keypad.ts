@@ -21,12 +21,14 @@ export interface Key {
 }
 
 const digit = (d: string): Key => ({ label: d, name: d, action: { kind: 'insert', latex: d } });
-const insert = (label: string, name: string, latex: string): Key => ({
+const insert = (label: string, name: string, latex: string, wrapNumber?: boolean): Key => ({
 	label,
 	name,
-	action: { kind: 'insert', latex },
+	action: wrapNumber ? { kind: 'insert', latex, wrapNumber } : { kind: 'insert', latex },
 	tone: 'aux'
 });
+
+const FRAC = String.raw`\frac{#0}{#?}`;
 
 /** Calculator order: 7 8 9 / 4 5 6 / 1 2 3, then 0 and delete on the bottom row. */
 const DIGITS = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0'].map(digit);
@@ -51,15 +53,12 @@ const RIGHT: Key = {
 	tone: 'aux'
 };
 
-const FRACTION: Key = {
-	...insert('⁄', 'Fraction', '\\frac{#0}{#?}'),
-	action: { kind: 'insert', latex: '\\frac{#0}{#?}', wrapNumber: true }
-};
+const FRACTION = insert('⁄', 'Fraction', FRAC, true);
 /**
  * On the mixed keypad 2, Fraction, 1, move right, 3 means 2 and one third (the shared
  * samples pin that), so its Fraction key never wraps the digits before it.
  */
-const FRACTION_AFTER_WHOLE = insert('⁄', 'Fraction', '\\frac{#0}{#?}');
+const FRACTION_AFTER_WHOLE = insert('⁄', 'Fraction', FRAC);
 const MIXED = insert('▢⁄', 'Mixed number', '#?\\frac{#?}{#?}');
 const MINUS = insert('−', 'Minus', '-');
 const PLUS = insert('+', 'Plus', '+');

@@ -39,7 +39,8 @@
 			{ "keys": ["Square root", "x"], "latex": "\\sqrt{x}", "at": { "x": 9 }, "value": "3" },
 			{ "keys": ["Fraction", "y", "Move right", "2"], "latex": "\\frac{y}{2}", "at": { "y": 3 }, "value": "3/2" },
 			{ "keys": ["2", "Open bracket", "x", "Minus", "1", "Close bracket"], "latex": "2(x-1)", "at": { "x": 4 }, "value": "6" },
-			{ "keys": ["3", "Fraction", "4"], "latex": "\\frac34", "at": { "y": 3 }, "value": "3/4" }
+			{ "keys": ["3", "Fraction", "4"], "latex": "\\frac34", "value": "3/4" },
+			{ "keys": ["x", "Plus", "3", "Fraction", "4"], "latex": "x+\\frac34", "at": { "x": 1 }, "value": "7/4" }
 		],
 		"choice": []
 	}

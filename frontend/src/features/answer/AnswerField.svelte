@@ -44,6 +44,7 @@
 	}
 
 	function insertKey(f: MathfieldElement, action: Extract<Key['action'], { kind: 'insert' }>) {
+		// Wrapping relies on MathLive reporting one digit per offset from getValue(i - 1, i, 'latex'); the e2e keypad samples catch a change.
 		if (action.wrapNumber && f.selectionIsCollapsed) {
 			const position = f.position;
 			const start = numberStart(position, (i) => f.getValue(i - 1, i, 'latex'));
