@@ -1,6 +1,6 @@
 # 0015. Placement: a noisy binary search over anchor skills and provisional mastery
 
-- Status: accepted
+- Status: accepted; superseded in part by [0019](0019-six-anchor-placement-spine.md) (the real-pack figures)
 - Date: 2026-10-15
 
 ## Context
@@ -20,9 +20,9 @@ skill graph says what each one builds on.
 
 ## Decision
 **The spine.** The anchors in the graph's topological order (declaration order breaks
-ties) form a ladder, easiest first. The k8-core pack has six: counting to 10 and
-adding to 10 (K), adding to 20 and comparing to 100 (grade 1), adding with carrying
-(grade 2) and adding unlike fractions (grade 5). Each probe is one problem at the anchor's middle tier, generated and checked
+ties) form a ladder, easiest first. The k8-core pack has four: adding to 10 (K),
+adding to 20 (grade 1), adding with carrying (grade 2) and adding unlike fractions
+(grade 5). Each probe is one problem at the anchor's middle tier, generated and checked
 like a play problem. Anchors answered only with choices get a bank item; every other
 anchor gets the bare generator problem, since placement measures the skill, not reading.
 
@@ -83,11 +83,8 @@ any of them worse fails. A hint three grades too high costs at most two points (
 worst for the reference model). With a quarter of guesses landing, low-level learners
 are placed too high in up to 15% of runs; choice anchors should therefore stay rare on
 the spine, and the first review of each provisional skill catches what slips through.
-On the real six-anchor pack, with no hint, the reference learner lands within one anchor
-in 94.7% or more of runs (over-placement at most 2.4%) at about 14 questions; with the
-hint of the learner's own grade, 97.9% or more (at most 1.0%) at about 14. With four
-anchors the same figures were 97.4% (1.7%) and 97.7% (0.7%): a finer ladder of the same
-fifteen questions costs the no-hint case a few points. Comparing to 100 is the one anchor answered with choices.
+On the real four-anchor pack the reference learner lands within one anchor in 97.4% or
+more of runs (over-placement at most 1.7%) at about 13.5 questions.
 
 **The outcome.** The frontier is the highest anchor of the placement. Every anchor up
 to the frontier and all of their prerequisites, transitively, become provisionally

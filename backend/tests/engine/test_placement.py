@@ -303,7 +303,7 @@ def test_simulated_learners_across_models(model: str, hint: str) -> None:
 # The real pack's six anchors, per model and hint: lowest share within one anchor and highest
 # share placed two or more too high, over every level from "nothing passed" to "everything
 # passed". Without a hint the reference learner is at the limit of fifteen questions on six
-# anchors (see ADR-0015); with the hint of the learner's own grade it meets the ADR's bar.
+# anchors (the bars are set from the figures in ADR-0019, which supersedes the four-anchor figures in ADR-0015); with the hint of the learner's own grade it meets ADR-0015's bar.
 REAL_BARS: dict[tuple[str, str], tuple[float, float]] = {
     ("reference", "none"): (0.94, 0.03),
     ("reference", "same"): (0.95, 0.02),
