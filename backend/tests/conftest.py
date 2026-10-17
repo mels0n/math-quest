@@ -24,6 +24,11 @@ from mathquest.shared.config import Settings
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
+NO_CONTENT_SKILL = "equivalent_fractions"
+"""A real skill that has no lesson, hints or explanations yet, for tests of the missing
+case. When it gains content, pick another skill that lacks it; the premise test in
+tests/engine/test_reference_content.py says so."""
+
 
 def _database_url() -> str:
     url = os.environ.get("TEST_DATABASE_URL")

@@ -42,6 +42,7 @@ from mathquest.features import teaching
 from mathquest.features.play import service
 from mathquest.features.play.schema import AnswerOut, ProblemOut
 from mathquest.shared.errors import Conflict, NotFound
+from tests.conftest import NO_CONTENT_SKILL
 
 CATALOG = load_catalog(Path(__file__).resolve().parents[2] / "content", "k8-core")
 PACK = CATALOG.pack
@@ -166,8 +167,8 @@ async def test_hint_for_another_player_or_a_skill_without_hints_is_not_found(
     inst = await _issue(db, pid, session_id)
     with pytest.raises(NotFound):
         await teaching.next_hint(db, CATALOG, other, inst.id)
-    bare = await _issue(db, pid, session_id, "equivalent_fractions", 0)
-    assert "equivalent_fractions" not in PACK.hints
+    bare = await _issue(db, pid, session_id, NO_CONTENT_SKILL, 0)
+    assert NO_CONTENT_SKILL not in PACK.hints
     with pytest.raises(NotFound):
         await teaching.next_hint(db, CATALOG, pid, bare.id)
     with pytest.raises(NotFound):

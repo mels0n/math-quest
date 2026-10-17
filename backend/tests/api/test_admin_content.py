@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from tests.conftest import Api, ApiFactory
+from tests.conftest import NO_CONTENT_SKILL, Api, ApiFactory
 
 CSRF = {"X-Requested-With": "mathquest"}
 PASSWORD = "correct horse battery staple"
@@ -60,9 +60,12 @@ async def test_overview_shows_the_live_pack_and_coverage(
     assert (skill["misconceptions"], skill["feedback"], skill["gaps"]) == (2, 2, [])
     first = next(s for s in meadows["skills"] if s["skill_id"] == "add_within_10")
     assert first["gaps"] == []
-    forest = next(r for r in pack["regions"] if r["region_id"] == "fraction_forest")
-    fractions = next(s for s in forest["skills"] if s["skill_id"] == "equivalent_fractions")
-    assert {"field": "misconception feedback", "have": 0, "want": 3} in fractions["gaps"]
+    gapped = next(
+        sk for r in pack["regions"] for sk in r["skills"] if sk["skill_id"] == NO_CONTENT_SKILL
+    )
+    feedback_gap = next(g for g in gapped["gaps"] if g["field"] == "misconception feedback")
+    assert feedback_gap["have"] == 0
+    assert feedback_gap["want"] > 0
 
 
 async def test_skill_preview_renders_every_item_with_answers(
