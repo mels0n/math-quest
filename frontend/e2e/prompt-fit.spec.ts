@@ -185,7 +185,8 @@ test("every generator's longest prompt fits the card at phone and desktop sizes"
 	const skills = Object.keys(LONGEST).sort();
 	expect(skills.length).toBeGreaterThanOrEqual(9);
 	// A quest ends after a fixed number of problems, so the prompts are laid out in
-	// chunks, each in its own quest.
+	// chunks, each in its own quest (every visit to /play starts a new one). CHUNK must
+	// stay at or below SESSION_PROBLEMS (12) in backend/src/mathquest/engine/scheduler.py.
 	const CHUNK = 8;
 	for (let start = 0; start < skills.length; start += CHUNK) {
 		const chunk = skills.slice(start, start + CHUNK);
@@ -197,8 +198,6 @@ test("every generator's longest prompt fits the card at phone and desktop sizes"
 		);
 		await page.setViewportSize(VIEWPORTS[0] as { width: number; height: number });
 		await page.goto('/play');
-		const again = page.getByRole('button', { name: 'Play again' });
-		if (await again.isVisible()) await again.click();
 
 		for (const [i, skill] of chunk.entries()) {
 			const text = (LONGEST[skill] as { prompt: PromptPart[] }).prompt
