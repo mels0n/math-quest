@@ -3,7 +3,7 @@
 	import type { MathfieldElement } from 'mathlive';
 	import type { KeypadProfile } from '../../entities/problem';
 	import { noticeAfterEdit, submitBlocker } from './guard';
-	import { layoutFor, type Key } from './keypad';
+	import { layoutFor, numberStart, type Key } from './keypad';
 
 	let {
 		profile,
@@ -43,12 +43,21 @@
 		onSubmit(latex);
 	}
 
+	function insertKey(f: MathfieldElement, action: Extract<Key['action'], { kind: 'insert' }>) {
+		if (action.wrapNumber && f.selectionIsCollapsed) {
+			const position = f.position;
+			const start = numberStart(position, (i) => f.getValue(i - 1, i, 'latex'));
+			if (start < position) f.selection = { ranges: [[start, position]] };
+		}
+		f.insert(action.latex);
+	}
+
 	function press(key: Key, event: MouseEvent) {
 		if (!field || disabled) return;
 		notice = noticeAfterEdit(notice);
 		const { action } = key;
 		if (action.kind === 'go') submit();
-		else if (action.kind === 'insert') field.insert(action.latex);
+		else if (action.kind === 'insert') insertKey(field, action);
 		else field.executeCommand(action.command);
 		// Pointer taps keep the caret in the field; keyboard presses keep focus on the key.
 		if (action.kind !== 'go' && event.detail > 0) field.focus();

@@ -12,7 +12,8 @@
 		],
 		"fraction": [
 			{ "keys": ["Fraction", "3", "Move right", "4"], "latex": "\\frac34", "value": "3/4" },
-			{ "keys": ["Fraction", "1", "2", "Move right", "5"], "latex": "\\frac{12}{5}", "value": "12/5" }
+			{ "keys": ["Fraction", "1", "2", "Move right", "5"], "latex": "\\frac{12}{5}", "value": "12/5" },
+			{ "keys": ["1", "5", "Fraction", "3", "4"], "latex": "\\frac{15}{34}", "value": "15/34" }
 		],
 		"mixed": [
 			{ "keys": ["2", "Fraction", "1", "Move right", "3"], "latex": "2\\frac13", "value": "7/3" },
@@ -37,7 +38,8 @@
 			{ "keys": ["x", "Equals", "Minus", "4"], "latex": "x=-4", "at": { "x": 1 }, "value": "5" },
 			{ "keys": ["Square root", "x"], "latex": "\\sqrt{x}", "at": { "x": 9 }, "value": "3" },
 			{ "keys": ["Fraction", "y", "Move right", "2"], "latex": "\\frac{y}{2}", "at": { "y": 3 }, "value": "3/2" },
-			{ "keys": ["2", "Open bracket", "x", "Minus", "1", "Close bracket"], "latex": "2(x-1)", "at": { "x": 4 }, "value": "6" }
+			{ "keys": ["2", "Open bracket", "x", "Minus", "1", "Close bracket"], "latex": "2(x-1)", "at": { "x": 4 }, "value": "6" },
+			{ "keys": ["3", "Fraction", "4"], "latex": "\\frac34", "at": { "y": 3 }, "value": "3/4" }
 		],
 		"choice": []
 	}

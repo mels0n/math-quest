@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { KEYPAD_PROFILES, keypadProfile, type KeypadProfile } from '../../entities/problem';
-import { keysFor, layoutFor } from './keypad';
+import { keysFor, layoutFor, numberStart } from './keypad';
 
 const names = (profile: KeypadProfile) => keysFor(profile).map((k) => k.name);
 const WITH_KEYS = KEYPAD_PROFILES.filter((p) => p !== 'choice');
@@ -160,5 +160,40 @@ describe('shared keypad samples', () => {
 				for (const key of sample.keys) expect(offered.has(key), `${p}: ${key}`).toBe(true);
 			}
 		}
+	});
+});
+
+describe('fraction key wrapping', () => {
+	const fractionKey = (p: KeypadProfile) => keysFor(p).find((k) => k.name === 'Fraction');
+	const wraps = (p: KeypadProfile) => {
+		const action = fractionKey(p)?.action;
+		return action?.kind === 'insert' ? action.wrapNumber === true : undefined;
+	};
+
+	it('wraps the typed number on the fraction and algebra keypads', () => {
+		expect(wraps('fraction')).toBe(true);
+		expect(wraps('algebra')).toBe(true);
+	});
+
+	it('never wraps on the mixed keypad', () => {
+		expect(wraps('mixed')).toBe(false);
+	});
+});
+
+describe('numberStart', () => {
+	const at = (text: string) => (i: number) => text[i - 1] ?? '';
+
+	it('returns the position when no digit precedes it', () => {
+		expect(numberStart(0, at(''))).toBe(0);
+		expect(numberStart(1, at('+'))).toBe(1);
+	});
+
+	it('finds the start of a run of digits', () => {
+		expect(numberStart(2, at('15'))).toBe(0);
+	});
+
+	it('stops at a non-digit', () => {
+		expect(numberStart(4, at('2+15'))).toBe(2);
+		expect(numberStart(3, at('x12'))).toBe(1);
 	});
 });
