@@ -27,9 +27,9 @@ skills:
     anchor: true
     generator: count_to_10
     tiers:
-      - {id: 0, label: Count 1 to 5}
-      - {id: 1, label: Count 6 to 8}
-      - {id: 2, label: Count 9 and 10}
+      - {id: 0, label: After and before}
+      - {id: 1, label: Missing numbers and runs}
+      - {id: 2, label: Count on from a number}
     grade_band: "K"
     keypad: numpad
     standards: [K.CC.A.1, K.CC.A.2]
@@ -67,9 +67,9 @@ skills:
     anchor: false
     generator: count_to_20
     tiers:
-      - {id: 0, label: Count 11 to 14}
-      - {id: 1, label: Count 15 to 17}
-      - {id: 2, label: Count 18 to 20}
+      - {id: 0, label: After and before}
+      - {id: 1, label: Missing numbers and runs}
+      - {id: 2, label: Count on from a number}
     grade_band: "K"
     keypad: numpad
     standards: [K.CC.A.1, K.CC.A.2]
@@ -155,9 +155,9 @@ skills:
     anchor: false
     generator: teen_numbers
     tiers:
-      - {id: 0, label: 11 to 13}
-      - {id: 1, label: 14 to 16}
-      - {id: 2, label: 17 to 19}
+      - {id: 0, label: Ten and some ones}
+      - {id: 1, label: Add ten and ones}
+      - {id: 2, label: Take the ten away}
     grade_band: "K"
     keypad: numpad
     vocabulary: [teen, teens]
@@ -170,9 +170,9 @@ skills:
     anchor: false
     generator: pairs_to_10
     tiers:
-      - {id: 0, label: Make 5}
-      - {id: 1, label: Make 6 to 9}
-      - {id: 2, label: Make 10}
+      - {id: 0, label: Pairs up to 6}
+      - {id: 1, label: Pairs up to 9}
+      - {id: 2, label: Pairs to 10 in any layout}
     grade_band: "K"
     keypad: numpad
     standards: [K.OA.A.3, K.OA.A.4]

@@ -6,7 +6,7 @@ import random
 import sympy
 
 from mathquest.engine.generators._util import Built, SkillGenerator, math, text
-from mathquest.engine.types import AnswerForm
+from mathquest.engine.types import AnswerForm, PromptPart
 
 _PLACES = ("ones", "tens", "hundreds", "thousands")
 _DIGITS_BY_TIER = (2, 3, 4)
@@ -50,27 +50,36 @@ def _unit(count: int, name: str) -> str:
 
 
 def _build_teen_numbers(rng: random.Random, tier: int) -> Built:
-    """A teen number is a ten and some ones: name the number, or the ones. Asked in words
-    or as a sum with 10, two ways each."""
-    teen = rng.randint(*_TEENS[tier])
+    """A teen number is a ten and some ones. Every tier uses all of 11 to 19; the form gets
+    harder: name the number from a ten and some ones (in words), then as a sum with ten,
+    then take the ten away to find the ones."""
+    teen = rng.randint(11, 19)
     ones = teen - 10
-    if rng.choice((True, False)):
+    one = _unit(ones, "one")
+    prompt: tuple[PromptPart, ...]
+    if tier < 2:
         asks = "number"
         wrong = (
             ("reversed_digits", sympy.Integer(ones * 10 + 1)),
             ("wrote_ten_then_ones", sympy.Integer(100 + ones)),
             ("said_the_ones_only", sympy.Integer(ones)),
         )
-        one = _unit(ones, "one")
-        prompt = rng.choice(
-            (
-                (text("A ten and "), math(str(ones)), text(f" {one} make what number?")),
-                (text("What number is one ten and "), math(str(ones)), text(f" {one}?")),
-                (text("Put a ten with "), math(str(ones)), text(f" {one}. What number is it?")),
+        if tier == 0:
+            prompt = rng.choice(
+                (
+                    (text("A ten and "), math(str(ones)), text(f" {one} make what number?")),
+                    (text("What number is one ten and "), math(str(ones)), text(f" {one}?")),
+                    (text("Put a ten with "), math(str(ones)), text(f" {one}. What number is it?")),
+                )
             )
-        )
-        if rng.choice((True, False)):
-            prompt = (math(f"10 + {ones} = ?"),)
+        else:
+            prompt = rng.choice(
+                (
+                    (math(f"10 + {ones} = ?"),),
+                    (math(f"{ones} + 10 = ?"),),
+                    (text("What is 10 plus "), math(str(ones)), text("?")),
+                )
+            )
         answer, shown, task = teen, ones, "put the ten and the ones together"
     else:
         asks = "ones"
@@ -78,16 +87,18 @@ def _build_teen_numbers(rng: random.Random, tier: int) -> Built:
             ("said_the_tens_digit", sympy.Integer(1)),
             ("copied_the_number", sympy.Integer(teen)),
         )
-        if rng.choice((True, False)):
-            prompt = (math(str(teen)), text(" is a ten and how many more ones?"))
-        else:
-            prompt = (
-                text("How many ones are in "),
-                math(str(teen)),
-                text(" after you take out the ten?"),
+        prompt = rng.choice(
+            (
+                (math(str(teen)), text(" is a ten and how many more ones?")),
+                (
+                    text("How many ones are in "),
+                    math(str(teen)),
+                    text(" after you take out the ten?"),
+                ),
+                (math(f"{teen} = 10 + ?"),),
+                (math(f"{teen} = ? + 10"),),
             )
-        if rng.choice((True, False)):
-            prompt = (math(f"{teen} = 10 + ?"),)
+        )
         answer, shown, task = ones, teen, "take the ten away and see what is left"
     return Built(
         prompt=prompt,

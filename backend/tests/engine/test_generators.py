@@ -306,9 +306,8 @@ EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
         for t in range(3)
     },
     **{
-        (skill, t): {"counted_start", "went_one_too_far"}
+        (skill, 2): {"counted_start", "went_one_too_far"}
         for skill in ("count_to_10", "count_to_20")
-        for t in range(3)
     },
     ("count_to_20", 2): {"repeated_number", "wrong_direction", "skipped_a_number", "kept_the_tens"},
     ("count_to_100", 0): {"repeated_number", "wrong_direction", "kept_the_tens"},
@@ -335,15 +334,10 @@ EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
         for t in range(3)
     },
     **{
-        ("teen_numbers", t): {
-            "reversed_digits",
-            "wrote_ten_then_ones",
-            "said_the_ones_only",
-            "said_the_tens_digit",
-            "copied_the_number",
-        }
-        for t in range(3)
+        ("teen_numbers", t): {"reversed_digits", "wrote_ten_then_ones", "said_the_ones_only"}
+        for t in range(2)
     },
+    ("teen_numbers", 2): {"said_the_tens_digit", "copied_the_number"},
     **{
         ("pairs_to_10", t): {"gave_the_known_number", "gave_the_total", "counted_start"}
         for t in range(3)
@@ -425,18 +419,18 @@ PINNED_PROBLEMS = (
     ("place_value_tens_ones", 2, 1, "Which digit is in the hundreds place of 3914?", 9),
     ("place_value_tens_ones", 2, 7, "Which digit is in the hundreds place of 6260?", 2),
     ("place_value_tens_ones", 2, 42, "Which digit is in the hundreds place of 2043?", 0),
-    ("count_to_10", 0, 7, "What number comes before 4?", 3),
-    ("count_to_10", 0, 42, "What number comes before 2?", 1),
-    ("count_to_10", 1, 7, "What number comes before 8?", 7),
-    ("count_to_10", 1, 42, "What number comes after 7?", 8),
-    ("count_to_10", 2, 7, "What number comes after 9?", 10),
-    ("count_to_10", 2, 42, "What number comes after 8?", 9),
-    ("count_to_20", 0, 7, "What number comes before 14?", 13),
-    ("count_to_20", 0, 42, "What number comes after 10?", 11),
-    ("count_to_20", 1, 7, "What number comes before 17?", 16),
-    ("count_to_20", 1, 42, "What number comes after 16?", 17),
-    ("count_to_20", 2, 7, "Count on. What comes next? 16, 17, 18, 19, ?", 20),
-    ("count_to_20", 2, 42, "What number is missing? 17, ?, 19", 18),
+    ("count_to_10", 0, 7, "What comes right after 2?", 3),
+    ("count_to_10", 0, 42, "What number comes after 5?", 6),
+    ("count_to_10", 1, 7, "What comes right before 8?", 7),
+    ("count_to_10", 1, 42, "Say the number after 2.", 3),
+    ("count_to_10", 2, 7, "What number is missing? 5, 6, ?, 8, 9, 10", 7),
+    ("count_to_10", 2, 42, "Say the number before 4.", 3),
+    ("count_to_20", 0, 7, "What comes right after 12?", 13),
+    ("count_to_20", 0, 42, "What number comes after 15?", 16),
+    ("count_to_20", 1, 7, "Count on. What comes next? 9, 10, 11, 12, ?", 13),
+    ("count_to_20", 1, 42, "What number is missing? 10, ?, 12", 11),
+    ("count_to_20", 2, 7, "Start at 12. Count on 1 more number. Which number do you say last?", 13),
+    ("count_to_20", 2, 42, "Count on. What comes next? 9, 10, ?", 11),
     ("count_to_100", 0, 7, "Count on. What comes next? 26, 27, 28, 29, ?", 30),
     ("count_to_100", 0, 42, "What number is missing? 20, ?, 22", 21),
     ("count_to_100", 1, 7, "Count on. What comes next? 66, 67, 68, 69, ?", 70),
@@ -497,18 +491,18 @@ PINNED_PROBLEMS = (
     ("one_more_one_less", 1, 42, "Find 1 more than 10?", 11),
     ("one_more_one_less", 2, 7, "Find 1 less than 71?", 70),
     ("one_more_one_less", 2, 42, "What is 1 more than 69?", 70),
-    ("teen_numbers", 0, 7, "10 + 2 = ?", 12),
-    ("teen_numbers", 0, 42, "A ten and 3 ones make what number?", 13),
-    ("teen_numbers", 1, 7, "10 + 5 = ?", 15),
-    ("teen_numbers", 1, 42, "A ten and 6 ones make what number?", 16),
-    ("teen_numbers", 2, 7, "10 + 8 = ?", 18),
-    ("teen_numbers", 2, 42, "A ten and 9 ones make what number?", 19),
-    ("pairs_to_10", 0, 7, "? + 3 = 5", 2),
-    ("pairs_to_10", 0, 42, "1 + ? = 5", 4),
-    ("pairs_to_10", 1, 7, "8 = ? + 2", 6),
-    ("pairs_to_10", 1, 42, "6 = 1 + ?", 5),
-    ("pairs_to_10", 2, 7, "? + 6 = 10", 4),
-    ("pairs_to_10", 2, 42, "2 + ? = 10", 8),
+    ("teen_numbers", 0, 7, "A ten and 6 ones make what number?", 16),
+    ("teen_numbers", 0, 42, "A ten and 2 ones make what number?", 12),
+    ("teen_numbers", 1, 7, "10 + 6 = ?", 16),
+    ("teen_numbers", 1, 42, "10 + 2 = ?", 12),
+    ("teen_numbers", 2, 7, "How many ones are in 16 after you take out the ten?", 6),
+    ("teen_numbers", 2, 42, "12 is a ten and how many more ones?", 2),
+    ("pairs_to_10", 0, 7, "? + 2 = 5", 3),
+    ("pairs_to_10", 0, 42, "1 + ? = 6", 5),
+    ("pairs_to_10", 1, 7, "7 = ? + 2", 5),
+    ("pairs_to_10", 1, 42, "5 = 1 + ?", 4),
+    ("pairs_to_10", 2, 7, "8 = ? + 2", 6),
+    ("pairs_to_10", 2, 42, "6 = 1 + ?", 5),
     ("place_value_hundreds", 0, 7, "How many bundles of ten make 70?", 7),
     ("place_value_hundreds", 0, 42, "How many bundles of ten make 30?", 3),
     ("place_value_hundreds", 1, 7, "How many hundreds make 700?", 7),
@@ -602,8 +596,8 @@ def kept(answer: int, rules: dict[str, int], floor: int = 0) -> dict[str, int]:
 
 
 COUNTING = {
-    "count_to_10": (((1, 5), (6, 8), (9, 10)), 10),
-    "count_to_20": (((11, 14), (15, 17), (18, 20)), 20),
+    "count_to_10": (((1, 6), (2, 10), (2, 10)), 10),
+    "count_to_20": (((11, 16), (11, 20), (11, 20)), 20),
     "count_to_100": (((21, 50), (51, 100), (11, 100)), 100),
 }
 
@@ -764,8 +758,7 @@ def test_skip_count_10_counts_back_in_the_first_two_tiers_only() -> None:
 def test_teen_numbers_ranges_and_mistakes(seed: int, tier: int) -> None:
     problem = get_generator("teen_numbers").generate(seed, tier)
     teen, ones = int(problem.values["teen"]), int(problem.values["ones"])
-    lo, hi = ((11, 13), (14, 16), (17, 19))[tier]
-    assert lo <= teen <= hi
+    assert 11 <= teen <= 19
     assert ones == teen - 10
     shown = numbers("teen_numbers", seed, tier)
     if "10" in prompt("teen_numbers", seed, tier).replace(str(teen), ""):
@@ -786,12 +779,23 @@ def test_teen_numbers_ranges_and_mistakes(seed: int, tier: int) -> None:
     assert wrong_answers("teen_numbers", seed, tier) == kept(int(problem.answer), rules)
 
 
-def test_teen_numbers_are_asked_in_words_and_as_sums() -> None:
-    texts = {prompt("teen_numbers", seed, 1) for seed in range(300)}
-    assert any(t.startswith("10 + ") and t.endswith("= ?") for t in texts)
-    assert any(t.endswith("= 10 + ?") for t in texts)
-    assert any(t.startswith("A ten and ") for t in texts)
-    assert any(t.endswith("after you take out the ten?") for t in texts)
+def test_teen_numbers_get_harder_by_form_and_share_the_range() -> None:
+    def prompts(tier: int) -> set[str]:
+        return {prompt("teen_numbers", seed, tier) for seed in range(600)}
+
+    easy, middle, hard = prompts(0), prompts(1), prompts(2)
+    assert all(not t.startswith("10 + ") and "10 plus" not in t for t in easy)
+    assert any(t.startswith("A ten and ") for t in easy)
+    assert any(t.startswith("10 + ") and t.endswith("= ?") for t in middle)
+    assert any(" + 10 = ?" in t for t in middle)
+    assert any("10 plus" in t for t in middle)
+    assert any(t.endswith("= 10 + ?") for t in hard)
+    assert any(t.endswith("after you take out the ten?") for t in hard)
+    for tier in range(3):
+        teens = {
+            int(get_generator("teen_numbers").generate(s, tier).values["teen"]) for s in range(300)
+        }
+        assert teens == set(range(11, 20))
 
 
 def test_teen_numbers_agree_with_one_one() -> None:
@@ -808,7 +812,7 @@ def test_pairs_to_10_make_the_total(seed: int, tier: int) -> None:
     answer = int(problem.answer)
     assert known + answer == total
     assert 1 <= known < total
-    assert (total == 5, 6 <= total <= 9, total == 10)[tier]
+    assert ((4, 6), (5, 9), (6, 10))[tier][0] <= total <= ((4, 6), (5, 9), (6, 10))[tier][1]
     assert flatten(problem) in (
         f"{known} + ? = {total}",
         f"? + {known} = {total}",
@@ -1035,3 +1039,25 @@ def test_only_the_comparing_generators_count_the_first_try_only() -> None:
         gid for gid, gen in all_generators().items() if getattr(gen, "first_try_counts", False)
     }
     assert flagged == {"compare_groups", "compare_numbers_20", "compare_numbers_100"}
+
+
+def test_pair_layouts_get_harder_by_tier() -> None:
+    def layouts(tier: int) -> set[str]:
+        return {re.sub(r"\d+", "#", prompt("pairs_to_10", seed, tier)) for seed in range(600)}
+
+    assert layouts(0) == {"# + ? = #", "? + # = #"}
+    assert layouts(1) == layouts(0) | {"# = # + ?", "# = ? + #"}
+    assert layouts(2) == layouts(1) | {"You have #. How many more make #?"}
+
+
+@pytest.mark.parametrize("skill", BATCH_ONE)
+def test_every_batch_one_tier_has_a_spread_of_answers(skill: str) -> None:
+    """Tiers span the range and get harder through the form of the question, so none may
+    shrink to a handful of answers, and no one answer may be a third of the draws."""
+    gen = get_generator(skill)
+    for tier in range(3):
+        answers = [int(gen.generate(seed, tier).answer) for seed in range(3000)]
+        distinct = set(answers)
+        assert len(distinct) >= 5, (skill, tier, sorted(distinct))
+        top = max(answers.count(a) for a in distinct) / len(answers)
+        assert top <= 0.35, (skill, tier, top)

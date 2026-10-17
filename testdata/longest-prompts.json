@@ -224,8 +224,8 @@
     ]
   },
   "count_to_10": {
-    "tier": 0,
-    "seed": 9,
+    "tier": 2,
+    "seed": 6,
     "prompt": [
       {
         "kind": "text",
@@ -233,7 +233,7 @@
       },
       {
         "kind": "math",
-        "value": "2"
+        "value": "1"
       },
       {
         "kind": "text",
@@ -284,8 +284,8 @@
     ]
   },
   "count_to_20": {
-    "tier": 0,
-    "seed": 9,
+    "tier": 2,
+    "seed": 10,
     "prompt": [
       {
         "kind": "text",
@@ -293,7 +293,7 @@
       },
       {
         "kind": "math",
-        "value": "11"
+        "value": "12"
       },
       {
         "kind": "text",
@@ -301,7 +301,7 @@
       },
       {
         "kind": "math",
-        "value": "3"
+        "value": "5"
       },
       {
         "kind": "text",
@@ -343,11 +343,11 @@
   },
   "pairs_to_10": {
     "tier": 2,
-    "seed": 1,
+    "seed": 30,
     "prompt": [
       {
         "kind": "text",
-        "value": "You have 3. How many more make 10?"
+        "value": "You have 5. How many more make 10?"
       }
     ]
   },
@@ -448,8 +448,8 @@
     ]
   },
   "teen_numbers": {
-    "tier": 0,
-    "seed": 16,
+    "tier": 2,
+    "seed": 3,
     "prompt": [
       {
         "kind": "text",
@@ -457,7 +457,7 @@
       },
       {
         "kind": "math",
-        "value": "12"
+        "value": "14"
       },
       {
         "kind": "text",

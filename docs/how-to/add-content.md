@@ -165,6 +165,12 @@ remaining batch. To build the next batch, take that number from the report and:
 
 1. Write and register a generator for each skill, with the tier count the plan gives
    (see [ADR-0012](../adr/0012-content-packs.md)).
+   Let tiers span the skill's whole range and get harder through the form of the question
+   (before, a missing number, counting on, a sum, a question in words), not by narrowing the
+   numbers: every tier needs at least five different answers, and no answer a third of the
+   draws (`test_every_batch_one_tier_has_a_spread_of_answers`). `add_within_10` and the
+   other skills built before batch 1 still narrow their tiers by total; revisiting them is a
+   follow-up.
 2. Move each entry from `planned_skills.yaml` to `skills.yaml`: add `generator`, drop
    `batch` and `unlocks`, and keep `standards`. Put it in `skills.yaml` where it sits in
    the plan, ahead of the first skill of any later region, because the file order breaks

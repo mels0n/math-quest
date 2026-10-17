@@ -146,13 +146,20 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
     )
 
 
+_PAIR_TOTALS = ((4, 6), (5, 9), (6, 10))
+_PAIR_LAYOUTS = (2, 4, 5)
+"""How many of the five layouts each tier may use: known first or second, the total first,
+then the question in words."""
+
+
 def _build_pairs_to_10(rng: random.Random, tier: int) -> Built:
-    """A number and the one that goes with it to make the total: ``3 + ? = 5``, written
-    four ways round, or in words."""
-    total = rng.randint(6, 9) if tier == 1 else (5, 10)[tier // 2]
+    """A number and the one that goes with it to make the total: ``3 + ? = 5``. Totals
+    overlap across tiers; the layouts get harder (the unknown second, then first, then the
+    total first, then in words)."""
+    total = rng.randint(*_PAIR_TOTALS[tier])
     known = rng.randint(1, total - 1)
     answer = total - known
-    layout = rng.randrange(5)
+    layout = rng.randrange(_PAIR_LAYOUTS[tier])
     prompt: Prompt
     if layout == 4:
         prompt = (text(f"You have {known}. How many more make {total}?"),)

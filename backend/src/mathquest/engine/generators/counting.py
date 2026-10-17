@@ -10,6 +10,16 @@ from mathquest.engine.types import AnswerForm
 
 _Int = sympy.Integer
 
+_AFTER_ASKS = (
+    ("What number comes after ", "?"),
+    ("What comes right after ", "?"),
+    ("Say the number after ", "."),
+)
+_BEFORE_ASKS = (
+    ("What number comes before ", "?"),
+    ("What comes right before ", "?"),
+    ("Say the number before ", "."),
+)
 _COUNTING_KEYS = ("repeated_number", "wrong_direction", "skipped_a_number")
 _COUNT_ON_KEYS = ("counted_start", "went_one_too_far")
 _COUNTING_FORMS = ("after", "before", "missing", "run", "count_on")
@@ -29,18 +39,22 @@ def _counting(
     cap: int,
     forms: tuple[str, ...],
     decade: bool,
+    decade_share: float = 1 / 3,
 ) -> Built:
     """One counting problem whose answer is in ``lo..hi`` and whose numbers stay in
-    ``1..cap``. ``decade`` asks for answers on a new ten about a third of the time."""
+    ``1..cap``. ``decade`` asks for answers on a new ten ``decade_share`` of the time."""
     tens = [n for n in range(lo, hi + 1) if n % 10 == 0]
-    answer = rng.choice(tens) if decade and tens and rng.random() < 1 / 3 else rng.randint(lo, hi)
+    answer = (
+        rng.choice(tens) if decade and tens and rng.random() < decade_share else rng.randint(lo, hi)
+    )
     available = [f for f in forms if _available(f, answer, cap)]
     form = rng.choice(available)
     values: dict[str, int | str] = {"answer": answer, "form": form}
     wrong: list[tuple[str, int]]
     if form == "after":
         n = answer - 1
-        prompt = (text("What number comes after "), math(str(n)), text("?"))
+        asking, end = rng.choice(_AFTER_ASKS)
+        prompt = (text(asking), math(str(n)), text(end))
         wrong = [("repeated_number", n), ("wrong_direction", n - 1), ("skipped_a_number", n + 2)]
         if decade and n % 10 == 9:
             wrong.append(("kept_the_tens", n // 10 * 10))
@@ -48,7 +62,8 @@ def _counting(
         near, rel, way = n, "one more than", "up"
     elif form == "before":
         n = answer + 1
-        prompt = (text("What number comes before "), math(str(n)), text("?"))
+        asking, end = rng.choice(_BEFORE_ASKS)
+        prompt = (text(asking), math(str(n)), text(end))
         wrong = [("repeated_number", n), ("wrong_direction", n + 1), ("skipped_a_number", n - 2)]
         if decade and n % 10 == 0:
             wrong.append(("kept_the_tens", answer + 10))
@@ -101,19 +116,26 @@ def _available(form: str, answer: int, cap: int) -> bool:
     return answer >= 2
 
 
-_TEN_ANSWERS = ((1, 5), (6, 8), (9, 10))
-_TWENTY_ANSWERS = ((11, 14), (15, 17), (18, 20))
+# The first two tiers are narrow, the rest span the range; difficulty comes from the form of
+# the question: after and before, then a missing number or a run, then counting on.
+_TEN_ANSWERS = ((1, 6), (2, 10), (2, 10))
+_TWENTY_ANSWERS = ((11, 16), (11, 20), (11, 20))
+_FORMS_BY_TIER = (
+    ("after", "before"),
+    ("after", "before", "missing", "run"),
+    ("before", "missing", "run", "count_on"),
+)
 _HUNDRED_ANSWERS = ((21, 50), (51, 100), (11, 100))
 
 
 def _build_count_to_10(rng: random.Random, tier: int) -> Built:
     lo, hi = _TEN_ANSWERS[tier]
-    return _counting(rng, lo, hi, 10, _COUNTING_FORMS, decade=False)
+    return _counting(rng, lo, hi, 10, _FORMS_BY_TIER[tier], decade=False)
 
 
 def _build_count_to_20(rng: random.Random, tier: int) -> Built:
     lo, hi = _TWENTY_ANSWERS[tier]
-    return _counting(rng, lo, hi, 20, _COUNTING_FORMS, decade=True)
+    return _counting(rng, lo, hi, 20, _FORMS_BY_TIER[tier], decade=True, decade_share=0.2)
 
 
 def _build_count_to_100(rng: random.Random, tier: int) -> Built:
