@@ -4,6 +4,35 @@ How to write a batch of teaching content (lessons, hints, explanations, word pro
 bank items) for one or more skills, check it, and get it merged. Commands run in
 `backend/` unless noted.
 
+## Building a batch of planned skills
+
+Skills that are designed but have no generator yet live in
+`content/packs/<pack>/planned_skills.yaml` ([ADR-0017](../adr/0017-planned-skill-graph.md)).
+The file is never loaded for play; `content-lint` checks it together with the built
+skills, and `content-report` ends with the planned skills per region and per batch.
+To build the next batch, take the lowest batch number in the report and:
+
+1. Write and register a generator for each skill, with the tier count the plan gives
+   (see [ADR-0012](../adr/0012-content-packs.md)).
+2. Move each entry from `planned_skills.yaml` to `skills.yaml`: add `generator`, drop
+   `batch` and `unlocks`, and keep `standards`. Put it in `skills.yaml` where it sits in
+   the plan, ahead of the first skill of any later region, because the file order breaks
+   ties in the topological order and so decides the placement spine.
+3. Apply every `unlocks`: for each target skill the entry named, add the new skill's id
+   to that target's `prerequisites` in `skills.yaml`.
+4. Delete the moved entries from `planned_skills.yaml`. A skill left in both files is a
+   lint error. If a later batch needs a different shape (a skill split, merged or
+   moved), change the plan in the same pull request.
+5. Write the teaching content for the new skills as below, and bump `version` in
+   `pack.yaml`. A change that touches only `planned_skills.yaml` changes nothing a
+   learner sees and needs no bump.
+
+Fields of a plan entry: the ones in `skills.yaml` except `generator`, `word_share`,
+`bank_share` and `vocabulary`, plus `standards` (Common Core codes such as `K.CC.A.1`),
+`batch` (1 upwards) and an optional `unlocks`. The file's `scope` lists the regions and
+grade bands it covers. Every error is shown with the rule that raised it, for example
+`planned-batch` when a prerequisite is built in a later batch.
+
 ## 1. Pick the skills
 
 Run the coverage report to see which skills are short of the targets:
