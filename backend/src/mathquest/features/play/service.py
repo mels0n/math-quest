@@ -140,6 +140,7 @@ NOTHING before it is locked.
 import logging
 import secrets
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -312,6 +313,11 @@ async def start_session(
     return out
 
 
+def _started(rows: Iterable[SkillMastery]) -> set[str]:
+    """The skills the learner has played outside practice (see ``SkillGraph.ready``)."""
+    return {r.skill_id for r in rows if r.played_in_adventure}
+
+
 def _state(
     catalog: Catalog, skill_id: str, row: SkillMastery | None, ready: set[str], now: datetime
 ) -> MasteryOut:
@@ -328,7 +334,9 @@ async def _player_states(
     rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
     mastered = {sid for sid, r in rows.items() if r.state in mastery.COUNTS_AS_MASTERED}
     # A skill implied by what the learner has mastered is open to practice, not offered.
-    ready = set(catalog.graph.ready(mastered, set(rows))) | catalog.graph.implied(mastered)
+    ready = set(catalog.graph.ready(mastered, _started(rows.values()))) | catalog.graph.implied(
+        mastered
+    )
     return {
         sid: _state(catalog, sid, rows.get(sid), ready, now) for sid in catalog.graph.topo_order()
     }
@@ -523,7 +531,7 @@ async def next_problem(
         pick = plan_practice(graph, ratings, list(session.focus or []), history)
     else:
         pick = plan_next(
-            graph, ratings, mastered, due, session.problem_count, history, set(by_skill)
+            graph, ratings, mastered, due, session.problem_count, history, _started(rows)
         )
     skill_id = pick.skill_id
     if offer_lessons and await _lesson_due(
@@ -850,7 +858,11 @@ async def submit_answer(
     if scored:
         session = await problems.get_session(db, instance.session_id)
         practice = session.mode == PRACTICE
-        row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
+        row = await mastery.lock(
+            db, player_id, skill_id, _start_rating(catalog, skill_id), adventure=not practice
+        )
+        if not practice:
+            row.played_in_adventure = True
         if (
             practice
             and skill_id in (session.mastered_at_start or [])

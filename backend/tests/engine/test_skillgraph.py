@@ -155,3 +155,13 @@ def test_a_demoted_skill_under_a_placed_high_learner_is_offered() -> None:
     ready = graph.ready(mastered, mastered | {"add_within_10"})
     assert "add_within_10" in ready
     assert "add_within_10" not in graph.ready(mastered, mastered)
+
+
+def test_a_slipped_prerequisite_and_the_skill_that_needs_it_are_both_offered() -> None:
+    """add_within_10 slipped back to learning while add_within_20 is being learned."""
+    graph = _graph()
+    started = {"count_to_10", "add_within_10", "add_within_20"}
+    ready = graph.ready({"count_to_10"}, started)
+    assert "add_within_10" in ready and "add_within_20" in ready
+    # Without any record of play, add_within_20 would wait for add_within_10.
+    assert "add_within_20" not in graph.ready({"count_to_10"})

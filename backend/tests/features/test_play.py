@@ -1284,3 +1284,60 @@ async def test_an_open_problem_on_a_skill_the_pack_lacks_is_closed(db: AsyncSess
     with pytest.raises(Conflict) as err:
         await _submit(db, pid, inst.id, "1")
     assert err.value.code == "problem_closed"
+
+
+_OLD_PLACEMENT = (
+    "add_within_10",
+    "add_within_20",
+    "place_value_tens_ones",
+    "add_2digit_no_regroup",
+    "add_2digit_regroup",
+)
+
+
+async def test_trying_an_implied_skill_in_practice_does_not_make_it_offered(
+    db: AsyncSession,
+) -> None:
+    """A grade 2 learner placed before counting existed tries count_to_10 once in practice.
+    That is not playing it in the adventure: it stays implied, and is never offered."""
+    pid = await _player(db, fresh=True)
+    await _mark_provisional(db, pid, *_OLD_PLACEMENT)
+    practice = await service.start_practice(db, CATALOG, pid, skill_id="count_to_10")
+    out = await _next_problem(db, CATALOG, pid, practice.session_id, expose_answers=True)
+    await _submit(db, pid, out.problem_id, out.dev_answer_latex or "")
+    row = await _row(db, pid, "count_to_10")
+    assert row.attempts == 1 and row.played_in_adventure is False
+    assert service._started(await mastery.list_for_player(db, pid)) == set(_OLD_PLACEMENT)  # pyright: ignore[reportPrivateUsage]
+
+    adventure = await service.start_session(db, pid, "adventure")
+    for _ in range(8):
+        problem = await _next_problem(db, CATALOG, pid, adventure.session_id, expose_answers=True)
+        assert problem.skill_id != "count_to_10"
+        if problem.dev_answer_choice is not None:
+            await service.submit_answer(
+                db, POOL, CATALOG, pid, problem.problem_id, choice=problem.dev_answer_choice
+            )
+        else:
+            await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+
+
+async def test_mastering_an_implied_skill_in_practice_still_masters_it(db: AsyncSession) -> None:
+    pid = await _player(db, fresh=True)
+    await _mark_provisional(db, pid, *_OLD_PLACEMENT)
+    practice = await service.start_practice(db, CATALOG, pid, skill_id="count_to_10")
+    await _master(db, pid, practice.session_id, "count_to_10")
+    row = await _row(db, pid, "count_to_10")
+    assert row.state == "mastered" and row.played_in_adventure is False
+
+
+async def test_playing_a_skill_in_the_adventure_marks_it_started(db: AsyncSession) -> None:
+    pid = await _player(db, fresh=True)
+    practice = await service.start_practice(db, CATALOG, pid, skill_id="count_to_10")
+    out = await _next_problem(db, CATALOG, pid, practice.session_id, expose_answers=True)
+    await _submit(db, pid, out.problem_id, out.dev_answer_latex or "")
+    assert (await _row(db, pid, "count_to_10")).played_in_adventure is False
+    adventure = await service.start_session(db, pid, "adventure")
+    problem = await _next_problem(db, CATALOG, pid, adventure.session_id, expose_answers=True)
+    assert problem.skill_id == "count_to_10"
+    await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+    assert (await _row(db, pid, "count_to_10")).played_in_adventure is True

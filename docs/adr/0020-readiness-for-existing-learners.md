@@ -32,6 +32,13 @@ additions, both in `SkillGraph`:
 The play service passes the learner's record of started skills to the scheduler and to
 the skill list; no stored row changes.
 
+**A slipped prerequisite keeps what builds on it open.** If a skill the learner mastered
+slips back to learning (a failed review) while a skill that needs it is also being learned,
+both stay offered: the started skill is not locked behind the one that slipped, and the
+slipped one is offered again. Struggle warm-ups still go to the weakest prerequisite. This
+is the rule, not a stopgap: a child is never moved backwards or blocked by a review, and
+nothing locks a skill the learner has started.
+
 ## Alternatives rejected
 - **A migration that marks the new prerequisites provisionally mastered for everyone who
   has started a dependent.** It writes ratings and review dates for skills nobody played,

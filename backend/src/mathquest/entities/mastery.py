@@ -45,6 +45,10 @@ class SkillMastery(Base):
     placed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     """Mastered because placement marked it and its first review confirmed it, not yet
     by the rating rule; a correct answer keeps it mastered until the rating catches up."""
+    played_in_adventure: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    """False for a row made only by practice. Readiness treats such a skill as never played
+    (docs/adr/0022-practice-does-not-start-a-skill.md); rows that exist before the column
+    count as played."""
 
 
 PROVISIONAL = "provisional"
@@ -77,12 +81,23 @@ async def get(db: AsyncSession, player_id: uuid.UUID, skill_id: str) -> SkillMas
 
 
 async def lock(
-    db: AsyncSession, player_id: uuid.UUID, skill_id: str, initial_rating: float
+    db: AsyncSession,
+    player_id: uuid.UUID,
+    skill_id: str,
+    initial_rating: float,
+    *,
+    adventure: bool = True,
 ) -> SkillMastery:
-    """Create the row (at `initial_rating`) if absent, then return it locked for update."""
+    """Create the row (at `initial_rating`, played in the adventure unless ``adventure`` is
+    False) if absent, then return it locked for update."""
     await db.execute(
         pg_insert(SkillMastery)
-        .values(player_id=player_id, skill_id=skill_id, rating=initial_rating)
+        .values(
+            player_id=player_id,
+            skill_id=skill_id,
+            rating=initial_rating,
+            played_in_adventure=adventure,
+        )
         .on_conflict_do_nothing(index_elements=["player_id", "skill_id"])
     )
     result = await db.execute(
