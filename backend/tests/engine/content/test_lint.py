@@ -9,9 +9,10 @@ import pytest
 import sympy
 
 from mathquest.engine.content import Pack, load_pack
+from mathquest.engine.content import lint as lint_module
 from mathquest.engine.content.lint import Finding, errors, lint
 from mathquest.engine.generators import all_generators
-from mathquest.engine.types import Generator
+from mathquest.engine.types import Generator, MathPart
 from tests.engine.content.packbuilder import CONTENT, SLOTS, WORDS, base, load
 
 REGISTRY = all_generators()
@@ -350,11 +351,52 @@ def test_a_worked_question_in_words_is_checked_against_the_questions_asked(
         return files
 
     asked = _edit(with_place_value(base()), "lessons/alpha.yaml", lesson("tens"))
-    assert [f.path for f in _rule(_lint(load(tmp_path, asked)), "example")] == [
-        "worked_example.prompt"
-    ]
+    found = errors(_rule(_lint(load(tmp_path, asked)), "example"))
+    assert [f.path for f in found] == ["worked_example.prompt"]
     never = _edit(with_place_value(base()), "lessons/alpha.yaml", lesson("hundreds"))
-    assert _rule(_lint(load(tmp_path, never)), "example") == []
+    # Place value's four-digit tier is too large to scan to the end, which is a warning only.
+    assert errors(_rule(_lint(load(tmp_path, never)), "example")) == []
+
+
+@dataclasses.dataclass
+class _Spaced:
+    """The add-to-20 generator with its prompts replaced by ``seed % size + 100`` plus 1, so
+    the space of problems has exactly ``size`` members (``None``: a new one every seed)."""
+
+    size: int | None
+    generator_id: str = "add_within_20"
+    tier_difficulties: tuple[float, ...] = (1.0, 2.0, 3.0)
+    misconception_keys: tuple[str, ...] = REGISTRY["add_within_20"].misconception_keys
+
+    def generate(self, seed: int, tier: int, *rest: Any) -> Any:
+        real = REGISTRY["add_within_20"].generate(seed, tier, *rest)
+        n = seed if self.size is None else seed % self.size
+        return dataclasses.replace(real, prompt=(MathPart(f"{n + 100} + 1 = ?"),))
+
+
+def _spaced_lint(tmp_path: Path, size: int | None, worked: str) -> list[Finding]:
+    def example(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "math", "value": worked}]
+
+    pack = load(tmp_path, _edit(base(), "lessons/alpha.yaml", example))
+    return _rule(_lint(pack, {"add_within_20": _Spaced(size)}), "example")  # type: ignore[dict-item]
+
+
+def test_a_small_space_saturates_early_and_is_fully_covered(tmp_path: Path) -> None:
+    # 50 problems: found within the first 50 seeds, so the scan stops near the floor
+    # and still knows the last one.
+    findings = _spaced_lint(tmp_path, 50, "149 + 1 = ?")
+    assert {f.path for f in findings} == {"worked_example.prompt"}
+    assert _spaced_lint(tmp_path, 50, "150 + 1 = ?") == []
+
+
+def test_a_space_larger_than_the_cap_warns_that_the_scan_did_not_finish(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(lint_module, "EXAMPLE_CAP", 3_000)
+    (finding,) = _spaced_lint(tmp_path, None, "5 + 5 = ?")
+    assert finding.level == "warning"
+    assert "example scan did not finish for alpha tier 0" in finding.message
 
 
 def test_an_explanation_example_the_skill_can_ask_is_an_error(tmp_path: Path) -> None:

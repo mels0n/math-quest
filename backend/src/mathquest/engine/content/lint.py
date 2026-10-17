@@ -610,9 +610,13 @@ def _reveal_one(
 
 # --- rule: fixed examples are not problems the skill asks ------------------------
 
-EXAMPLE_SEEDS = 20_000
-"""Seeds scanned per tier for the problems a skill can ask; the skills' number spaces are
-far smaller, so every reachable problem turns up."""
+EXAMPLE_FLOOR = 1_000
+EXAMPLE_CAP = 100_000
+"""A tier's seeds are scanned until seed >= max(EXAMPLE_FLOOR, 2 * the last seed that gave a
+problem not seen before): once the scan has run twice as long as it last found anything,
+it counts as saturated. A tier still finding new problems at EXAMPLE_CAP is reported as
+not finished, since a very large space (place value's four-digit numbers) may hold
+problems the scan never reached."""
 _MATH_SEGMENT = re.compile(r"\\\((.*?)\\\)", re.DOTALL)
 
 
@@ -635,12 +639,16 @@ def _whole(pieces: Iterable[str]) -> str:
     return "prompt: " + "".join("".join(pieces).split())
 
 
-_ASKED_CACHE: dict[int, tuple[object, dict[str, tuple[int, int]]]] = {}
+type _Scan = tuple[dict[str, tuple[int, int]], list[tuple[int, int]]]
+"""The problems found (key -> first (seed, tier)) and the (tier, keys seen) of every tier
+whose scan hit EXAMPLE_CAP unfinished."""
+
+_ASKED_CACHE: dict[int, tuple[object, _Scan]] = {}
 """Scan results by generator object; a scan is tens of thousands of problems, and a
 generator never changes while the process runs."""
 
 
-def _asked(source: SkillSource) -> dict[str, tuple[int, int]]:
+def _asked(source: SkillSource) -> _Scan:
     cached = _ASKED_CACHE.get(id(source.generator))
     if cached is not None and cached[0] is source.generator:
         return cached[1]
@@ -649,22 +657,32 @@ def _asked(source: SkillSource) -> dict[str, tuple[int, int]]:
     return found
 
 
-def _scan(source: SkillSource) -> dict[str, tuple[int, int]]:
-    """The math of every bare problem the generator gives over the scanned seeds (its
-    left side, terms of a sum in order) and each whole prompt, with the first (seed, tier)
-    that gives it."""
+def _scan(source: SkillSource) -> _Scan:
+    """The math of every bare problem the generator gives (its left side, terms of a sum in
+    order) and each whole prompt, with the first (seed, tier) that gives it; see
+    ``EXAMPLE_FLOOR`` for when a tier's scan stops."""
     asked: dict[str, tuple[int, int]] = {}
+    unfinished: list[tuple[int, int]] = []
     for tier in range(len(source.tier_difficulties)):
-        for seed in range(EXAMPLE_SEEDS):
+        last_new = 0
+        seed = 0
+        while seed < max(EXAMPLE_FLOOR, 2 * last_new):
+            if seed >= EXAMPLE_CAP:
+                unfinished.append((tier, len(asked)))
+                break
             prompt = source.generate(seed, tier).prompt
             at = (seed, tier)
+            before = len(asked)
             asked.setdefault(
                 _whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt), at
             )
             for part in prompt:
                 if isinstance(part, MathPart):
                     asked.setdefault(_same_sum(part.latex), at)
-    return asked
+            if len(asked) > before:
+                last_new = seed
+            seed += 1
+    return asked, unfinished
 
 
 def _fixed_math(template: str) -> Iterator[str]:
@@ -702,7 +720,14 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
                 ))  # fmt: skip
         if not any(math for *_, math in texts):
             continue
-        asked = _asked(source)
+        asked, unfinished = _asked(source)
+        for tier, seen in unfinished:
+            yield Finding(
+                "warning", "skills.yaml", sid, "example",
+                f"example scan did not finish for {sid} tier {tier}: still finding new "
+                f"problems after {EXAMPLE_CAP} seeds ({seen} seen); an example it never "
+                "reached could still be a problem the skill asks",
+            )  # fmt: skip
         for file, at, math in texts:
             for latex in math:
                 hit = asked.get(latex if latex.startswith("prompt: ") else _same_sum(latex))
