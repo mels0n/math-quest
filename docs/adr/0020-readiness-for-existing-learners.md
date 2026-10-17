@@ -19,15 +19,15 @@ migration that invents mastery rows would also invent review dates and ratings.
 Readiness stays a pure function of the graph and the learner's skill records, with two
 additions, both in `SkillGraph`:
 
-- **A started skill stays ready.** A skill the learner has a record of (learning,
-  mastered, provisional or due for review) is offered whatever prerequisites it gained
-  since. Mastered skills are still never offered.
-- **A skill under what the learner knows is implied.** A skill the learner has not
+- **A started skill stays ready.** A skill the learner has a record of (learning, or
+  provisional or mastered and since lost) is offered whatever prerequisites it gained since,
+  and even when a skill above it is mastered. Mastered skills are never offered.
+- **A skill under what the learner knows is implied.** A skill never played and not
   mastered, but which is a prerequisite (directly or through other prerequisites) of a skill
-  they have mastered or provisionally mastered, counts as known for the prerequisite check,
-  whether or not it was ever played. It is not offered by the scheduler, but the practice
-  picker shows it as open, so a child can still choose it. A skill whose only dependents are
-  unplayed is not implied.
+  they have mastered or provisionally mastered, counts as known for the prerequisite check.
+  It is not offered by the scheduler, but the practice picker shows it as open, so a child
+  can still choose it. A skill whose only dependents are unplayed is not implied, and
+  implication never applies to a skill the learner has started.
 
 The play service passes the learner's record of started skills to the scheduler and to
 the skill list; no stored row changes.

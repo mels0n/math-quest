@@ -59,10 +59,12 @@ class SkillGraph:
         return list(self._order)
 
     def implied(self, mastered: Collection[str]) -> set[str]:
-        """Skills the learner can be taken to know without ever having played them: every
-        prerequisite, direct or transitive, of a skill they have mastered, that is not
-        mastered itself. Content added later under skills a learner already knows must not
-        send them back to it (docs/adr/0020-readiness-for-existing-learners.md)."""
+        """Skills the learner can be taken to know without playing them: every prerequisite,
+        direct or transitive, of a skill they have mastered, that is not mastered itself.
+        ``ready`` applies this only to skills never played; a started skill that is not
+        mastered is offered whatever is above it. Content added later under skills a learner
+        already knows must not send them back to it
+        (docs/adr/0020-readiness-for-existing-learners.md)."""
         known = set(mastered)
         found: set[str] = set()
         for sid in known:
@@ -71,15 +73,19 @@ class SkillGraph:
         return found - known
 
     def ready(self, mastered: Collection[str], started: Collection[str] = ()) -> list[str]:
-        """Unmastered skills to play, in topological order: those whose prerequisites are
-        all mastered (or implied, see ``implied``), and every skill the learner has already
-        started, whatever prerequisites were added to it since. ``started`` is the skills
-        the learner has a record of; mastered ones are not offered."""
+        """Unmastered skills to offer, in topological order: every skill the learner has
+        started and not mastered (whatever prerequisites it gained since, and whatever is
+        mastered above it), and every never-played skill whose prerequisites are all mastered
+        or implied (see ``implied``) and which is not itself implied."""
         done = set(mastered)
-        known = done | self.implied(done)
+        begun = set(started) - done
+        known = done | (self.implied(done) - begun)
         return [
             sid
             for sid in self._order
-            if sid not in known
-            and (sid in started or all(p in known for p in self.skills[sid].prerequisites))
+            if sid not in done
+            and (
+                sid in begun
+                or (sid not in known and all(p in known for p in self.skills[sid].prerequisites))
+            )
         ]

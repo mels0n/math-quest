@@ -135,3 +135,23 @@ def test_a_skill_whose_dependents_are_all_unplayed_is_not_implied() -> None:
     for sid in ("count_to_20", "compare_groups", "sub_within_10", "teen_numbers"):
         assert sid not in graph.implied(known)
     assert graph.implied(known) == {"count_to_10"}
+
+
+def test_a_started_skill_under_a_mastered_one_is_still_offered() -> None:
+    """A placed child fails the first review of add_within_10 while add_within_20 counts as
+    mastered: add_within_10 is learning again and must be offered, not implied away."""
+    graph = _graph()
+    mastered = {"count_to_10", "add_within_20"}
+    started = mastered | {"add_within_10"}
+    assert "add_within_10" in graph.implied(mastered)
+    assert "add_within_10" in graph.ready(mastered, started)
+    # Never played, it is implied and stays out.
+    assert "add_within_10" not in graph.ready(mastered, mastered)
+
+
+def test_a_demoted_skill_under_a_placed_high_learner_is_offered() -> None:
+    graph = _graph()
+    mastered = {"add_2digit_regroup", "add_within_20", "count_to_10"}
+    ready = graph.ready(mastered, mastered | {"add_within_10"})
+    assert "add_within_10" in ready
+    assert "add_within_10" not in graph.ready(mastered, mastered)
