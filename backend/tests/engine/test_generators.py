@@ -307,6 +307,39 @@ def test_sub_within_20_no_borrow_tier_has_no_backwards_misconception() -> None:
 
 @prop
 @given(seed=seeds, tier=tiers)
+def test_two_digit_values_split_the_addends_into_digits(seed: int, tier: int) -> None:
+    for skill in TWO_DIGIT_SKILLS:
+        values = get_generator(skill).generate(seed, tier).values
+        for name in ("a", "b"):
+            tens, ones = int(values[f"{name}_tens"]), int(values[f"{name}_ones"])
+            assert tens * 10 + ones == values[name]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_place_value_digit_value_is_the_answer(seed: int, tier: int) -> None:
+    problem = get_generator("place_value_tens_ones").generate(seed, tier)
+    assert problem.values["digit"] == problem.answer
+
+
+def test_sub_within_20_adding_wins_when_the_column_slip_gives_the_same_number() -> None:
+    gen = get_generator("sub_within_20")
+    seen_zero_ones = False
+    for seed in range(500):
+        problem = gen.generate(seed, 2)
+        a, b = addends("sub_within_20", seed, 2)
+        keys = {m.key: m.answer for m in problem.misconceptions}
+        if a % 10 == 0:
+            seen_zero_ones = True
+            assert keys == {"added_instead": a + b}
+            assert check(problem, str(a + b)).misconception == "added_instead"
+        else:
+            assert keys["subtracted_backwards"] == a // 10 * 10 + abs(a % 10 - b)
+    assert seen_zero_ones
+
+
+@prop
+@given(seed=seeds, tier=tiers)
 def test_equivalent_fractions_takes_a_number_and_recognises_a_whole_fraction(
     seed: int, tier: int
 ) -> None:

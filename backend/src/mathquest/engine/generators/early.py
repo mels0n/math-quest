@@ -83,13 +83,14 @@ def _build_sub_within_20(rng: random.Random, tier: int) -> Built:
         b = rng.choice([n for n in (7, 8, 9) if n > a % 10])
     # Column-wise "smaller minus larger" error: ones digits subtracted the wrong way round.
     ones_apart = abs(a % 10 - b)
+    backwards = a // 10 * 10 + ones_apart
+    # With no ones (20 - 8) the column slip and adding give the same number; adding is the
+    # likelier cause, so that one is left to the other mistake.
+    wrong = [("subtracted_backwards", _Int(backwards))] if backwards != a + b else []
     return Built(
         prompt=math_prompt(f"{a} - {b} = ?"),
         answer=_Int(a - b),
-        wrong=(
-            ("subtracted_backwards", _Int(a // 10 * 10 + ones_apart)),
-            ("added_instead", _Int(a + b)),
-        ),
+        wrong=(*wrong, ("added_instead", _Int(a + b))),
         values={"a": a, "b": b},
     )
 
