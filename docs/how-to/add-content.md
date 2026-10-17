@@ -157,6 +157,8 @@ remaining batch. To build the next batch, take that number from the report and:
    ties in the topological order and so decides the placement spine.
 3. Apply each promoted skill's `unlocks`: for every built skill it named, add the new
    skill's id to that skill's `prerequisites` in `skills.yaml`.
+   When it names a skill that is still planned, add the promoted id to that planned
+   entry's `prerequisites` in `planned_skills.yaml` instead.
 4. Delete the moved entries from `planned_skills.yaml`. A skill left in both files is a
    lint error. If a later batch needs a different shape (a skill split, merged or
    moved), change the plan in the same pull request.

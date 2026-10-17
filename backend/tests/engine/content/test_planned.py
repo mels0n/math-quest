@@ -1,7 +1,9 @@
 """The build plan: loading, each lint rule against its own failing fixture, the report."""
 
+import io
 import json
 import shutil
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -585,3 +587,41 @@ def test_content_lint_passes_a_clean_plan(
     root = write(_content_dir(tmp_path) / "packs", {**base(), "planned_skills.yaml": _plan()})
     assert content_lint.main([str(root)]) == 0
     assert "0 errors, 0 warnings" in capsys.readouterr().out
+
+
+# --- robustness ----------------------------------------------------------------------
+
+
+def test_a_directory_at_the_plan_path_is_an_error(tmp_path: Path) -> None:
+    root = write(tmp_path, base())
+    (root / "planned_skills.yaml").mkdir()
+    with pytest.raises(ContentError, match="not a file"):
+        load_planned(root)
+
+
+def test_the_summary_survives_an_unknown_region(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    plan = _edit(lambda p: p["planned"][0].update(region="nowhere"))
+    root = _pack(tmp_path, plan)
+    assert content_report.main([str(root)]) == 0
+    assert "Planned skills" in capsys.readouterr().out
+    loaded = load_planned(root)
+    assert loaded is not None
+    summary = plan_summary(load_pack(root), loaded)
+    assert summary.batches[0].regions == {"nowhere": 1}
+
+
+def test_the_report_prints_on_a_console_that_cannot_show_its_marks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = _pack(tmp_path, _plan())
+    raw = io.BytesIO()
+    console = io.TextIOWrapper(raw, encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", console)
+    assert content_report.main([str(root)]) == 0
+    console.flush()
+    out = raw.getvalue()
+    assert b"Planned skills" in out
+    assert b"\xe2\x9a" not in out  # the warning mark became a replacement, not a crash
+    assert b"?" in out
