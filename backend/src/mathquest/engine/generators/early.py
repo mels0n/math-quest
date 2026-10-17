@@ -146,6 +146,25 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
     )
 
 
+def _build_pairs_to_10(rng: random.Random, tier: int) -> Built:
+    """A number and the one that goes with it to make the total: ``3 + ? = 5``."""
+    total = rng.randint(6, 9) if tier == 1 else (5, 10)[tier // 2]
+    known = rng.randint(1, total - 1)
+    answer = total - known
+    shown = f"{known} + ? = {total}" if rng.choice((True, False)) else f"? + {known} = {total}"
+    return Built(
+        prompt=math_prompt(shown),
+        answer=_Int(answer),
+        wrong=(
+            ("gave_the_known_number", _Int(known)),
+            ("gave_the_total", _Int(total)),
+            # Counting up from the known number counts it again: 7 + ? = 10 as "7, 8, 9, 10".
+            ("counted_start", _Int(answer + 1)),
+        ),
+        values={"known": known, "total": total, "answer": answer},
+    )
+
+
 _ADD_MISTAKES = ("subtracted_instead", "counted_start")
 
 
@@ -177,5 +196,12 @@ def generators() -> list[SkillGenerator]:
             form,
             _build_add_2digit_regroup,
             ("forgot_carry", "added_carry_twice"),
+        ),
+        SkillGenerator(
+            "pairs_to_10",
+            -1.5,
+            form,
+            _build_pairs_to_10,
+            ("gave_the_known_number", "gave_the_total", "counted_start"),
         ),
     ]
