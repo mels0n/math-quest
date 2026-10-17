@@ -1,0 +1,434 @@
+skill: compare_groups
+items:
+  - id: cg_01
+    prompt:
+      - {kind: text, value: "Snow falls on the hill. The shop has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " pies. The hall has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " pies. Which place has fewer pies?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The shop"}]
+      - [{kind: text, value: "The hall"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_02
+    prompt:
+      - {kind: text, value: "The stars shine at night. There are "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " lemons and "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " eggs. Which group has fewer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The lemons"}]
+      - [{kind: text, value: "The eggs"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_03
+    prompt:
+      - {kind: text, value: "A horse eats hay. There are "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " stamps and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " cups. Which group has fewer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The stamps"}]
+      - [{kind: text, value: "The cups"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_04
+    prompt:
+      - {kind: text, value: "A turtle walks slowly. A baker sells "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " hats and "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " balls. Which group is smaller?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The hats"}]
+      - [{kind: text, value: "The balls"}]
+      - [{kind: text, value: "They are the same size"}]
+  - id: cg_05
+    prompt:
+      - {kind: text, value: "A puppy runs by. There are "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " beans and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " cookies. Which group has fewer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The beans"}]
+      - [{kind: text, value: "The cookies"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_06
+    prompt:
+      - {kind: text, value: "A cat naps in the sun. The kitchen has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " stamps. The shop has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " stamps. Which place has more stamps?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The kitchen"}]
+      - [{kind: text, value: "The shop"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_07
+    prompt:
+      - {kind: text, value: "A frog sits on a log. There are "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " eggs and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " cakes. Are there more eggs or more cakes?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More eggs"}]
+      - [{kind: text, value: "More cakes"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_08
+    prompt:
+      - {kind: text, value: "The moon is bright. The brown box has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " cherries. The black box has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " cherries. Which box has fewer?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The brown box"}]
+      - [{kind: text, value: "The black box"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_09
+    prompt:
+      - {kind: text, value: "The cake is in the oven. There are "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " pens and "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " sticks. Which group has fewer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The pens"}]
+      - [{kind: text, value: "The sticks"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_10
+    prompt:
+      - {kind: text, value: "The king is at the castle. There are "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " balls and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " bells. Are there more balls or more bells?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More balls"}]
+      - [{kind: text, value: "More bells"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_11
+    prompt:
+      - {kind: text, value: "Friends meet at the park. The blue tray has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " bees. The green tray has "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " bees. Which tray has fewer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The blue tray"}]
+      - [{kind: text, value: "The green tray"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_12
+    prompt:
+      - {kind: text, value: "A fox hides in the woods. The park has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " beans. The camp has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " beans. Which place has more beans?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The park"}]
+      - [{kind: text, value: "The camp"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_13
+    prompt:
+      - {kind: text, value: "It is a cold day. A boy counts "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " rocks and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " buttons. Which group is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The rocks"}]
+      - [{kind: text, value: "The buttons"}]
+      - [{kind: text, value: "They are the same size"}]
+  - id: cg_14
+    prompt:
+      - {kind: text, value: "The sea is calm. There are "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " spoons and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " bags. Are there more spoons or more bags?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More spoons"}]
+      - [{kind: text, value: "More bags"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_15
+    prompt:
+      - {kind: text, value: "Mom is in the garden. A cook sees "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " birds and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " cats. Which group is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The birds"}]
+      - [{kind: text, value: "The cats"}]
+      - [{kind: text, value: "They are the same size"}]
+  - id: cg_16
+    prompt:
+      - {kind: text, value: "The picnic is on the grass. There are "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " rocks and "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " stars. Are there more rocks or more stars?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More rocks"}]
+      - [{kind: text, value: "More stars"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_17
+    prompt:
+      - {kind: text, value: "The wind is warm. There are "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " eggs and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " peaches. Are there more eggs or more peaches?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More eggs"}]
+      - [{kind: text, value: "More peaches"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_18
+    prompt:
+      - {kind: text, value: "The truck is in the yard. A guard buys "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " cars and "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " dolls. Which group is bigger?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The cars"}]
+      - [{kind: text, value: "The dolls"}]
+      - [{kind: text, value: "They are the same size"}]
+  - id: cg_19
+    prompt:
+      - {kind: text, value: "The barn is big. The hall has "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " peaches. The garden has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " peaches. Which place has more peaches?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The hall"}]
+      - [{kind: text, value: "The garden"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_20
+    prompt:
+      - {kind: text, value: "A duck swims by. The camp has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " kites. The school has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " kites. Which place has more kites?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The camp"}]
+      - [{kind: text, value: "The school"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_21
+    prompt:
+      - {kind: text, value: "It is a sunny day. The purple box has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " cups. The white box has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " cups. Which box has more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The purple box"}]
+      - [{kind: text, value: "The white box"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_22
+    prompt:
+      - {kind: text, value: "The beach is sandy. The forest has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " peas. The park has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " peas. Which place has more peas?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The forest"}]
+      - [{kind: text, value: "The park"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_23
+    prompt:
+      - {kind: text, value: "The boat is on the lake. A chef brings "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " bells and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " kites. Which group is bigger?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The bells"}]
+      - [{kind: text, value: "The kites"}]
+      - [{kind: text, value: "They are the same size"}]
+  - id: cg_24
+    prompt:
+      - {kind: text, value: "The pond is cool. There are "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " plums and "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " nuts. Are there more plums or more nuts?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More plums"}]
+      - [{kind: text, value: "More nuts"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_25
+    prompt:
+      - {kind: text, value: "A kite flies high. The yard has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " beans. The pond has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " beans. Which place has more beans?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The yard"}]
+      - [{kind: text, value: "The pond"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_26
+    prompt:
+      - {kind: text, value: "The shop is open. There are "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " drums and "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " marbles. Are there more drums or more marbles?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More drums"}]
+      - [{kind: text, value: "More marbles"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_27
+    prompt:
+      - {kind: text, value: "The cows are in the field. There are "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " grapes and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " beans. Are there more grapes or more beans?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More grapes"}]
+      - [{kind: text, value: "More beans"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_28
+    prompt:
+      - {kind: text, value: "The tent is by the lake. The blue bag has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " plates. The brown bag has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " plates. Which bag has more?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The blue bag"}]
+      - [{kind: text, value: "The brown bag"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_29
+    prompt:
+      - {kind: text, value: "The fire is warm. The orange bag has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " bees. The purple bag has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " bees. Which bag has more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The orange bag"}]
+      - [{kind: text, value: "The purple bag"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_30
+    prompt:
+      - {kind: text, value: "The wagon rolls down the hill. The camp has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " ants. The garden has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " ants. Which place has more ants?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The camp"}]
+      - [{kind: text, value: "The garden"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_31
+    prompt:
+      - {kind: text, value: "Dad is in the kitchen. The blue crate has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " marbles. The yellow crate has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " marbles. Which crate has fewer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The blue crate"}]
+      - [{kind: text, value: "The yellow crate"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_32
+    prompt:
+      - {kind: text, value: "A snail crawls on the path. The orange bag has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " crayons. The white bag has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " crayons. Which bag has fewer?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The orange bag"}]
+      - [{kind: text, value: "The white bag"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_33
+    prompt:
+      - {kind: text, value: "The room is quiet. The red jar has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " blocks. The black jar has "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " blocks. Which jar has more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The red jar"}]
+      - [{kind: text, value: "The black jar"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_34
+    prompt:
+      - {kind: text, value: "The garden is wet. There are "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " birds and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " bugs. Are there more birds or more bugs?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More birds"}]
+      - [{kind: text, value: "More bugs"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_35
+    prompt:
+      - {kind: text, value: "The ship sails at noon. There are "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " robots and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " kites. Are there more robots or more kites?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More robots"}]
+      - [{kind: text, value: "More kites"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_36
+    prompt:
+      - {kind: text, value: "The fair is in town. A cook picks "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " drums and "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " hats. Which group is bigger?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The drums"}]
+      - [{kind: text, value: "The hats"}]
+      - [{kind: text, value: "They are the same size"}]

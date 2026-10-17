@@ -1,0 +1,416 @@
+skill: compare_numbers_20
+items:
+  - id: cn20_01
+    prompt:
+      - {kind: text, value: "Which number is greater, "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " or "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "9"}]
+      - [{kind: math, value: "6"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_02
+    prompt:
+      - {kind: text, value: "Which number comes later when you count, "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " or "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "12"}]
+      - [{kind: math, value: "19"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_03
+    prompt:
+      - {kind: text, value: "Which of these numbers is the smallest?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "3"}]
+      - [{kind: math, value: "10"}]
+      - [{kind: math, value: "9"}]
+  - id: cn20_04
+    prompt:
+      - {kind: text, value: "Pick the biggest number."}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "13"}]
+      - [{kind: math, value: "16"}]
+      - [{kind: math, value: "15"}]
+  - id: cn20_05
+    prompt:
+      - {kind: text, value: "Which number is less than "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "6"}]
+      - [{kind: math, value: "9"}]
+      - [{kind: math, value: "2"}]
+  - id: cn20_06
+    prompt:
+      - {kind: text, value: "Finish the line: "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " is ___ "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: "."}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "more than"}]
+      - [{kind: text, value: "less than"}]
+      - [{kind: text, value: "the same as"}]
+  - id: cn20_07
+    prompt:
+      - {kind: text, value: "Compare "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: ". Is the first more, less, or equal?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More"}]
+      - [{kind: text, value: "Less"}]
+      - [{kind: text, value: "Equal"}]
+  - id: cn20_08
+    prompt:
+      - {kind: text, value: "Does "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " come before or after "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " when you count?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Before"}]
+      - [{kind: text, value: "After"}]
+      - [{kind: text, value: "Same spot"}]
+  - id: cn20_09
+    prompt:
+      - {kind: text, value: "Which number is the least of these?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "13"}]
+      - [{kind: math, value: "15"}]
+      - [{kind: math, value: "18"}]
+  - id: cn20_10
+    prompt:
+      - {kind: text, value: "Which row goes from the least to the most?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "12, 2, 5"}]
+      - [{kind: math, value: "2, 5, 12"}]
+      - [{kind: math, value: "5, 12, 2"}]
+  - id: cn20_11
+    prompt:
+      - {kind: text, value: "Look at "}
+      - {kind: math, value: "13"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: ". Which is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "13"}]
+      - [{kind: math, value: "15"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn20_12
+    prompt:
+      - {kind: text, value: "The kids play outside. There are "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " pears and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " cookies. Which number is greater?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "6"}]
+      - [{kind: math, value: "7"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_13
+    prompt:
+      - {kind: text, value: "The stars shine at night. Count the plums: "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: ". Count the buns: "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: ". Which number is less?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "15"}]
+      - [{kind: math, value: "12"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn20_14
+    prompt:
+      - {kind: text, value: "The bus is on the road. The number of pies is "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: ". The number of plums is "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: ". Which number is bigger?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "9"}]
+      - [{kind: math, value: "7"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn20_15
+    prompt:
+      - {kind: text, value: "It is a rainy day. There are "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " frogs and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " mice. Which number is greater?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "8"}]
+      - [{kind: math, value: "7"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_16
+    prompt:
+      - {kind: text, value: "The tent is by the lake. Count the snails: "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: ". Count the birds: "}
+      - {kind: math, value: "16"}
+      - {kind: text, value: ". Which number is less?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "17"}]
+      - [{kind: math, value: "16"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn20_17
+    prompt:
+      - {kind: text, value: "The fair is in town. A queen picks "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " lemons and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " beans. Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "3"}]
+      - [{kind: math, value: "4"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_18
+    prompt:
+      - {kind: text, value: "A fox hides in the woods. Count the buns: "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: ". Count the cherries: "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: ". Which number is less?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "7"}]
+      - [{kind: math, value: "3"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn20_19
+    prompt:
+      - {kind: text, value: "The class is at the park. A cook buys "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " apples and "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " buns. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "17"}]
+      - [{kind: math, value: "12"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_20
+    prompt:
+      - {kind: text, value: "A cat naps in the sun. A clown draws "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " bells and "}
+      - {kind: math, value: "13"}
+      - {kind: text, value: " cars. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "15"}]
+      - [{kind: math, value: "13"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_21
+    prompt:
+      - {kind: text, value: "A frog sits on a log. There are "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " spoons and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " stars. Which number is greater?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "6"}]
+      - [{kind: math, value: "9"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_22
+    prompt:
+      - {kind: text, value: "It is time for lunch. A fox wants "}
+      - {kind: math, value: "16"}
+      - {kind: text, value: " hats and "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " puzzles. Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "16"}]
+      - [{kind: math, value: "17"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_23
+    prompt:
+      - {kind: text, value: "Snow falls on the hill. The class counts "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " books and "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " leaves. Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "17"}]
+      - [{kind: math, value: "19"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_24
+    prompt:
+      - {kind: text, value: "A turtle walks slowly. A fox collects "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " bags and "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " stars. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "9"}]
+      - [{kind: math, value: "5"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_25
+    prompt:
+      - {kind: text, value: "The farm is busy. Mom packs "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " marbles and "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " blocks. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "19"}]
+      - [{kind: math, value: "15"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_26
+    prompt:
+      - {kind: text, value: "The bell rings at school. A boy draws "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " dogs and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " ducks. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "9"}]
+      - [{kind: math, value: "8"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_27
+    prompt:
+      - {kind: text, value: "A mouse peeks out. Count the bags: "}
+      - {kind: math, value: "1"}
+      - {kind: text, value: ". Count the leaves: "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: ". Which number is less?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "1"}]
+      - [{kind: math, value: "7"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn20_28
+    prompt:
+      - {kind: text, value: "The sea is calm. A bear collects "}
+      - {kind: math, value: "16"}
+      - {kind: text, value: " puzzles and "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " bells. Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "16"}]
+      - [{kind: math, value: "19"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_29
+    prompt:
+      - {kind: text, value: "Friends meet at the park. The class draws "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: " cars and "}
+      - {kind: math, value: "13"}
+      - {kind: text, value: " drums. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "14"}]
+      - [{kind: math, value: "13"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_30
+    prompt:
+      - {kind: text, value: "Dad is in the kitchen. A guard counts "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " beans and "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " eggs. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "4"}]
+      - [{kind: math, value: "2"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_31
+    prompt:
+      - {kind: text, value: "It is a happy day. The class holds "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " carrots and "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " cookies. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "19"}]
+      - [{kind: math, value: "17"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_32
+    prompt:
+      - {kind: text, value: "A clown is at the party. A sailor wants "}
+      - {kind: math, value: "16"}
+      - {kind: text, value: " cookies and "}
+      - {kind: math, value: "18"}
+      - {kind: text, value: " apples. Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "16"}]
+      - [{kind: math, value: "18"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_33
+    prompt:
+      - {kind: text, value: "A horse eats hay. A queen picks "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " seeds and "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " bags. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "7"}]
+      - [{kind: math, value: "5"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_34
+    prompt:
+      - {kind: text, value: "The stars shine at night. A bear has "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: " lemons and "}
+      - {kind: math, value: "13"}
+      - {kind: text, value: " cookies. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "14"}]
+      - [{kind: math, value: "13"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_35
+    prompt:
+      - {kind: text, value: "The class sings a song. A kid spots "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: " pears and "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " cakes. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "14"}]
+      - [{kind: math, value: "12"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_36
+    prompt:
+      - {kind: text, value: "Snow falls on the hill. Count the hens: "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: ". Count the frogs: "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: ". Which number is less?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "3"}]
+      - [{kind: math, value: "5"}]
+      - [{kind: text, value: "Same"}]

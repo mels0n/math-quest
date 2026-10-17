@@ -174,11 +174,22 @@ def test_real_pack_loads_and_binds() -> None:
     ]
     bands = {sid: s.grade_band for sid, s in pack.skills.items()}
     assert bands == {
+        "count_to_10": "K",
         "add_within_10": "K",
         "sub_within_10": "K",
+        "count_to_20": "K",
+        "count_to_100": "K",
+        "compare_groups": "K",
+        "compare_numbers_20": "K",
+        "one_more_one_less": "K",
+        "skip_count_10": "K",
+        "teen_numbers": "K",
+        "pairs_to_10": "K",
         "add_within_20": "1",
         "sub_within_20": "1",
         "place_value_tens_ones": "1",
+        "place_value_hundreds": "2",
+        "compare_numbers_100": "1",
         "add_2digit_no_regroup": "2",
         "add_2digit_regroup": "2",
         "equivalent_fractions": "3",

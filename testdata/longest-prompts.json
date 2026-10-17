@@ -79,6 +79,204 @@
       }
     ]
   },
+  "compare_groups": {
+    "tier": 1,
+    "seed": 5,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 10 apples and 5 rocks. How many are in the group with fewer?"
+      }
+    ]
+  },
+  "compare_groups-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Dad is in the kitchen. The blue crate has "
+      },
+      {
+        "kind": "math",
+        "value": "10"
+      },
+      {
+        "kind": "text",
+        "value": " marbles. The yellow crate has "
+      },
+      {
+        "kind": "math",
+        "value": "9"
+      },
+      {
+        "kind": "text",
+        "value": " marbles. Which crate has fewer?"
+      }
+    ]
+  },
+  "compare_numbers_100": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Which number is smaller, "
+      },
+      {
+        "kind": "math",
+        "value": "70"
+      },
+      {
+        "kind": "text",
+        "value": " or "
+      },
+      {
+        "kind": "math",
+        "value": "44"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "compare_numbers_100-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A fox hides in the woods. A miner has "
+      },
+      {
+        "kind": "math",
+        "value": "34"
+      },
+      {
+        "kind": "text",
+        "value": " coins and "
+      },
+      {
+        "kind": "math",
+        "value": "85"
+      },
+      {
+        "kind": "text",
+        "value": " pins. Which sign fits: "
+      },
+      {
+        "kind": "math",
+        "value": "34 \\square 85"
+      }
+    ]
+  },
+  "compare_numbers_20": {
+    "tier": 1,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Which number is smaller, "
+      },
+      {
+        "kind": "math",
+        "value": "17"
+      },
+      {
+        "kind": "text",
+        "value": " or "
+      },
+      {
+        "kind": "math",
+        "value": "13"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "compare_numbers_20-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The bus is on the road. The number of pies is "
+      },
+      {
+        "kind": "math",
+        "value": "9"
+      },
+      {
+        "kind": "text",
+        "value": ". The number of plums is "
+      },
+      {
+        "kind": "math",
+        "value": "7"
+      },
+      {
+        "kind": "text",
+        "value": ". Which number is bigger?"
+      }
+    ]
+  },
+  "count_to_10": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Count on. What comes next? "
+      },
+      {
+        "kind": "math",
+        "value": "1, 2, 3, ?"
+      }
+    ]
+  },
+  "count_to_100": {
+    "tier": 2,
+    "seed": 4,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Start at "
+      },
+      {
+        "kind": "math",
+        "value": "25"
+      },
+      {
+        "kind": "text",
+        "value": ". Count on "
+      },
+      {
+        "kind": "math",
+        "value": "5"
+      },
+      {
+        "kind": "text",
+        "value": " more numbers. Which number do you say last?"
+      }
+    ]
+  },
+  "count_to_20": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Count on. What comes next? "
+      },
+      {
+        "kind": "math",
+        "value": "11, 12, 13, ?"
+      }
+    ]
+  },
   "equivalent_fractions": {
     "tier": 0,
     "seed": 0,
@@ -86,6 +284,68 @@
       {
         "kind": "math",
         "value": "\\frac{1}{5} = \\frac{?}{15}"
+      }
+    ]
+  },
+  "one_more_one_less": {
+    "tier": 2,
+    "seed": 30,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "What is 1 less than "
+      },
+      {
+        "kind": "math",
+        "value": "100"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "pairs_to_10": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "? + 7 = 10"
+      }
+    ]
+  },
+  "place_value_hundreds": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "What number is "
+      },
+      {
+        "kind": "math",
+        "value": "7"
+      },
+      {
+        "kind": "text",
+        "value": " hundreds, "
+      },
+      {
+        "kind": "math",
+        "value": "5"
+      },
+      {
+        "kind": "text",
+        "value": " tens and "
+      },
+      {
+        "kind": "math",
+        "value": "0"
+      },
+      {
+        "kind": "text",
+        "value": " ones?"
       }
     ]
   },
@@ -104,6 +364,20 @@
       {
         "kind": "text",
         "value": "?"
+      }
+    ]
+  },
+  "skip_count_10": {
+    "tier": 1,
+    "seed": 6,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Count by tens. "
+      },
+      {
+        "kind": "math",
+        "value": "10, 20, 30, 40, 50, 60, 70, 80, 90, ?"
       }
     ]
   },
@@ -134,6 +408,20 @@
       {
         "kind": "text",
         "value": "There are 12 frogs on a log. Fatima watches 1 of them hop into the pond. How many frogs are left on the log?"
+      }
+    ]
+  },
+  "teen_numbers": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "12"
+      },
+      {
+        "kind": "text",
+        "value": " is a ten and how many more ones?"
       }
     ]
   }

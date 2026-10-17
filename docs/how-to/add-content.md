@@ -168,6 +168,12 @@ remaining batch. To build the next batch, take that number from the report and:
    `batch` and `unlocks`, and keep `standards`. Put it in `skills.yaml` where it sits in
    the plan, ahead of the first skill of any later region, because the file order breaks
    ties in the topological order and so decides the placement spine.
+   A skill with the `choice` keypad also gets `word_share: 0.0` and `bank_share: 1.0`,
+   and its bank items (at least 30, each phrased differently: the duplicate lint compares
+   them with their numbers blanked) go in the same change, because the loader refuses a
+   choice skill without a bank. The generator of a choice skill is its typed form of the
+   same question: it keeps the difficulty ramp and the named mistakes, but play only
+   shows the bank items, which carry no tier.
 3. Apply each promoted skill's `unlocks`: for every built skill it named, add the new
    skill's id to that skill's `prerequisites` in `skills.yaml`.
    When it names a skill that is still planned, add the promoted id to that planned

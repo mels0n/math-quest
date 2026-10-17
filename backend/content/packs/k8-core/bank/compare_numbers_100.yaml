@@ -1,0 +1,406 @@
+skill: compare_numbers_100
+items:
+  - id: cn100_01
+    prompt:
+      - {kind: text, value: "Which sign makes this true: "}
+      - {kind: math, value: "37 \\square 70"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_02
+    prompt:
+      - {kind: text, value: "Pick the sign that fits: "}
+      - {kind: math, value: "33 \\square 36"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_03
+    prompt:
+      - {kind: text, value: "Fill in the sign: "}
+      - {kind: math, value: "70 \\square 70"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_04
+    prompt:
+      - {kind: text, value: "Which sign goes in the blank: "}
+      - {kind: math, value: "26 \\square 33"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_05
+    prompt:
+      - {kind: text, value: "Look at the two numbers. Which sign is right: "}
+      - {kind: math, value: "32 \\square 23"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_06
+    prompt:
+      - {kind: text, value: "Which is more, "}
+      - {kind: math, value: "32"}
+      - {kind: text, value: " or "}
+      - {kind: math, value: "53"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "32"}]
+      - [{kind: math, value: "53"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_07
+    prompt:
+      - {kind: text, value: "Compare these. One has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " tens and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " ones. The other has "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " tens and "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " ones. Which is more?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The first one"}]
+      - [{kind: text, value: "The other one"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_08
+    prompt:
+      - {kind: text, value: "Pick the greatest two-digit number."}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "76"}]
+      - [{kind: math, value: "39"}]
+      - [{kind: math, value: "49"}]
+  - id: cn100_09
+    prompt:
+      - {kind: text, value: "Look at the choices below. Which one is the smallest?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "25"}]
+      - [{kind: math, value: "56"}]
+      - [{kind: math, value: "64"}]
+  - id: cn100_10
+    prompt:
+      - {kind: text, value: "Which sentence is true?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "31 > 48"}]
+      - [{kind: math, value: "31 < 48"}]
+      - [{kind: math, value: "31 = 48"}]
+  - id: cn100_11
+    prompt:
+      - {kind: text, value: "Which row lists the numbers from greatest to least?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "46, 42, 77"}]
+      - [{kind: math, value: "42, 46, 77"}]
+      - [{kind: math, value: "77, 46, 42"}]
+  - id: cn100_12
+    prompt:
+      - {kind: text, value: "Look at "}
+      - {kind: math, value: "74"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "75"}
+      - {kind: text, value: ". They are close. Which is the greater number?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "74"}]
+      - [{kind: math, value: "75"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_13
+    prompt:
+      - {kind: text, value: "Find the number that is greater than "}
+      - {kind: math, value: "59"}
+      - {kind: text, value: "."}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "49"}]
+      - [{kind: math, value: "60"}]
+      - [{kind: math, value: "58"}]
+  - id: cn100_14
+    prompt:
+      - {kind: text, value: "Which number is between 50 and "}
+      - {kind: math, value: "77"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "40"}]
+      - [{kind: math, value: "57"}]
+      - [{kind: math, value: "87"}]
+  - id: cn100_15
+    prompt:
+      - {kind: text, value: "Which number has the same tens as "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " but is bigger?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "26"}]
+      - [{kind: math, value: "47"}]
+      - [{kind: math, value: "28"}]
+  - id: cn100_16
+    prompt:
+      - {kind: text, value: "It is a rainy day. A guard counts "}
+      - {kind: math, value: "50"}
+      - {kind: text, value: " lamps and "}
+      - {kind: math, value: "18"}
+      - {kind: text, value: " ducks. Which count is greater?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "50"}]
+      - [{kind: math, value: "18"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_17
+    prompt:
+      - {kind: text, value: "The barn is big. A team counts "}
+      - {kind: math, value: "90"}
+      - {kind: text, value: " nuts and "}
+      - {kind: math, value: "95"}
+      - {kind: text, value: " stones. Which count is greater?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "90"}]
+      - [{kind: math, value: "95"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_18
+    prompt:
+      - {kind: text, value: "The fair is in town. Count the logs: "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: ". Count the stones: "}
+      - {kind: math, value: "41"}
+      - {kind: text, value: ". Which count has more tens?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "17"}]
+      - [{kind: math, value: "41"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_19
+    prompt:
+      - {kind: text, value: "A clown is at the party. There are "}
+      - {kind: math, value: "56"}
+      - {kind: text, value: " chairs and "}
+      - {kind: math, value: "20"}
+      - {kind: text, value: " boats. Which count is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "56"}]
+      - [{kind: math, value: "20"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_20
+    prompt:
+      - {kind: text, value: "The bus is on the road. There are "}
+      - {kind: math, value: "92"}
+      - {kind: text, value: " cows and "}
+      - {kind: math, value: "93"}
+      - {kind: text, value: " chairs. Which count is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "92"}]
+      - [{kind: math, value: "93"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_21
+    prompt:
+      - {kind: text, value: "A duck swims by. A baker counts "}
+      - {kind: math, value: "37"}
+      - {kind: text, value: " pins and "}
+      - {kind: math, value: "50"}
+      - {kind: text, value: " ships. Which count is greater?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "37"}]
+      - [{kind: math, value: "50"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_22
+    prompt:
+      - {kind: text, value: "It is a cold day. A farmer has "}
+      - {kind: math, value: "81"}
+      - {kind: text, value: " hens and "}
+      - {kind: math, value: "54"}
+      - {kind: text, value: " pins. Which sign fits: "}
+      - {kind: math, value: "81 \\square 54"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_23
+    prompt:
+      - {kind: text, value: "The moon is bright. A fox has "}
+      - {kind: math, value: "94"}
+      - {kind: text, value: " stones and "}
+      - {kind: math, value: "92"}
+      - {kind: text, value: " rolls. Which sign fits: "}
+      - {kind: math, value: "94 \\square 92"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_24
+    prompt:
+      - {kind: text, value: "A mouse peeks out. Count the bricks: "}
+      - {kind: math, value: "38"}
+      - {kind: text, value: ". Count the logs: "}
+      - {kind: math, value: "50"}
+      - {kind: text, value: ". Which count has more tens?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "38"}]
+      - [{kind: math, value: "50"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_25
+    prompt:
+      - {kind: text, value: "A cat naps in the sun. A sailor counts "}
+      - {kind: math, value: "11"}
+      - {kind: text, value: " ducks and "}
+      - {kind: math, value: "47"}
+      - {kind: text, value: " tickets. Which count is greater?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "11"}]
+      - [{kind: math, value: "47"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_26
+    prompt:
+      - {kind: text, value: "A snail crawls on the path. A fair counts "}
+      - {kind: math, value: "92"}
+      - {kind: text, value: " ships and "}
+      - {kind: math, value: "94"}
+      - {kind: text, value: " logs. Which count is greater?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "92"}]
+      - [{kind: math, value: "94"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_27
+    prompt:
+      - {kind: text, value: "A bee hums by the flowers. There are "}
+      - {kind: math, value: "43"}
+      - {kind: text, value: " ducks and "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " stones. Which count is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "43"}]
+      - [{kind: math, value: "27"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_28
+    prompt:
+      - {kind: text, value: "A fox hides in the woods. A miner has "}
+      - {kind: math, value: "34"}
+      - {kind: text, value: " coins and "}
+      - {kind: math, value: "85"}
+      - {kind: text, value: " pins. Which sign fits: "}
+      - {kind: math, value: "34 \\square 85"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_29
+    prompt:
+      - {kind: text, value: "It is a happy day. There are "}
+      - {kind: math, value: "21"}
+      - {kind: text, value: " ships and "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " pins. Which count is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "21"}]
+      - [{kind: math, value: "27"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_30
+    prompt:
+      - {kind: text, value: "A kite flies high. A farmer counts "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " bells and "}
+      - {kind: math, value: "44"}
+      - {kind: text, value: " cows. Which count is greater?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "15"}]
+      - [{kind: math, value: "44"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_31
+    prompt:
+      - {kind: text, value: "The door is open. Count the stones: "}
+      - {kind: math, value: "24"}
+      - {kind: text, value: ". Count the eggs: "}
+      - {kind: math, value: "61"}
+      - {kind: text, value: ". Which count has more tens?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "24"}]
+      - [{kind: math, value: "61"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_32
+    prompt:
+      - {kind: text, value: "The class sings a song. There are "}
+      - {kind: math, value: "54"}
+      - {kind: text, value: " seats and "}
+      - {kind: math, value: "59"}
+      - {kind: text, value: " nuts. Which count is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "54"}]
+      - [{kind: math, value: "59"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_33
+    prompt:
+      - {kind: text, value: "The ship sails at noon. A cook counts "}
+      - {kind: math, value: "35"}
+      - {kind: text, value: " hens and "}
+      - {kind: math, value: "18"}
+      - {kind: text, value: " boats. Which count is greater?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "35"}]
+      - [{kind: math, value: "18"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_34
+    prompt:
+      - {kind: text, value: "Mom is in the garden. A school has "}
+      - {kind: math, value: "66"}
+      - {kind: text, value: " pies and "}
+      - {kind: math, value: "24"}
+      - {kind: text, value: " cows. Which sign fits: "}
+      - {kind: math, value: "66 \\square 24"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_35
+    prompt:
+      - {kind: text, value: "A frog sits on a log. There are "}
+      - {kind: math, value: "23"}
+      - {kind: text, value: " nuts and "}
+      - {kind: math, value: "22"}
+      - {kind: text, value: " eggs. Which count is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "23"}]
+      - [{kind: math, value: "22"}]
+      - [{kind: text, value: "Same"}]
+  - id: cn100_36
+    prompt:
+      - {kind: text, value: "The bell rings at school. A sailor has "}
+      - {kind: math, value: "28"}
+      - {kind: text, value: " eggs and "}
+      - {kind: math, value: "73"}
+      - {kind: text, value: " nuts. Which sign fits: "}
+      - {kind: math, value: "28 \\square 73"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]

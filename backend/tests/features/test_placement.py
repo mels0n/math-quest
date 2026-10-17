@@ -54,6 +54,14 @@ async def _start(db: AsyncSession, pid: uuid.UUID, hint: str | None = None) -> P
 async def _answer(
     db: AsyncSession, pid: uuid.UUID, step: PlacementStepOut, latex: str
 ) -> PlacementStepOut | PlacementDoneOut:
+    """Answer the open probe; for a choice probe, ``latex`` is only read as right or wrong."""
+    right_choice = step.problem.dev_answer_choice
+    if right_choice is not None:
+        picked = right_choice if latex == _right(step) else (right_choice + 1) % 3
+        return await service.answer(
+            db, POOL, CATALOG, pid, step.placement_id, step.problem.problem_id, None,
+            choice=picked, expose_answers=True,
+        )  # fmt: skip
     return await service.answer(
         db, POOL, CATALOG, pid, step.placement_id, step.problem.problem_id, latex,
         expose_answers=True,
@@ -61,6 +69,8 @@ async def _answer(
 
 
 def _right(step: PlacementStepOut) -> str:
+    if step.problem.dev_answer_choice is not None:
+        return f"choice:{step.problem.dev_answer_choice}"
     assert step.problem.dev_answer_latex is not None
     return step.problem.dev_answer_latex
 
@@ -102,7 +112,8 @@ async def _state(db: AsyncSession, pid: uuid.UUID, skill_id: str) -> str | None:
 async def test_the_grade_hint_picks_the_first_question(db: AsyncSession) -> None:
     pid = await _player(db)
     assert (await _start(db, pid)).problem.skill_id == "add_within_20"
-    assert (await _start(db, pid, "K")).problem.skill_id == "add_within_10"
+    assert (await _start(db, pid, "K")).problem.skill_id == "count_to_10"
+    assert (await _start(db, pid, "1")).problem.skill_id == "add_within_20"
     assert (await _start(db, pid, "3")).problem.skill_id == "add_2digit_regroup"
     first = await _start(db, pid, "8")
     assert first.problem.skill_id == "add_fractions_unlike"
@@ -124,12 +135,18 @@ async def test_answers_stay_hidden_without_the_dev_setting(db: AsyncSession) -> 
 async def test_a_round_marks_provisional_mastery(db: AsyncSession) -> None:
     pid = await _player(db)
     before = datetime.now(UTC)
-    done, asked = await _round(db, pid, level=2)
+    done, asked = await _round(db, pid, level=4)
 
     assert done.frontier == ["add_2digit_regroup"]
     assert len(asked) <= MAX_QUESTIONS
-    expected = {"add_2digit_regroup"} | CATALOG.graph.ancestors("add_2digit_regroup")
-    expected |= {"add_within_10", "add_within_20"}
+    # Every anchor up to the frontier, each with everything it builds on.
+    expected = {sid for anchor in ANCHORS[:5] for sid in {anchor} | CATALOG.graph.ancestors(anchor)}
+    assert {
+        "count_to_10",
+        "add_within_20",
+        "compare_numbers_100",
+        "place_value_tens_ones",
+    } <= expected
     assert set(done.provisional) == expected
     assert [r.id for r in done.revealed_regions] == ["number_meadows", "operation_canyon"]
     assert done.revealed_regions[0].name == "Number Meadows"
@@ -179,7 +196,7 @@ async def test_unreadable_answers_are_asked_again_then_count(db: AsyncSession) -
     assert counted.retry is None
     assert counted.question == 2
     # Counted as a miss: the probe moved down.
-    assert counted.problem.skill_id == "add_within_10"
+    assert counted.problem.skill_id == "count_to_10"
 
 
 async def test_a_stale_problem_returns_the_round_as_it_is(db: AsyncSession) -> None:
@@ -239,7 +256,7 @@ async def test_a_finished_round_answers_with_its_outcome(db: AsyncSession) -> No
 
 async def test_retake_resets_unconfirmed_marks_and_keeps_real_mastery(db: AsyncSession) -> None:
     pid = await _player(db)
-    first, _ = await _round(db, pid, level=3)
+    first, _ = await _round(db, pid, level=5)
     assert "add_fractions_unlike" in first.provisional
     # One skill was confirmed since (mastered), one was played and is learning.
     confirmed = await mastery.lock(db, pid, "add_within_10", 0.0)
@@ -252,7 +269,7 @@ async def test_retake_resets_unconfirmed_marks_and_keeps_real_mastery(db: AsyncS
     await db.commit()
     await _age_rounds(db, pid)
 
-    second, _ = await _round(db, pid, level=0)
+    second, _ = await _round(db, pid, level=1)
 
     assert second.frontier == ["add_within_10"]
     assert "add_within_10" not in second.provisional
@@ -273,7 +290,7 @@ async def test_a_learning_skill_is_never_marked(db: AsyncSession) -> None:
     await db.commit()
     row.state = "learning"
     await db.commit()
-    done, _ = await _round(db, pid, level=1)
+    done, _ = await _round(db, pid, level=2)
     after = await mastery.get(db, pid, "add_within_10")
     assert after is not None
     await db.refresh(after)

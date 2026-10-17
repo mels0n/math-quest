@@ -29,11 +29,13 @@ def _skill(sid: str, *prereqs: str) -> Skill:
 
 def test_load_slice_pack() -> None:
     graph = _graph()
-    assert len(graph.skills) == 9
-    assert graph.ready(set()) == [
+    assert len(graph.skills) == 20
+    assert graph.ready(set()) == ["count_to_10", "equivalent_fractions"]
+    assert graph.ready({"count_to_10"}) == [
         "add_within_10",
         "sub_within_10",
-        "place_value_tens_ones",
+        "count_to_20",
+        "compare_groups",
         "equivalent_fractions",
     ]
     order = graph.topo_order()
@@ -42,8 +44,10 @@ def test_load_slice_pack() -> None:
             assert order.index(prereq) < order.index(skill_id)
     anchors = {s.id for s in graph.skills.values() if s.anchor}
     assert anchors == {
+        "count_to_10",
         "add_within_10",
         "add_within_20",
+        "compare_numbers_100",
         "add_2digit_regroup",
         "add_fractions_unlike",
     }
@@ -75,4 +79,19 @@ def test_ready_after_mastery() -> None:
 def test_pack_skills_name_their_keypad() -> None:
     keypads = {sid: s.keypad for sid, s in _graph().skills.items()}
     assert keypads["add_fractions_unlike"] == "fraction"
-    assert {k for sid, k in keypads.items() if sid != "add_fractions_unlike"} == {"numpad"}
+    choice = {"compare_groups", "compare_numbers_20", "compare_numbers_100"}
+    assert {sid for sid, k in keypads.items() if k == "choice"} == choice
+    others = {k for sid, k in keypads.items() if sid not in choice | {"add_fractions_unlike"}}
+    assert others == {"numpad"}
+
+
+def test_promoted_skills_sit_under_the_skills_they_unlock() -> None:
+    skills = _graph().skills
+    assert "count_to_10" in skills["add_within_10"].prerequisites
+    assert "count_to_10" in skills["sub_within_10"].prerequisites
+    assert "teen_numbers" in skills["place_value_tens_ones"].prerequisites
+    assert skills["place_value_hundreds"].prerequisites == ("place_value_tens_ones",)
+    assert skills["compare_numbers_100"].prerequisites == (
+        "place_value_tens_ones",
+        "compare_numbers_20",
+    )

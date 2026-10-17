@@ -6,6 +6,7 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import AsyncExitStack
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -20,6 +21,8 @@ from sqlalchemy.pool import NullPool
 
 from mathquest.app.main import create_app
 from mathquest.engine.checker.bounded import CheckerPool
+from mathquest.engine.mastery import initial_rating
+from mathquest.entities import mastery
 from mathquest.shared.config import Settings
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -119,6 +122,40 @@ class Api:
 
 
 ApiFactory = Callable[..., Awaitable[Api]]
+
+EARLY_SKILLS = (
+    "count_to_10",
+    "count_to_20",
+    "count_to_100",
+    "compare_groups",
+    "compare_numbers_20",
+    "one_more_one_less",
+    "skip_count_10",
+    "teen_numbers",
+    "pairs_to_10",
+    "place_value_hundreds",
+    "compare_numbers_100",
+)
+"""The skills built after the first seven. Most tests are about the addition, subtraction
+and place value skills, so `pass_early_skills` gives a player these as passed (not due for
+review for a year) and the ready set is the one those tests describe."""
+
+
+async def pass_early_skills(h: Api) -> None:
+    """Mark `EARLY_SKILLS` provisionally mastered for the signed-in player."""
+    catalog = h.app.state.catalog
+    now = datetime.now(UTC)
+    ratings = {sid: initial_rating(catalog.source(sid).tier_difficulties) for sid in EARLY_SKILLS}
+    me = (await h.client.get("/api/me")).json()
+    async with h.app.state.session_factory() as db:
+        await mastery.mark_provisional(
+            db,
+            uuid.UUID(me["player"]["id"]),
+            ratings,
+            review_due_at=now + timedelta(days=365),
+            now=now,
+        )
+        await db.commit()
 
 
 @pytest.fixture

@@ -32,7 +32,7 @@ from mathquest.features.play import service
 from mathquest.features.play.schema import AnswerOut, LessonDueOut, ProblemOut, SummaryOut
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
-from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
+from tests.conftest import EARLY_SKILLS, _database_url  # pyright: ignore[reportPrivateUsage]
 
 CATALOG = load_catalog(Path(__file__).resolve().parents[2] / "content", "k8-core")
 GRAPH = CATALOG.graph
@@ -48,9 +48,10 @@ POOL = _SyncPool()
 
 
 async def _player(
-    db: AsyncSession, name: str = "Tester", *, lessons_seen: bool = True
+    db: AsyncSession, name: str = "Tester", *, lessons_seen: bool = True, fresh: bool = False
 ) -> uuid.UUID:
-    """A new player; by default one who has seen every lesson, so `next` issues problems."""
+    """A new player; by default one who has seen every lesson, so `next` issues problems,
+    and who has passed `EARLY_SKILLS` (`fresh=True`: none, to see where a new player begins)."""
     row = await players.add(
         db,
         nickname=f"{name}{uuid.uuid4().hex[:6]}",
@@ -61,6 +62,8 @@ async def _player(
     if lessons_seen:
         for skill_id in CATALOG.pack.lessons:
             await lessons.mark_seen(db, row.id, skill_id, datetime.now(UTC))
+    if not fresh:
+        await _mark_provisional(db, row.id, *EARLY_SKILLS, due_in=timedelta(days=365))
     return row.id
 
 
@@ -297,7 +300,7 @@ async def test_other_player_problem_404(db: AsyncSession) -> None:
 
 
 async def test_new_player_starts_on_ready_skills(db: AsyncSession) -> None:
-    pid = await _player(db)
+    pid = await _player(db, fresh=True)
     session = await service.start_session(db, pid, "adventure")
 
     problem = await _next_problem(db, CATALOG, pid, session.session_id)
