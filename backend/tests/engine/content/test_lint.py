@@ -714,3 +714,50 @@ def test_built_skill_standards_are_checked_without_a_plan(tmp_path: Path) -> Non
         ("error", "skills.yaml", "skills[0].standards[1]"),
         ("error", "skills.yaml", "skills[0].standards[2]"),
     ]
+
+
+# --- example: bank prompts and plain-text runs ---
+
+
+def test_an_example_that_is_a_bank_prompt_is_an_error(tmp_path: Path) -> None:
+    def asked(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "text", "value": "What is double six?"}]
+
+    files = _edit(base(), "lessons/alpha.yaml", asked)
+    (finding,) = errors(_rule(_lint(load(tmp_path, files)), "example"))
+    assert finding.path == "worked_example.prompt"
+    assert "a bank item" in finding.message
+
+
+def test_a_run_of_numbers_with_a_blank_in_plain_text_is_checked(tmp_path: Path) -> None:
+    def counting(files: dict[str, Any]) -> dict[str, Any]:
+        files["skills.yaml"]["skills"][0]["generator"] = "count_to_10"
+        files["explanations/alpha.yaml"]["misconceptions"] = {}
+        files["lessons/alpha.yaml"]["screens"][0]["body_md"] = "Look at 7, 8, _, 10. Say them."
+        return files
+
+    found = errors(_rule(_lint(load(tmp_path, counting(base()))), "example"))
+    assert [f.path for f in found] == ["screens[0].body_md"]
+    assert "7,8,?,10" in found[0].message
+
+    def in_words(files: dict[str, Any]) -> dict[str, Any]:
+        files = counting(files)
+        files["lessons/alpha.yaml"]["screens"][0]["body_md"] = "Look at seven, eight, and ten."
+        return files
+
+    assert errors(_rule(_lint(load(tmp_path, in_words(base()))), "example")) == []
+
+
+def test_the_exact_scan_is_skipped_when_no_example_is_of_a_kind_the_skill_asks(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A skill with far more problems than the scan can cover only warns when an example
+    looks like one of its problems; a sentence no problem resembles needs no scan."""
+    monkeypatch.setattr(lint_module, "EXAMPLE_CAP", 3_000)
+
+    def words(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "text", "value": "Add three and four."}]
+        lesson["screens"][0]["body_md"] = "Adding puts two groups together."
+
+    pack = load(tmp_path, _edit(base(), "lessons/alpha.yaml", words))
+    assert _rule(_lint(pack, {"add_within_20": _Spaced(None)}), "example") == []  # type: ignore[dict-item]

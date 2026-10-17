@@ -71,6 +71,7 @@ from typing import Literal
 
 import sympy
 
+from mathquest.engine.bank import to_prompt
 from mathquest.engine.catalog import SkillSource, check_binding
 from mathquest.engine.checker.check import Verdict, check
 from mathquest.engine.content.coverage import skill_coverage
@@ -662,6 +663,23 @@ def _whole(pieces: Iterable[str]) -> str:
     return "prompt: " + "".join("".join(pieces).split())
 
 
+def _shape(key: str) -> str:
+    """``key`` with every number blanked: what kind of problem it is, not which."""
+    return re.sub(r"\d+", "#", key)
+
+
+_BLANK_RUN = re.compile(r"(?<![\w.])(?:\d+|_|\?)(?:\s*,\s*(?:\d+|_|\?))+(?![\w])")
+
+
+def _plain_runs(template: str) -> Iterator[str]:
+    """Each run of numbers written in plain text with a blank in it ("7, 8, _, 10"), as the
+    prompt of a counting problem writes it ("7,8,?,10"); the same run written as math is
+    found by ``_fixed_math``."""
+    for run in _BLANK_RUN.findall(_MATH_SEGMENT.sub(" ", template)):
+        if "_" in run or "?" in run:
+            yield "".join(run.split()).replace("_", "?")
+
+
 type _Scan = tuple[dict[str, tuple[int, int]], list[tuple[int, int]]]
 """The problems found (key -> first (seed, tier)) and the (tier, keys seen) of every tier
 whose scan hit EXAMPLE_CAP unfinished."""
@@ -705,7 +723,60 @@ def _scan(source: SkillSource) -> _Scan:
             if len(asked) > before:
                 last_new = seed
             seed += 1
+    if source.bank is not None:
+        for item in source.bank.items:
+            prompt = to_prompt(item.prompt)
+            asked.setdefault(
+                _whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt), (-1, -1)
+            )
+            for part in prompt:
+                if isinstance(part, MathPart):
+                    asked.setdefault(_same_sum(part.latex), (-1, -1))
     return asked, unfinished
+
+
+_SHAPES_CACHE: dict[int, tuple[object, frozenset[str]]] = {}
+
+
+def _shapes(source: SkillSource) -> frozenset[str]:
+    """The kinds of problem the skill asks (``_shape`` of every prompt and math part, bank
+    items included). Few kinds, so the scan ends long before the problems run out; an
+    example of a kind never asked cannot be one of its problems, and needs no exact scan."""
+    cached = _SHAPES_CACHE.get(id(source.generator))
+    if cached is not None and cached[0] is source.generator:
+        found = cached[1]
+    else:
+        seen: set[str] = set()
+        for tier in range(len(source.tier_difficulties)):
+            last_new = 0
+            for seed in range(EXAMPLE_CAP):
+                if seed >= max(EXAMPLE_FLOOR, 2 * last_new):
+                    break
+                prompt = source.generate(seed, tier).prompt
+                before = len(seen)
+                seen.add(
+                    _shape(_whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt))
+                )
+                for part in prompt:
+                    if isinstance(part, MathPart):
+                        seen.add(_shape(_same_sum(part.latex)))
+                if len(seen) > before:
+                    last_new = seed
+        found = frozenset(seen)
+        _SHAPES_CACHE[id(source.generator)] = (source.generator, found)
+    if source.bank is None:
+        return found
+    extra: set[str] = set()
+    for item in source.bank.items:
+        prompt = to_prompt(item.prompt)
+        extra.add(_shape(_whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt)))
+        extra |= {_shape(_same_sum(p.latex)) for p in prompt if isinstance(p, MathPart)}
+    return found | extra
+
+
+def _example_key(latex: str) -> str:
+    """How an example is looked up among the problems asked."""
+    return latex if latex.startswith("prompt: ") else _same_sum(latex)
 
 
 def _fixed_math(template: str) -> Iterator[str]:
@@ -727,7 +798,8 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
         if lesson is not None:
             file = f"lessons/{sid}.yaml"
             for i, screen in enumerate(lesson.screens):
-                texts.append((file, f"screens[{i}].body_md", list(_fixed_math(screen.body_md))))
+                math = [*_fixed_math(screen.body_md), *_plain_runs(screen.body_md)]
+                texts.append((file, f"screens[{i}].body_md", math))
             prompt = [p.value for p in lesson.worked_example.prompt]
             math = [p.value for p in lesson.worked_example.prompt if p.kind == "math"]
             texts.append((file, "worked_example.prompt", [_whole(prompt), *math]))
@@ -743,6 +815,9 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
                 ))  # fmt: skip
         if not any(math for *_, math in texts):
             continue
+        kinds = _shapes(source)
+        if not any(_shape(_example_key(latex)) in kinds for *_, math in texts for latex in math):
+            continue
         asked, unfinished = _asked(source)
         for tier, seen in unfinished:
             yield Finding(
@@ -753,13 +828,14 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
             )  # fmt: skip
         for file, at, math in texts:
             for latex in math:
-                hit = asked.get(latex if latex.startswith("prompt: ") else _same_sum(latex))
+                hit = asked.get(_example_key(latex))
                 if hit is not None:
                     shown = latex.removeprefix("prompt: ")
+                    where = "a bank item" if hit[0] < 0 else f"seed {hit[0]} tier {hit[1]}"
                     yield Finding(
                         "error", file, at, "example",
-                        f"the example {shown} is a problem this skill asks (seed {hit[0]} "
-                        f"tier {hit[1]}); pick numbers it never uses",
+                        f"the example {shown} is a problem this skill asks ({where}); "
+                        "pick numbers it never uses",
                     )  # fmt: skip
 
 
