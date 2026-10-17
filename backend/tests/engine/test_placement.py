@@ -360,7 +360,9 @@ def test_a_choice_anchor_would_miss_the_bar_the_real_spine_meets() -> None:
             over += placed - 0 >= 2
         return over / 600
 
-    assert over_rate(1 / 3) > over_rate(0.1) + 0.02
+    bar = REAL_BARS[("reference", "same")][1]
+    assert over_rate(0.1) <= bar
+    assert over_rate(1 / 3) > bar
 
 
 @pytest.mark.parametrize(("model", "hint"), sorted(REAL_BARS))

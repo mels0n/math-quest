@@ -118,8 +118,7 @@ def _build_count_to_20(rng: random.Random, tier: int) -> Built:
 
 def _build_count_to_100(rng: random.Random, tier: int) -> Built:
     lo, hi = _HUNDRED_ANSWERS[tier]
-    forms = (*_COUNTING_FORMS, "count_on") if tier == 2 else _COUNTING_FORMS
-    return _counting(rng, lo, hi, 100, forms, decade=True)
+    return _counting(rng, lo, hi, 100, _COUNTING_FORMS, decade=True)
 
 
 def _build_one_more_one_less(rng: random.Random, tier: int) -> Built:

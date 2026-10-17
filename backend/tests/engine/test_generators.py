@@ -442,13 +442,7 @@ PINNED_PROBLEMS = (
     ("count_to_100", 1, 7, "Count on. What comes next? 66, 67, 68, 69, ?", 70),
     ("count_to_100", 1, 42, "What number is missing? 51, ?, 53", 52),
     ("count_to_100", 2, 7, "Count on. What comes next? 36, 37, 38, 39, ?", 40),
-    (
-        "count_to_100",
-        2,
-        42,
-        "Start at 11. Count on 3 more numbers. Which number do you say last?",
-        14,
-    ),
+    ("count_to_100", 2, 42, "What number is missing? 13, ?, 15", 14),
     (
         "compare_groups",
         0,
@@ -1027,3 +1021,10 @@ def test_no_batch_one_tier_runs_out_of_problems(skill: str) -> None:
     gen = get_generator(skill)
     for tier in range(3):
         assert len({flatten(gen.generate(seed, tier)) for seed in range(5000)}) >= 20, (skill, tier)
+
+
+def test_count_on_is_one_form_in_five_in_every_tier_of_count_to_100() -> None:
+    gen = get_generator("count_to_100")
+    for tier in range(3):
+        forms = [gen.generate(seed, tier).values["form"] for seed in range(1000)]
+        assert 0.14 <= forms.count("count_on") / 1000 <= 0.26, tier

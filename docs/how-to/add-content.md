@@ -42,13 +42,13 @@ Before you write:
   problems; the loader rejects them otherwise.
 - Mistake feedback is keyed by the mistakes the generator declares. A new mistake needs a
   generator change (with a property test) before it can have feedback.
-- A lesson or explanation example must never be a problem the skill asks. The lint scans
-  the generator's problems and the bank prompts, counts sums with the terms in either order,
-  checks a worked question written in words against the whole prompts the skill asks, and
-  reads runs of numbers with a blank in plain text ("7, 8, _, 10") as the math they are.
+- A lesson or explanation example must never be a problem the skill asks, whether it is
+  written as math or as plain text; the lint fails it
+  ([ADR-0013](../adr/0013-content-lint-and-review.md),
+  [ADR-0021](../adr/0021-typed-comparing-skills-with-a-tiered-bank.md)). Write worked
+  questions in words, with numbers the skill never uses.
 - Digits of a number a word problem shows count as shown, so hints may use them
   ([ADR-0018](../adr/0018-digits-count-as-shown-in-word-problems.md)).
-
 
 Files live in `content/packs/<pack>/`, one file per skill and kind:
 `lessons/<skill>.yaml`, `hints/<skill>.yaml`, `explanations/<skill>.yaml`,
@@ -169,16 +169,13 @@ remaining batch. To build the next batch, take that number from the report and:
    `batch` and `unlocks`, and keep `standards`. Put it in `skills.yaml` where it sits in
    the plan, ahead of the first skill of any later region, because the file order breaks
    ties in the topological order and so decides the placement spine.
-   A skill whose generator is typed can still serve a bank of button questions (the signs,
-   "same" answers): give it `banked: true` and a `bank_share` such as 0.3, and tag each
-   bank item with the `tier` it suits, so a learner only meets items of their own tier. A
-   skill with the `choice` keypad is answered by buttons alone: it needs `bank_share: 1`
-   and a bank of choice items, in the same change, because the loader refuses it
-   otherwise; its generator is never shown, so prefer a typed skill with a bank.
-   Duplicate lint compares bank items with their numbers blanked, so at least 30 items
-   need different words, not different numbers. Counting objects needs a picture of
-   countable objects, a visual that is not built yet; until it is, a groups skill tells
-   the counts as numerals.
+   A typed skill can serve a bank of button questions: set `banked: true`, a
+   `bank_share` such as 0.3 and a `tier` on each item
+   ([ADR-0021](../adr/0021-typed-comparing-skills-with-a-tiered-bank.md)). A `choice`
+   keypad skill is answered by buttons alone and needs `bank_share: 1` and its bank in the
+   same change; prefer a typed skill with a bank. Bank items need at least 30 different
+   wordings, not different numbers. Counting objects needs a picture that is not built yet,
+   so a groups skill tells counts as numerals.
 3. Apply each promoted skill's `unlocks`: for every built skill it named, add the new
    skill's id to that skill's `prerequisites` in `skills.yaml`.
    When it names a skill that is still planned, add the promoted id to that planned
@@ -189,3 +186,11 @@ remaining batch. To build the next batch, take that number from the report and:
 5. Write the teaching content for the new skills (the steps above), and bump `version`
    in `pack.yaml`. A change that touches only `planned_skills.yaml` changes nothing a
    learner sees and needs no bump.
+6. Update what the batch changes around the pack: `EARLY_SKILLS` in `backend/tests/conftest.py`
+   (the skills a test player has passed, so tests about older skills keep their ready set;
+   leave out a skill that builds on one the tests use), the practice picker height bound in
+   `frontend/e2e/session.spec.ts` (measure it, then set it about 15% above), the placement
+   test bars if the spine changed ([ADR-0019](../adr/0019-six-anchor-placement-spine.md)),
+   and the longest-prompts fixture (`UPDATE_FIXTURES=1 uv run pytest
+   tests/engine/test_prompt_fixture.py`). A batch that adds prerequisites under skills
+   learners have played is covered by [ADR-0020](../adr/0020-readiness-for-existing-learners.md).
