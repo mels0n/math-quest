@@ -1,0 +1,60 @@
+# Word problems for Add Big Numbers. Every template uses the generator's {a} and {b}
+# and asks for their sum, so each story puts two groups together. Both numbers are
+# two-digit, so nouns after them are always plural. Nouns are fixed words, not the shared
+# object list, so every story makes sense. At most two templates share a story shape.
+# Short sentences (12 words or fewer), simple words, no sentence that starts with a number.
+skill: add_2digit_no_regroup
+templates:
+  - id: farm_hens
+    text_template: "A farm has {a} hens. The farm buys {b} more hens. How many hens does the farm have now?"
+    grade_band: 2
+  - id: card_book
+    text_template: "The card book has {a} cards. {name} adds {b} new cards. How many cards are in the book now?"
+    slots: {name: names}
+    grade_band: 2
+  - id: parking_lot
+    text_template: "A lot has {a} red cars and {b} blue cars. How many cars are in the lot?"
+    grade_band: 2
+  - id: two_teams
+    text_template: "The red team has {a} kids. The blue team has {b} kids. How many kids are on both teams?"
+    grade_band: 2
+  - id: jump_rope
+    text_template: "{name} jumps rope {a} times before lunch and {b} times after. How many jumps is that?"
+    slots: {name: names}
+    grade_band: 2
+  - id: class_kids
+    text_template: "A class has {a} boys. It has {b} girls. How many kids are in the class?"
+    grade_band: 2
+  - id: park_trees
+    text_template: "The park has {a} trees by the lake. It has {b} trees on the hill. How many trees does the park have?"
+    grade_band: 2
+  - id: book_shelf
+    text_template: "The top shelf holds {a} picture books. The bottom shelf holds {b} story books. How many books is that?"
+    grade_band: 2
+  - id: saving_coins
+    text_template: "{name} saves {a} coins. {friend} saves {b} coins. How many coins do they have together?"
+    slots: {name: names, friend: names}
+    grade_band: 2
+  - id: reading_pages
+    text_template: "{name} reads {a} pages. {friend} reads {b} pages. How many pages did the two kids read in all?"
+    slots: {name: names, friend: names}
+    grade_band: 2
+  - id: step_trail
+    text_template: "A trail has two parts. The first part has {a} steps. The second part has {b} steps. How many steps is the trail?"
+    grade_band: 2
+  - id: walk_home
+    text_template: "{name} walks {a} steps to the bus stop. The walk home from school is {b} steps. How many steps is that?"
+    slots: {name: names}
+    grade_band: 2
+  - id: class_pages
+    text_template: "How many pages did the class read? They read {a} pages on Monday and {b} on Tuesday."
+    grade_band: 2
+  - id: toy_costs
+    text_template: "A toy costs {a} cents. A ball costs {b} cents. How many cents do the two cost?"
+    grade_band: 2
+  - id: hat_days
+    text_template: "A shop had {a} hats on Friday. It had {b} hats on Saturday. How many hats did the shop have in all?"
+    grade_band: 2
+  - id: pond_fish
+    text_template: "Two groups of fish swim in a pond. One has {a} fish. The other has {b}. How many fish swim there?"
+    grade_band: 2

@@ -1,0 +1,62 @@
+# Word problems for Add and Carry. Every template uses the generator's {a} and {b} and
+# asks for their sum, so each story puts two groups together. Both numbers are two-digit,
+# so nouns after them are always plural. Sums can pass 100, so the stories count big
+# groups. Nouns are fixed words, not the shared object list, so every story makes sense.
+# At most two templates share a story shape. Short sentences (12 words or fewer), simple
+# words, no sentence that starts with a number.
+skill: add_2digit_regroup
+templates:
+  - id: field_trip
+    text_template: "A school sends {a} kids on a trip. Another school sends {b} kids. How many kids are on the trip?"
+    grade_band: 2
+  - id: card_swap
+    text_template: "{name} has {a} game cards. {name} wins {b} cards from {friend}. How many cards does {name} have now?"
+    slots: {name: names, friend: names}
+    grade_band: 2
+  - id: soccer_goals
+    text_template: "The red team scores {a} goals this year. The blue team scores {b} goals. How many goals do the two teams score?"
+    grade_band: 2
+  - id: seed_packs
+    text_template: "{name} plants {a} seeds in spring and {b} more in summer. How many seeds does {name} plant?"
+    slots: {name: names}
+    grade_band: 2
+  - id: marching_band
+    text_template: "The band has {a} drums and {b} horns. How many drums and horns does the band have?"
+    grade_band: 2
+  - id: sea_shells
+    text_template: "{name} finds {a} shells on the sand. {friend} finds {b} shells in the water. How many shells do they find?"
+    slots: {name: names, friend: names}
+    grade_band: 2
+  - id: train_cars
+    text_template: "A train pulls {a} cars up the hill. Then it picks up {b} more cars. How many cars does the train have?"
+    grade_band: 2
+  - id: bean_garden
+    text_template: "A garden has {a} bean plants and {b} corn plants. How many plants are in the garden?"
+    grade_band: 2
+  - id: pasta_bowls
+    text_template: "A cook serves {a} bowls of pasta at noon. The cook serves {b} bowls at night. How many bowls is that?"
+    grade_band: 2
+  - id: step_counter
+    text_template: "{name} walks {a} steps to school. {name} walks {b} steps home. How many steps does {name} walk?"
+    slots: {name: names}
+    grade_band: 2
+  - id: bird_count
+    text_template: "How many birds did {name} see? {name} saw {a} in the morning and {b} at night."
+    slots: {name: names}
+    grade_band: 2
+  - id: doll_wall
+    text_template: "A toy shop has {a} dolls on one wall. It has {b} dolls near the door. How many dolls does the shop have?"
+    grade_band: 2
+  - id: bake_fair
+    text_template: "The class bakes {a} cookies for the fair. The teacher bakes {b} more. How many cookies are at the fair?"
+    grade_band: 2
+  - id: rock_museum
+    text_template: "A museum shows {a} rocks from the desert. It shows {b} rocks from the sea. How many rocks does the museum show?"
+    grade_band: 2
+  - id: kite_beach
+    text_template: "The beach has {a} kids flying kites. Then {b} more kids come to fly kites. How many kids fly kites now?"
+    grade_band: 2
+  - id: box_packing
+    text_template: "{name} packs {a} books in one box. {name} packs {b} books in a second box. How many books is that?"
+    slots: {name: names}
+    grade_band: 2

@@ -203,6 +203,26 @@ def test_regroup_always_carries(seed: int, tier: int) -> None:
 
 @prop
 @given(seed=seeds, tier=tiers)
+def test_no_regroup_mistakes_fail_and_are_matched(seed: int, tier: int) -> None:
+    problem = get_generator("add_2digit_no_regroup").generate(seed, tier)
+    a, b = addends("add_2digit_no_regroup", seed, tier)
+    assert check(problem, str(a + b)).verdict is Verdict.CORRECT
+    rules = {
+        "subtracted_instead": abs(a - b),
+        "added_digits": sum(int(d) for d in f"{a}{b}"),
+        "left_out_tens": a + b % 10,
+    }
+    for key, wrong in rules.items():
+        result = check(problem, str(wrong))
+        assert result.verdict is Verdict.INCORRECT
+        # A wrong answer shared by two mistakes is reported as the first one declared.
+        assert result.misconception in rules
+        if wrong not in [v for k, v in rules.items() if k != key]:
+            assert result.misconception == key
+
+
+@prop
+@given(seed=seeds, tier=tiers)
 def test_sub_within_20_borrow_by_tier(seed: int, tier: int) -> None:
     a, b = addends("sub_within_20", seed, tier)
     assert (b > a % 10) == (tier >= 1)
@@ -262,6 +282,10 @@ EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
         }
         for t in range(3)
     },
+    **{
+        ("add_2digit_no_regroup", t): {"subtracted_instead", "added_digits", "left_out_tens"}
+        for t in range(3)
+    },
     ("place_value_tens_ones", 0): {"confused_tens_ones"},
     ("place_value_tens_ones", 1): {"confused_tens_ones", "confused_adjacent_place"},
     ("place_value_tens_ones", 2): {"confused_adjacent_place"},
@@ -279,6 +303,91 @@ def test_sub_within_20_no_borrow_tier_has_no_backwards_misconception() -> None:
     gen = get_generator("sub_within_20")
     keys = {m.key for seed in range(200) for m in gen.generate(seed, 0).misconceptions}
     assert "subtracted_backwards" not in keys
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_two_digit_values_split_the_addends_into_digits(seed: int, tier: int) -> None:
+    for skill in TWO_DIGIT_SKILLS:
+        values = get_generator(skill).generate(seed, tier).values
+        for name in ("a", "b"):
+            tens, ones = int(values[f"{name}_tens"]), int(values[f"{name}_ones"])
+            assert tens * 10 + ones == values[name]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_place_value_digit_value_is_the_answer(seed: int, tier: int) -> None:
+    problem = get_generator("place_value_tens_ones").generate(seed, tier)
+    assert problem.values["digit"] == problem.answer
+
+
+# Problems these skills gave before their teaching content was written, by (skill, tier, seed).
+# A failure means the same seed now gives a different problem, so attempts stored under the
+# old one would be checked against the wrong prompt or answer.
+PINNED_PROBLEMS = (
+    ("sub_within_20", 0, 1, "13 - 3 = ?", 10),
+    ("sub_within_20", 0, 7, "16 - 2 = ?", 14),
+    ("sub_within_20", 0, 42, "12 - 1 = ?", 11),
+    ("sub_within_20", 1, 1, "12 - 7 = ?", 5),
+    ("sub_within_20", 1, 7, "13 - 5 = ?", 8),
+    ("sub_within_20", 1, 42, "16 - 7 = ?", 9),
+    ("sub_within_20", 2, 1, "16 - 9 = ?", 7),
+    ("sub_within_20", 2, 7, "17 - 8 = ?", 9),
+    ("sub_within_20", 2, 42, "15 - 7 = ?", 8),
+    ("add_2digit_no_regroup", 0, 1, "32 + 50 = ?", 82),
+    ("add_2digit_no_regroup", 0, 7, "67 + 10 = ?", 77),
+    ("add_2digit_no_regroup", 0, 42, "25 + 10 = ?", 35),
+    ("add_2digit_no_regroup", 1, 1, "24 + 10 = ?", 34),
+    ("add_2digit_no_regroup", 1, 7, "36 + 20 = ?", 56),
+    ("add_2digit_no_regroup", 1, 42, "14 + 11 = ?", 25),
+    ("add_2digit_no_regroup", 2, 1, "31 + 54 = ?", 85),
+    ("add_2digit_no_regroup", 2, 7, "66 + 10 = ?", 76),
+    ("add_2digit_no_regroup", 2, 42, "24 + 11 = ?", 35),
+    ("add_2digit_regroup", 0, 1, "13 + 29 = ?", 42),
+    ("add_2digit_regroup", 0, 7, "26 + 35 = ?", 61),
+    ("add_2digit_regroup", 0, 42, "32 + 28 = ?", 60),
+    ("add_2digit_regroup", 1, 1, "73 + 19 = ?", 92),
+    ("add_2digit_regroup", 1, 7, "46 + 15 = ?", 61),
+    ("add_2digit_regroup", 1, 42, "62 + 28 = ?", 90),
+    ("add_2digit_regroup", 2, 1, "33 + 89 = ?", 122),
+    ("add_2digit_regroup", 2, 7, "86 + 15 = ?", 101),
+    ("add_2digit_regroup", 2, 42, "62 + 48 = ?", 110),
+    ("place_value_tens_ones", 0, 1, "Which digit is in the ones place of 39?", 9),
+    ("place_value_tens_ones", 0, 7, "Which digit is in the tens place of 62?", 6),
+    ("place_value_tens_ones", 0, 42, "Which digit is in the tens place of 20?", 2),
+    ("place_value_tens_ones", 1, 1, "Which digit is in the hundreds place of 391?", 3),
+    ("place_value_tens_ones", 1, 7, "Which digit is in the tens place of 626?", 2),
+    ("place_value_tens_ones", 1, 42, "Which digit is in the tens place of 204?", 0),
+    ("place_value_tens_ones", 2, 1, "Which digit is in the hundreds place of 3914?", 9),
+    ("place_value_tens_ones", 2, 7, "Which digit is in the hundreds place of 6260?", 2),
+    ("place_value_tens_ones", 2, 42, "Which digit is in the hundreds place of 2043?", 0),
+)
+
+
+@pytest.mark.parametrize(("skill", "tier", "seed", "prompt_text", "answer"), PINNED_PROBLEMS)
+def test_problems_for_existing_seeds_are_unchanged(
+    skill: str, tier: int, seed: int, prompt_text: str, answer: int
+) -> None:
+    problem = get_generator(skill).generate(seed, tier)
+    assert flatten(problem) == prompt_text
+    assert problem.answer == answer
+
+
+def test_sub_within_20_adding_wins_when_the_column_slip_gives_the_same_number() -> None:
+    gen = get_generator("sub_within_20")
+    seen_zero_ones = False
+    for seed in range(500):
+        problem = gen.generate(seed, 2)
+        a, b = addends("sub_within_20", seed, 2)
+        keys = {m.key: m.answer for m in problem.misconceptions}
+        if a % 10 == 0:
+            seen_zero_ones = True
+            assert keys == {"added_instead": a + b}
+            assert check(problem, str(a + b)).misconception == "added_instead"
+        else:
+            assert keys["subtracted_backwards"] == a // 10 * 10 + abs(a % 10 - b)
+    assert seen_zero_ones
 
 
 @prop

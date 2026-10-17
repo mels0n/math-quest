@@ -1,0 +1,37 @@
+# Lesson shown the first time a learner meets Subtract from 20. Its examples start
+# above 20, so a replayed lesson never shows a problem the skill asks.
+skill: sub_within_20
+screens:
+  - title: Take some away
+    body_md: >-
+      Subtracting means taking some away. You have 23 blocks. You give 6
+      away. Now you have fewer. \(23 - 6\) means 23, take away 6.
+    visual:
+      kind: base_ten
+      params: {tens: 2, ones: 3}
+  - title: Count back
+    body_md: >-
+      Start at the first number. Then count back, one jump at a time. For
+      \(21 - 4\), start at 21 and jump back 4 times. Say 20, 19, 18, 17. You
+      land on {{= 21 - 4 }}.
+    visual:
+      kind: number_line
+      params: {min: 10, max: 25, start: 21, jumps: [-1, -1, -1, -1], end: 17}
+  - title: Stop at ten
+    body_md: >-
+      Tens are friendly numbers. For \(23 - 6\), split 6 into 3 and 3. Now
+      23 take away 3 is 20. Then 20 take away 3 is {{= 20 - 3 }}. So
+      \(23 - 6 = {{= 23 - 6 }}\).
+    visual:
+      kind: number_line
+      params: {min: 10, max: 25, start: 23, jumps: [-3, -3], end: 17}
+worked_example:
+  prompt:
+    - {kind: math, value: "24 - 7 = ?"}
+  steps:
+    - Start at 24, the first number.
+    - Take away 4 to land on 20. That leaves 3 more to take away.
+    - 20 take away 3 is {{= 20 - 3 }}.
+    - So \(24 - 7 = {{= 24 - 7 }}\).
+try_it:
+  tier: 0

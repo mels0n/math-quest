@@ -60,7 +60,7 @@ prerequisites. It binds the pack to a generator registry passed in, through the 
 """
 
 import re
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from functools import lru_cache, partial
@@ -322,13 +322,22 @@ def _plurals(slots: Slots) -> frozenset[str]:
     return frozenset(n.many.lower() for n in nouns if n.many != n.one)
 
 
+def _digits(number: object) -> set[int]:
+    """The digits of a whole ``number``, only the places it has (no leading zeros)."""
+    if isinstance(number, bool) or not isinstance(number, int):
+        return set()
+    return {int(d) for d in str(abs(number))}
+
+
 def _always_shown(source: SkillSource, used: frozenset[str], name: str) -> bool:
-    """``name`` is not used but always equals a number the template does show."""
+    """``name`` is not used but always equals a number the template does show, or one
+    digit of it (the tens of a shown ``a``): the learner still sees what it stands for."""
     for tier in range(len(source.tier_difficulties)):
         for seed in range(20):
             values = source.generator.generate(seed, tier).values
             shown = {values[u] for u in used if u in values}
-            if values[name] not in shown:
+            digits = {d for v in shown for d in _digits(v)}
+            if values[name] not in shown | digits:
                 return False
     return True
 
@@ -601,7 +610,13 @@ def _reveal_one(
 
 # --- rule: fixed examples are not problems the skill asks ------------------------
 
-EXAMPLE_SEEDS = 300
+EXAMPLE_FLOOR = 1_000
+EXAMPLE_CAP = 100_000
+"""A tier's seeds are scanned until seed >= max(EXAMPLE_FLOOR, 2 * the last seed that gave a
+problem not seen before): once the scan has run twice as long as it last found anything,
+it counts as saturated. A tier still finding new problems at EXAMPLE_CAP is reported as
+not finished, since a very large space (place value's four-digit numbers) may hold
+problems the scan never reached."""
 _MATH_SEGMENT = re.compile(r"\\\((.*?)\\\)", re.DOTALL)
 
 
@@ -610,16 +625,64 @@ def _left(latex: str) -> str:
     return latex.split("=")[0].replace(" ", "")
 
 
-def _asked(source: SkillSource) -> dict[str, tuple[int, int]]:
-    """The left side of every bare problem the generator gives over the sampled seeds,
-    with the first (seed, tier) that gives it."""
+def _same_sum(latex: str) -> str:
+    """``_left`` with the terms of a plain sum in order, so ``3 + 4`` and ``4 + 3`` match."""
+    left = _left(latex)
+    terms = left.split("+")
+    if len(terms) > 1 and all(t.isdigit() for t in terms):
+        return "+".join(sorted(terms, key=int))
+    return left
+
+
+def _whole(pieces: Iterable[str]) -> str:
+    """A prompt's text and math as one line, for questions asked in words."""
+    return "prompt: " + "".join("".join(pieces).split())
+
+
+type _Scan = tuple[dict[str, tuple[int, int]], list[tuple[int, int]]]
+"""The problems found (key -> first (seed, tier)) and the (tier, keys seen) of every tier
+whose scan hit EXAMPLE_CAP unfinished."""
+
+_ASKED_CACHE: dict[int, tuple[object, _Scan]] = {}
+"""Scan results by generator object; a scan is tens of thousands of problems, and a
+generator never changes while the process runs."""
+
+
+def _asked(source: SkillSource) -> _Scan:
+    cached = _ASKED_CACHE.get(id(source.generator))
+    if cached is not None and cached[0] is source.generator:
+        return cached[1]
+    found = _scan(source)
+    _ASKED_CACHE[id(source.generator)] = (source.generator, found)
+    return found
+
+
+def _scan(source: SkillSource) -> _Scan:
+    """The math of every bare problem the generator gives (its left side, terms of a sum in
+    order) and each whole prompt, with the first (seed, tier) that gives it; see
+    ``EXAMPLE_FLOOR`` for when a tier's scan stops."""
     asked: dict[str, tuple[int, int]] = {}
+    unfinished: list[tuple[int, int]] = []
     for tier in range(len(source.tier_difficulties)):
-        for seed in range(EXAMPLE_SEEDS):
-            for part in source.generate(seed, tier).prompt:
+        last_new = 0
+        seed = 0
+        while seed < max(EXAMPLE_FLOOR, 2 * last_new):
+            if seed >= EXAMPLE_CAP:
+                unfinished.append((tier, len(asked)))
+                break
+            prompt = source.generate(seed, tier).prompt
+            at = (seed, tier)
+            before = len(asked)
+            asked.setdefault(
+                _whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt), at
+            )
+            for part in prompt:
                 if isinstance(part, MathPart):
-                    asked.setdefault(_left(part.latex), (seed, tier))
-    return asked
+                    asked.setdefault(_same_sum(part.latex), at)
+            if len(asked) > before:
+                last_new = seed
+            seed += 1
+    return asked, unfinished
 
 
 def _fixed_math(template: str) -> Iterator[str]:
@@ -642,8 +705,9 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
             file = f"lessons/{sid}.yaml"
             for i, screen in enumerate(lesson.screens):
                 texts.append((file, f"screens[{i}].body_md", list(_fixed_math(screen.body_md))))
-            prompt = [p.value for p in lesson.worked_example.prompt if p.kind == "math"]
-            texts.append((file, "worked_example.prompt", prompt))
+            prompt = [p.value for p in lesson.worked_example.prompt]
+            math = [p.value for p in lesson.worked_example.prompt if p.kind == "math"]
+            texts.append((file, "worked_example.prompt", [_whole(prompt), *math]))
             for i, step in enumerate(lesson.worked_example.steps):
                 texts.append((file, f"worked_example.steps[{i}]", list(_fixed_math(step))))
         explanations = pack.explanations.get(sid)
@@ -656,14 +720,22 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
                 ))  # fmt: skip
         if not any(math for *_, math in texts):
             continue
-        asked = _asked(source)
+        asked, unfinished = _asked(source)
+        for tier, seen in unfinished:
+            yield Finding(
+                "warning", "skills.yaml", sid, "example",
+                f"example scan did not finish for {sid} tier {tier}: still finding new "
+                f"problems after {EXAMPLE_CAP} seeds ({seen} seen); an example it never "
+                "reached could still be a problem the skill asks",
+            )  # fmt: skip
         for file, at, math in texts:
             for latex in math:
-                hit = asked.get(_left(latex))
+                hit = asked.get(latex if latex.startswith("prompt: ") else _same_sum(latex))
                 if hit is not None:
+                    shown = latex.removeprefix("prompt: ")
                     yield Finding(
                         "error", file, at, "example",
-                        f"the example {latex} is a problem this skill asks (seed {hit[0]} "
+                        f"the example {shown} is a problem this skill asks (seed {hit[0]} "
                         f"tier {hit[1]}); pick numbers it never uses",
                     )  # fmt: skip
 

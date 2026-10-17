@@ -1,0 +1,33 @@
+# Lesson shown the first time a learner meets Add and Carry. Its examples add a one-digit
+# number to a two-digit number: the skill itself always adds two two-digit numbers, so a
+# replayed lesson never repeats a question.
+skill: add_2digit_regroup
+screens:
+  - title: Ten ones make a ten
+    body_md: >-
+      Ten cubes can swap for one stick. We call this carrying. Here is 13. It
+      is 1 ten and 3 ones. Ten ones become one ten.
+    visual:
+      kind: base_ten
+      params: {tens: 1, ones: 3}
+  - title: Add the ones first
+    body_md: >-
+      To add 58 and 7, start with the ones. 8 and 7 make {{= 8 + 7 }}. That
+      is 1 ten and 5 ones. Write the 5 in the ones place. Carry the 1 ten.
+  - title: Then add the tens
+    body_md: >-
+      Now add the tens. 5 tens and the carried ten make {{= 5 + 1 }} tens.
+      So \(58 + 7 = {{= 58 + 7 }}\). With two big numbers, add their tens too.
+    visual:
+      kind: base_ten
+      params: {tens: 6, ones: 5}
+worked_example:
+  prompt:
+    - {kind: math, value: "69 + 4 = ?"}
+  steps:
+    - Add the ones. 9 and 4 make {{= 9 + 4 }}.
+    - That is 1 ten and 3 ones. Write 3 and carry the ten.
+    - Add the tens. 6 and the carried 1 make {{= 6 + 1 }}.
+    - So \(69 + 4 = {{= 69 + 4 }}\).
+try_it:
+  tier: 0

@@ -7,14 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, check
 from mathquest.engine.types import Problem
-from tests.conftest import SIGNUP_WORD, Api, ApiFactory
+from tests.conftest import NO_CONTENT_SKILL, SIGNUP_WORD, Api, ApiFactory
 
 CSRF = {"X-Requested-With": "mathquest"}
 LESSON_CLIENT = {**CSRF, "X-MathQuest-Client": "2"}
 """What a client that can show lessons sends with `next`."""
 FIRST_SKILL = "add_within_10"
 """The skill a new player starts on: it has a lesson."""
-NO_LESSON = "place_value_tens_ones"
+NO_LESSON = NO_CONTENT_SKILL
 
 
 class _SyncPool(CheckerPool):

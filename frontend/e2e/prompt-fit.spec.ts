@@ -180,34 +180,42 @@ test('long prompts wrap and fit the card at every width', async ({ page }) => {
 test("every generator's longest prompt fits the card at phone and desktop sizes", async ({
 	page
 }) => {
-	test.setTimeout(180_000);
+	test.setTimeout(240_000);
 	await signUp(page);
 	const skills = Object.keys(LONGEST).sort();
 	expect(skills.length).toBeGreaterThanOrEqual(9);
-	const answers: string[] = [];
-	await servePrompts(
-		page,
-		skills.map((s) => (LONGEST[s] as { prompt: PromptPart[] }).prompt),
-		answers
-	);
-	await page.setViewportSize(VIEWPORTS[0] as { width: number; height: number });
-	await page.goto('/play');
-
-	for (const [i, skill] of skills.entries()) {
-		const text = (LONGEST[skill] as { prompt: PromptPart[] }).prompt
-			.filter((p) => p.kind === 'text')
-			.map((p) => p.value.trim())
-			.join(' ');
-		if (text) await expect(page.getByTestId('prompt')).toContainText(text.split(' ')[0] as string);
-		for (const size of VIEWPORTS) {
-			await page.setViewportSize(size);
-			await expectNoOverflow(page, `${skill}-${size.width}x${size.height}`);
-		}
+	// A quest ends after a fixed number of problems, so the prompts are laid out in
+	// chunks, each in its own quest (every visit to /play starts a new one). CHUNK must
+	// stay at or below SESSION_PROBLEMS (12) in backend/src/mathquest/engine/scheduler.py.
+	const CHUNK = 8;
+	for (let start = 0; start < skills.length; start += CHUNK) {
+		const chunk = skills.slice(start, start + CHUNK);
+		const answers: string[] = [];
+		await servePrompts(
+			page,
+			chunk.map((s) => (LONGEST[s] as { prompt: PromptPart[] }).prompt),
+			answers
+		);
 		await page.setViewportSize(VIEWPORTS[0] as { width: number; height: number });
-		if (i < skills.length - 1) {
-			const before = await page.getByTestId('prompt').textContent();
-			await answerAndGoNext(page, answers[i] as string);
-			if (before) await expect(page.getByTestId('prompt')).not.toHaveText(before);
+		await page.goto('/play');
+
+		for (const [i, skill] of chunk.entries()) {
+			const text = (LONGEST[skill] as { prompt: PromptPart[] }).prompt
+				.filter((p) => p.kind === 'text')
+				.map((p) => p.value.trim())
+				.join(' ');
+			if (text) await expect(page.getByTestId('prompt')).toContainText(text.split(' ')[0] as string);
+			for (const size of VIEWPORTS) {
+				await page.setViewportSize(size);
+				await expectNoOverflow(page, `${skill}-${size.width}x${size.height}`);
+			}
+			await page.setViewportSize(VIEWPORTS[0] as { width: number; height: number });
+			if (i < chunk.length - 1) {
+				const before = await page.getByTestId('prompt').textContent();
+				await answerAndGoNext(page, answers[i] as string);
+				if (before) await expect(page.getByTestId('prompt')).not.toHaveText(before);
+			}
 		}
 	}
 });
+
