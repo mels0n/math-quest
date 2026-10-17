@@ -9,8 +9,9 @@
 # Each entry under `planned` has the fields of skills.yaml except `generator`,
 # `word_share`, `bank_share` and `vocabulary`, plus:
 #   standards   Common Core codes the skill covers, such as K.CC.A.1 or 2.NBT.B.5
-#   batch       the build batch, 1 upwards; a skill's prerequisites are in the same or an
-#               earlier batch (or already built)
+#   batch       the build batch, 1 upwards; a permanent label, so built batches leave the
+#               file and the plan starts at its lowest remaining one. A skill's
+#               prerequisites are in the same or an earlier batch (or already built)
 #   unlocks     (optional) skills that gain this one as a prerequisite once it is built;
 #               how the plan puts a new foundation under a skill that already exists
 # Order here breaks ties in the topological order, so keep it by batch.

@@ -28,11 +28,12 @@ admin pages; its own loader (`load_planned`) and model (`PlannedSkill`) are sepa
 blocks CI on errors:
 
 - ids are unique and a built skill must leave the plan;
-- every prerequisite exists, the graph has no cycle, every skill is reachable from a
-  root, and a skill with no prerequisites sits in batch 1;
+- every prerequisite exists, the graph has no cycle, and a skill with no
+  prerequisites sits in the first batch still in the plan;
 - no prerequisite is on a later region or grade band than the skill that needs it;
-- batches run 1 to N without gaps, and every prerequisite is built in the same or an
-  earlier batch (or already exists);
+- batch numbers are permanent labels, so the plan starts at its lowest remaining batch
+  (built batches are gone) and runs without gaps, and every prerequisite is built in the
+  same or an earlier batch (or already exists);
 - an anchor is never on an earlier grade band than an anchor it builds on (only anchors
   joined by a prerequisite path are compared, so declaration order does not matter), and
   every grade band of the plan has an anchor;
