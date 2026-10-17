@@ -448,42 +448,42 @@ PINNED_PROBLEMS = (
         "compare_groups",
         0,
         7,
-        "There are 3 pears and 4 hats. How many are in the group with more?",
+        "There are 3 apples and 4 dogs. How many are in the group with more?",
         4,
     ),
     (
         "compare_groups",
         0,
         42,
-        "There is 1 frog and 2 dogs. How many are in the group with more?",
+        "There is 1 pear and 2 apples. How many are in the group with more?",
         2,
     ),
     (
         "compare_groups",
         1,
         7,
-        "There are 6 pears and 8 hats. How many are in the group with more?",
+        "There are 6 apples and 8 dogs. How many are in the group with more?",
         8,
     ),
     (
         "compare_groups",
         1,
         42,
-        "There are 2 frogs and 3 dogs. How many are in the group with more?",
+        "There are 2 pears and 3 apples. How many are in the group with more?",
         3,
     ),
     (
         "compare_groups",
         2,
         7,
-        "There are 8 pears and 9 hats. How many are in the group with more?",
+        "There are 8 apples and 9 dogs. How many are in the group with more?",
         9,
     ),
     (
         "compare_groups",
         2,
         42,
-        "There are 6 frogs and 7 dogs. How many are in the group with more?",
+        "There are 6 pears and 7 apples. How many are in the group with more?",
         7,
     ),
     ("compare_numbers_20", 0, 7, "Which number is bigger, 6 or 8?", 8),
@@ -516,12 +516,12 @@ PINNED_PROBLEMS = (
     ("place_value_hundreds", 1, 42, "How many hundreds are in 300?", 3),
     ("place_value_hundreds", 2, 7, "What number is 6 hundreds, 1 ten and 6 ones?", 616),
     ("place_value_hundreds", 2, 42, "What number is 2 hundreds, 0 tens and 5 ones?", 205),
-    ("compare_numbers_100", 0, 7, "Which number is bigger, 66 or 20?", 66),
-    ("compare_numbers_100", 0, 42, "Which number is bigger, 24 or 43?", 43),
-    ("compare_numbers_100", 1, 7, "Which number is bigger, 62 or 66?", 66),
-    ("compare_numbers_100", 1, 42, "Which number is bigger, 20 or 24?", 24),
-    ("compare_numbers_100", 2, 7, "Which number is bigger, 56 or 84?", 84),
-    ("compare_numbers_100", 2, 42, "Which number is bigger, 13 or 21?", 21),
+    ("compare_numbers_100", 0, 7, "Which number is bigger, 67 or 21?", 67),
+    ("compare_numbers_100", 0, 42, "Which number is bigger, 25 or 43?", 43),
+    ("compare_numbers_100", 1, 7, "Which number is bigger, 63 or 67?", 67),
+    ("compare_numbers_100", 1, 42, "Which number is bigger, 21 or 25?", 25),
+    ("compare_numbers_100", 2, 7, "Which number is bigger, 63 or 71?", 71),
+    ("compare_numbers_100", 2, 42, "Which number is bigger, 29 or 71?", 71),
     ("skip_count_10", 0, 7, "Count by tens. 10, 20, 30, ?", 40),
     ("skip_count_10", 0, 42, "Count by tens. 10, 20, 30, 40, ?", 50),
     ("skip_count_10", 1, 7, "Count by tens. 10, 20, 30, 40, 50, 60, 70, ?", 80),
@@ -909,3 +909,69 @@ def test_compare_numbers_100_by_tier_and_rule(seed: int, tier: int) -> None:
 def test_compare_numbers_100_tier_two_has_reversed_digit_pairs() -> None:
     pairs = [numbers("compare_numbers_100", seed, 2) for seed in range(400)]
     assert any(a == int(str(b)[::-1]) for a, b in pairs)
+
+
+# --- the values the batch 1 hints and explanations lean on ------------------------------
+
+
+BATCH_ONE = (
+    "count_to_10",
+    "count_to_20",
+    "count_to_100",
+    "compare_groups",
+    "compare_numbers_20",
+    "one_more_one_less",
+    "skip_count_10",
+    "teen_numbers",
+    "pairs_to_10",
+    "place_value_hundreds",
+    "compare_numbers_100",
+)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_batch_one_values_name_the_answer(seed: int, tier: int) -> None:
+    for skill in BATCH_ONE:
+        problem = get_generator(skill).generate(seed, tier)
+        assert problem.values["answer"] == problem.answer, skill
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_counting_values_point_at_a_number_the_prompt_shows(seed: int, tier: int) -> None:
+    for skill in COUNTING:
+        problem = get_generator(skill).generate(seed, tier)
+        near = int(problem.values["near"])
+        assert near in numbers(skill, seed, tier)
+        way = str(problem.values["dir"])
+        assert way in ("up", "back")
+        if problem.values["form"] == "before":
+            assert (problem.values["rel"], way, near - 1) == (
+                "one less than",
+                "back",
+                problem.answer,
+            )
+        elif problem.values["form"] == "count_on":
+            assert problem.values["rel"] == f"{problem.values['more']} more than"
+            assert near + int(problem.values["more"]) == problem.answer
+        else:
+            assert (problem.values["rel"], way, near + 1) == ("one more than", "up", problem.answer)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_teen_hint_values_show_the_prompts_number(seed: int, tier: int) -> None:
+    problem = get_generator("teen_numbers").generate(seed, tier)
+    assert int(problem.values["shown"]) in numbers("teen_numbers", seed, tier)
+    assert int(problem.values["shown"]) != problem.answer
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_comparing_values_name_which_is_asked(seed: int, tier: int) -> None:
+    for skill in ("compare_numbers_20", "compare_numbers_100"):
+        problem = get_generator(skill).generate(seed, tier)
+        assert str(problem.values["which"]) in flatten(problem)
+    groups = get_generator("compare_groups").generate(seed, tier)
+    assert str(groups.values["more"]) in flatten(groups)

@@ -16,24 +16,10 @@ from mathquest.engine.types import AnswerForm
 _Int = sympy.Integer
 
 # Plural nouns a kindergartner can count, two groups at a time.
-_GROUPS = (
-    "apples",
-    "pears",
-    "cats",
-    "dogs",
-    "birds",
-    "fish",
-    "ducks",
-    "frogs",
-    "balls",
-    "kites",
-    "cubes",
-    "stars",
-    "shells",
-    "rocks",
-    "cups",
-    "hats",
-)
+_GROUPS = ("apples", "pears", "cats", "dogs")
+# Few ones digits and nouns keep the bare problems a small set (the typed form is never shown
+# to a learner, since the skill is fully banked), so the lint can check every example against it.
+_ONES = [1, 3, 5, 7, 9]
 _GROUP_MAX = ((1, 5), (1, 10), (6, 10))
 
 
@@ -72,7 +58,7 @@ def _build_compare_groups(rng: random.Random, tier: int) -> Built:
             ("confused_more_fewer", _Int(other)),
             ("counted_both_groups", _Int(a + b)),
         ),
-        values={"a": a, "b": b, "more": "more" if more else "fewer"},
+        values={"a": a, "b": b, "more": "more" if more else "fewer", "answer": answer},
     )
 
 
@@ -96,7 +82,13 @@ def _compare_numbers(rng: random.Random, pair: tuple[int, int], tricky: bool) ->
         ),
         answer=_Int(answer),
         wrong=((key, _Int(other)), ("gave_the_difference", _Int(big - small))),
-        values={"a": a, "b": b, "bigger": "yes" if greater else "no"},
+        values={
+            "a": a,
+            "b": b,
+            "bigger": "yes" if greater else "no",
+            "which": word,
+            "answer": answer,
+        },
     )
 
 
@@ -114,16 +106,16 @@ def _build_compare_numbers_100(rng: random.Random, tier: int) -> Built:
     if tier == 0:
         tens_a = rng.randint(1, 9)
         tens_b = rng.choice([t for t in range(1, 10) if abs(t - tens_a) >= 2])
-        pair = (tens_a * 10 + rng.randint(0, 9), tens_b * 10 + rng.randint(0, 9))
+        pair = (tens_a * 10 + rng.choice(_ONES), tens_b * 10 + rng.choice(_ONES))
         return _compare_numbers(rng, pair, tricky=False)
     if tier == 1:
         tens = rng.randint(1, 9)
-        ones = rng.sample(range(10), 2)
+        ones = rng.sample(_ONES, 2)
         return _compare_numbers(rng, (tens * 10 + ones[0], tens * 10 + ones[1]), tricky=False)
     # The smaller number has the higher ones digit: 29 and 31, or 47 and 74.
     while True:
-        a = rng.randint(10, 99)
-        b = rng.randint(10, 99)
+        a = rng.randint(1, 9) * 10 + rng.choice(_ONES)
+        b = rng.randint(1, 9) * 10 + rng.choice(_ONES)
         if a // 10 < b // 10 and a % 10 > b % 10:
             break
     pair = (a, b) if rng.choice((True, False)) else (b, a)

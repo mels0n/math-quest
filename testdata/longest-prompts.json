@@ -81,11 +81,11 @@
   },
   "compare_groups": {
     "tier": 1,
-    "seed": 5,
+    "seed": 105,
     "prompt": [
       {
         "kind": "text",
-        "value": "There are 10 apples and 5 rocks. How many are in the group with fewer?"
+        "value": "There are 10 apples and 4 pears. How many are in the group with fewer?"
       }
     ]
   },
@@ -125,7 +125,7 @@
       },
       {
         "kind": "math",
-        "value": "70"
+        "value": "71"
       },
       {
         "kind": "text",
@@ -133,7 +133,7 @@
       },
       {
         "kind": "math",
-        "value": "44"
+        "value": "45"
       },
       {
         "kind": "text",

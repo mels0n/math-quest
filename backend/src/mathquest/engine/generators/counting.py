@@ -44,6 +44,7 @@ def _counting(
         if decade and n % 10 == 9:
             wrong.append(("kept_the_tens", n // 10 * 10))
         values["n"] = n
+        near, rel, way = n, "one more than", "up"
     elif form == "before":
         n = answer + 1
         prompt = (text("What number comes before "), math(str(n)), text("?"))
@@ -51,6 +52,7 @@ def _counting(
         if decade and n % 10 == 0:
             wrong.append(("kept_the_tens", answer + 10))
         values["n"] = n
+        near, rel, way = n, "one less than", "back"
     elif form == "missing":
         lead = answer - 2 >= 1
         trail = answer + 2 <= cap
@@ -61,6 +63,7 @@ def _counting(
         run = ", ".join("?" if n == 0 else str(n) for n in shown)
         prompt = (text("What number is missing? "), math(run))
         wrong = [("repeated_number", answer - 1), ("skipped_a_number", answer + 1)]
+        near, rel, way = answer - 1, "one more than", "up"
     elif form == "run":
         size = min(3, answer - 1)
         run = ", ".join([*(str(n) for n in range(answer - size, answer)), "?"])
@@ -68,6 +71,7 @@ def _counting(
         wrong = [("repeated_number", answer - 1), ("skipped_a_number", answer + 1)]
         if decade and answer % 10 == 0:
             wrong.append(("kept_the_tens", answer - 10))
+        near, rel, way = answer - 1, "one more than", "up"
     else:
         more = rng.randint(2, min(5, answer - 2))
         start = answer - more
@@ -80,6 +84,10 @@ def _counting(
         )
         wrong = [("counted_start", answer - 1), ("went_one_too_far", answer + 1)]
         values.update({"start": start, "more": more})
+        near, rel, way = start, f"{more} more than", "up"
+    # What every hint can lean on, whatever the form: the number to count from (shown in the
+    # prompt), how the answer relates to it, and which way to count.
+    values.update({"near": near, "rel": rel, "dir": way})
     return Built(prompt=prompt, answer=_Int(answer), wrong=_wrongs(answer, wrong, 1), values=values)
 
 
@@ -142,7 +150,12 @@ def _build_one_more_one_less(rng: random.Random, tier: int) -> Built:
         prompt=(text(f"What is 1 {word} than "), math(str(n)), text("?")),
         answer=_Int(answer),
         wrong=_wrongs(answer, wrong, 0),
-        values={"n": n, "answer": answer, "direction": word},
+        values={
+            "n": n,
+            "answer": answer,
+            "direction": word,
+            "dir": "up" if more else "back",
+        },
     )
 
 

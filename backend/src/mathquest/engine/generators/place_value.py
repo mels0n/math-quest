@@ -64,7 +64,14 @@ def _build_teen_numbers(rng: random.Random, tier: int) -> Built:
                 ("wrote_ten_then_ones", sympy.Integer(100 + ones)),
                 ("said_the_ones_only", sympy.Integer(ones)),
             ),
-            values={"teen": teen, "ones": ones, "asks": "number"},
+            values={
+                "teen": teen,
+                "ones": ones,
+                "asks": "number",
+                "answer": teen,
+                "shown": ones,
+                "task": "put the ten and the ones together",
+            },
         )
     return Built(
         prompt=(math(str(teen)), text(" is a ten and how many more ones?")),
@@ -73,7 +80,14 @@ def _build_teen_numbers(rng: random.Random, tier: int) -> Built:
             ("said_the_tens_digit", sympy.Integer(1)),
             ("copied_the_number", sympy.Integer(teen)),
         ),
-        values={"teen": teen, "ones": ones, "asks": "ones"},
+        values={
+            "teen": teen,
+            "ones": ones,
+            "asks": "ones",
+            "answer": ones,
+            "shown": teen,
+            "task": "take the ten away and see what is left",
+        },
     )
 
 
@@ -89,7 +103,7 @@ def _build_place_value_hundreds(rng: random.Random, tier: int) -> Built:
                 ("gave_the_number", sympy.Integer(number)),
                 ("off_by_one", sympy.Integer(tens - 1)),
             ),
-            values={"number": number, "tens": tens},
+            values={"number": number, "tens": tens, "answer": tens},
         )
     if tier == 1:
         hundreds = rng.randint(2, 9)
@@ -102,7 +116,12 @@ def _build_place_value_hundreds(rng: random.Random, tier: int) -> Built:
                     ("gave_the_number", sympy.Integer(number)),
                     ("confused_hundreds_tens", sympy.Integer(hundreds * 10)),
                 ),
-                values={"number": number, "hundreds": hundreds, "asks": "hundreds"},
+                values={
+                    "number": number,
+                    "hundreds": hundreds,
+                    "asks": "hundreds",
+                    "answer": hundreds,
+                },
             )
         return Built(
             prompt=(text("How many bundles of ten make "), math(str(number)), text("?")),
@@ -111,7 +130,12 @@ def _build_place_value_hundreds(rng: random.Random, tier: int) -> Built:
                 ("gave_the_number", sympy.Integer(number)),
                 ("confused_hundreds_tens", sympy.Integer(hundreds)),
             ),
-            values={"number": number, "hundreds": hundreds, "asks": "tens"},
+            values={
+                "number": number,
+                "hundreds": hundreds,
+                "asks": "tens",
+                "answer": hundreds * 10,
+            },
         )
     hundreds = rng.randint(1, 9)
     tens = rng.choice((0, 0, *range(1, 10)))
@@ -133,7 +157,13 @@ def _build_place_value_hundreds(rng: random.Random, tier: int) -> Built:
             ("swapped_tens_and_ones", sympy.Integer(hundreds * 100 + ones * 10 + tens)),
             ("left_out_the_zero", sympy.Integer(int(str(number).replace("0", "")))),
         ),
-        values={"number": number, "hundreds": hundreds, "tens": tens, "ones": ones},
+        values={
+            "number": number,
+            "hundreds": hundreds,
+            "tens": tens,
+            "ones": ones,
+            "answer": number,
+        },
     )
 
 
