@@ -1,0 +1,9 @@
+# Three hints for Number Pairs: a nudge, the next step, then the whole answer worked out.
+skill: pairs_to_10
+levels:
+  - text_template: >-
+      You know {known}. The total is {total}. How many more do you need?
+  - text_template: >-
+      Count on from {known} up to {total}. Hold up a finger for each count.
+  - text_template: >-
+      {known} and {answer} make {total}. So the answer is {answer}.

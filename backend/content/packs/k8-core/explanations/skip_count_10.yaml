@@ -1,0 +1,29 @@
+# Four ways to explain counting by tens. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: skip_count_10
+approaches:
+  - style: visual
+    body_md: >-
+      Find {previous} on the number line. Take one big jump of ten. Where do you land?
+    visual:
+      kind: number_line
+      params: {min: 0, max: 100, start: "{previous}", jumps: ["{jump}"]}
+  - style: steps
+    body_md: |-
+      1. Look at the number before the blank.
+      2. Count {dir} one ten.
+      3. The tens digit changes by one.
+      4. Write the whole number, with the zero on the end.
+  - style: story
+    body_md: >-
+      You pack marbles in bags of ten. {previous} marbles fill some bags. The next number has ten {tens_way} marbles. How many is that?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Put your finger on {previous}. Count {dir} ten, or take one big jump of ten. The number you reach is the answer.
+misconceptions:
+  counted_by_ones: >-
+    It looks like you counted by ones. Count by tens. Add ten to {previous}, not one.
+  said_the_tens_digit: >-
+    It looks like you said only the tens digit. Write the whole number. It has a zero on the end.
+  skipped_a_ten: >-
+    It looks like you jumped two tens. Add only one ten to {previous}.

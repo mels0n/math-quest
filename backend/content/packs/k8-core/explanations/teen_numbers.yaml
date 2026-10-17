@@ -1,0 +1,30 @@
+# Four ways to explain teen numbers. Every explanation and feedback line avoids written digits, so it never shows an answer;
+# it uses the numbers of the problem (near, known, previous and so on) instead.
+skill: teen_numbers
+approaches:
+  - style: visual
+    body_md: >-
+      Picture one stick of ten and some loose cubes. Put the stick on the left. Put the cubes on the right. Now {task}.
+  - style: steps
+    body_md: |-
+      1. A teen number has two digits.
+      2. The first digit is the ten.
+      3. The second digit is the ones.
+      4. Look at {shown}, then {task}.
+  - style: story
+    body_md: >-
+      A baker packs one box of ten rolls. A few rolls are left loose. Look at {shown}. The baker wants to {task}.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Draw one stick for the ten. Draw dots for the ones. Look at {shown}. Now {task}.
+misconceptions:
+  reversed_digits: >-
+    It looks like you flipped the digits. The ten goes first. Then the ones.
+  wrote_ten_then_ones: >-
+    You put ten and the ones side by side. A ten is just the digit one in the tens place.
+  said_the_ones_only: >-
+    It looks like you said only the ones. The ten counts too.
+  said_the_tens_digit: >-
+    It looks like you said how many tens. Count the ones that are left after the ten.
+  copied_the_number: >-
+    It looks like you gave the whole number. Take the ten away first. What is left?

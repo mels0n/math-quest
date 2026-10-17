@@ -1,0 +1,37 @@
+# Lesson shown the first time a learner meets Tens and Ones. The screens use plain numbers
+# only to draw pictures. The worked example asks for the ones place of a three-digit
+# number, which the skill never asks, so a replayed lesson never repeats a question.
+skill: place_value_tens_ones
+screens:
+  - title: Tens and ones
+    body_md: >-
+      A number is built from tens and ones. A ten is a stick. A one is a small
+      cube. This picture shows 4 tens and 7 ones. That is the number 47.
+    visual:
+      kind: base_ten
+      params: {tens: 4, ones: 7}
+  - title: Which place is it?
+    body_md: >-
+      Each digit sits in a place. Start from the right. The last digit is in
+      the ones place. The next digit is in the tens place. In 47, the 7 is in
+      the ones place. The 4 is in the tens place.
+    visual:
+      kind: base_ten
+      params: {tens: 4, ones: 7}
+  - title: More places
+    body_md: >-
+      Keep going left for bigger numbers. Next is the hundreds place, then
+      the thousands place. In 352, the 3 is in the hundreds place. It means 3
+      hundreds.
+    visual:
+      kind: base_ten
+      params: {hundreds: 3, tens: 5, ones: 2}
+worked_example:
+  prompt:
+    - {kind: text, value: "Which digit is in the ones place of 352?"}
+  steps:
+    - Start from the right. The last digit is in the ones place.
+    - In 352, the last digit is 2.
+    - So the 2 is in the ones place.
+try_it:
+  tier: 0

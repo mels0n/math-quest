@@ -49,6 +49,8 @@ warning naming the pack file, the path inside it and the rule. The rules:
     No em dash, no en dash, no ``--`` and no spaced hyphen (" - ") used as a dash in
     kid-facing text outside math and computed numbers, nor any dash in the slot lists
     or the word list.
+``standards``
+    A built skill does not cite a Common Core standard from a later grade, or one twice.
 ``slots``
     A word template names only generator values and its declared slots, and uses every
     slot it declares (slot kinds are checked by the schema).
@@ -59,8 +61,9 @@ prerequisites. It binds the pack to a generator registry passed in, through the 
 ``SkillSource`` the app uses, so what it renders is what a learner sees.
 """
 
+import dataclasses
 import re
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from functools import lru_cache, partial
@@ -69,6 +72,7 @@ from typing import Literal
 
 import sympy
 
+from mathquest.engine.bank import to_prompt
 from mathquest.engine.catalog import SkillSource, check_binding
 from mathquest.engine.checker.check import Verdict, check
 from mathquest.engine.content.coverage import skill_coverage
@@ -165,6 +169,7 @@ def lint(
     sources, generator_findings = _sources(pack, registry, slots)
     out += generator_findings
     out += _teaching(pack)
+    out += _standards(pack)
     out += _coverage(pack, registry)
     out += _slots(pack, sources)
     out += _answers(pack, sources, _plurals(slots))
@@ -178,6 +183,26 @@ def lint(
     out += _dashes(texts)
     out += _list_dashes(slots, words)
     return out
+
+
+def standard_problems(grade_band: str, standards: Sequence[str]) -> Iterator[tuple[int, str]]:
+    """``(index, message)`` for each standards code that is from a later grade than
+    ``grade_band`` or listed twice."""
+    band = GRADE_BANDS.index(grade_band)
+    for j, code in enumerate(standards):
+        grade = code.split(".", 1)[0]
+        if (0 if grade == "K" else int(grade)) > band:
+            yield j, f"{code} is from a later grade than the skill"
+        if code in standards[:j]:
+            yield j, f"{code} is listed twice"
+
+
+def _standards(pack: Pack) -> Iterator[Finding]:
+    for i, skill in enumerate(pack.skills.values()):
+        for j, message in standard_problems(skill.grade_band, skill.standards):
+            yield Finding(
+                "error", "skills.yaml", f"skills[{i}].standards[{j}]", "standards", message
+            )
 
 
 def errors(findings: list[Finding]) -> list[Finding]:
@@ -322,13 +347,22 @@ def _plurals(slots: Slots) -> frozenset[str]:
     return frozenset(n.many.lower() for n in nouns if n.many != n.one)
 
 
+def _digits(number: object) -> set[int]:
+    """The digits of a whole ``number``, only the places it has (no leading zeros)."""
+    if isinstance(number, bool) or not isinstance(number, int):
+        return set()
+    return {int(d) for d in str(abs(number))}
+
+
 def _always_shown(source: SkillSource, used: frozenset[str], name: str) -> bool:
-    """``name`` is not used but always equals a number the template does show."""
+    """``name`` is not used but always equals a number the template does show, or one
+    digit of it (the tens of a shown ``a``): the learner still sees what it stands for."""
     for tier in range(len(source.tier_difficulties)):
         for seed in range(20):
             values = source.generator.generate(seed, tier).values
             shown = {values[u] for u in used if u in values}
-            if values[name] not in shown:
+            digits = {d for v in shown for d in _digits(v)}
+            if values[name] not in shown | digits:
                 return False
     return True
 
@@ -572,9 +606,13 @@ def _reveal_one(
 ) -> Iterator[Finding]:
     """Report the first (seed, tier) where the text shows a number equal to the answer
     that the prompt does not show itself. A number written in every rendering is a fixed
-    example, and the message says so."""
+    example, and the message says so. When the answer is always one of the numbers the
+    prompt shows (a comparison), writing the answer's own value (``{answer}``, or any value
+    that is the answer in every problem) is reported too, since the number check cannot see
+    it."""
     renders: list[set[sympy.Expr]] = []
     leaks: list[tuple[int, int, sympy.Expr]] = []
+    rendered: list[tuple[int, int, Problem, set[sympy.Expr]]] = []
     for tier in range(len(source.tier_difficulties)):
         for seed in range(TEACHING_SEEDS):
             problem = source.generate(seed, tier)
@@ -586,22 +624,51 @@ def _reveal_one(
                 continue
             found = _numbers(shown)
             renders.append(found)
+            rendered.append((seed, tier, problem, found))
             if _leaks(problem, found):
                 leaks.append((seed, tier, problem.answer))
-    if not leaks:
+    if leaks:
+        seed, tier, answer = leaks[0]
+        fixed = set.intersection(*renders)
+        origin = "a fixed example shows" if answer in fixed else "shows"
+        yield Finding(
+            "error", file, at, "reveal",
+            f"seed {seed} tier {tier}: {origin} {answer}, the answer; only the last hint may",
+        )  # fmt: skip
         return
-    seed, tier, answer = leaks[0]
-    fixed = set.intersection(*renders)
-    origin = "a fixed example shows" if answer in fixed else "shows"
-    yield Finding(
-        "error", file, at, "reveal",
-        f"seed {seed} tier {tier}: {origin} {answer}, the answer; only the last hint may",
-    )  # fmt: skip
+    if not rendered or not all(p.answer in _prompt_numbers(p) for _, _, p, _ in rendered):
+        return
+    own = {
+        key
+        for key in rendered[0][2].values
+        if all(p.values.get(key) == p.answer for _, _, p, _ in rendered)
+    }
+    for seed, tier, problem, found in rendered:
+        changed = {
+            k: (int(problem.answer) + 100_003 if k in own else v) for k, v in problem.values.items()
+        }
+        try:
+            other = run(dataclasses.replace(problem, values=changed))
+        except TemplateError:
+            continue
+        if other is not None and _numbers(other) != found:
+            yield Finding(
+                "error", file, at, "reveal",
+                f"seed {seed} tier {tier}: writes the answer's own value "
+                f"({', '.join(sorted(own))}); only the last hint may",
+            )  # fmt: skip
+            return
 
 
 # --- rule: fixed examples are not problems the skill asks ------------------------
 
-EXAMPLE_SEEDS = 300
+EXAMPLE_FLOOR = 1_000
+EXAMPLE_CAP = 100_000
+"""A tier's seeds are scanned until seed >= max(EXAMPLE_FLOOR, 2 * the last seed that gave a
+problem not seen before): once the scan has run twice as long as it last found anything,
+it counts as saturated. A tier still finding new problems at EXAMPLE_CAP is reported as
+not finished, since a very large space (place value's four-digit numbers) may hold
+problems the scan never reached."""
 _MATH_SEGMENT = re.compile(r"\\\((.*?)\\\)", re.DOTALL)
 
 
@@ -610,16 +677,108 @@ def _left(latex: str) -> str:
     return latex.split("=")[0].replace(" ", "")
 
 
-def _asked(source: SkillSource) -> dict[str, tuple[int, int]]:
-    """The left side of every bare problem the generator gives over the sampled seeds,
-    with the first (seed, tier) that gives it."""
-    asked: dict[str, tuple[int, int]] = {}
-    for tier in range(len(source.tier_difficulties)):
-        for seed in range(EXAMPLE_SEEDS):
-            for part in source.generate(seed, tier).prompt:
+def _same_sum(latex: str) -> str:
+    """``_left`` with the terms of a plain sum in order, so ``3 + 4`` and ``4 + 3`` match."""
+    left = _left(latex)
+    terms = left.split("+")
+    if len(terms) > 1 and all(t.isdigit() for t in terms):
+        return "+".join(sorted(terms, key=int))
+    return left
+
+
+def _whole(pieces: Iterable[str]) -> str:
+    """A prompt's text and math as one line, for questions asked in words."""
+    return "prompt: " + "".join("".join(pieces).split())
+
+
+def _shape(key: str) -> str:
+    """``key`` with every number blanked: what kind of problem it is, not which."""
+    return re.sub(r"\d+", "#", key)
+
+
+_BLANK_RUN = re.compile(r"(?<![\w.])(?:\d+|_+|\?)(?:\s*,\s*(?:\d+|_+|\?))+(?![\w])")
+
+
+def _plain_runs(template: str) -> Iterator[str]:
+    """Each run of numbers written in plain text with a blank in it ("7, 8, _, 10"), as the
+    prompt of a counting problem writes it ("7,8,?,10"); the same run written as math is
+    found by ``_fixed_math``."""
+    for run in _BLANK_RUN.findall(_MATH_SEGMENT.sub(" ", template)):
+        if "_" in run or "?" in run:
+            yield re.sub(r"_+", "?", "".join(run.split()))
+
+
+type _Scan = tuple[dict[str, tuple[int, int]], frozenset[str], list[tuple[int, int]]]
+"""The problems found (key -> first (seed, tier)), the shapes of those keys (see ``_shape``)
+and the (tier, keys seen) of every tier whose scan hit EXAMPLE_CAP unfinished."""
+
+_ASKED_CACHE: dict[int, tuple[object, _Scan]] = {}
+"""Scan results by generator object, bank not included; a scan is tens of thousands of
+problems, and a generator never changes while the process runs."""
+
+
+def _bank_keys(source: SkillSource) -> dict[str, tuple[int, int]]:
+    """The whole prompt and math parts of every bank item, marked as found at (-1, -1)."""
+    keys: dict[str, tuple[int, int]] = {}
+    if source.bank is not None:
+        for item in source.bank.items:
+            prompt = to_prompt(item.prompt)
+            keys.setdefault(
+                _whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt), (-1, -1)
+            )
+            for part in prompt:
                 if isinstance(part, MathPart):
-                    asked.setdefault(_left(part.latex), (seed, tier))
-    return asked
+                    keys.setdefault(_same_sum(part.latex), (-1, -1))
+    return keys
+
+
+def _asked(source: SkillSource) -> _Scan:
+    """What the skill asks: its generator's scan (cached) and its bank items."""
+    cached = _ASKED_CACHE.get(id(source.generator))
+    if cached is not None and cached[0] is source.generator:
+        found = cached[1]
+    else:
+        found = _scan(source)
+        _ASKED_CACHE[id(source.generator)] = (source.generator, found)
+    asked, shapes, unfinished = found
+    bank = _bank_keys(source)
+    if not bank:
+        return found
+    merged = {**bank, **asked}
+    return merged, shapes | {_shape(k) for k in bank}, unfinished
+
+
+def _scan(source: SkillSource) -> _Scan:
+    """The math of every bare problem the generator gives (its left side, terms of a sum in
+    order) and each whole prompt, with the first (seed, tier) that gives it; see
+    ``EXAMPLE_FLOOR`` for when a tier's scan stops."""
+    asked: dict[str, tuple[int, int]] = {}
+    unfinished: list[tuple[int, int]] = []
+    for tier in range(len(source.tier_difficulties)):
+        last_new = 0
+        seed = 0
+        while seed < max(EXAMPLE_FLOOR, 2 * last_new):
+            if seed >= EXAMPLE_CAP:
+                unfinished.append((tier, len(asked)))
+                break
+            prompt = source.generate(seed, tier).prompt
+            at = (seed, tier)
+            before = len(asked)
+            asked.setdefault(
+                _whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt), at
+            )
+            for part in prompt:
+                if isinstance(part, MathPart):
+                    asked.setdefault(_same_sum(part.latex), at)
+            if len(asked) > before:
+                last_new = seed
+            seed += 1
+    return asked, frozenset(_shape(k) for k in asked), unfinished
+
+
+def _example_key(latex: str) -> str:
+    """How an example is looked up among the problems asked."""
+    return latex if latex.startswith("prompt: ") else _same_sum(latex)
 
 
 def _fixed_math(template: str) -> Iterator[str]:
@@ -641,9 +800,11 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
         if lesson is not None:
             file = f"lessons/{sid}.yaml"
             for i, screen in enumerate(lesson.screens):
-                texts.append((file, f"screens[{i}].body_md", list(_fixed_math(screen.body_md))))
-            prompt = [p.value for p in lesson.worked_example.prompt if p.kind == "math"]
-            texts.append((file, "worked_example.prompt", prompt))
+                math = [*_fixed_math(screen.body_md), *_plain_runs(screen.body_md)]
+                texts.append((file, f"screens[{i}].body_md", math))
+            prompt = [p.value for p in lesson.worked_example.prompt]
+            math = [p.value for p in lesson.worked_example.prompt if p.kind == "math"]
+            texts.append((file, "worked_example.prompt", [_whole(prompt), *math]))
             for i, step in enumerate(lesson.worked_example.steps):
                 texts.append((file, f"worked_example.steps[{i}]", list(_fixed_math(step))))
         explanations = pack.explanations.get(sid)
@@ -656,15 +817,29 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
                 ))  # fmt: skip
         if not any(math for *_, math in texts):
             continue
-        asked = _asked(source)
+        asked, shapes, unfinished = _asked(source)
+        # A tier whose scan did not finish may hold a problem the scan never reached. That only
+        # matters for an example that looks like one of the skill's problems.
+        looks_asked = any(
+            _shape(_example_key(latex)) in shapes for *_, math in texts for latex in math
+        )
+        for tier, seen in unfinished if looks_asked else []:
+            yield Finding(
+                "warning", "skills.yaml", sid, "example",
+                f"example scan did not finish for {sid} tier {tier}: still finding new "
+                f"problems after {EXAMPLE_CAP} seeds ({seen} seen); an example it never "
+                "reached could still be a problem the skill asks",
+            )  # fmt: skip
         for file, at, math in texts:
             for latex in math:
-                hit = asked.get(_left(latex))
+                hit = asked.get(_example_key(latex))
                 if hit is not None:
+                    shown = latex.removeprefix("prompt: ")
+                    where = "a bank item" if hit[0] < 0 else f"seed {hit[0]} tier {hit[1]}"
                     yield Finding(
                         "error", file, at, "example",
-                        f"the example {latex} is a problem this skill asks (seed {hit[0]} "
-                        f"tier {hit[1]}); pick numbers it never uses",
+                        f"the example {shown} is a problem this skill asks ({where}); "
+                        "pick numbers it never uses",
                     )  # fmt: skip
 
 

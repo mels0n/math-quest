@@ -8,10 +8,12 @@ from typing import Any
 import pytest
 import sympy
 
+from mathquest.engine.catalog import SkillSource
 from mathquest.engine.content import Pack, load_pack
+from mathquest.engine.content import lint as lint_module
 from mathquest.engine.content.lint import Finding, errors, lint
 from mathquest.engine.generators import all_generators
-from mathquest.engine.types import Generator
+from mathquest.engine.types import Generator, MathPart, TextPart
 from tests.engine.content.packbuilder import CONTENT, SLOTS, WORDS, base, load
 
 REGISTRY = all_generators()
@@ -156,6 +158,32 @@ def test_a_number_always_equal_to_a_shown_one_counts_as_shown(tmp_path: Path) ->
     assert _rule(_lint(load(tmp_path, files)), "answers") == []
 
 
+def _two_digit(files: dict[str, Any], template: str) -> dict[str, Any]:
+    """The base pack on the two-digit generator, with one word template."""
+    files["skills.yaml"]["skills"][0]["generator"] = "add_2digit_no_regroup"
+    files["explanations/alpha.yaml"]["misconceptions"] = {}
+    files["word_problems/alpha.yaml"]["templates"][1]["text_template"] = template
+    return files
+
+
+def test_the_digits_of_shown_numbers_count_as_shown(tmp_path: Path) -> None:
+    files = _two_digit(base(), "There are {a} red cars and {b} blue cars. How many cars?")
+    assert _rule(_lint(load(tmp_path, files)), "answers") == []
+
+
+def test_a_digit_of_a_number_that_is_not_shown_is_still_left_out(tmp_path: Path) -> None:
+    files = _two_digit(base(), "There are {a} red cars and some blue cars. How many cars?")
+    (finding,) = _rule(_lint(load(tmp_path, files)), "answers")
+    assert finding.message.endswith("never shows b, b_ones, b_tens")
+
+
+def test_tens_are_not_shown_by_a_template_that_shows_only_ones_digits(tmp_path: Path) -> None:
+    # No place beyond a number's own length is a digit of it, so a number never "shows" a zero.
+    files = _two_digit(base(), "There are {a_ones} red cars and {b_ones} blue cars. How many?")
+    (finding,) = _rule(_lint(load(tmp_path, files)), "answers")
+    assert finding.message.endswith("never shows a, a_tens, b, b_tens")
+
+
 def test_a_template_that_fails_to_render_for_some_seed(tmp_path: Path) -> None:
     files = _edit(
         base(),
@@ -298,6 +326,78 @@ def test_a_lesson_example_the_skill_can_ask_is_an_error(tmp_path: Path) -> None:
     findings = _rule(_lint(load(tmp_path, _edit(base(), "lessons/alpha.yaml", asked))), "example")
     assert {f.path for f in findings} == {"worked_example.prompt", "screens[0].body_md"}
     assert all("is a problem this skill asks" in f.message for f in findings)
+
+
+def test_an_example_with_the_terms_the_other_way_round_is_an_error(tmp_path: Path) -> None:
+    def asked(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "math", "value": "5 + 8 = ?"}]
+
+    findings = _rule(_lint(load(tmp_path, _edit(base(), "lessons/alpha.yaml", asked))), "example")
+    assert {f.path for f in findings} == {"worked_example.prompt"}
+
+
+def test_a_worked_question_in_words_is_checked_against_the_questions_asked(
+    tmp_path: Path,
+) -> None:
+    def lesson(place: str) -> Callable[[dict[str, Any]], None]:
+        def edit(data: dict[str, Any]) -> None:
+            question = f"Which digit is in the {place} place of 68?"
+            data["worked_example"]["prompt"] = [{"kind": "text", "value": question}]
+
+        return edit
+
+    def with_place_value(files: dict[str, Any]) -> dict[str, Any]:
+        files["skills.yaml"]["skills"][0]["generator"] = "place_value_tens_ones"
+        files["explanations/alpha.yaml"]["misconceptions"] = {}
+        return files
+
+    asked = _edit(with_place_value(base()), "lessons/alpha.yaml", lesson("tens"))
+    found = errors(_rule(_lint(load(tmp_path, asked)), "example"))
+    assert [f.path for f in found] == ["worked_example.prompt"]
+    never = _edit(with_place_value(base()), "lessons/alpha.yaml", lesson("hundreds"))
+    # Place value's four-digit tier is too large to scan to the end, which is a warning only.
+    assert errors(_rule(_lint(load(tmp_path, never)), "example")) == []
+
+
+@dataclasses.dataclass
+class _Spaced:
+    """The add-to-20 generator with its prompts replaced by ``seed % size + 100`` plus 1, so
+    the space of problems has exactly ``size`` members (``None``: a new one every seed)."""
+
+    size: int | None
+    generator_id: str = "add_within_20"
+    tier_difficulties: tuple[float, ...] = (1.0, 2.0, 3.0)
+    misconception_keys: tuple[str, ...] = REGISTRY["add_within_20"].misconception_keys
+
+    def generate(self, seed: int, tier: int, *rest: Any) -> Any:
+        real = REGISTRY["add_within_20"].generate(seed, tier, *rest)
+        n = seed if self.size is None else seed % self.size
+        return dataclasses.replace(real, prompt=(MathPart(f"{n + 100} + 1 = ?"),))
+
+
+def _spaced_lint(tmp_path: Path, size: int | None, worked: str) -> list[Finding]:
+    def example(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "math", "value": worked}]
+
+    pack = load(tmp_path, _edit(base(), "lessons/alpha.yaml", example))
+    return _rule(_lint(pack, {"add_within_20": _Spaced(size)}), "example")  # type: ignore[dict-item]
+
+
+def test_a_small_space_saturates_early_and_is_fully_covered(tmp_path: Path) -> None:
+    # 50 problems: found within the first 50 seeds, so the scan stops near the floor
+    # and still knows the last one.
+    findings = _spaced_lint(tmp_path, 50, "149 + 1 = ?")
+    assert {f.path for f in findings} == {"worked_example.prompt"}
+    assert _spaced_lint(tmp_path, 50, "150 + 1 = ?") == []
+
+
+def test_a_space_larger_than_the_cap_warns_that_the_scan_did_not_finish(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(lint_module, "EXAMPLE_CAP", 3_000)
+    (finding,) = _spaced_lint(tmp_path, None, "5 + 5 = ?")
+    assert finding.level == "warning"
+    assert "example scan did not finish for alpha tier 0" in finding.message
 
 
 def test_an_explanation_example_the_skill_can_ask_is_an_error(tmp_path: Path) -> None:
@@ -605,3 +705,137 @@ def test_dashes_in_slot_lists_and_word_list(tmp_path: Path) -> None:
     words = WORDS | {"grown-up"}
     found = _rule(lint(pack, REGISTRY, slots=slots, words=words), "dashes")
     assert sorted(f.file for f in found) == ["../../lint/k2_words.txt", "../../slots.yaml"]
+
+
+def test_built_skill_standards_are_checked_without_a_plan(tmp_path: Path) -> None:
+    files = base()
+    files["skills.yaml"]["skills"][0]["standards"] = ["1.OA.A.1", "2.OA.A.1", "1.OA.A.1"]
+    found = _rule(_lint(load(tmp_path, files)), "standards")
+    assert [(f.level, f.file, f.path) for f in found] == [
+        ("error", "skills.yaml", "skills[0].standards[1]"),
+        ("error", "skills.yaml", "skills[0].standards[2]"),
+    ]
+
+
+# --- example: bank prompts and plain-text runs ---
+
+
+def test_an_example_that_is_a_bank_prompt_is_an_error(tmp_path: Path) -> None:
+    def asked(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "text", "value": "What is double six?"}]
+
+    files = _edit(base(), "lessons/alpha.yaml", asked)
+    (finding,) = errors(_rule(_lint(load(tmp_path, files)), "example"))
+    assert finding.path == "worked_example.prompt"
+    assert "a bank item" in finding.message
+
+
+def test_a_run_of_numbers_with_a_blank_in_plain_text_is_checked(tmp_path: Path) -> None:
+    def counting(files: dict[str, Any]) -> dict[str, Any]:
+        files["skills.yaml"]["skills"][0]["generator"] = "count_to_10"
+        files["explanations/alpha.yaml"]["misconceptions"] = {}
+        files["lessons/alpha.yaml"]["screens"][0]["body_md"] = "Look at 7, 8, _, 10. Say them."
+        return files
+
+    found = errors(_rule(_lint(load(tmp_path, counting(base()))), "example"))
+    assert [f.path for f in found] == ["screens[0].body_md"]
+    assert "7,8,?,10" in found[0].message
+
+    def in_words(files: dict[str, Any]) -> dict[str, Any]:
+        files = counting(files)
+        files["lessons/alpha.yaml"]["screens"][0]["body_md"] = "Look at seven, eight, and ten."
+        return files
+
+    assert errors(_rule(_lint(load(tmp_path, in_words(base()))), "example")) == []
+
+
+def test_an_unfinished_scan_only_warns_for_an_example_that_looks_like_a_problem(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A skill with far more problems than the scan can cover only warns when an example
+    looks like one of its problems; a sentence no problem resembles cannot be one."""
+    monkeypatch.setattr(lint_module, "EXAMPLE_CAP", 3_000)
+
+    def words(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "text", "value": "Add three and four."}]
+        lesson["screens"][0]["body_md"] = "Adding puts two groups together."
+
+    pack = load(tmp_path, _edit(base(), "lessons/alpha.yaml", words))
+    assert _rule(_lint(pack, {"add_within_20": _Spaced(None)}), "example") == []  # type: ignore[dict-item]
+
+
+@dataclasses.dataclass
+class _Late:
+    """Eight hundred sums, repeated, then a differently worded question at one late seed."""
+
+    generator_id: str = "add_within_20"
+    tier_difficulties: tuple[float, ...] = (1.0, 2.0, 3.0)
+    misconception_keys: tuple[str, ...] = REGISTRY["add_within_20"].misconception_keys
+
+    def generate(self, seed: int, tier: int, *rest: Any) -> Any:
+        real = REGISTRY["add_within_20"].generate(seed, tier, *rest)
+        if seed == 1500:
+            prompt: Any = (TextPart("What number is 1 hundred?"),)
+        else:
+            prompt = (MathPart(f"{seed % 800 + 100} + 1 = ?"),)
+        return dataclasses.replace(real, prompt=prompt)
+
+
+def test_a_question_asked_only_late_in_a_scan_that_runs_on_is_still_found(tmp_path: Path) -> None:
+    """Its kind first appears at seed 1500, after the first thousand seeds, because new
+    problems kept turning up until seed 799; the scan runs on to 1598 and meets it."""
+
+    def example(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [
+            {"kind": "text", "value": "What number is 1 hundred?"}
+        ]
+
+    pack = load(tmp_path, _edit(base(), "lessons/alpha.yaml", example))
+    findings = errors(_rule(_lint(pack, {"add_within_20": _Late()}), "example"))  # type: ignore[dict-item]
+    assert [f.path for f in findings] == ["worked_example.prompt"]
+
+
+def test_a_second_bank_on_the_same_generator_does_not_leak_into_the_first(tmp_path: Path) -> None:
+    pack = load(tmp_path, base())
+    source = SkillSource(
+        skill=pack.skills["alpha"],
+        generator=REGISTRY["add_within_20"],
+        slots=SLOTS,
+        bank=pack.bank["alpha"],
+    )
+    with_bank, shapes_with, _ = lint_module._asked(source)  # pyright: ignore[reportPrivateUsage]
+    plain_source = dataclasses.replace(source, bank=None)
+    without, shapes_without, _ = lint_module._asked(plain_source)  # pyright: ignore[reportPrivateUsage]
+    assert "prompt: Whatisdoublesix?" in with_bank
+    assert "prompt: Whatisdoublesix?" not in without
+    assert lint_module._shape("prompt: Whatisdoublesix?") in shapes_with  # pyright: ignore[reportPrivateUsage]
+    assert lint_module._shape("prompt: Whatisdoublesix?") not in shapes_without  # pyright: ignore[reportPrivateUsage]
+
+
+def test_a_blank_written_with_several_underscores_is_still_a_blank(tmp_path: Path) -> None:
+    def counting(files: dict[str, Any]) -> dict[str, Any]:
+        files["skills.yaml"]["skills"][0]["generator"] = "count_to_10"
+        files["explanations/alpha.yaml"]["misconceptions"] = {}
+        files["lessons/alpha.yaml"]["screens"][0]["body_md"] = "Look at 7, 8, ___, 10. Say them."
+        return files
+
+    found = errors(_rule(_lint(load(tmp_path, counting(base()))), "example"))
+    assert [f.path for f in found] == ["screens[0].body_md"]
+
+
+def _comparing(first_hint: str) -> dict[str, Any]:
+    files = base()
+    files["skills.yaml"]["skills"][0]["generator"] = "compare_numbers_20"
+    files["hints/alpha.yaml"]["levels"][0]["text_template"] = first_hint
+    return files
+
+
+def test_writing_the_answer_of_a_comparison_in_an_early_hint_is_an_error(tmp_path: Path) -> None:
+    """The answer is one of the two numbers the prompt shows, so the number check alone
+    cannot tell {answer} from {a}."""
+    leaking = load(tmp_path, _comparing("Look at {a} and {b}. The answer is {answer}."))
+    found = _rule(_lint(leaking), "reveal")
+    assert [f.path for f in found] == ["levels[0]"]
+    assert "answer's own value" in found[0].message
+    fine = load(tmp_path, _comparing("Look at {a} and {b}. Which one is {which}?"))
+    assert [f for f in _rule(_lint(fine), "reveal") if f.path == "levels[0]"] == []

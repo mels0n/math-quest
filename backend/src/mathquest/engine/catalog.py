@@ -71,7 +71,7 @@ class SkillSource:
                 return render_word(template, problem, self.slots)
         if variant == "bank" and self.bank is not None:
             item = (
-                pick_item(self.bank, seed)
+                pick_item(self.bank, seed, tier)
                 if template_id is None
                 else find_item(self.bank, template_id)
             )

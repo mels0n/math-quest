@@ -1,0 +1,430 @@
+skill: compare_numbers_20
+items:
+  - id: cn20_01
+    tier: 0
+    prompt:
+      - {kind: text, value: "A sailor has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " bags. A friend has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " bags. Who has fewer bags?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "A sailor"}]
+      - [{kind: text, value: "The friend"}]
+      - [{kind: text, value: "They have the same"}]
+  - id: cn20_02
+    tier: 1
+    prompt:
+      - {kind: text, value: "Count the goats: "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: ". Count the pigs: "}
+      - {kind: math, value: "16"}
+      - {kind: text, value: ". Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The goats"}]
+      - [{kind: text, value: "The pigs"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_03
+    tier: 2
+    prompt:
+      - {kind: text, value: "The orange basket has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " hens. The green basket has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " bees. Finish it: "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " is ___ "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: "."}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "more than"}]
+      - [{kind: text, value: "less than"}]
+      - [{kind: text, value: "the same as"}]
+  - id: cn20_04
+    tier: 0
+    prompt:
+      - {kind: text, value: "The yellow bowl has the number "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: ". The black bowl has the number "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: ". Which number is bigger?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The yellow bowl"}]
+      - [{kind: text, value: "The black bowl"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn20_05
+    tier: 1
+    prompt:
+      - {kind: text, value: "A baker keeps "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: " mice and "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " bees. Is the number of mice more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More mice than bees"}]
+      - [{kind: text, value: "Fewer mice than bees"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_06
+    tier: 2
+    prompt:
+      - {kind: text, value: "A kid packs "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " fish and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " dogs. Is the number of fish more, less, or the same?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More fish than dogs"}]
+      - [{kind: text, value: "Fewer fish than dogs"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_07
+    tier: 0
+    prompt:
+      - {kind: text, value: "A pirate finds "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " robots and "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " marbles. Is the number of robots more, less, or the same?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More robots than marbles"}]
+      - [{kind: text, value: "Fewer robots than marbles"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_08
+    tier: 1
+    prompt:
+      - {kind: text, value: "The red basket has the number "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: ". The orange basket has the number "}
+      - {kind: math, value: "13"}
+      - {kind: text, value: ". Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The red basket"}]
+      - [{kind: text, value: "The orange basket"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn20_09
+    tier: 2
+    prompt:
+      - {kind: text, value: "A queen holds "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " nuts and "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " apples. Is the number of nuts more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More nuts than apples"}]
+      - [{kind: text, value: "Fewer nuts than apples"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_10
+    tier: 0
+    prompt:
+      - {kind: text, value: "Mom has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " shells. A friend has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " shells. Who has more shells?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "Mom"}]
+      - [{kind: text, value: "The friend"}]
+      - [{kind: text, value: "They have the same"}]
+  - id: cn20_11
+    tier: 1
+    prompt:
+      - {kind: text, value: "A nurse sees "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: " bees and "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " frogs. Is the number of bees more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More bees than frogs"}]
+      - [{kind: text, value: "Fewer bees than frogs"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_12
+    tier: 2
+    prompt:
+      - {kind: text, value: "A chef counts "}
+      - {kind: math, value: "18"}
+      - {kind: text, value: " peas and "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " beans. Is the number of peas more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More peas than beans"}]
+      - [{kind: text, value: "Fewer peas than beans"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_13
+    tier: 0
+    prompt:
+      - {kind: text, value: "Mom gets "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " dogs and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " cows. Is the number of dogs more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More dogs than cows"}]
+      - [{kind: text, value: "Fewer dogs than cows"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_14
+    tier: 1
+    prompt:
+      - {kind: text, value: "A driver makes "}
+      - {kind: math, value: "16"}
+      - {kind: text, value: " crayons and "}
+      - {kind: math, value: "13"}
+      - {kind: text, value: " forks. Is the number of crayons more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More crayons than forks"}]
+      - [{kind: text, value: "Fewer crayons than forks"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_15
+    tier: 2
+    prompt:
+      - {kind: text, value: "Dad finds "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " coins and "}
+      - {kind: math, value: "11"}
+      - {kind: text, value: " plates. Is the number of coins more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More coins than plates"}]
+      - [{kind: text, value: "Fewer coins than plates"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_16
+    tier: 0
+    prompt:
+      - {kind: text, value: "A boy draws "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " lemons and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " carrots. Is the number of lemons more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More lemons than carrots"}]
+      - [{kind: text, value: "Fewer lemons than carrots"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_17
+    tier: 1
+    prompt:
+      - {kind: text, value: "A girl carries "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " boats and "}
+      - {kind: math, value: "11"}
+      - {kind: text, value: " hats. Is the number of boats more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More boats than hats"}]
+      - [{kind: text, value: "Fewer boats than hats"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_18
+    tier: 2
+    prompt:
+      - {kind: text, value: "The class has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " dogs. A friend has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " dogs. Who has fewer dogs?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The class"}]
+      - [{kind: text, value: "The friend"}]
+      - [{kind: text, value: "They have the same"}]
+  - id: cn20_19
+    tier: 0
+    prompt:
+      - {kind: text, value: "A farmer sells "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " plums and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " cakes. Is the number of plums more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More plums than cakes"}]
+      - [{kind: text, value: "Fewer plums than cakes"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_20
+    tier: 1
+    prompt:
+      - {kind: text, value: "The class brings "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " ducks and "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " birds. Is the number of ducks more, less, or the same?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More ducks than birds"}]
+      - [{kind: text, value: "Fewer ducks than birds"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_21
+    tier: 2
+    prompt:
+      - {kind: text, value: "A bear wants "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " books and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " cups. Is the number of books more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More books than cups"}]
+      - [{kind: text, value: "Fewer books than cups"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_22
+    tier: 0
+    prompt:
+      - {kind: text, value: "The yellow bucket has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " bees. The blue bucket has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " birds. Finish it: "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " is ___ "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: "."}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "more than"}]
+      - [{kind: text, value: "less than"}]
+      - [{kind: text, value: "the same as"}]
+  - id: cn20_23
+    tier: 1
+    prompt:
+      - {kind: text, value: "A king picks "}
+      - {kind: math, value: "11"}
+      - {kind: text, value: " puzzles and "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: " dolls. Is the number of puzzles more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More puzzles than dolls"}]
+      - [{kind: text, value: "Fewer puzzles than dolls"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_24
+    tier: 2
+    prompt:
+      - {kind: text, value: "Count the pigs: "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: ". Count the mice: "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: ". Which number is bigger?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The pigs"}]
+      - [{kind: text, value: "The mice"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn20_25
+    tier: 0
+    prompt:
+      - {kind: text, value: "A cook buys "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " beans and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " eggs. Is the number of beans more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More beans than eggs"}]
+      - [{kind: text, value: "Fewer beans than eggs"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_26
+    tier: 1
+    prompt:
+      - {kind: text, value: "A fox spots "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: " seeds and "}
+      - {kind: math, value: "16"}
+      - {kind: text, value: " stamps. Is the number of seeds more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More seeds than stamps"}]
+      - [{kind: text, value: "Fewer seeds than stamps"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_27
+    tier: 2
+    prompt:
+      - {kind: text, value: "A sailor gets "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " rocks and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " sticks. Is the number of rocks more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More rocks than sticks"}]
+      - [{kind: text, value: "Fewer rocks than sticks"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_28
+    tier: 0
+    prompt:
+      - {kind: text, value: "A guard has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " forks and "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " leaves. Is the number of forks more, less, or the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More forks than leaves"}]
+      - [{kind: text, value: "Fewer forks than leaves"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_29
+    tier: 1
+    prompt:
+      - {kind: text, value: "A clown brings "}
+      - {kind: math, value: "20"}
+      - {kind: text, value: " leaves and "}
+      - {kind: math, value: "20"}
+      - {kind: text, value: " buttons. Is the number of leaves more, less, or the same?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More leaves than buttons"}]
+      - [{kind: text, value: "Fewer leaves than buttons"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_30
+    tier: 2
+    prompt:
+      - {kind: text, value: "The blue jar has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " horses. The yellow jar has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " hens. Finish it: "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " is ___ "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: "."}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "more than"}]
+      - [{kind: text, value: "less than"}]
+      - [{kind: text, value: "the same as"}]
+  - id: cn20_31
+    tier: 0
+    prompt:
+      - {kind: text, value: "The class makes "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " birds and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " ducks. Is the number of birds more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More birds than ducks"}]
+      - [{kind: text, value: "Fewer birds than ducks"}]
+      - [{kind: text, value: "The same"}]
+  - id: cn20_32
+    tier: 1
+    prompt:
+      - {kind: text, value: "A girl collects "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " hats and "}
+      - {kind: math, value: "20"}
+      - {kind: text, value: " boats. Is the number of hats more, less, or the same?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More hats than boats"}]
+      - [{kind: text, value: "Fewer hats than boats"}]
+      - [{kind: text, value: "The same"}]

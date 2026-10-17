@@ -42,6 +42,7 @@ from mathquest.features import teaching
 from mathquest.features.play import service
 from mathquest.features.play.schema import AnswerOut, ProblemOut
 from mathquest.shared.errors import Conflict, NotFound
+from tests.conftest import NO_CONTENT_SKILL
 
 CATALOG = load_catalog(Path(__file__).resolve().parents[2] / "content", "k8-core")
 PACK = CATALOG.pack
@@ -166,8 +167,8 @@ async def test_hint_for_another_player_or_a_skill_without_hints_is_not_found(
     inst = await _issue(db, pid, session_id)
     with pytest.raises(NotFound):
         await teaching.next_hint(db, CATALOG, other, inst.id)
-    bare = await _issue(db, pid, session_id, "place_value_tens_ones", 0)
-    assert "place_value_tens_ones" not in PACK.hints
+    bare = await _issue(db, pid, session_id, NO_CONTENT_SKILL, 0)
+    assert NO_CONTENT_SKILL not in PACK.hints
     with pytest.raises(NotFound):
         await teaching.next_hint(db, CATALOG, pid, bare.id)
     with pytest.raises(NotFound):
@@ -530,3 +531,23 @@ async def test_no_stuck_event_for_a_problem_with_its_own_answer(db: AsyncSession
         wrong = sympy.latex(problem.answer + 1000 + k)
         await service.submit_answer(db, POOL, catalog, pid, worded.id, wrong)
     assert await _stuck_count(db, pid) == 0
+
+
+async def test_help_for_a_problem_on_a_skill_the_pack_lacks_is_closed(db: AsyncSession) -> None:
+    """A rolled-back release leaves stored problems for skills the older pack does not know."""
+    pid = await _player(db)
+    session_id = await _session(db, pid)
+    ghost = await problems.add_problem(
+        db,
+        session_id=session_id,
+        player_id=pid,
+        skill_id="ghost_skill",
+        tier=0,
+        seed=1,
+        difficulty=0.0,
+        issued_at=datetime.now(UTC),
+    )
+    for ask in (teaching.next_hint, teaching.next_explanation):
+        with pytest.raises(Conflict) as err:
+            await ask(db, CATALOG, pid, ghost.id)
+        assert err.value.code == "problem_closed"

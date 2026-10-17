@@ -1,0 +1,29 @@
+# Lesson for Count by Tens. The worked example is in words, so it is never a problem the
+# skill asks.
+skill: skip_count_10
+screens:
+  - title: Count by tens
+    body_md: >-
+      Counting by tens jumps ten each time. Say 10, 20, 30. Each number is ten more than the one before.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 100, start: 0, jumps: [10, 10, 10], end: 30}
+  - title: The pattern
+    body_md: >-
+      Look at the tens digit in 10, 20, 30, 40. It goes up by one each time. The ones digit stays zero.
+  - title: Find the hole
+    body_md: >-
+      Some numbers hide. In 60, 70, _, 90 you say 80. Each jump is ten.
+    visual:
+      kind: number_line
+      params: {min: 50, max: 100, start: 60, jumps: [10, 10, 10], end: 90}
+worked_example:
+  prompt:
+    - {kind: text, value: "Count by tens. Say ten, twenty, thirty. What comes next?"}
+  steps:
+    - Say the tens in order. Ten, twenty, thirty.
+    - Each jump adds ten.
+    - Ten more than thirty is forty.
+    - So forty comes next.
+try_it:
+  tier: 0

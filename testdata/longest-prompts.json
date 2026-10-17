@@ -9,6 +9,16 @@
       }
     ]
   },
+  "add_2digit_no_regroup-word": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A trail has two parts. The first part has 71 steps. The second part has 20 steps. How many steps is the trail?"
+      }
+    ]
+  },
   "add_2digit_regroup": {
     "tier": 0,
     "seed": 0,
@@ -16,6 +26,16 @@
       {
         "kind": "math",
         "value": "27 + 19 = ?"
+      }
+    ]
+  },
+  "add_2digit_regroup-word": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The red team scores 27 goals this year. The blue team scores 19 goals. How many goals do the two teams score?"
       }
     ]
   },
@@ -59,6 +79,240 @@
       }
     ]
   },
+  "compare_groups": {
+    "tier": 1,
+    "seed": 5,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 10 apples and 5 rocks. How many are in the group with fewer?"
+      }
+    ]
+  },
+  "compare_groups-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The yellow basket has "
+      },
+      {
+        "kind": "math",
+        "value": "10"
+      },
+      {
+        "kind": "text",
+        "value": " cherries. The brown basket has "
+      },
+      {
+        "kind": "math",
+        "value": "9"
+      },
+      {
+        "kind": "text",
+        "value": " cherries. Which basket has more?"
+      }
+    ]
+  },
+  "compare_numbers_100": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Which number is smaller, "
+      },
+      {
+        "kind": "math",
+        "value": "70"
+      },
+      {
+        "kind": "text",
+        "value": " or "
+      },
+      {
+        "kind": "math",
+        "value": "44"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "compare_numbers_100-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The brown bucket has "
+      },
+      {
+        "kind": "math",
+        "value": "27"
+      },
+      {
+        "kind": "text",
+        "value": " buns. The green bucket has "
+      },
+      {
+        "kind": "math",
+        "value": "27"
+      },
+      {
+        "kind": "text",
+        "value": " buns. Which sign makes this true: "
+      },
+      {
+        "kind": "math",
+        "value": "27 \\square 27"
+      }
+    ]
+  },
+  "compare_numbers_20": {
+    "tier": 1,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Which number is smaller, "
+      },
+      {
+        "kind": "math",
+        "value": "17"
+      },
+      {
+        "kind": "text",
+        "value": " or "
+      },
+      {
+        "kind": "math",
+        "value": "13"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "compare_numbers_20-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The red basket has the number "
+      },
+      {
+        "kind": "math",
+        "value": "12"
+      },
+      {
+        "kind": "text",
+        "value": ". The orange basket has the number "
+      },
+      {
+        "kind": "math",
+        "value": "13"
+      },
+      {
+        "kind": "text",
+        "value": ". Which number is smaller?"
+      }
+    ]
+  },
+  "count_to_10": {
+    "tier": 2,
+    "seed": 6,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Start at "
+      },
+      {
+        "kind": "math",
+        "value": "1"
+      },
+      {
+        "kind": "text",
+        "value": ". Count on "
+      },
+      {
+        "kind": "math",
+        "value": "2"
+      },
+      {
+        "kind": "text",
+        "value": " more numbers."
+      },
+      {
+        "kind": "text",
+        "value": " Which number do you say last?"
+      }
+    ]
+  },
+  "count_to_100": {
+    "tier": 0,
+    "seed": 12,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Start at "
+      },
+      {
+        "kind": "math",
+        "value": "39"
+      },
+      {
+        "kind": "text",
+        "value": ". Count on "
+      },
+      {
+        "kind": "math",
+        "value": "3"
+      },
+      {
+        "kind": "text",
+        "value": " more numbers."
+      },
+      {
+        "kind": "text",
+        "value": " Which number do you say last?"
+      }
+    ]
+  },
+  "count_to_20": {
+    "tier": 2,
+    "seed": 10,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Start at "
+      },
+      {
+        "kind": "math",
+        "value": "12"
+      },
+      {
+        "kind": "text",
+        "value": ". Count on "
+      },
+      {
+        "kind": "math",
+        "value": "5"
+      },
+      {
+        "kind": "text",
+        "value": " more numbers."
+      },
+      {
+        "kind": "text",
+        "value": " Which number do you say last?"
+      }
+    ]
+  },
   "equivalent_fractions": {
     "tier": 0,
     "seed": 0,
@@ -66,6 +320,68 @@
       {
         "kind": "math",
         "value": "\\frac{1}{5} = \\frac{?}{15}"
+      }
+    ]
+  },
+  "one_more_one_less": {
+    "tier": 0,
+    "seed": 11,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "What number is 1 less than "
+      },
+      {
+        "kind": "math",
+        "value": "10"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "pairs_to_10": {
+    "tier": 2,
+    "seed": 30,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have 5. How many more make 10?"
+      }
+    ]
+  },
+  "place_value_hundreds": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "What number is "
+      },
+      {
+        "kind": "math",
+        "value": "7"
+      },
+      {
+        "kind": "text",
+        "value": " hundreds, "
+      },
+      {
+        "kind": "math",
+        "value": "5"
+      },
+      {
+        "kind": "text",
+        "value": " tens and "
+      },
+      {
+        "kind": "math",
+        "value": "0"
+      },
+      {
+        "kind": "text",
+        "value": " ones?"
       }
     ]
   },
@@ -87,6 +403,20 @@
       }
     ]
   },
+  "skip_count_10": {
+    "tier": 1,
+    "seed": 19,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Keep counting by tens. "
+      },
+      {
+        "kind": "math",
+        "value": "10, 20, 30, 40, 50, 60, 70, 80, 90, ?"
+      }
+    ]
+  },
   "sub_within_10": {
     "tier": 2,
     "seed": 0,
@@ -104,6 +434,34 @@
       {
         "kind": "math",
         "value": "17 - 7 = ?"
+      }
+    ]
+  },
+  "sub_within_20-word": {
+    "tier": 0,
+    "seed": 14,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 12 frogs on a log. Fatima watches 1 of them hop into the pond. How many frogs are left on the log?"
+      }
+    ]
+  },
+  "teen_numbers": {
+    "tier": 2,
+    "seed": 3,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "How many ones are in "
+      },
+      {
+        "kind": "math",
+        "value": "14"
+      },
+      {
+        "kind": "text",
+        "value": " after you take out the ten?"
       }
     ]
   }

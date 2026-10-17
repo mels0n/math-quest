@@ -1,0 +1,470 @@
+skill: compare_groups
+items:
+  - id: cg_01
+    tier: 0
+    prompt:
+      - {kind: text, value: "The garden has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " nuts. The farm has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " nuts. Which place has more nuts?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The garden"}]
+      - [{kind: text, value: "The farm"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_02
+    tier: 1
+    prompt:
+      - {kind: text, value: "A baker counts "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " stamps and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " bags. Is one group bigger, or are they the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The stamps are bigger"}]
+      - [{kind: text, value: "The bags are bigger"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_03
+    tier: 2
+    prompt:
+      - {kind: text, value: "The hall has "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " ducks. The camp has "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " ducks. Which place has more ducks?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The hall"}]
+      - [{kind: text, value: "The camp"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_04
+    tier: 0
+    prompt:
+      - {kind: text, value: "The shop has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " lemons. The hall has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " lemons. Which place has fewer lemons?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The shop"}]
+      - [{kind: text, value: "The hall"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_05
+    tier: 1
+    prompt:
+      - {kind: text, value: "The orange pot has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " buttons. The pink pot has "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " buttons. Which pot has fewer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The orange pot"}]
+      - [{kind: text, value: "The pink pot"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_06
+    tier: 2
+    prompt:
+      - {kind: text, value: "The red bag has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " bells. The yellow bag has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " bells. Which bag has more?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The red bag"}]
+      - [{kind: text, value: "The yellow bag"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_07
+    tier: 0
+    prompt:
+      - {kind: text, value: "A baker keeps "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " blocks and "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " marbles. Are there more blocks or more marbles?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More blocks"}]
+      - [{kind: text, value: "More marbles"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_08
+    tier: 1
+    prompt:
+      - {kind: text, value: "The beach has "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " dogs. The park has "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " dogs. Which place has more dogs?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The beach"}]
+      - [{kind: text, value: "The park"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_09
+    tier: 2
+    prompt:
+      - {kind: text, value: "A chef sees "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " ants and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " birds. Which group has fewer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The ants"}]
+      - [{kind: text, value: "The birds"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_10
+    tier: 0
+    prompt:
+      - {kind: text, value: "Mom gets "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " apples and "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " eggs. Are there more apples or more eggs?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More apples"}]
+      - [{kind: text, value: "More eggs"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_11
+    tier: 1
+    prompt:
+      - {kind: text, value: "A driver carries "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " frogs and "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " cats. Which group has more?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The frogs"}]
+      - [{kind: text, value: "The cats"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_12
+    tier: 2
+    prompt:
+      - {kind: text, value: "A driver picks "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " leaves and "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " pens. Are there more leaves or more pens?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More leaves"}]
+      - [{kind: text, value: "More pens"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_13
+    tier: 0
+    prompt:
+      - {kind: text, value: "The farm has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " horses. The kitchen has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " horses. Which place has fewer horses?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The farm"}]
+      - [{kind: text, value: "The kitchen"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_14
+    tier: 1
+    prompt:
+      - {kind: text, value: "A boy picks "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " cups and "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " bags. Are there more cups or more bags?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More cups"}]
+      - [{kind: text, value: "More bags"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_15
+    tier: 2
+    prompt:
+      - {kind: text, value: "A kid buys "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " plums and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " buns. Are there more plums or more buns?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More plums"}]
+      - [{kind: text, value: "More buns"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_16
+    tier: 0
+    prompt:
+      - {kind: text, value: "Mom picks "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " pigs and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " bees. Which group has fewer?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The pigs"}]
+      - [{kind: text, value: "The bees"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_17
+    tier: 1
+    prompt:
+      - {kind: text, value: "The yellow basket has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " cherries. The brown basket has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " cherries. Which basket has more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The yellow basket"}]
+      - [{kind: text, value: "The brown basket"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_18
+    tier: 2
+    prompt:
+      - {kind: text, value: "The green bucket has "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " buns. The red bucket has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " buns. Which bucket has more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The green bucket"}]
+      - [{kind: text, value: "The red bucket"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_19
+    tier: 0
+    prompt:
+      - {kind: text, value: "The white bucket has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " spoons. The purple bucket has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " spoons. Which bucket has fewer?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The white bucket"}]
+      - [{kind: text, value: "The purple bucket"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_20
+    tier: 1
+    prompt:
+      - {kind: text, value: "The kitchen has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " balls. The barn has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " balls. Which place has fewer balls?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The kitchen"}]
+      - [{kind: text, value: "The barn"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_21
+    tier: 2
+    prompt:
+      - {kind: text, value: "The class has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " cakes and "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " nuts. Which group has fewer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The cakes"}]
+      - [{kind: text, value: "The nuts"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_22
+    tier: 0
+    prompt:
+      - {kind: text, value: "The purple bowl has "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " dolls. The brown bowl has "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " dolls. Which bowl has fewer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The purple bowl"}]
+      - [{kind: text, value: "The brown bowl"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_23
+    tier: 1
+    prompt:
+      - {kind: text, value: "A farmer picks "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " boats and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " dolls. Are there more boats or more dolls?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More boats"}]
+      - [{kind: text, value: "More dolls"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_24
+    tier: 2
+    prompt:
+      - {kind: text, value: "The black pot has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " hats. The yellow pot has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " hats. Which pot has more?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The black pot"}]
+      - [{kind: text, value: "The yellow pot"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_25
+    tier: 0
+    prompt:
+      - {kind: text, value: "A king draws "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " kites and "}
+      - {kind: math, value: "4"}
+      - {kind: text, value: " drums. Which group has more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The kites"}]
+      - [{kind: text, value: "The drums"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_26
+    tier: 1
+    prompt:
+      - {kind: text, value: "A cook makes "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " coins and "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " bags. Which group has fewer?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The coins"}]
+      - [{kind: text, value: "The bags"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_27
+    tier: 2
+    prompt:
+      - {kind: text, value: "The camp has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " robots. The shop has "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " robots. Which place has fewer robots?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The camp"}]
+      - [{kind: text, value: "The shop"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_28
+    tier: 0
+    prompt:
+      - {kind: text, value: "The barn has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " books. The school has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " books. Which place has fewer books?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The barn"}]
+      - [{kind: text, value: "The school"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_29
+    tier: 1
+    prompt:
+      - {kind: text, value: "A sailor counts "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " horses and "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " cows. Are there more horses or more cows?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More horses"}]
+      - [{kind: text, value: "More cows"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_30
+    tier: 2
+    prompt:
+      - {kind: text, value: "The purple crate has "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " dogs. The black crate has "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " dogs. Which crate has more?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The purple crate"}]
+      - [{kind: text, value: "The black crate"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_31
+    tier: 0
+    prompt:
+      - {kind: text, value: "A sailor holds "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " peas and "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " grapes. Which group has fewer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The peas"}]
+      - [{kind: text, value: "The grapes"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_32
+    tier: 1
+    prompt:
+      - {kind: text, value: "A baker has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " pies and "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " beans. Are there more pies or more beans?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "More pies"}]
+      - [{kind: text, value: "More beans"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_33
+    tier: 2
+    prompt:
+      - {kind: text, value: "A nurse has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " sticks and "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " plates. Which group has more?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The sticks"}]
+      - [{kind: text, value: "The plates"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cg_34
+    tier: 0
+    prompt:
+      - {kind: text, value: "The black cup has "}
+      - {kind: math, value: "2"}
+      - {kind: text, value: " pigs. The yellow cup has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " pigs. Which cup has more?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The black cup"}]
+      - [{kind: text, value: "The yellow cup"}]
+      - [{kind: text, value: "Same"}]
+  - id: cg_35
+    tier: 1
+    prompt:
+      - {kind: text, value: "A bear brings "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: " kites and "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: " puzzles. Are there more kites or more puzzles?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "More kites"}]
+      - [{kind: text, value: "More puzzles"}]
+      - [{kind: text, value: "The same"}]
+  - id: cg_36
+    tier: 2
+    prompt:
+      - {kind: text, value: "The orange jar has "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " ducks. The white jar has "}
+      - {kind: math, value: "8"}
+      - {kind: text, value: " ducks. Which jar has more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The orange jar"}]
+      - [{kind: text, value: "The white jar"}]
+      - [{kind: text, value: "Same"}]

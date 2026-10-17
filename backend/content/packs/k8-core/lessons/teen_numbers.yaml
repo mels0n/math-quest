@@ -1,0 +1,32 @@
+# Lesson for Teen Numbers. The worked example is in words, so it is never a problem the
+# skill asks.
+skill: teen_numbers
+screens:
+  - title: A ten and some ones
+    body_md: >-
+      A teen number is one ten and some ones. This picture shows one ten and four ones. That makes fourteen.
+    visual:
+      kind: base_ten
+      params: {tens: 1, ones: 4}
+  - title: Read the digits
+    body_md: >-
+      The first digit is the ten. The second digit is the ones. Ten and four ones make fourteen.
+    visual:
+      kind: base_ten
+      params: {tens: 1, ones: 4}
+  - title: Take the ten away
+    body_md: >-
+      Take the ten away from sixteen. Six ones are left. So sixteen is a ten and six ones.
+    visual:
+      kind: base_ten
+      params: {tens: 1, ones: 6}
+worked_example:
+  prompt:
+    - {kind: text, value: "Seventeen is a ten and how many ones?"}
+  steps:
+    - Seventeen is a ten and some ones.
+    - Take the ten away.
+    - Seven ones are left.
+    - So seventeen is a ten and 7 ones.
+try_it:
+  tier: 0

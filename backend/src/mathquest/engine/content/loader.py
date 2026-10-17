@@ -81,6 +81,11 @@ def _validate[M: BaseModel](model: type[M], data: Any, rel: str) -> M:
         raise ContentError("; ".join(problems)) from None
 
 
+def load_validated[M: BaseModel](model: type[M], root: Path, rel: str) -> M:
+    """Read ``rel`` under ``root`` and validate it as ``model``; a ``ContentError`` if not."""
+    return _validate(model, _read(root, rel), rel)
+
+
 def load_slots(path: Path) -> Slots:
     """Load the shared slot lists (``content/slots.yaml``)."""
     return _validate(Slots, _read(path.parent, path.name), path.name)
@@ -136,6 +141,15 @@ def _check_teaching(pack: Pack) -> None:
             raise _fail(
                 f"word_problems/{sid}.yaml", ("skill",), f"{sid} has word_problems_fit: false"
             )
+    for sid, bank in pack.bank.items():
+        tiers = len(pack.skills[sid].tiers)
+        for i, item in enumerate(bank.items):
+            if item.tier is not None and item.tier >= tiers:
+                raise _fail(
+                    f"bank/{sid}.yaml",
+                    ("items", i, "tier"),
+                    f"skill {sid} has only {tiers} tiers",
+                )
     for sid in pack.bank:
         if not pack.skills[sid].banked:
             raise _fail(f"bank/{sid}.yaml", ("skill",), f"{sid} has banked: false")

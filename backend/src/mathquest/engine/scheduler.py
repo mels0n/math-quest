@@ -22,7 +22,7 @@ skill before rotating to the weakest of the others, and the same warm-up rule.
 An adventure session lasts SESSION_PROBLEMS problems; the caller ends it there.
 """
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
 
 from mathquest.engine.mastery import SkillRating
@@ -78,11 +78,13 @@ def pick_skill(
     due_reviews: Sequence[str],
     problem_index: int,
     recent: Sequence[str] = (),
+    started: Collection[str] = (),
 ) -> str:
     """Pick the next skill.
 
     `due_reviews` must already be ordered oldest review first. `recent` holds the
-    session's last skill ids, newest last.
+    session's last skill ids, newest last. `started` is the skills the learner has a record
+    of, which stay ready whatever prerequisites they gained (`SkillGraph.ready`).
     Every fifth problem (problem_index % 5 == 4) takes the first due review.
     Otherwise, when the skill of the newest problem that was not a review is still
     ready and has had fewer than RUN_LENGTH problems in a row (see `current_run`), it is
@@ -96,7 +98,7 @@ def pick_skill(
     """
     if due_reviews and problem_index % REVIEW_EVERY == REVIEW_EVERY - 1:
         return due_reviews[0]
-    ready = graph.ready(mastered)
+    ready = graph.ready(mastered, started)
     if ready:
         skill, length = current_run(recent, ready, problem_index)
         if skill is not None and length < RUN_LENGTH:
@@ -188,8 +190,9 @@ def plan_next(
     due_reviews: Sequence[str],
     problem_index: int,
     history: Sequence[Played],
+    started: Collection[str] = (),
 ) -> Pick:
-    """The next skill.
+    """The next skill. ``started`` is the skills the learner has a record of; see `pick_skill`.
 
     A review slot with a review due takes it first, so a warm-up never pushes a review
     back (the warm-up carries on after it). A warm-up in progress continues until it has
@@ -203,15 +206,17 @@ def plan_next(
     if due_reviews and _review_slot(problem_index):
         return Pick(due_reviews[0])
     tail = _warmup_tail(history, problem_index)
-    if tail:
+    if tail and tail[-1].skill_id in graph.skills:
         target = tail[-1].warmup_for
         assert target is not None
         if len(tail) < WARMUP_PROBLEMS:
             return Pick(tail[-1].skill_id, target)
-        if target in graph.skills and (target in graph.ready(mastered) or target in due_reviews):
+        if target in graph.skills and (
+            target in graph.ready(mastered, started) or target in due_reviews
+        ):
             return Pick(target)
     recent = [p.skill_id for p in history]
-    skill = pick_skill(graph, ratings, mastered, due_reviews, problem_index, recent)
+    skill = pick_skill(graph, ratings, mastered, due_reviews, problem_index, recent, started)
     if struggling(history, skill):
         prereq = weakest_prerequisite(graph, ratings, skill)
         if prereq is not None:

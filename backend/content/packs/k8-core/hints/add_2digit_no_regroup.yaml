@@ -1,0 +1,11 @@
+# Three hints, gentlest first: a nudge, the next step, then the whole answer worked out.
+skill: add_2digit_no_regroup
+levels:
+  - text_template: >-
+      Split each number into tens and ones. Add the tens, then add the ones.
+  - text_template: >-
+      Add the tens of both numbers: {a_tens} and {b_tens}. Then add the ones:
+      {a_ones} and {b_ones}.
+  - text_template: >-
+      The tens add up to {{= a_tens + b_tens }}. The ones add up to
+      {{= a_ones + b_ones }}. Together that makes {{= a + b }}. So \({a} + {b} = {{= a + b }}\).

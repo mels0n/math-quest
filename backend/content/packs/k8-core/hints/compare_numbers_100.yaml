@@ -1,0 +1,9 @@
+# Three hints for Compare to 100: a nudge, the next step, then the whole answer worked out.
+skill: compare_numbers_100
+levels:
+  - text_template: >-
+      Look at {a} and {b}. Find the {which} number.
+  - text_template: >-
+      Look at the tens first. More tens means a bigger number. If the tens match, look at the ones.
+  - text_template: >-
+      You compare {a} and {b}. The {which} number is {answer}. So the answer is {answer}.

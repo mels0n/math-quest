@@ -1,6 +1,6 @@
 """Skill dependency graph, built from a loaded content pack's skills."""
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from types import MappingProxyType
 
 from mathquest.engine.content.errors import ContentError
@@ -58,10 +58,34 @@ class SkillGraph:
     def topo_order(self) -> list[str]:
         return list(self._order)
 
-    def ready(self, mastered: set[str]) -> list[str]:
-        """Unmastered skills whose prerequisites are all mastered, in topological order."""
+    def implied(self, mastered: Collection[str]) -> set[str]:
+        """Skills the learner can be taken to know without playing them: every prerequisite,
+        direct or transitive, of a skill they have mastered, that is not mastered itself.
+        ``ready`` applies this only to skills never played; a started skill that is not
+        mastered is offered whatever is above it. Content added later under skills a learner
+        already knows must not send them back to it
+        (docs/adr/0020-readiness-for-existing-learners.md)."""
+        known = set(mastered)
+        found: set[str] = set()
+        for sid in known:
+            if sid in self.skills:
+                found |= self.ancestors(sid)
+        return found - known
+
+    def ready(self, mastered: Collection[str], started: Collection[str] = ()) -> list[str]:
+        """Unmastered skills to offer, in topological order: every skill the learner has
+        started and not mastered (whatever prerequisites it gained since, and whatever is
+        mastered above it), and every never-played skill whose prerequisites are all mastered
+        or implied (see ``implied``) and which is not itself implied."""
+        done = set(mastered)
+        begun = set(started) - done
+        known = done | (self.implied(done) - begun)
         return [
             sid
             for sid in self._order
-            if sid not in mastered and all(p in mastered for p in self.skills[sid].prerequisites)
+            if sid not in done
+            and (
+                sid in begun
+                or (sid not in known and all(p in known for p in self.skills[sid].prerequisites))
+            )
         ]

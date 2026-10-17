@@ -273,3 +273,37 @@ def test_0010_adds_practice_columns_and_revisits_and_downgrades() -> None:
         assert asyncio.run(_rows(url, schema, columns)) == []
     finally:
         asyncio.run(_exec(url, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+
+
+def test_0011_counts_existing_mastery_rows_as_played_in_the_adventure() -> None:
+    url = _database_url()
+    schema = f"mq_mig_{uuid.uuid4().hex[:12]}"
+    asyncio.run(_exec(url, f'CREATE SCHEMA "{schema}"'))
+    column = (
+        "SELECT column_name FROM information_schema.columns"
+        f" WHERE table_schema = '{schema}' AND table_name = 'skill_mastery'"
+        " AND column_name = 'played_in_adventure'"
+    )
+    try:
+        cfg = _alembic(url, schema)
+        command.upgrade(cfg, "0010")
+        player = uuid.uuid4()
+        asyncio.run(
+            _rows(
+                url,
+                schema,
+                "INSERT INTO players (id, nickname, nickname_key, recovery_hash)"
+                f" VALUES ('{player}', 'Old', 'old', 'x')",
+                "INSERT INTO skill_mastery (player_id, skill_id)"
+                f" VALUES ('{player}', 'add_within_10')",
+            )
+        )
+        command.upgrade(cfg, "0011")
+        assert asyncio.run(_rows(url, schema, column)) == [("played_in_adventure",)]
+        old = "SELECT played_in_adventure FROM skill_mastery"
+        assert asyncio.run(_rows(url, schema, old)) == [(True,)]
+        command.downgrade(cfg, "0010")
+        assert asyncio.run(_rows(url, schema, column)) == []
+        assert asyncio.run(_rows(url, schema, "SELECT count(*) FROM skill_mastery")) == [(1,)]
+    finally:
+        asyncio.run(_exec(url, f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))

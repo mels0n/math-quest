@@ -5,8 +5,15 @@ import httpx
 import pytest
 
 from mathquest.engine.scheduler import SESSION_PROBLEMS
-from tests.api.test_play_api import CSRF, _answer, _api, _signup
-from tests.conftest import ApiFactory
+from tests.api.test_play_api import CSRF, _answer, _signup
+from tests.api.test_play_api import _api as _play_api
+from tests.conftest import Api, ApiFactory, pass_early_skills
+
+
+async def _api(api: ApiFactory, *, dev_expose_answers: bool = False) -> Api:
+    h = await _play_api(api, dev_expose_answers=dev_expose_answers)
+    await pass_early_skills(h)
+    return h
 
 
 async def _start(client: httpx.AsyncClient, **body: object) -> httpx.Response:

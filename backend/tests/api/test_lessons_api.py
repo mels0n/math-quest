@@ -7,14 +7,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, check
 from mathquest.engine.types import Problem
-from tests.conftest import SIGNUP_WORD, Api, ApiFactory
+from tests.conftest import (
+    EARLY_SKILLS,
+    NO_CONTENT_SKILL,
+    SIGNUP_WORD,
+    Api,
+    ApiFactory,
+    pass_early_skills,
+)
 
 CSRF = {"X-Requested-With": "mathquest"}
 LESSON_CLIENT = {**CSRF, "X-MathQuest-Client": "2"}
 """What a client that can show lessons sends with `next`."""
 FIRST_SKILL = "add_within_10"
 """The skill a new player starts on: it has a lesson."""
-NO_LESSON = "place_value_tens_ones"
+NO_LESSON = NO_CONTENT_SKILL
 
 
 class _SyncPool(CheckerPool):
@@ -35,6 +42,7 @@ async def _api(api: ApiFactory, nickname: str = "Learner", **overrides: object) 
     h = await api(**overrides)
     h.app.state.checker_pool = _SyncPool()
     await _signup(h.client, nickname)
+    await pass_early_skills(h)
     return h
 
 
@@ -94,6 +102,7 @@ async def test_seen_is_per_player_and_idempotent(api: ApiFactory) -> None:
     other = await api()
     other.app.state.checker_pool = _SyncPool()
     await _signup(other.client, "Second")
+    await pass_early_skills(other)
     assert (await _next(other.client, await _session(other.client)))["type"] == "lesson"
 
 
@@ -178,7 +187,11 @@ async def test_try_it_is_checked_but_changes_nothing(api: ApiFactory, db: AsyncS
 
     me = (await h.client.get("/api/me")).json()
     assert me["total_solved"] == 0
-    count = await db.scalar(text("SELECT count(*) FROM skill_mastery"))
+    # Only the early skills `_api` gave the player are recorded; the try-it added nothing.
+    count = await db.scalar(
+        text("SELECT count(*) FROM skill_mastery WHERE NOT (skill_id = ANY(:early))"),
+        {"early": list(EARLY_SKILLS)},
+    )
     assert count == 0
     issued = await db.scalar(text("SELECT count(*) FROM problem_instances"))
     assert issued == 0

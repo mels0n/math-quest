@@ -1,0 +1,9 @@
+# Three hints for Count to 10: a nudge, the next step, then the whole answer worked out.
+skill: count_to_10
+levels:
+  - text_template: >-
+      Find the number you know in the question. Think about which way to count.
+  - text_template: >-
+      The answer is {rel} {near}. Count {dir} from {near}, one number at a time.
+  - text_template: >-
+      Count {dir} from {near}. The answer is {rel} {near}. You say {answer}.

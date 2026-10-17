@@ -18,9 +18,16 @@ from mathquest.engine.content.schema import Bank, BankItem, Part
 from mathquest.engine.types import MathPart, Problem, Prompt, TextPart
 
 
-def pick_item(bank: Bank, seed: int) -> BankItem:
-    """The item a seed selects."""
-    return random.Random(f"{seed}:bank").choice(bank.items)
+def items_for_tier(bank: Bank, tier: int) -> list[BankItem]:
+    """The items a learner at ``tier`` can get: those tagged with it and untagged ones."""
+    return [i for i in bank.items if i.tier is None or i.tier == tier]
+
+
+def pick_item(bank: Bank, seed: int, tier: int | None = None) -> BankItem:
+    """The item a seed selects, from the items for ``tier`` when it is given (and any
+    exist; a bank with none for that tier serves all of its items)."""
+    pool = bank.items if tier is None else items_for_tier(bank, tier) or list(bank.items)
+    return random.Random(f"{seed}:bank").choice(pool)
 
 
 def find_item(bank: Bank, item_id: str) -> BankItem | None:

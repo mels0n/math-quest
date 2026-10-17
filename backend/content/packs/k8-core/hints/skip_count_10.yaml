@@ -1,0 +1,9 @@
+# Three hints for Count by Tens: a nudge, the next step, then the whole answer worked out.
+skill: skip_count_10
+levels:
+  - text_template: >-
+      Look at the numbers in the row. Each one is ten away from the next.
+  - text_template: >-
+      Look at {previous}. Count {dir} one ten from {previous}.
+  - text_template: >-
+      Ten {tens_way} than {previous} is {answer}. So the answer is {answer}.
