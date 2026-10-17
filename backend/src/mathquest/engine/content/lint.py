@@ -61,6 +61,7 @@ prerequisites. It binds the pack to a generator registry passed in, through the 
 ``SkillSource`` the app uses, so what it renders is what a learner sees.
 """
 
+import dataclasses
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -605,9 +606,13 @@ def _reveal_one(
 ) -> Iterator[Finding]:
     """Report the first (seed, tier) where the text shows a number equal to the answer
     that the prompt does not show itself. A number written in every rendering is a fixed
-    example, and the message says so."""
+    example, and the message says so. When the answer is always one of the numbers the
+    prompt shows (a comparison), writing the answer's own value (``{answer}``, or any value
+    that is the answer in every problem) is reported too, since the number check cannot see
+    it."""
     renders: list[set[sympy.Expr]] = []
     leaks: list[tuple[int, int, sympy.Expr]] = []
+    rendered: list[tuple[int, int, Problem, set[sympy.Expr]]] = []
     for tier in range(len(source.tier_difficulties)):
         for seed in range(TEACHING_SEEDS):
             problem = source.generate(seed, tier)
@@ -619,17 +624,40 @@ def _reveal_one(
                 continue
             found = _numbers(shown)
             renders.append(found)
+            rendered.append((seed, tier, problem, found))
             if _leaks(problem, found):
                 leaks.append((seed, tier, problem.answer))
-    if not leaks:
+    if leaks:
+        seed, tier, answer = leaks[0]
+        fixed = set.intersection(*renders)
+        origin = "a fixed example shows" if answer in fixed else "shows"
+        yield Finding(
+            "error", file, at, "reveal",
+            f"seed {seed} tier {tier}: {origin} {answer}, the answer; only the last hint may",
+        )  # fmt: skip
         return
-    seed, tier, answer = leaks[0]
-    fixed = set.intersection(*renders)
-    origin = "a fixed example shows" if answer in fixed else "shows"
-    yield Finding(
-        "error", file, at, "reveal",
-        f"seed {seed} tier {tier}: {origin} {answer}, the answer; only the last hint may",
-    )  # fmt: skip
+    if not rendered or not all(p.answer in _prompt_numbers(p) for _, _, p, _ in rendered):
+        return
+    own = {
+        key
+        for key in rendered[0][2].values
+        if all(p.values.get(key) == p.answer for _, _, p, _ in rendered)
+    }
+    for seed, tier, problem, found in rendered:
+        changed = {
+            k: (int(problem.answer) + 100_003 if k in own else v) for k, v in problem.values.items()
+        }
+        try:
+            other = run(dataclasses.replace(problem, values=changed))
+        except TemplateError:
+            continue
+        if other is not None and _numbers(other) != found:
+            yield Finding(
+                "error", file, at, "reveal",
+                f"seed {seed} tier {tier}: writes the answer's own value "
+                f"({', '.join(sorted(own))}); only the last hint may",
+            )  # fmt: skip
+            return
 
 
 # --- rule: fixed examples are not problems the skill asks ------------------------
@@ -668,7 +696,7 @@ def _shape(key: str) -> str:
     return re.sub(r"\d+", "#", key)
 
 
-_BLANK_RUN = re.compile(r"(?<![\w.])(?:\d+|_|\?)(?:\s*,\s*(?:\d+|_|\?))+(?![\w])")
+_BLANK_RUN = re.compile(r"(?<![\w.])(?:\d+|_+|\?)(?:\s*,\s*(?:\d+|_+|\?))+(?![\w])")
 
 
 def _plain_runs(template: str) -> Iterator[str]:
@@ -677,25 +705,47 @@ def _plain_runs(template: str) -> Iterator[str]:
     found by ``_fixed_math``."""
     for run in _BLANK_RUN.findall(_MATH_SEGMENT.sub(" ", template)):
         if "_" in run or "?" in run:
-            yield "".join(run.split()).replace("_", "?")
+            yield re.sub(r"_+", "?", "".join(run.split()))
 
 
-type _Scan = tuple[dict[str, tuple[int, int]], list[tuple[int, int]]]
-"""The problems found (key -> first (seed, tier)) and the (tier, keys seen) of every tier
-whose scan hit EXAMPLE_CAP unfinished."""
+type _Scan = tuple[dict[str, tuple[int, int]], frozenset[str], list[tuple[int, int]]]
+"""The problems found (key -> first (seed, tier)), the shapes of those keys (see ``_shape``)
+and the (tier, keys seen) of every tier whose scan hit EXAMPLE_CAP unfinished."""
 
 _ASKED_CACHE: dict[int, tuple[object, _Scan]] = {}
-"""Scan results by generator object; a scan is tens of thousands of problems, and a
-generator never changes while the process runs."""
+"""Scan results by generator object, bank not included; a scan is tens of thousands of
+problems, and a generator never changes while the process runs."""
+
+
+def _bank_keys(source: SkillSource) -> dict[str, tuple[int, int]]:
+    """The whole prompt and math parts of every bank item, marked as found at (-1, -1)."""
+    keys: dict[str, tuple[int, int]] = {}
+    if source.bank is not None:
+        for item in source.bank.items:
+            prompt = to_prompt(item.prompt)
+            keys.setdefault(
+                _whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt), (-1, -1)
+            )
+            for part in prompt:
+                if isinstance(part, MathPart):
+                    keys.setdefault(_same_sum(part.latex), (-1, -1))
+    return keys
 
 
 def _asked(source: SkillSource) -> _Scan:
+    """What the skill asks: its generator's scan (cached) and its bank items."""
     cached = _ASKED_CACHE.get(id(source.generator))
     if cached is not None and cached[0] is source.generator:
-        return cached[1]
-    found = _scan(source)
-    _ASKED_CACHE[id(source.generator)] = (source.generator, found)
-    return found
+        found = cached[1]
+    else:
+        found = _scan(source)
+        _ASKED_CACHE[id(source.generator)] = (source.generator, found)
+    asked, shapes, unfinished = found
+    bank = _bank_keys(source)
+    if not bank:
+        return found
+    merged = {**bank, **asked}
+    return merged, shapes | {_shape(k) for k in bank}, unfinished
 
 
 def _scan(source: SkillSource) -> _Scan:
@@ -723,55 +773,7 @@ def _scan(source: SkillSource) -> _Scan:
             if len(asked) > before:
                 last_new = seed
             seed += 1
-    if source.bank is not None:
-        for item in source.bank.items:
-            prompt = to_prompt(item.prompt)
-            asked.setdefault(
-                _whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt), (-1, -1)
-            )
-            for part in prompt:
-                if isinstance(part, MathPart):
-                    asked.setdefault(_same_sum(part.latex), (-1, -1))
-    return asked, unfinished
-
-
-_SHAPES_CACHE: dict[int, tuple[object, frozenset[str]]] = {}
-
-
-def _shapes(source: SkillSource) -> frozenset[str]:
-    """The kinds of problem the skill asks (``_shape`` of every prompt and math part, bank
-    items included). Few kinds, so the scan ends long before the problems run out; an
-    example of a kind never asked cannot be one of its problems, and needs no exact scan."""
-    cached = _SHAPES_CACHE.get(id(source.generator))
-    if cached is not None and cached[0] is source.generator:
-        found = cached[1]
-    else:
-        seen: set[str] = set()
-        for tier in range(len(source.tier_difficulties)):
-            last_new = 0
-            for seed in range(EXAMPLE_CAP):
-                if seed >= max(EXAMPLE_FLOOR, 2 * last_new):
-                    break
-                prompt = source.generate(seed, tier).prompt
-                before = len(seen)
-                seen.add(
-                    _shape(_whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt))
-                )
-                for part in prompt:
-                    if isinstance(part, MathPart):
-                        seen.add(_shape(_same_sum(part.latex)))
-                if len(seen) > before:
-                    last_new = seed
-        found = frozenset(seen)
-        _SHAPES_CACHE[id(source.generator)] = (source.generator, found)
-    if source.bank is None:
-        return found
-    extra: set[str] = set()
-    for item in source.bank.items:
-        prompt = to_prompt(item.prompt)
-        extra.add(_shape(_whole(p.text if isinstance(p, TextPart) else p.latex for p in prompt)))
-        extra |= {_shape(_same_sum(p.latex)) for p in prompt if isinstance(p, MathPart)}
-    return found | extra
+    return asked, frozenset(_shape(k) for k in asked), unfinished
 
 
 def _example_key(latex: str) -> str:
@@ -815,11 +817,13 @@ def _examples(pack: Pack, sources: Mapping[str, SkillSource]) -> Iterator[Findin
                 ))  # fmt: skip
         if not any(math for *_, math in texts):
             continue
-        kinds = _shapes(source)
-        if not any(_shape(_example_key(latex)) in kinds for *_, math in texts for latex in math):
-            continue
-        asked, unfinished = _asked(source)
-        for tier, seen in unfinished:
+        asked, shapes, unfinished = _asked(source)
+        # A tier whose scan did not finish may hold a problem the scan never reached. That only
+        # matters for an example that looks like one of the skill's problems.
+        looks_asked = any(
+            _shape(_example_key(latex)) in shapes for *_, math in texts for latex in math
+        )
+        for tier, seen in unfinished if looks_asked else []:
             yield Finding(
                 "warning", "skills.yaml", sid, "example",
                 f"example scan did not finish for {sid} tier {tier}: still finding new "
