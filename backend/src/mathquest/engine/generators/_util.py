@@ -74,6 +74,8 @@ class SkillGenerator:
 
     ``misconception_keys`` declares every misconception key the builder can produce, so
     content (misconception feedback) can be checked against it without sampling.
+    ``first_try_counts`` marks a question with only two likely answers: a wrong try before
+    the solve scores as a miss (``engine.mastery.scores_as_correct``).
     """
 
     def __init__(
@@ -83,8 +85,11 @@ class SkillGenerator:
         form: AnswerForm,
         build: Builder,
         misconception_keys: tuple[str, ...] = (),
+        *,
+        first_try_counts: bool = False,
     ) -> None:
         self.generator_id = generator_id
+        self.first_try_counts = first_try_counts
         self.tier_difficulties = tier_difficulties(base_difficulty)
         self.misconception_keys = misconception_keys
         self._form = form

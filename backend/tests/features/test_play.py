@@ -1341,3 +1341,39 @@ async def test_playing_a_skill_in_the_adventure_marks_it_started(db: AsyncSessio
     assert problem.skill_id == "count_to_10"
     await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
     assert (await _row(db, pid, "count_to_10")).played_in_adventure is True
+
+
+async def test_a_comparison_solved_after_a_wrong_try_counts_as_a_miss(db: AsyncSession) -> None:
+    """Two numbers to pick from: a guess is followed by a sure right answer, so only the
+    first try counts. The tries, feedback and copy are unchanged."""
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, "compare_numbers_20", tier=0, seed=11)
+    miss = await _submit(db, pid, inst.id, _wrong(inst))
+    assert miss.verdict is Verdict.INCORRECT and miss.attempts_left == 2
+    hit = await _submit(db, pid, inst.id, _right(inst))
+    assert hit.solved and hit.verdict is Verdict.CORRECT  # still solved, still shown as right
+    assert (await _row(db, pid, "compare_numbers_20")).recent == [[0, 0]]
+    clean = await _issue(db, pid, session.session_id, "compare_numbers_20", tier=0, seed=12)
+    await _submit(db, pid, clean.id, _right(clean))
+    assert (await _row(db, pid, "compare_numbers_20")).recent == [[0, 0], [1, 0]]
+
+
+async def test_other_skills_and_bank_items_keep_the_plain_rule(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, "add_within_10", tier=0, seed=3)
+    await _submit(db, pid, inst.id, _wrong(inst))
+    await _submit(db, pid, inst.id, _right(inst))
+    assert (await _row(db, pid, "add_within_10")).recent == [[1, 0]]
+
+    source = CATALOG.source("compare_numbers_20")
+    assert source.bank is not None
+    item = next(i for i in source.bank.items if i.tier == 0)
+    bank = await _issue(db, pid, session.session_id, "compare_numbers_20", 0, 5, "bank", item.id)
+    problem = service.regenerate(CATALOG, bank)
+    assert problem.correct_choice is not None
+    wrong = (problem.correct_choice + 1) % len(problem.choices or ())
+    await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=wrong)
+    await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=problem.correct_choice)
+    assert (await _row(db, pid, "compare_numbers_20")).recent == [[1, 0]]

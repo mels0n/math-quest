@@ -174,6 +174,7 @@ from mathquest.engine.mastery import (
     next_review_days,
     placed_keeps_mastery,
     predict,
+    scores_as_correct,
     update,
 )
 from mathquest.engine.placement import probe_tier
@@ -875,8 +876,14 @@ async def submit_answer(
                 skill_id=skill_id,
                 at=received,
             )
+        # A generator with two likely answers scores only a first-try solve as correct;
+        # bank choice items keep the plain rule (they allow two tries, not a free guess).
+        first_try = bool(getattr(catalog.source(skill_id).generator, "first_try_counts", False))
+        wrong_tries = sum(1 for a in attempts if a.verdict == Verdict.INCORRECT.value)
         outcome = Outcome(
-            correct=solved,
+            correct=scores_as_correct(
+                solved, wrong_tries, first_try and instance.variant != "bank"
+            ),
             hints_used=help_used(
                 tried,
                 instance.hints_used + await teaching.views_on_problem(db, instance.id),

@@ -148,6 +148,7 @@ def generators() -> list[SkillGenerator]:
             form,
             _build_compare_groups,
             ("confused_more_fewer", "counted_both_groups"),
+            first_try_counts=True,
         ),
         SkillGenerator(
             "compare_numbers_20",
@@ -155,6 +156,7 @@ def generators() -> list[SkillGenerator]:
             form,
             _build_compare_numbers_20,
             ("confused_bigger_smaller", "gave_the_difference"),
+            first_try_counts=True,
         ),
         SkillGenerator(
             "compare_numbers_100",
@@ -162,5 +164,6 @@ def generators() -> list[SkillGenerator]:
             form,
             _build_compare_numbers_100,
             ("confused_bigger_smaller", "compared_ones_only", "gave_the_difference"),
+            first_try_counts=True,
         ),
     ]

@@ -27,6 +27,13 @@ shows its bank items). That had three costs found in review:
 - A bank item has an optional `tier`. A problem at a tier draws only from items with that
   tier or none, and the bank's share only counts when the tier has such items. Every item
   of the comparing banks is tagged.
+- Only the first try counts. A comparison has two likely answers, so a wrong try is
+  followed by a sure right one and guessing would master the skill. Their generators carry
+  `first_try_counts`: for a bare or word problem a solve after a wrong try is scored as a
+  miss (a zero in the rating and a miss in `recent`), while the tries, the feedback and the
+  "That's right" copy stay. Bank choice items keep the plain rule, since they allow two
+  tries and have three or more choices. A simulated guesser who always finds the right
+  number on the second try reaches mastery under the plain rule and never under this one.
 - The groups skill keeps numerals: counting objects is K.CC.B.5 and needs a picture of
   countable objects, a visual that does not exist yet. It is a separate follow-up; until
   then groups are told as numbers and the first batch does not claim to teach counting

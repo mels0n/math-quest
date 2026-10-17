@@ -1028,3 +1028,10 @@ def test_count_on_is_one_form_in_five_in_every_tier_of_count_to_100() -> None:
     for tier in range(3):
         forms = [gen.generate(seed, tier).values["form"] for seed in range(1000)]
         assert 0.14 <= forms.count("count_on") / 1000 <= 0.26, tier
+
+
+def test_only_the_comparing_generators_count_the_first_try_only() -> None:
+    flagged = {
+        gid for gid, gen in all_generators().items() if getattr(gen, "first_try_counts", False)
+    }
+    assert flagged == {"compare_groups", "compare_numbers_20", "compare_numbers_100"}
