@@ -9,6 +9,16 @@
       }
     ]
   },
+  "add_2digit_no_regroup-word": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A trail has two parts. The first part has 71 steps. The second part has 20 steps. How many steps is the trail?"
+      }
+    ]
+  },
   "add_2digit_regroup": {
     "tier": 0,
     "seed": 0,
@@ -16,6 +26,16 @@
       {
         "kind": "math",
         "value": "27 + 19 = ?"
+      }
+    ]
+  },
+  "add_2digit_regroup-word": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The red team scores 27 goals this year. The blue team scores 19 goals. How many goals do the two teams score?"
       }
     ]
   },
@@ -104,6 +124,16 @@
       {
         "kind": "math",
         "value": "17 - 7 = ?"
+      }
+    ]
+  },
+  "sub_within_20-word": {
+    "tier": 0,
+    "seed": 14,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 12 frogs on a log. Fatima watches 1 of them hop into the pond. How many frogs are left on the log?"
       }
     ]
   }

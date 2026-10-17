@@ -72,6 +72,7 @@ skills:
       - {id: 2, label: Big jumps across ten}
     grade_band: "1"
     keypad: numpad
+    word_problems_fit: true
   - id: place_value_tens_ones
     name: Tens and Ones
     region: number_meadows
@@ -85,6 +86,7 @@ skills:
       - {id: 2, label: Four-digit numbers}
     grade_band: "1"
     keypad: numpad
+    vocabulary: [ones, tens, hundreds, thousands, digit, digits]
   - id: add_2digit_no_regroup
     name: Add Big Numbers
     region: operation_canyon
@@ -98,6 +100,7 @@ skills:
       - {id: 2, label: Bigger sums}
     grade_band: "2"
     keypad: numpad
+    word_problems_fit: true
   - id: add_2digit_regroup
     name: Add and Carry
     region: operation_canyon
@@ -111,6 +114,7 @@ skills:
       - {id: 2, label: Sums over 100}
     grade_band: "2"
     keypad: numpad
+    word_problems_fit: true
   - id: equivalent_fractions
     name: Same-Size Fractions
     region: fraction_forest

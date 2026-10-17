@@ -1,0 +1,11 @@
+# Three hints, gentlest first: a nudge, the next step, then the whole answer worked out.
+skill: place_value_tens_ones
+levels:
+  - text_template: >-
+      Look at the digits of {number} one at a time. Each one sits in its own place.
+  - text_template: >-
+      Start at the right. The first place is ones, then tens, then hundreds,
+      then thousands. Find the {place} place.
+  - text_template: >-
+      Count the places from the right until you reach {place}. The digit
+      there is {digit}. So the digit in the {place} place of {number} is {digit}.

@@ -1,0 +1,74 @@
+# Word problems for Subtract from 20. Every template uses the generator's {a} and {b}
+# and asks for what is left, how many more or how many are not, so each story takes
+# something away. The amount taken (b) can be 1, so it is never followed by a noun and
+# never the subject of a verb ("takes {b} out", "That is {b}"). Nouns are fixed words, not
+# the shared object list, so every story makes sense. Short sentences (12 words or
+# fewer), simple words, no sentence that starts with a number, and a question that says
+# whose things are counted.
+skill: sub_within_20
+templates:
+  - id: gives_away
+    text_template: "{name} brings {a} cards to school. {name} gives {b} to {friend}. How many cards does {name} still have?"
+    slots: {name: names, friend: names}
+    grade_band: 1
+  - id: library_return
+    text_template: "{name} has {a} books from the library. {name} brings {b} back. How many books does {name} still have?"
+    slots: {name: names}
+    grade_band: 1
+  - id: party_cupcakes
+    text_template: "There are {a} cupcakes at the party. The kids eat {b}. How many cupcakes are left?"
+    grade_band: 1
+  - id: frogs_log
+    text_template: "There are {a} frogs on a log. {name} watches {b} of them hop into the pond. How many frogs are left on the log?"
+    slots: {name: names}
+    grade_band: 1
+  - id: fish_tank
+    text_template: "Some fish swim in a tank, {a} in all. {name} moves {b} to a new tank. How many fish stay in the first tank?"
+    slots: {name: names}
+    grade_band: 1
+  - id: muffin_tray
+    text_template: "A tray has {a} muffins. {name} sells {b} of them. How many muffins are left on the tray?"
+    slots: {name: names}
+    grade_band: 1
+  - id: wire_birds
+    text_template: "Birds sit on a wire, {a} in all. A cat chases {b} away. How many birds are still on the wire?"
+    grade_band: 1
+  - id: apple_tree
+    text_template: "An apple tree has {a} apples. The wind blows {b} to the ground. How many apples are still on the tree?"
+    grade_band: 1
+  - id: path_steps
+    text_template: "A path up the hill has {a} steps. {name} has climbed {b}. How many steps are left to climb?"
+    slots: {name: names}
+    grade_band: 1
+  - id: puzzle_pieces
+    text_template: "A puzzle has {a} pieces. {name} puts in {b}. How many pieces are left to put in?"
+    slots: {name: names}
+    grade_band: 1
+  - id: marble_compare
+    text_template: "{name} has {a} marbles. {friend} has {b}. How many more marbles does {name} have?"
+    slots: {name: names, friend: names}
+    grade_band: 1
+  - id: pages_compare
+    text_template: "{name} reads {a} pages. {friend} reads {b}. How many fewer pages does {friend} read?"
+    slots: {name: names, friend: names}
+    grade_band: 1
+  - id: points_needed
+    text_template: "{name} needs {a} points to win the game. {name} has {b}. How many more points does {name} need?"
+    slots: {name: names}
+    grade_band: 1
+  - id: picture_page
+    text_template: "A page holds {a} pictures. {name} has {b}. How many more pictures fill the page?"
+    slots: {name: names}
+    grade_band: 1
+  - id: blue_marbles
+    text_template: "A bag has {a} marbles. {name} pulls out the blue ones. That is {b}. How many marbles are not blue?"
+    slots: {name: names}
+    grade_band: 1
+  - id: red_flowers
+    text_template: "{name} picks {a} flowers and keeps the red ones. That is {b}. How many flowers are not red?"
+    slots: {name: names}
+    grade_band: 1
+  - id: nest_hatch
+    text_template: "A nest has {a} eggs. {name} sees {b} of them hatch. How many eggs have not hatched?"
+    slots: {name: names}
+    grade_band: 1

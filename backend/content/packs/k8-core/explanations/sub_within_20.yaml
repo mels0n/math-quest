@@ -1,0 +1,34 @@
+# Four ways to explain subtracting from 20, plus feedback for each mistake the generator
+# knows. None of them shows the answer, and none writes the number ten as a digit, since
+# ten can be the answer: pictures show the start and the hops back.
+skill: sub_within_20
+approaches:
+  - style: visual
+    body_md: >-
+      Look at the line. You begin at {a}. Hop to the left to take away. Keep
+      hopping until you have counted back {b}. Where you land is the answer.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: "{a}", jumps: "{{= 0 - b }}"}
+  - style: steps
+    body_md: |-
+      1. Say the first number out loud.
+      2. Count back the second number, one at a time.
+      3. If you cross ten, stop at ten, then keep going.
+      4. The last number you say is the answer.
+  - style: story
+    body_md: >-
+      A jar holds {a} buttons. You take {b} of them out. How many are left
+      in the jar? That is \({a} - {b}\).
+  - style: worked
+    body_md: >-
+      Try it with me. Begin with {a}. Count back {b}, and move your finger
+      along the line. Stop when you have counted back {b}.
+      Your last number is the answer.
+misconceptions:
+  subtracted_backwards: >-
+    It looks like you took the smaller digit from the bigger digit. Start at
+    {a} and count back {b} instead. When you reach ten, keep counting back.
+  added_instead: >-
+    It looks like you added. The minus sign means take {b} away from {a}. So
+    the answer is less than {a}.

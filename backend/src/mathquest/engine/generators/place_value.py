@@ -35,7 +35,7 @@ def _build_place_value(rng: random.Random, tier: int) -> Built:
         ),
         answer=sympy.Integer(answer),
         wrong=wrong,
-        values={"number": number, "place": _PLACES[place]},
+        values={"number": number, "place": _PLACES[place], "digit": answer},
     )
 
 

@@ -1,0 +1,35 @@
+# Four ways to explain adding with carrying, plus feedback for each mistake the generator
+# knows. None of them shows the answer: the picture shows only the first number.
+skill: add_2digit_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      Here is {a} as blocks. Picture the blocks for {b} next to them. Count the
+      cubes. If you can make ten cubes, swap them for one stick. Then count
+      the sticks and the cubes that are left.
+    visual:
+      kind: base_ten
+      params: {tens: "{a_tens}", ones: "{a_ones}"}
+  - style: steps
+    body_md: |-
+      1. Add the ones of both numbers.
+      2. If they make ten or more, keep the ones that are left.
+      3. Carry one ten to the tens place.
+      4. Add the tens, and the carried ten too.
+  - style: story
+    body_md: >-
+      A baker packs {a} rolls into bags and sells them. Then the baker packs
+      {b} more rolls. How many rolls did the baker pack in all? That is
+      \({a} + {b}\).
+  - style: worked
+    body_md: >-
+      Let us do yours together. The ones digits are {a_ones} and {b_ones}.
+      Add them. They make a ten and some ones. Write the ones. Carry the ten.
+      Then add the tens digits and the carried ten.
+misconceptions:
+  forgot_carry: >-
+    You were close! It looks like the carried ten got lost. Ten ones
+    make one ten. Carry that ten to the tens place. Then add it in.
+  added_carry_twice: >-
+    You were close! It looks like the carried ten was added two times. Carry
+    the ten once. Add it with the other tens.
