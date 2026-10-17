@@ -322,6 +322,58 @@ def test_place_value_digit_value_is_the_answer(seed: int, tier: int) -> None:
     assert problem.values["digit"] == problem.answer
 
 
+# Problems these skills gave before their teaching content was written, by (skill, tier, seed).
+# A failure means the same seed now gives a different problem, so attempts stored under the
+# old one would be checked against the wrong prompt or answer.
+PINNED_PROBLEMS = (
+    ("sub_within_20", 0, 1, "13 - 3 = ?", 10),
+    ("sub_within_20", 0, 7, "16 - 2 = ?", 14),
+    ("sub_within_20", 0, 42, "12 - 1 = ?", 11),
+    ("sub_within_20", 1, 1, "12 - 7 = ?", 5),
+    ("sub_within_20", 1, 7, "13 - 5 = ?", 8),
+    ("sub_within_20", 1, 42, "16 - 7 = ?", 9),
+    ("sub_within_20", 2, 1, "16 - 9 = ?", 7),
+    ("sub_within_20", 2, 7, "17 - 8 = ?", 9),
+    ("sub_within_20", 2, 42, "15 - 7 = ?", 8),
+    ("add_2digit_no_regroup", 0, 1, "32 + 50 = ?", 82),
+    ("add_2digit_no_regroup", 0, 7, "67 + 10 = ?", 77),
+    ("add_2digit_no_regroup", 0, 42, "25 + 10 = ?", 35),
+    ("add_2digit_no_regroup", 1, 1, "24 + 10 = ?", 34),
+    ("add_2digit_no_regroup", 1, 7, "36 + 20 = ?", 56),
+    ("add_2digit_no_regroup", 1, 42, "14 + 11 = ?", 25),
+    ("add_2digit_no_regroup", 2, 1, "31 + 54 = ?", 85),
+    ("add_2digit_no_regroup", 2, 7, "66 + 10 = ?", 76),
+    ("add_2digit_no_regroup", 2, 42, "24 + 11 = ?", 35),
+    ("add_2digit_regroup", 0, 1, "13 + 29 = ?", 42),
+    ("add_2digit_regroup", 0, 7, "26 + 35 = ?", 61),
+    ("add_2digit_regroup", 0, 42, "32 + 28 = ?", 60),
+    ("add_2digit_regroup", 1, 1, "73 + 19 = ?", 92),
+    ("add_2digit_regroup", 1, 7, "46 + 15 = ?", 61),
+    ("add_2digit_regroup", 1, 42, "62 + 28 = ?", 90),
+    ("add_2digit_regroup", 2, 1, "33 + 89 = ?", 122),
+    ("add_2digit_regroup", 2, 7, "86 + 15 = ?", 101),
+    ("add_2digit_regroup", 2, 42, "62 + 48 = ?", 110),
+    ("place_value_tens_ones", 0, 1, "Which digit is in the ones place of 39?", 9),
+    ("place_value_tens_ones", 0, 7, "Which digit is in the tens place of 62?", 6),
+    ("place_value_tens_ones", 0, 42, "Which digit is in the tens place of 20?", 2),
+    ("place_value_tens_ones", 1, 1, "Which digit is in the hundreds place of 391?", 3),
+    ("place_value_tens_ones", 1, 7, "Which digit is in the tens place of 626?", 2),
+    ("place_value_tens_ones", 1, 42, "Which digit is in the tens place of 204?", 0),
+    ("place_value_tens_ones", 2, 1, "Which digit is in the hundreds place of 3914?", 9),
+    ("place_value_tens_ones", 2, 7, "Which digit is in the hundreds place of 6260?", 2),
+    ("place_value_tens_ones", 2, 42, "Which digit is in the hundreds place of 2043?", 0),
+)
+
+
+@pytest.mark.parametrize(("skill", "tier", "seed", "prompt_text", "answer"), PINNED_PROBLEMS)
+def test_problems_for_existing_seeds_are_unchanged(
+    skill: str, tier: int, seed: int, prompt_text: str, answer: int
+) -> None:
+    problem = get_generator(skill).generate(seed, tier)
+    assert flatten(problem) == prompt_text
+    assert problem.answer == answer
+
+
 def test_sub_within_20_adding_wins_when_the_column_slip_gives_the_same_number() -> None:
     gen = get_generator("sub_within_20")
     seen_zero_ones = False
