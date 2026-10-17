@@ -1,0 +1,991 @@
+# The build plan: skills that are designed but not built yet. This file is never loaded
+# for play or placement; a batch moves its skills into skills.yaml (see
+# docs/how-to/add-content.md). The content lint checks it together with the built skills.
+#
+# scope:
+#   regions       the regions this plan covers (ids from world.yaml)
+#   grade_bands   the grade bands it covers; each needs an anchor
+#
+# Each entry under `planned` has the fields of skills.yaml except `generator`,
+# `word_share`, `bank_share` and `vocabulary`, plus:
+#   standards   Common Core codes the skill covers, such as K.CC.A.1 or 2.NBT.B.5
+#   batch       the build batch, 1 upwards; a skill's prerequisites are in the same or an
+#               earlier batch (or already built)
+#   unlocks     (optional) skills that gain this one as a prerequisite once it is built;
+#               how the plan puts a new foundation under a skill that already exists
+# Order here breaks ties in the topological order, so keep it by batch.
+scope:
+  regions: [number_meadows, operation_canyon]
+  grade_bands: ["K", "1", "2", "3"]
+planned:
+  - id: count_to_10
+    name: Count to 10
+    region: number_meadows
+    prerequisites: []
+    unlocks: [add_within_10, sub_within_10]
+    fluency: false
+    anchor: true
+    tiers:
+      - {id: 0, label: Count 1 to 5}
+      - {id: 1, label: Count 6 to 8}
+      - {id: 2, label: Count 9 and 10}
+    grade_band: "K"
+    keypad: numpad
+    standards: [K.CC.A.1, K.CC.B.4, K.CC.B.5]
+    batch: 1
+  - id: count_to_20
+    name: Count to 20
+    region: number_meadows
+    prerequisites: [count_to_10]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Count 11 to 14}
+      - {id: 1, label: Count 15 to 17}
+      - {id: 2, label: Count 18 to 20}
+    grade_band: "K"
+    keypad: numpad
+    standards: [K.CC.A.1, K.CC.B.5]
+    batch: 1
+  - id: count_to_100
+    name: Count to 100
+    region: number_meadows
+    prerequisites: [count_to_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Count to 50}
+      - {id: 1, label: Count to 100}
+      - {id: 2, label: Start from any number}
+    grade_band: "K"
+    keypad: numpad
+    standards: [K.CC.A.1, K.CC.A.2]
+    batch: 1
+  - id: compare_groups
+    name: More, Fewer, Same
+    region: number_meadows
+    prerequisites: [count_to_10]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Groups up to 5}
+      - {id: 1, label: Groups up to 10}
+      - {id: 2, label: Groups that look tricky}
+    grade_band: "K"
+    keypad: choice
+    banked: true
+    standards: [K.CC.C.6]
+    batch: 1
+  - id: compare_numbers_20
+    name: Compare to 20
+    region: number_meadows
+    prerequisites: [count_to_20, compare_groups]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Numbers 1 to 10}
+      - {id: 1, label: Numbers 11 to 20}
+      - {id: 2, label: Numbers close together}
+    grade_band: "K"
+    keypad: choice
+    banked: true
+    standards: [K.CC.C.7]
+    batch: 1
+  - id: one_more_one_less
+    name: One More, One Less
+    region: number_meadows
+    prerequisites: [count_to_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Within 10}
+      - {id: 1, label: Within 20}
+      - {id: 2, label: Within 100}
+    grade_band: "K"
+    keypad: numpad
+    standards: [K.CC.B.4, K.CC.A.2]
+    batch: 1
+  - id: teen_numbers
+    name: Teen Numbers
+    region: number_meadows
+    prerequisites: [count_to_20]
+    unlocks: [place_value_tens_ones]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: 11 to 13}
+      - {id: 1, label: 14 to 16}
+      - {id: 2, label: 17 to 19}
+    grade_band: "K"
+    keypad: numpad
+    standards: [K.NBT.A.1]
+    batch: 1
+  - id: pairs_to_10
+    name: Pairs That Make 10
+    region: number_meadows
+    prerequisites: [add_within_10]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Make 5}
+      - {id: 1, label: Make 6 to 9}
+      - {id: 2, label: Make 10}
+    grade_band: "K"
+    keypad: numpad
+    standards: [K.OA.A.3, K.OA.A.4]
+    batch: 1
+  - id: place_value_hundreds
+    name: Hundreds Bundles
+    region: number_meadows
+    prerequisites: [place_value_tens_ones]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Bundles of ten}
+      - {id: 1, label: Whole hundreds}
+      - {id: 2, label: "Hundreds, tens and ones"}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.A.1]
+    batch: 1
+  - id: compare_numbers_100
+    name: Compare to 100
+    region: number_meadows
+    prerequisites: [place_value_tens_ones, compare_numbers_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Different tens}
+      - {id: 1, label: Same tens}
+      - {id: 2, label: Tricky pairs}
+    grade_band: "1"
+    keypad: choice
+    banked: true
+    standards: [1.NBT.B.3]
+    batch: 1
+  - id: add_three_numbers
+    name: Add Three Numbers
+    region: number_meadows
+    prerequisites: [add_within_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Totals up to 10}
+      - {id: 1, label: Totals up to 15}
+      - {id: 2, label: Totals up to 20}
+    grade_band: "1"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [1.OA.A.2]
+    batch: 2
+  - id: missing_number_20
+    name: Find the Missing Number
+    region: number_meadows
+    prerequisites: [add_within_20, sub_within_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Within 10}
+      - {id: 1, label: Within 20}
+      - {id: 2, label: Missing at the start}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.D.8]
+    batch: 2
+  - id: fact_families_20
+    name: Fact Families
+    region: number_meadows
+    prerequisites: [missing_number_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Within 10}
+      - {id: 1, label: Within 20}
+      - {id: 2, label: Mixed families}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.B.3, 1.OA.B.4]
+    batch: 2
+  - id: doubles_near_doubles
+    name: Doubles and Near Doubles
+    region: number_meadows
+    prerequisites: [add_within_20]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Doubles to 10}
+      - {id: 1, label: Near doubles}
+      - {id: 2, label: Doubles to 20}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.C.6]
+    batch: 2
+  - id: ten_more_ten_less
+    name: Ten More, Ten Less
+    region: number_meadows
+    prerequisites: [place_value_tens_ones]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Numbers up to 50}
+      - {id: 1, label: Numbers up to 100}
+      - {id: 2, label: Mixed more and less}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.NBT.C.5]
+    batch: 2
+  - id: sub_tens_within_100
+    name: Subtract Tens
+    region: number_meadows
+    prerequisites: [sub_within_20, ten_more_ten_less]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Within 50}
+      - {id: 1, label: Within 100}
+      - {id: 2, label: Mixed}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.NBT.C.6]
+    batch: 2
+  - id: equal_or_not
+    name: Equal or Not
+    region: number_meadows
+    prerequisites: [add_within_20, sub_within_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Sums within 10}
+      - {id: 1, label: Sums within 20}
+      - {id: 2, label: Sums on both sides}
+    grade_band: "1"
+    keypad: choice
+    banked: true
+    standards: [1.OA.D.7]
+    batch: 2
+  - id: skip_count_10
+    name: Count by Tens
+    region: number_meadows
+    prerequisites: [count_to_100]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Tens to 50}
+      - {id: 1, label: Tens to 100}
+      - {id: 2, label: Fill in the missing ten}
+    grade_band: "K"
+    keypad: numpad
+    standards: [K.CC.A.1]
+    batch: 2
+  - id: skip_count_2_5
+    name: Count by 2s and 5s
+    region: number_meadows
+    prerequisites: [skip_count_10]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Count by 5s}
+      - {id: 1, label: Count by 2s}
+      - {id: 2, label: Fill in the missing number}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.A.2]
+    batch: 2
+  - id: word_problems_20
+    name: Story Problems to 20
+    region: number_meadows
+    prerequisites: [add_within_20, sub_within_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Add to or take from}
+      - {id: 1, label: Put together}
+      - {id: 2, label: Compare}
+    grade_band: "1"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [1.OA.A.1]
+    batch: 2
+  - id: sub_2digit_no_regroup
+    name: Subtract Big Numbers
+    region: operation_canyon
+    prerequisites: [sub_tens_within_100, add_2digit_no_regroup]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Subtract whole tens}
+      - {id: 1, label: Small differences}
+      - {id: 2, label: Bigger differences}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.B.5]
+    batch: 3
+  - id: sub_2digit_regroup
+    name: Subtract and Borrow
+    region: operation_canyon
+    prerequisites: [sub_2digit_no_regroup, add_2digit_regroup]
+    fluency: false
+    anchor: true
+    tiers:
+      - {id: 0, label: Small numbers}
+      - {id: 1, label: Numbers under 100}
+      - {id: 2, label: Tricky ones places}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.B.5]
+    batch: 3
+  - id: add_several_2digit
+    name: Add Many Numbers
+    region: operation_canyon
+    prerequisites: [add_2digit_regroup]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Three numbers}
+      - {id: 1, label: Four numbers}
+      - {id: 2, label: Sums over 100}
+    grade_band: "2"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [2.NBT.B.6]
+    batch: 3
+  - id: mental_add_10_100
+    name: Add 10 or 100
+    region: operation_canyon
+    prerequisites: [ten_more_ten_less, place_value_hundreds]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Ten more or less}
+      - {id: 1, label: Hundred more or less}
+      - {id: 2, label: Mixed}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.B.8]
+    batch: 3
+  - id: add_3digit_no_regroup
+    name: Add Hundreds
+    region: operation_canyon
+    prerequisites: [add_2digit_regroup, place_value_hundreds]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Whole hundreds}
+      - {id: 1, label: Hundreds and tens}
+      - {id: 2, label: "Hundreds, tens and ones"}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.B.7]
+    batch: 3
+  - id: sub_3digit_no_regroup
+    name: Subtract Hundreds
+    region: operation_canyon
+    prerequisites: [sub_2digit_regroup, place_value_hundreds]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Whole hundreds}
+      - {id: 1, label: Hundreds and tens}
+      - {id: 2, label: "Hundreds, tens and ones"}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.B.7]
+    batch: 3
+  - id: add_3digit_regroup
+    name: Add Hundreds and Carry
+    region: operation_canyon
+    prerequisites: [add_3digit_no_regroup]
+    fluency: false
+    anchor: true
+    tiers:
+      - {id: 0, label: Carry once}
+      - {id: 1, label: Carry twice}
+      - {id: 2, label: Sums close to 1000}
+    grade_band: "3"
+    keypad: numpad
+    standards: [2.NBT.B.7, 3.NBT.A.2]
+    batch: 3
+  - id: sub_3digit_regroup
+    name: Subtract Hundreds and Borrow
+    region: operation_canyon
+    prerequisites: [sub_3digit_no_regroup, add_3digit_regroup]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Borrow once}
+      - {id: 1, label: Borrow twice}
+      - {id: 2, label: Borrow across a zero}
+    grade_band: "3"
+    keypad: numpad
+    standards: [2.NBT.B.7, 3.NBT.A.2]
+    batch: 3
+  - id: even_odd
+    name: Even or Odd
+    region: operation_canyon
+    prerequisites: [skip_count_2_5]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Numbers to 20}
+      - {id: 1, label: Numbers to 100}
+      - {id: 2, label: Numbers to 1000}
+    grade_band: "2"
+    keypad: choice
+    banked: true
+    standards: [2.OA.C.3]
+    batch: 3
+  - id: compare_numbers_1000
+    name: Compare to 1000
+    region: number_meadows
+    prerequisites: [compare_numbers_100, place_value_hundreds]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Different hundreds}
+      - {id: 1, label: Same hundreds}
+      - {id: 2, label: Tricky pairs}
+    grade_band: "2"
+    keypad: choice
+    banked: true
+    standards: [2.NBT.A.4]
+    batch: 3
+  - id: word_problems_100
+    name: Story Problems to 100
+    region: operation_canyon
+    prerequisites: [add_2digit_no_regroup, sub_2digit_no_regroup]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Add or take away}
+      - {id: 1, label: Put together and compare}
+      - {id: 2, label: Mixed stories}
+    grade_band: "2"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [2.OA.A.1]
+    batch: 3
+  - id: equal_groups
+    name: Equal Groups
+    region: operation_canyon
+    prerequisites: [skip_count_2_5, add_within_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Groups of 2}
+      - {id: 1, label: "Groups of 3, 4 or 5"}
+      - {id: 2, label: Mixed groups}
+    grade_band: "2"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [2.OA.C.4]
+    batch: 4
+  - id: arrays
+    name: Rows and Columns
+    region: operation_canyon
+    prerequisites: [equal_groups]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Small arrays}
+      - {id: 1, label: Arrays up to 5 by 5}
+      - {id: 2, label: Longer rows}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.OA.C.4]
+    batch: 4
+  - id: mult_as_groups
+    name: Multiply Groups
+    region: operation_canyon
+    prerequisites: [arrays]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Two groups}
+      - {id: 1, label: Up to five groups}
+      - {id: 2, label: Up to ten groups}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.A.1, 3.OA.A.3]
+    batch: 4
+  - id: mult_0_1_10
+    name: Times 0, 1 and 10
+    region: operation_canyon
+    prerequisites: [mult_as_groups]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Times 1 and 0}
+      - {id: 1, label: Times 10}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.OA.C.7, 3.OA.B.5]
+    batch: 4
+  - id: mult_2_5
+    name: Times 2 and 5
+    region: operation_canyon
+    prerequisites: [mult_as_groups, skip_count_2_5]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Times 2}
+      - {id: 1, label: Times 5}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7]
+    batch: 4
+  - id: mult_3_4
+    name: Times 3 and 4
+    region: operation_canyon
+    prerequisites: [mult_2_5]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Times 3}
+      - {id: 1, label: Times 4}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7]
+    batch: 4
+  - id: mult_6_7
+    name: Times 6 and 7
+    region: operation_canyon
+    prerequisites: [mult_3_4]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Times 6}
+      - {id: 1, label: Times 7}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7]
+    batch: 4
+  - id: mult_8_9
+    name: Times 8 and 9
+    region: operation_canyon
+    prerequisites: [mult_6_7]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Times 8}
+      - {id: 1, label: Times 9}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7]
+    batch: 4
+  - id: mult_mixed_facts
+    name: Times Tables Mix
+    region: operation_canyon
+    prerequisites: [mult_0_1_10, mult_8_9]
+    fluency: true
+    anchor: true
+    tiers:
+      - {id: 0, label: Tables 0 to 5}
+      - {id: 1, label: Tables 0 to 7}
+      - {id: 2, label: Tables 0 to 10}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7]
+    batch: 4
+  - id: mult_missing_factor
+    name: Missing Factor
+    region: operation_canyon
+    prerequisites: [mult_mixed_facts]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Tables 0 to 5}
+      - {id: 1, label: Tables 0 to 7}
+      - {id: 2, label: Tables 0 to 10}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.OA.A.4, 3.OA.B.6]
+    batch: 4
+  - id: div_equal_sharing
+    name: Share Equally
+    region: operation_canyon
+    prerequisites: [mult_as_groups]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Share among 2}
+      - {id: 1, label: Share among up to 5}
+      - {id: 2, label: Share among up to 10}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.A.2]
+    batch: 5
+  - id: div_2_5_10
+    name: Divide by 2, 5 and 10
+    region: operation_canyon
+    prerequisites: [div_equal_sharing, mult_2_5, mult_0_1_10]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Divide by 2}
+      - {id: 1, label: Divide by 5 and 10}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7, 3.OA.B.6]
+    batch: 5
+  - id: div_3_4
+    name: Divide by 3 and 4
+    region: operation_canyon
+    prerequisites: [div_2_5_10, mult_3_4]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Divide by 3}
+      - {id: 1, label: Divide by 4}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7, 3.OA.B.6]
+    batch: 5
+  - id: div_6_9
+    name: Divide by 6 to 9
+    region: operation_canyon
+    prerequisites: [div_3_4, mult_6_7, mult_8_9]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Divide by 6 and 7}
+      - {id: 1, label: Divide by 8 and 9}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7, 3.OA.B.6]
+    batch: 5
+  - id: div_mixed_facts
+    name: Division Mix
+    region: operation_canyon
+    prerequisites: [div_6_9, mult_mixed_facts]
+    fluency: true
+    anchor: true
+    tiers:
+      - {id: 0, label: Tables 0 to 5}
+      - {id: 1, label: Tables 0 to 7}
+      - {id: 2, label: Tables 0 to 10}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.C.7]
+    batch: 5
+  - id: mult_div_fact_families
+    name: Times and Divide Families
+    region: operation_canyon
+    prerequisites: [div_mixed_facts, mult_missing_factor]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Small tables}
+      - {id: 1, label: Tables to 7}
+      - {id: 2, label: Tables to 10}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.OA.B.6, 3.OA.C.7]
+    batch: 5
+  - id: mult_by_multiples_of_10
+    name: Multiply by Tens
+    region: operation_canyon
+    prerequisites: [mult_0_1_10, mult_2_5]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Times 10}
+      - {id: 1, label: Times 20 or 30}
+      - {id: 2, label: Times 40 to 90}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.NBT.A.3]
+    batch: 5
+  - id: mult_break_apart
+    name: Break Apart to Multiply
+    region: operation_canyon
+    prerequisites: [mult_mixed_facts]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Split into 5 and the rest}
+      - {id: 1, label: Split into tens and ones}
+      - {id: 2, label: Mixed splits}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.OA.B.5]
+    batch: 5
+  - id: mult_11_12
+    name: Times 11 and 12
+    region: operation_canyon
+    prerequisites: [mult_break_apart]
+    fluency: true
+    anchor: false
+    tiers:
+      - {id: 0, label: Times 11}
+      - {id: 1, label: Times 12}
+      - {id: 2, label: Mixed 11 and 12}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.OA.B.5, 3.OA.C.7]
+    batch: 5
+  - id: word_problems_mult_div
+    name: Times and Divide Stories
+    region: operation_canyon
+    prerequisites: [mult_mixed_facts, div_mixed_facts]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Equal groups}
+      - {id: 1, label: Arrays and sharing}
+      - {id: 2, label: Mixed stories}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.A.3]
+    batch: 5
+  - id: two_step_word_problems_100
+    name: Two-Step Stories to 100
+    region: operation_canyon
+    prerequisites: [word_problems_100, add_several_2digit]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Add then add}
+      - {id: 1, label: Add then take away}
+      - {id: 2, label: Mixed stories}
+    grade_band: "2"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [2.OA.A.1]
+    batch: 6
+  - id: two_step_word_problems
+    name: Two-Step Stories
+    region: operation_canyon
+    prerequisites: [two_step_word_problems_100, add_3digit_regroup, word_problems_mult_div]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Add and take away}
+      - {id: 1, label: "Times, then add or take away"}
+      - {id: 2, label: Mixed operations}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.OA.D.8]
+    batch: 6
+  - id: round_to_10
+    name: Round to Tens
+    region: operation_canyon
+    prerequisites: [compare_numbers_100, place_value_tens_ones]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Numbers to 50}
+      - {id: 1, label: Numbers to 100}
+      - {id: 2, label: Numbers to 1000}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.NBT.A.1]
+    batch: 6
+  - id: round_to_100
+    name: Round to Hundreds
+    region: operation_canyon
+    prerequisites: [round_to_10, place_value_hundreds]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Numbers under 500}
+      - {id: 1, label: Numbers under 1000}
+      - {id: 2, label: Numbers close to a hundred}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.NBT.A.1]
+    batch: 6
+  - id: patterns_add_mult
+    name: Number Patterns
+    region: operation_canyon
+    prerequisites: [skip_count_2_5, mult_2_5]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Add the same number}
+      - {id: 1, label: Times table patterns}
+      - {id: 2, label: Find the rule}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.OA.D.9]
+    batch: 6
+  - id: coin_values
+    name: Coin Values
+    region: operation_canyon
+    prerequisites: [skip_count_2_5]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: "Penny, nickel and dime"}
+      - {id: 1, label: Quarter}
+      - {id: 2, label: All coins}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.MD.C.8]
+    batch: 6
+  - id: count_coins
+    name: Count Coins
+    region: operation_canyon
+    prerequisites: [coin_values, add_2digit_no_regroup]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Coins of one kind}
+      - {id: 1, label: Mixed coins under 50}
+      - {id: 2, label: Mixed coins to a dollar}
+    grade_band: "2"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [2.MD.C.8]
+    batch: 6
+  - id: clock_hours
+    name: Clock Hours
+    region: operation_canyon
+    prerequisites: [count_to_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: On the hour}
+      - {id: 1, label: Half past}
+      - {id: 2, label: Hours and half hours}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.MD.B.3]
+    batch: 6
+  - id: clock_5_minutes
+    name: Clock Minutes
+    region: operation_canyon
+    prerequisites: [clock_hours, skip_count_2_5]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Quarter hours}
+      - {id: 1, label: Every 5 minutes}
+      - {id: 2, label: Any 5 minutes}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.MD.C.7]
+    batch: 6
+  - id: elapsed_time
+    name: How Much Time Passed
+    region: operation_canyon
+    prerequisites: [clock_5_minutes, add_2digit_regroup]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Whole hours}
+      - {id: 1, label: Hours and minutes}
+      - {id: 2, label: Across noon}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.MD.A.1]
+    batch: 6
+  - id: measure_length
+    name: Measure Length
+    region: operation_canyon
+    prerequisites: [count_to_100, add_within_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Count the units}
+      - {id: 1, label: Read a ruler to 12}
+      - {id: 2, label: Read a ruler to 100}
+    grade_band: "2"
+    keypad: numpad
+    standards: [1.MD.A.2, 2.MD.A.1, 2.MD.A.3]
+    batch: 7
+  - id: volume_mass_units
+    name: Volume and Mass
+    region: operation_canyon
+    prerequisites: [word_problems_mult_div, measure_length]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Read a scale or jug}
+      - {id: 1, label: Add and subtract amounts}
+      - {id: 2, label: Times and divide amounts}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.MD.A.2]
+    batch: 7
+  - id: area_rectangles
+    name: Area of Rectangles
+    region: operation_canyon
+    prerequisites: [arrays, mult_mixed_facts]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Count the squares}
+      - {id: 1, label: Multiply the sides}
+      - {id: 2, label: Find a missing side}
+    grade_band: "3"
+    keypad: numpad
+    standards: [3.MD.C.6, 3.MD.C.7]
+    batch: 7
+  - id: read_data_graphs
+    name: Read a Graph
+    region: operation_canyon
+    prerequisites: [add_within_20, count_to_20]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Count each group}
+      - {id: 1, label: Compare groups}
+      - {id: 2, label: How many in all}
+    grade_band: "1"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [1.MD.C.4]
+    batch: 7
+  - id: bar_graph_problems
+    name: Bar Graph Problems
+    region: operation_canyon
+    prerequisites: [read_data_graphs, sub_2digit_no_regroup]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Read the bars}
+      - {id: 1, label: Add and compare}
+      - {id: 2, label: Take away and compare}
+    grade_band: "2"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [2.MD.D.10]
+    batch: 7
+  - id: scaled_graphs
+    name: Scaled Graphs
+    region: operation_canyon
+    prerequisites: [bar_graph_problems, mult_2_5]
+    fluency: false
+    anchor: false
+    tiers:
+      - {id: 0, label: Each picture is 2 or 5}
+      - {id: 1, label: Each bar step is 5 or 10}
+      - {id: 2, label: Solve with the scale}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [3.MD.B.3]
+    batch: 7
