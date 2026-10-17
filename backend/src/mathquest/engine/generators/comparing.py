@@ -1,9 +1,11 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 """Comparing generators.
 
-These skills answer with choice buttons, drawn from their bank items (a choice skill is
-fully banked). The generators here are the typed form of the same question, so the
-skill still has a difficulty ramp and named mistakes: name the number, not the sign.
+The typed question of the comparing skills: name the bigger or smaller number, or the
+count of the group with more or fewer. Learners type the number. Questions that need
+buttons (the signs, and groups or numbers that are the same) are the skills' bank items,
+served beside these. Groups here always differ in size, since the typed answer for
+"the group with more" has no meaning for two equal groups; "same" is the bank's.
 """
 
 import random
@@ -16,10 +18,25 @@ from mathquest.engine.types import AnswerForm
 _Int = sympy.Integer
 
 # Plural nouns a kindergartner can count, two groups at a time.
-_GROUPS = ("apples", "pears", "cats", "dogs")
-# Few ones digits and nouns keep the bare problems a small set (the typed form is never shown
-# to a learner, since the skill is fully banked), so the lint can check every example against it.
-_ONES = [1, 3, 5, 7, 9]
+_GROUPS = (
+    "apples",
+    "pears",
+    "cats",
+    "dogs",
+    "birds",
+    "fish",
+    "ducks",
+    "frogs",
+    "balls",
+    "kites",
+    "cubes",
+    "stars",
+    "shells",
+    "rocks",
+    "cups",
+    "hats",
+)
+_ONES = list(range(10))
 _GROUP_MAX = ((1, 5), (1, 10), (6, 10))
 
 

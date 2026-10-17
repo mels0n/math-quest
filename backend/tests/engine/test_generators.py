@@ -305,6 +305,11 @@ EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
         for skill in ("count_to_10", "count_to_20", "count_to_100")
         for t in range(3)
     },
+    **{
+        (skill, t): {"counted_start", "went_one_too_far"}
+        for skill in ("count_to_10", "count_to_20")
+        for t in range(3)
+    },
     ("count_to_20", 2): {"repeated_number", "wrong_direction", "skipped_a_number", "kept_the_tens"},
     ("count_to_100", 0): {"repeated_number", "wrong_direction", "kept_the_tens"},
     ("count_to_100", 1): {"repeated_number", "wrong_direction", "kept_the_tens"},
@@ -430,60 +435,60 @@ PINNED_PROBLEMS = (
     ("count_to_20", 0, 42, "What number comes after 10?", 11),
     ("count_to_20", 1, 7, "What number comes before 17?", 16),
     ("count_to_20", 1, 42, "What number comes after 16?", 17),
-    ("count_to_20", 2, 7, "Count on. What comes next? 17, 18, 19, ?", 20),
-    ("count_to_20", 2, 42, "What number is missing? 16, 17, ?, 19", 18),
-    ("count_to_100", 0, 7, "Count on. What comes next? 27, 28, 29, ?", 30),
-    ("count_to_100", 0, 42, "What number is missing? 19, 20, ?, 22", 21),
-    ("count_to_100", 1, 7, "Count on. What comes next? 67, 68, 69, ?", 70),
-    ("count_to_100", 1, 42, "What number is missing? 50, 51, ?, 53", 52),
-    ("count_to_100", 2, 7, "Count on. What comes next? 37, 38, 39, ?", 40),
+    ("count_to_20", 2, 7, "Count on. What comes next? 16, 17, 18, 19, ?", 20),
+    ("count_to_20", 2, 42, "What number is missing? 17, ?, 19", 18),
+    ("count_to_100", 0, 7, "Count on. What comes next? 26, 27, 28, 29, ?", 30),
+    ("count_to_100", 0, 42, "What number is missing? 20, ?, 22", 21),
+    ("count_to_100", 1, 7, "Count on. What comes next? 66, 67, 68, 69, ?", 70),
+    ("count_to_100", 1, 42, "What number is missing? 51, ?, 53", 52),
+    ("count_to_100", 2, 7, "Count on. What comes next? 36, 37, 38, 39, ?", 40),
     (
         "count_to_100",
         2,
         42,
-        "Start at 10. Count on 4 more numbers. Which number do you say last?",
+        "Start at 11. Count on 3 more numbers. Which number do you say last?",
         14,
     ),
     (
         "compare_groups",
         0,
         7,
-        "There are 3 apples and 4 dogs. How many are in the group with more?",
+        "There are 3 pears and 4 hats. How many are in the group with more?",
         4,
     ),
     (
         "compare_groups",
         0,
         42,
-        "There is 1 pear and 2 apples. How many are in the group with more?",
+        "There is 1 frog and 2 dogs. How many are in the group with more?",
         2,
     ),
     (
         "compare_groups",
         1,
         7,
-        "There are 6 apples and 8 dogs. How many are in the group with more?",
+        "There are 6 pears and 8 hats. How many are in the group with more?",
         8,
     ),
     (
         "compare_groups",
         1,
         42,
-        "There are 2 pears and 3 apples. How many are in the group with more?",
+        "There are 2 frogs and 3 dogs. How many are in the group with more?",
         3,
     ),
     (
         "compare_groups",
         2,
         7,
-        "There are 8 apples and 9 dogs. How many are in the group with more?",
+        "There are 8 pears and 9 hats. How many are in the group with more?",
         9,
     ),
     (
         "compare_groups",
         2,
         42,
-        "There are 6 pears and 7 apples. How many are in the group with more?",
+        "There are 6 frogs and 7 dogs. How many are in the group with more?",
         7,
     ),
     ("compare_numbers_20", 0, 7, "Which number is bigger, 6 or 8?", 8),
@@ -492,42 +497,42 @@ PINNED_PROBLEMS = (
     ("compare_numbers_20", 1, 42, "Which number is bigger, 12 or 13?", 13),
     ("compare_numbers_20", 2, 7, "Which number is bigger, 11 or 12?", 12),
     ("compare_numbers_20", 2, 42, "Which number is bigger, 4 or 5?", 5),
-    ("one_more_one_less", 0, 7, "What is 1 less than 4?", 3),
-    ("one_more_one_less", 0, 42, "What is 1 more than 1?", 2),
-    ("one_more_one_less", 1, 7, "What is 1 less than 13?", 12),
-    ("one_more_one_less", 1, 42, "What is 1 more than 10?", 11),
-    ("one_more_one_less", 2, 7, "What is 1 less than 71?", 70),
+    ("one_more_one_less", 0, 7, "What number is 1 less than 4?", 3),
+    ("one_more_one_less", 0, 42, "Find 1 more than 1?", 2),
+    ("one_more_one_less", 1, 7, "What number is 1 less than 13?", 12),
+    ("one_more_one_less", 1, 42, "Find 1 more than 10?", 11),
+    ("one_more_one_less", 2, 7, "Find 1 less than 71?", 70),
     ("one_more_one_less", 2, 42, "What is 1 more than 69?", 70),
-    ("teen_numbers", 0, 7, "A ten and 2 ones make what number?", 12),
+    ("teen_numbers", 0, 7, "10 + 2 = ?", 12),
     ("teen_numbers", 0, 42, "A ten and 3 ones make what number?", 13),
-    ("teen_numbers", 1, 7, "A ten and 5 ones make what number?", 15),
+    ("teen_numbers", 1, 7, "10 + 5 = ?", 15),
     ("teen_numbers", 1, 42, "A ten and 6 ones make what number?", 16),
-    ("teen_numbers", 2, 7, "A ten and 8 ones make what number?", 18),
+    ("teen_numbers", 2, 7, "10 + 8 = ?", 18),
     ("teen_numbers", 2, 42, "A ten and 9 ones make what number?", 19),
-    ("pairs_to_10", 0, 7, "3 + ? = 5", 2),
+    ("pairs_to_10", 0, 7, "? + 3 = 5", 2),
     ("pairs_to_10", 0, 42, "1 + ? = 5", 4),
-    ("pairs_to_10", 1, 7, "? + 2 = 8", 6),
-    ("pairs_to_10", 1, 42, "? + 1 = 6", 5),
-    ("pairs_to_10", 2, 7, "6 + ? = 10", 4),
+    ("pairs_to_10", 1, 7, "8 = ? + 2", 6),
+    ("pairs_to_10", 1, 42, "6 = 1 + ?", 5),
+    ("pairs_to_10", 2, 7, "? + 6 = 10", 4),
     ("pairs_to_10", 2, 42, "2 + ? = 10", 8),
     ("place_value_hundreds", 0, 7, "How many bundles of ten make 70?", 7),
     ("place_value_hundreds", 0, 42, "How many bundles of ten make 30?", 3),
-    ("place_value_hundreds", 1, 7, "How many hundreds are in 700?", 7),
-    ("place_value_hundreds", 1, 42, "How many hundreds are in 300?", 3),
+    ("place_value_hundreds", 1, 7, "How many hundreds make 700?", 7),
+    ("place_value_hundreds", 1, 42, "How many hundreds make 300?", 3),
     ("place_value_hundreds", 2, 7, "What number is 6 hundreds, 1 ten and 6 ones?", 616),
     ("place_value_hundreds", 2, 42, "What number is 2 hundreds, 0 tens and 5 ones?", 205),
-    ("compare_numbers_100", 0, 7, "Which number is bigger, 67 or 21?", 67),
-    ("compare_numbers_100", 0, 42, "Which number is bigger, 25 or 43?", 43),
-    ("compare_numbers_100", 1, 7, "Which number is bigger, 63 or 67?", 67),
-    ("compare_numbers_100", 1, 42, "Which number is bigger, 21 or 25?", 25),
-    ("compare_numbers_100", 2, 7, "Which number is bigger, 63 or 71?", 71),
-    ("compare_numbers_100", 2, 42, "Which number is bigger, 29 or 71?", 71),
-    ("skip_count_10", 0, 7, "Count by tens. 10, 20, 30, ?", 40),
-    ("skip_count_10", 0, 42, "Count by tens. 10, 20, 30, 40, ?", 50),
-    ("skip_count_10", 1, 7, "Count by tens. 10, 20, 30, 40, 50, 60, 70, ?", 80),
-    ("skip_count_10", 1, 42, "Count by tens. 10, 20, 30, 40, 50, ?", 60),
-    ("skip_count_10", 2, 7, "Fill in the missing ten. 60, ?, 80, 90, 100", 70),
-    ("skip_count_10", 2, 42, "Fill in the missing ten. 20, ?, 40, 50, 60", 30),
+    ("compare_numbers_100", 0, 7, "Which number is bigger, 66 or 20?", 66),
+    ("compare_numbers_100", 0, 42, "Which number is bigger, 24 or 43?", 43),
+    ("compare_numbers_100", 1, 7, "Which number is bigger, 62 or 66?", 66),
+    ("compare_numbers_100", 1, 42, "Which number is bigger, 20 or 24?", 24),
+    ("compare_numbers_100", 2, 7, "Which number is bigger, 62 or 70?", 70),
+    ("compare_numbers_100", 2, 42, "Which number is bigger, 29 or 70?", 70),
+    ("skip_count_10", 0, 7, "Count back by tens. 30, 20, ?", 10),
+    ("skip_count_10", 0, 42, "Count by tens. 10, 20, ?", 30),
+    ("skip_count_10", 1, 7, "Count back by tens. 80, 70, 60, ?", 50),
+    ("skip_count_10", 1, 42, "Count by tens. 30, 40, 50, ?", 60),
+    ("skip_count_10", 2, 7, "Find the missing ten. 60, ?, 80, 90, 100", 70),
+    ("skip_count_10", 2, 42, "Find the missing ten. 20, ?, 40, 50, 60", 30),
 )
 
 
@@ -617,8 +622,6 @@ def test_counting_answers_and_numbers_stay_in_the_tier_range(seed: int, tier: in
         problem = get_generator(skill).generate(seed, tier)
         assert lo <= int(problem.answer) <= hi
         assert all(1 <= n <= cap for n in numbers(skill, seed, tier))
-        if skill != "count_to_100" or tier != 2:
-            assert problem.values["form"] != "count_on"
 
 
 @prop
@@ -692,8 +695,8 @@ def test_one_more_one_less_mistakes_follow_their_rules(seed: int, tier: int) -> 
     rules = {"wrong_direction": n - step, "skipped_a_number": n + 2 * step}
     if tier >= 1:
         rules["changed_the_tens"] = n + 10 * step
-    if tier == 2 and n % 10 == (9 if step == 1 else 0):
-        rules["kept_the_tens"] = n // 10 * 10 if step == 1 else n + 9
+    if tier == 2 and step == 1 and n % 10 == 9:
+        rules["kept_the_tens"] = n // 10 * 10
     assert wrong_answers("one_more_one_less", seed, tier) == kept(answer, rules)
 
 
@@ -708,19 +711,17 @@ def test_one_more_one_less_goes_across_a_ten_often_in_tier_two() -> None:
 @prop
 @given(seed=seeds, tier=tiers)
 def test_skip_count_10_is_a_row_of_tens(seed: int, tier: int) -> None:
-    answer = int(get_generator("skip_count_10").generate(seed, tier).answer)
+    problem = get_generator("skip_count_10").generate(seed, tier)
+    answer = int(problem.answer)
     shown = numbers("skip_count_10", seed, tier)
     assert answer % 10 == 0
-    if tier == 0:
-        assert 30 <= answer <= 50
-        assert shown == list(range(10, answer, 10))
-    elif tier == 1:
-        assert 60 <= answer <= 100
-        assert shown == list(range(shown[0], answer, 10))
-    else:
+    back = problem.values["dir"] == "back"
+    assert problem.values["jump"] == (-10 if back else 10)
+    assert problem.values["tens_way"] == ("less" if back else "more")
+    if tier == 2:
+        assert not back
         words = prompt("skip_count_10", seed, tier)
-        assert words.startswith("Fill in the missing ten. ")
-        row = words.removeprefix("Fill in the missing ten. ").split(", ")
+        row = re.sub(r"^[A-Za-z ]+\. ", "", words).split(", ")
         assert len(row) == 5
         assert row[0] != "?" and row[-1] != "?"
         start = int(row[0])
@@ -728,17 +729,40 @@ def test_skip_count_10_is_a_row_of_tens(seed: int, tier: int) -> None:
             "?" if v == answer else v for v in range(start, start + 50, 10)
         ]
         assert start >= 10 and start + 40 <= 100
+        return
+    assert len(shown) >= 2
+    assert int(problem.values["previous"]) == shown[-1]
+    if back:
+        assert shown == list(range(shown[0], answer, -10))
+        assert answer >= (10 if tier == 0 else 50) and shown[0] <= (50, 100)[tier]
+        assert "back" in prompt("skip_count_10", seed, tier) or "down" in prompt(
+            "skip_count_10", seed, tier
+        )
+    else:
+        assert shown == list(range(shown[0], answer, 10))
+        assert (30, 60)[tier] <= answer <= (50, 100)[tier]
 
 
 @prop
 @given(seed=seeds, tier=tiers)
 def test_skip_count_10_mistakes_follow_their_rules(seed: int, tier: int) -> None:
-    answer = int(get_generator("skip_count_10").generate(seed, tier).answer)
-    assert wrong_answers("skip_count_10", seed, tier) == {
-        "counted_by_ones": answer - 9,
+    problem = get_generator("skip_count_10").generate(seed, tier)
+    answer, step = int(problem.answer), int(problem.values["jump"])
+    rules = {
+        "counted_by_ones": answer - step + (-1 if step < 0 else 1),
         "said_the_tens_digit": answer // 10,
-        "skipped_a_ten": answer + 10,
+        "skipped_a_ten": answer + step,
     }
+    assert wrong_answers("skip_count_10", seed, tier) == kept(answer, rules, floor=1)
+
+
+def test_skip_count_10_counts_back_in_the_first_two_tiers_only() -> None:
+    for tier, back in ((0, True), (1, True), (2, False)):
+        directions = {
+            get_generator("skip_count_10").generate(seed, tier).values["dir"] for seed in range(200)
+        }
+        assert ("back" in directions) is back
+        assert "up" in directions
 
 
 @prop
@@ -749,9 +773,12 @@ def test_teen_numbers_ranges_and_mistakes(seed: int, tier: int) -> None:
     lo, hi = ((11, 13), (14, 16), (17, 19))[tier]
     assert lo <= teen <= hi
     assert ones == teen - 10
+    shown = numbers("teen_numbers", seed, tier)
+    if "10" in prompt("teen_numbers", seed, tier).replace(str(teen), ""):
+        shown.remove(10)  # the ten of "10 + 4 = ?" is part of the sum, not a number to read
     if problem.values["asks"] == "number":
         assert problem.answer == teen
-        assert numbers("teen_numbers", seed, tier) == [ones]
+        assert shown == [ones]
         rules = {
             "reversed_digits": ones * 10 + 1,
             "wrote_ten_then_ones": 100 + ones,
@@ -759,9 +786,18 @@ def test_teen_numbers_ranges_and_mistakes(seed: int, tier: int) -> None:
         }
     else:
         assert problem.answer == ones
-        assert numbers("teen_numbers", seed, tier) == [teen]
+        assert shown == [teen]
         rules = {"said_the_tens_digit": 1, "copied_the_number": teen}
+    assert problem.values["shown"] == shown[0]
     assert wrong_answers("teen_numbers", seed, tier) == kept(int(problem.answer), rules)
+
+
+def test_teen_numbers_are_asked_in_words_and_as_sums() -> None:
+    texts = {prompt("teen_numbers", seed, 1) for seed in range(300)}
+    assert any(t.startswith("10 + ") and t.endswith("= ?") for t in texts)
+    assert any(t.endswith("= 10 + ?") for t in texts)
+    assert any(t.startswith("A ten and ") for t in texts)
+    assert any(t.endswith("after you take out the ten?") for t in texts)
 
 
 def test_teen_numbers_agree_with_one_one() -> None:
@@ -779,7 +815,13 @@ def test_pairs_to_10_make_the_total(seed: int, tier: int) -> None:
     assert known + answer == total
     assert 1 <= known < total
     assert (total == 5, 6 <= total <= 9, total == 10)[tier]
-    assert flatten(problem) in (f"{known} + ? = {total}", f"? + {known} = {total}")
+    assert flatten(problem) in (
+        f"{known} + ? = {total}",
+        f"? + {known} = {total}",
+        f"{total} = {known} + ?",
+        f"{total} = ? + {known}",
+        f"You have {known}. How many more make {total}?",
+    )
     rules = {
         "gave_the_known_number": known,
         "gave_the_total": total,
@@ -953,7 +995,8 @@ def test_counting_values_point_at_a_number_the_prompt_shows(seed: int, tier: int
                 problem.answer,
             )
         elif problem.values["form"] == "count_on":
-            assert problem.values["rel"] == f"{problem.values['more']} more than"
+            more = int(problem.values["more"])
+            assert problem.values["rel"] == ("one" if more == 1 else str(more)) + " more than"
             assert near + int(problem.values["more"]) == problem.answer
         else:
             assert (problem.values["rel"], way, near + 1) == ("one more than", "up", problem.answer)
@@ -975,3 +1018,12 @@ def test_comparing_values_name_which_is_asked(seed: int, tier: int) -> None:
         assert str(problem.values["which"]) in flatten(problem)
     groups = get_generator("compare_groups").generate(seed, tier)
     assert str(groups.values["more"]) in flatten(groups)
+
+
+@pytest.mark.parametrize("skill", BATCH_ONE)
+def test_no_batch_one_tier_runs_out_of_problems(skill: str) -> None:
+    """A learner works a tier for a while, so every tier has a few dozen different
+    problems (the floor here is about twenty)."""
+    gen = get_generator(skill)
+    for tier in range(3):
+        assert len({flatten(gen.generate(seed, tier)) for seed in range(5000)}) >= 20, (skill, tier)

@@ -5,8 +5,8 @@ import random
 
 import sympy
 
-from mathquest.engine.generators._util import Built, SkillGenerator, math_prompt
-from mathquest.engine.types import AnswerForm
+from mathquest.engine.generators._util import Built, SkillGenerator, math_prompt, text
+from mathquest.engine.types import AnswerForm, Prompt
 
 _Int = sympy.Integer
 
@@ -147,13 +147,26 @@ def _build_add_2digit_regroup(rng: random.Random, tier: int) -> Built:
 
 
 def _build_pairs_to_10(rng: random.Random, tier: int) -> Built:
-    """A number and the one that goes with it to make the total: ``3 + ? = 5``."""
+    """A number and the one that goes with it to make the total: ``3 + ? = 5``, written
+    four ways round, or in words."""
     total = rng.randint(6, 9) if tier == 1 else (5, 10)[tier // 2]
     known = rng.randint(1, total - 1)
     answer = total - known
-    shown = f"{known} + ? = {total}" if rng.choice((True, False)) else f"? + {known} = {total}"
+    layout = rng.randrange(5)
+    prompt: Prompt
+    if layout == 4:
+        prompt = (text(f"You have {known}. How many more make {total}?"),)
+    else:
+        prompt = math_prompt(
+            (
+                f"{known} + ? = {total}",
+                f"? + {known} = {total}",
+                f"{total} = {known} + ?",
+                f"{total} = ? + {known}",
+            )[layout]
+        )
     return Built(
-        prompt=math_prompt(shown),
+        prompt=prompt,
         answer=_Int(answer),
         wrong=(
             ("gave_the_known_number", _Int(known)),
