@@ -81,6 +81,11 @@ def _validate[M: BaseModel](model: type[M], data: Any, rel: str) -> M:
         raise ContentError("; ".join(problems)) from None
 
 
+def load_validated[M: BaseModel](model: type[M], root: Path, rel: str) -> M:
+    """Read ``rel`` under ``root`` and validate it as ``model``; a ``ContentError`` if not."""
+    return _validate(model, _read(root, rel), rel)
+
+
 def load_slots(path: Path) -> Slots:
     """Load the shared slot lists (``content/slots.yaml``)."""
     return _validate(Slots, _read(path.parent, path.name), path.name)

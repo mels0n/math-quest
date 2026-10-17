@@ -5,6 +5,9 @@ Usage: ``uv run content-report [PACK_DIR ...] [--json] [--stuck FILE]`` (run in
 region with totals, or the same numbers as JSON. The report never fails on gaps; in a
 region declared complete the content lint does.
 
+A pack with a build plan (``planned_skills.yaml``) also gets the planned skills per
+region and per batch.
+
 ``--stuck FILE`` reads a stuck-problem export: a JSON list of
 ``{"skill", "generator", "tier", "seed", "wrong_answers": [...]}`` objects, one per
 problem a learner could not solve, and adds a count per skill.
@@ -29,6 +32,7 @@ from mathquest.engine.content.coverage import (
     SkillCoverage,
     pack_coverage,
 )
+from mathquest.engine.content.planned import PlanSummary, load_planned, plan_summary
 from mathquest.engine.generators import all_generators
 
 
@@ -79,7 +83,28 @@ def _row(skill: SkillCoverage, stuck: Counter[str] | None) -> str:
     return "| " + " | ".join(cells) + " |"
 
 
-def markdown(coverage: PackCoverage, stuck: Counter[str] | None = None) -> str:
+def plan_markdown(plan: PlanSummary) -> list[str]:
+    lines = [
+        "## Planned skills",
+        "",
+        "| Region | Built | Planned | Total |",
+        "|---|---|---|---|",
+    ]
+    for region in plan.regions:
+        total = region.built + region.planned
+        lines.append(f"| {region.name} | {region.built} | {region.planned} | {total} |")
+    lines += ["", "| Batch | Skills | Grades | Regions |", "|---|---|---|---|"]
+    for batch in plan.batches:
+        regions = ", ".join(f"{k} {v}" for k, v in batch.regions.items())
+        lines.append(
+            f"| {batch.batch} | {batch.skills} | {', '.join(batch.grade_bands)} | {regions} |"
+        )
+    return [*lines, ""]
+
+
+def markdown(
+    coverage: PackCoverage, stuck: Counter[str] | None = None, plan: PlanSummary | None = None
+) -> str:
     head = [
         "Skill", "Tiers", "Mistakes", "Feedback", "Word", "Bank", "Lesson", "Hints",
         "Explanations",
@@ -114,11 +139,17 @@ def markdown(coverage: PackCoverage, stuck: Counter[str] | None = None) -> str:
         lines.append("- Skills short of each target: " + ", ".join(
             f"{field} {count}" for field, count in sorted(gaps.items())
         ))  # fmt: skip
+    if plan is not None:
+        lines += ["", *plan_markdown(plan)]
     return "\n".join(lines) + "\n"
 
 
-def as_json(coverage: PackCoverage, stuck: Counter[str] | None = None) -> dict[str, Any]:
+def as_json(
+    coverage: PackCoverage, stuck: Counter[str] | None = None, plan: PlanSummary | None = None
+) -> dict[str, Any]:
     data = dataclasses.asdict(coverage)
+    if plan is not None:
+        data["planned"] = dataclasses.asdict(plan)
     for region in data["regions"]:
         for skill in region["skills"]:
             if stuck is not None:
@@ -139,17 +170,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (OSError, ValidationError) as err:
             print(f"cannot read {args.stuck}: {err}", file=sys.stderr)
             return 2
-    reports: list[PackCoverage] = []
+    reports: list[tuple[PackCoverage, PlanSummary | None]] = []
     for pack_dir in pack_dirs(args.packs):
         try:
-            reports.append(pack_coverage(load_pack(pack_dir), all_generators()))
+            pack = load_pack(pack_dir)
+            plan = load_planned(pack_dir)
+            summary = None if plan is None else plan_summary(pack, plan)
+            reports.append((pack_coverage(pack, all_generators()), summary))
         except ContentError as err:
             print(f"{pack_dir}/{err}", file=sys.stderr)
             return 2
     if args.json:
-        print(json.dumps({"packs": [as_json(r, stuck) for r in reports]}, indent=2))
+        print(json.dumps({"packs": [as_json(r, stuck, p) for r, p in reports]}, indent=2))
     else:
-        print("\n".join(markdown(r, stuck) for r in reports), end="")
+        print("\n".join(markdown(r, stuck, p) for r, p in reports), end="")
     return 0
 
 
