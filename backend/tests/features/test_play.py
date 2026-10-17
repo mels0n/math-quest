@@ -1171,7 +1171,7 @@ async def test_a_provisional_skill_reads_as_provisional(db: AsyncSession) -> Non
 async def test_an_old_learner_keeps_the_skill_they_were_on(db: AsyncSession) -> None:
     """add_within_10 gained count_to_10 as a prerequisite after this learner started it."""
     pid = await _player(db, fresh=True)
-    row = await mastery.lock(db, pid, "add_within_10", -1.0)
+    row = await mastery.lock(db, pid, "add_within_10", -3.0)
     row.attempts = 4
     row.state = "learning"
     await db.commit()
@@ -1185,8 +1185,13 @@ async def test_an_old_learner_keeps_the_skill_they_were_on(db: AsyncSession) -> 
     ready = CATALOG.graph.ready(set(), {"add_within_10"})
     assert "add_within_10" in ready and "count_to_10" in ready
     adventure = await service.start_session(db, pid, "adventure")
-    problem = await _next_problem(db, CATALOG, pid, adventure.session_id)
-    assert problem.skill_id in ready
+    seen: set[str] = set()
+    for _ in range(3):
+        problem = await _next_problem(db, CATALOG, pid, adventure.session_id, expose_answers=True)
+        seen.add(problem.skill_id)
+        await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+    # Without the rule add_within_10 would be locked behind count_to_10 and never come up.
+    assert seen == {"add_within_10"}
 
 
 async def test_a_learner_placed_high_before_counting_existed_is_not_sent_back(
@@ -1242,3 +1247,40 @@ async def test_a_typed_skill_serves_choice_bank_items_of_the_learners_tier(
             assert out.keypad == "numpad" and out.choices is None
             await _submit(db, pid, out.problem_id, out.dev_answer_latex or "")
     assert variants["bank"] > 3 and variants["bare"] > 10
+
+
+async def test_a_review_due_on_a_skill_the_pack_lacks_is_ignored(db: AsyncSession) -> None:
+    """Rolling back a release that added skills leaves stored rows for skills the older pack
+    does not have; play goes on without them."""
+    pid = await _player(db)
+    row = await mastery.lock(db, pid, "ghost_skill", 0.0)
+    row.state = SkillState.MASTERED
+    row.review_due_at = datetime.now(UTC) - timedelta(days=1)
+    await db.commit()
+    session = await service.start_session(db, pid, "adventure")
+    await db.execute(
+        update(PlaySession).where(PlaySession.id == session.session_id).values(problem_count=4)
+    )
+    out = await service.next_problem(db, CATALOG, pid, session.session_id)
+    assert isinstance(out, ProblemOut)
+    assert out.skill_id in CATALOG.graph.skills
+
+
+async def test_an_open_problem_on_a_skill_the_pack_lacks_is_closed(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await add_problem(
+        db,
+        session_id=session.session_id,
+        player_id=pid,
+        skill_id="ghost_skill",
+        tier=0,
+        seed=1,
+        difficulty=0.0,
+        issued_at=datetime.now(UTC),
+        variant="bare",
+        template_id=None,
+    )
+    with pytest.raises(Conflict) as err:
+        await _submit(db, pid, inst.id, "1")
+    assert err.value.code == "problem_closed"

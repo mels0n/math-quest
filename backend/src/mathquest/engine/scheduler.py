@@ -206,7 +206,7 @@ def plan_next(
     if due_reviews and _review_slot(problem_index):
         return Pick(due_reviews[0])
     tail = _warmup_tail(history, problem_index)
-    if tail:
+    if tail and tail[-1].skill_id in graph.skills:
         target = tail[-1].warmup_for
         assert target is not None
         if len(tail) < WARMUP_PROBLEMS:

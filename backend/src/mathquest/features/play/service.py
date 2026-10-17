@@ -512,7 +512,8 @@ async def next_problem(
     graph = catalog.graph
     ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
     mastered = {r.skill_id for r in rows if r.state in mastery.COUNTS_AS_MASTERED}
-    due = await mastery.due_reviews(db, player_id, now)
+    # A skill missing from the pack (a release rolled back) is neither reviewed nor picked.
+    due = [sid for sid in await mastery.due_reviews(db, player_id, now) if sid in graph.skills]
     history = [
         Played(skill_id=sid, correct=correct, stuck=stuck, warmup_for=warmup_for)
         for sid, correct, stuck, warmup_for in await problems.session_history(db, session_id)
@@ -644,9 +645,13 @@ def _apply_score(
 
 def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
     """The issued problem again, from its stored seed, tier, variant and template."""
-    return catalog.regenerate(
-        instance.skill_id, instance.seed, instance.tier, instance.variant, instance.template_id
-    )
+    try:
+        return catalog.regenerate(
+            instance.skill_id, instance.seed, instance.tier, instance.variant, instance.template_id
+        )
+    except KeyError:
+        # Issued for a skill the pack no longer has: closed, and the client moves on.
+        raise Conflict("problem_closed") from None
 
 
 def _allowed(problem: Problem) -> int:

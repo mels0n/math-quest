@@ -342,3 +342,41 @@ def test_practice_ignores_skills_missing_from_the_graph() -> None:
     assert plan_practice(graph, _RATINGS, ["gone", "b"], []) == Pick("b")
     with pytest.raises(ValueError):
         plan_practice(graph, _RATINGS, ["gone"], [])
+
+
+def test_a_warm_up_on_a_skill_the_graph_lacks_is_ignored() -> None:
+    history = [Played("ghost", None, warmup_for="add_within_10")]
+    pick = plan_next(_graph(), {}, set(), [], 3, history)
+    assert pick.skill_id in _graph().skills
+
+
+# --- started skills stay ready ------------------------------------------------------
+
+
+def test_pick_skill_offers_a_started_skill_whose_prerequisite_is_not_mastered() -> None:
+    g = _graph()
+    ratings = {
+        "a": SkillRating(rating=1.0),
+        "b": SkillRating(rating=1.0),
+        "c": SkillRating(rating=-1.0),
+    }
+    assert pick_skill(g, ratings, set(), [], 0) == "a"
+    assert pick_skill(g, ratings, set(), [], 0, started={"c"}) == "c"
+
+
+def test_pick_skill_offers_a_started_skill_that_is_also_implied() -> None:
+    g = _graph()
+    # "c" is mastered, so "a" is implied; "a" was played (and failed a review), so it is offered.
+    ratings = {"a": SkillRating(rating=-1.0), "b": SkillRating(rating=1.0)}
+    assert pick_skill(g, ratings, {"c"}, [], 0) == "b"
+    assert pick_skill(g, ratings, {"c"}, [], 0, started={"a", "c"}) == "a"
+
+
+def test_a_finished_warmup_returns_to_a_started_skill_that_is_not_otherwise_ready() -> None:
+    g = SkillGraph([_skill("a"), _skill("b"), _skill("c", "a"), _skill("p")])
+    ratings = {"a": SkillRating(rating=5.0), "b": SkillRating(rating=5.0), "p": SkillRating()}
+    history = [Played("p", True, warmup_for="c")] * WARMUP_PROBLEMS
+    without = plan_next(g, ratings, set(), [], WARMUP_PROBLEMS, history)
+    with_started = plan_next(g, ratings, set(), [], WARMUP_PROBLEMS, history, {"c"})
+    assert without.skill_id != "c"
+    assert with_started == Pick("c")

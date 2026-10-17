@@ -284,3 +284,9 @@ and migrations run on start. If the new task fails its health check, roll back:
 ```sh
 docker service rollback math-quest
 ```
+
+A release that adds skills must not be rolled back once learners have played them: their
+progress, reviews and open problems name skills the older image does not know. If the new
+version has a problem, fix it and deploy a new commit (roll forward). The app ignores a
+stored review or problem for a skill missing from its pack rather than failing, but the
+learner's progress on that skill is invisible until the skill returns.
