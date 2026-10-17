@@ -43,8 +43,9 @@ Before you write:
 - Mistake feedback is keyed by the mistakes the generator declares. A new mistake needs a
   generator change (with a property test) before it can have feedback.
 - A lesson or explanation example must never be a problem the skill asks. The lint scans
-  the generator's problems, counts sums with the terms in either order, and checks a
-  worked question written in words against the whole prompts the skill asks.
+  the generator's problems and the bank prompts, counts sums with the terms in either order,
+  checks a worked question written in words against the whole prompts the skill asks, and
+  reads runs of numbers with a blank in plain text ("7, 8, _, 10") as the math they are.
 - Digits of a number a word problem shows count as shown, so hints may use them
   ([ADR-0018](../adr/0018-digits-count-as-shown-in-word-problems.md)).
 
@@ -168,12 +169,16 @@ remaining batch. To build the next batch, take that number from the report and:
    `batch` and `unlocks`, and keep `standards`. Put it in `skills.yaml` where it sits in
    the plan, ahead of the first skill of any later region, because the file order breaks
    ties in the topological order and so decides the placement spine.
-   A skill with the `choice` keypad also gets `word_share: 0.0` and `bank_share: 1.0`,
-   and its bank items (at least 30, each phrased differently: the duplicate lint compares
-   them with their numbers blanked) go in the same change, because the loader refuses a
-   choice skill without a bank. The generator of a choice skill is its typed form of the
-   same question: it keeps the difficulty ramp and the named mistakes, but play only
-   shows the bank items, which carry no tier.
+   A skill whose generator is typed can still serve a bank of button questions (the signs,
+   "same" answers): give it `banked: true` and a `bank_share` such as 0.3, and tag each
+   bank item with the `tier` it suits, so a learner only meets items of their own tier. A
+   skill with the `choice` keypad is answered by buttons alone: it needs `bank_share: 1`
+   and a bank of choice items, in the same change, because the loader refuses it
+   otherwise; its generator is never shown, so prefer a typed skill with a bank.
+   Duplicate lint compares bank items with their numbers blanked, so at least 30 items
+   need different words, not different numbers. Counting objects needs a picture of
+   countable objects, a visual that is not built yet; until it is, a groups skill tells
+   the counts as numerals.
 3. Apply each promoted skill's `unlocks`: for every built skill it named, add the new
    skill's id to that skill's `prerequisites` in `skills.yaml`.
    When it names a skill that is still planned, add the promoted id to that planned

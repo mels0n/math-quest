@@ -4,7 +4,7 @@ skill: count_to_20
 approaches:
   - style: visual
     body_md: >-
-      Imagine a row of number cards on a wall. Your finger is on card {near}. Which card is {rel} {near}? Slide your finger {dir} along the row.
+      Imagine a row of number cards on a wall. Your finger is on card {near}. Which card is {rel} {near}? Count {dir} to find it.
   - style: steps
     body_md: |-
       1. Find the number that is already in the question.
@@ -26,3 +26,7 @@ misconceptions:
     It looks like you skipped a number. Go slowly from {near}. Say every number on the way.
   kept_the_tens: >-
     Careful when you pass a ten. The tens digit changes, and the ones start over.
+  counted_start: >-
+    Nearly! Do not count {near}. It is where you start. Your first count is the next number.
+  went_one_too_far: >-
+    Nearly! You went one number too far. The answer is {rel} {near}. Stop there.

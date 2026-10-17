@@ -2,8 +2,8 @@
 skill: count_to_10
 levels:
   - text_template: >-
-      Find {near} in the question. The answer is {rel} {near}.
+      Find the number you know in the question. Think about which way to count.
   - text_template: >-
-      Count {dir} from {near}, one number at a time. Say each number out loud.
+      The answer is {rel} {near}. Count {dir} from {near}, one number at a time.
   - text_template: >-
-      Start at {near} and count {dir}. The answer is {rel} {near}. You say {answer}.
+      Count {dir} from {near}. The answer is {rel} {near}. You say {answer}.

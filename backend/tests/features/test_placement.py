@@ -144,7 +144,7 @@ async def test_a_round_marks_provisional_mastery(db: AsyncSession) -> None:
     assert {
         "count_to_10",
         "add_within_20",
-        "compare_numbers_100",
+        "teen_numbers",
         "place_value_tens_ones",
     } <= expected
     assert set(done.provisional) == expected

@@ -2,8 +2,8 @@
 skill: skip_count_10
 levels:
   - text_template: >-
-      Each number is ten more than the one before. Look at {previous}.
+      Look at the numbers in the row. Each one is ten away from the next.
   - text_template: >-
-      Add ten to {previous}. Say the next number of tens.
+      Look at {previous}. Count {dir} one ten from {previous}.
   - text_template: >-
-      Ten more than {previous} is {answer}. So the answer is {answer}.
+      Ten {tens_way} than {previous} is {answer}. So the answer is {answer}.

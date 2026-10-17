@@ -16,7 +16,7 @@ screens:
       params: {min: 0, max: 10, start: 6, jumps: [-1], end: 5}
   - title: Missing numbers
     body_md: >-
-      Sometimes a number hides. Look at 7, 8, _, 10. Say them in order. The number that fits is 9.
+      Sometimes a number hides. Look at seven, eight, a hidden number, and ten. Say them in order. The number that fits is nine.
     visual:
       kind: number_line
       params: {min: 0, max: 10, start: 7, jumps: [1, 1, 1], end: 10}

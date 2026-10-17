@@ -24,3 +24,7 @@ misconceptions:
     It looks like you counted the other way. Start at {near} and count {dir}.
   skipped_a_number: >-
     It looks like you jumped over a number. Count {dir} from {near}, one at a time. Say every number.
+  counted_start: >-
+    Nearly! Do not count {near}. It is where you start. Your first count is the next number.
+  went_one_too_far: >-
+    Nearly! You went one number too far. The answer is {rel} {near}. Stop there.

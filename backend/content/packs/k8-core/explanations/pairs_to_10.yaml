@@ -23,4 +23,4 @@ misconceptions:
   gave_the_total: >-
     It looks like you said the total. The total is the whole. Find the missing part.
   counted_start: >-
-    Nearly! It looks like you counted {known} as one. Start at {known}. The next number you say is one.
+    Nearly! Do not count {known}. It is where you start. Your first count is the next number.

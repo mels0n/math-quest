@@ -7,19 +7,19 @@ approaches:
       Find {previous} on the number line. Take one big jump of ten. Where do you land?
     visual:
       kind: number_line
-      params: {min: 0, max: 100, start: "{previous}", jumps: [10]}
+      params: {min: 0, max: 100, start: "{previous}", jumps: ["{jump}"]}
   - style: steps
     body_md: |-
       1. Look at the number before the blank.
-      2. Count up one ten.
-      3. The tens digit goes up by one.
+      2. Count {dir} one ten.
+      3. The tens digit changes by one.
       4. Write the whole number, with the zero on the end.
   - style: story
     body_md: >-
-      You pack marbles in bags of ten. {previous} marbles fill some bags. You fill one more bag. How many marbles are there now?
+      You pack marbles in bags of ten. {previous} marbles fill some bags. The next number has ten {tens_way} marbles. How many is that?
   - style: worked
     body_md: >-
-      Let us do yours together. Put your finger on {previous}. Count up ten, or take one big jump of ten. The number you reach is the answer.
+      Let us do yours together. Put your finger on {previous}. Count {dir} ten, or take one big jump of ten. The number you reach is the answer.
 misconceptions:
   counted_by_ones: >-
     It looks like you counted by ones. Count by tens. Add ten to {previous}, not one.

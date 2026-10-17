@@ -2,7 +2,7 @@
 
 import math
 import random
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -126,13 +126,28 @@ SYNTH = _synthetic()
 SYNTH_SPINE = spine(SYNTH)
 
 
-def _learner(model: Model, level: int, rng: random.Random) -> Callable[[int], bool]:
+def guess_rate(skill: Skill, typed_guess: float) -> float:
+    """The chance a learner who does not know an anchor still answers it right: the
+    model's own for a typed answer, one in three for a three-button question, and a half
+    for a typed comparison (two numbers to pick from, then type one)."""
+    if skill.keypad == "choice":
+        return 1 / 3
+    if skill.id.startswith("compare_"):
+        return 0.5
+    return typed_guess
+
+
+def _learner(
+    model: Model, level: int, rng: random.Random, guesses: Sequence[float] | None = None
+) -> Callable[[int], bool]:
     """Answers anchor ``a`` under ``model``; ``level`` is the index of the highest anchor
-    the learner has mastered (-1 for none)."""
+    the learner has mastered (-1 for none). ``guesses`` gives each anchor its own guess
+    rate (default: the model's)."""
 
     def answer(anchor: int) -> bool:
+        guess = model.guess if guesses is None else guesses[anchor]
         knows = 1 / (1 + math.exp(-(model.slope * (level - anchor) + model.offset)))
-        return rng.random() < model.guess + (1 - model.guess - model.slip) * knows
+        return rng.random() < guess + (1 - guess - model.slip) * knows
 
     return answer
 
@@ -157,13 +172,17 @@ def _rates(
 ) -> tuple[float, float, float]:
     """Share within one anchor, share placed two or more too high, mean questions."""
     anchors = spine(graph)
+    guesses = [guess_rate(graph.skills[a], model.guess) for a in anchors]
     rng = random.Random(seed)
     hits = over = asked = 0
     for _ in range(runs):
         grade = hint(level)
         start = start_anchor(graph, anchors, grade)
         placed, answers = _place(
-            len(anchors), start, _learner(model, level, rng), None if grade is None else start
+            len(anchors),
+            start,
+            _learner(model, level, rng, guesses),
+            None if grade is None else start,
         )
         hits += abs(placed - level) <= 1
         over += placed - level >= 2
@@ -178,7 +197,7 @@ def test_spine_is_the_anchors_in_topological_order() -> None:
         "count_to_10",
         "add_within_10",
         "add_within_20",
-        "compare_numbers_100",
+        "place_value_tens_ones",
         "add_2digit_regroup",
         "add_fractions_unlike",
     )
@@ -302,15 +321,46 @@ def test_simulated_learners_across_models(model: str, hint: str) -> None:
 
 # The real pack's six anchors, per model and hint: lowest share within one anchor and highest
 # share placed two or more too high, over every level from "nothing passed" to "everything
-# passed". Without a hint the reference learner is at the limit of fifteen questions on six
-# anchors (the bars come from the figures in ADR-0019, which supersedes the four-anchor
-# figures in ADR-0015); with the hint of the learner's own grade it meets ADR-0015's bar.
+# passed", each one point looser than measured (ADR-0019 has the figures; ADR-0015 the targets).
+# Each anchor has the guess rate its answer format gives (`guess_rate`). Without a hint the
+# reference learner is at the limit of fifteen questions on six anchors; with the hint of the
+# learner's own grade it meets ADR-0015's bar.
 REAL_BARS: dict[tuple[str, str], tuple[float, float]] = {
-    ("reference", "none"): (0.94, 0.03),
-    ("reference", "same"): (0.95, 0.02),
-    ("steep", "none"): (0.98, 0.015),
-    ("steep", "same"): (0.98, 0.015),
+    ("reference", "none"): (0.937, 0.034),
+    ("reference", "same"): (0.969, 0.020),
+    ("steep", "none"): (0.982, 0.018),
+    ("steep", "same"): (0.986, 0.014),
 }
+
+
+def test_guess_rates_follow_the_answer_format() -> None:
+    assert guess_rate(_skill("a"), 0.1) == 0.1
+    assert guess_rate(_skill("compare_numbers_20"), 0.1) == 0.5
+    choice = _skill("b").model_copy(update={"keypad": "choice"})
+    assert guess_rate(choice, 0.1) == pytest.approx(1 / 3)
+    real = SkillGraph(load_pack(PACK).skills.values())
+    # Every anchor of the real pack is a typed skill that is not a comparison.
+    assert [guess_rate(real.skills[a], 0.1) for a in spine(real)] == [0.1] * 6
+
+
+def test_a_choice_anchor_would_miss_the_bar_the_real_spine_meets() -> None:
+    """Why the grade 1 anchor is place value, not comparing: three buttons guess right a
+    third of the time, and the reference learner is then placed too high too often."""
+    real = SkillGraph(load_pack(PACK).skills.values())
+    anchors = spine(real)
+    rng = random.Random(1)
+    model = MODELS["reference"]
+
+    def over_rate(guess_at_grade_one: float) -> float:
+        guesses = [model.guess] * len(anchors)
+        guesses[3] = guess_at_grade_one
+        over = 0
+        for _ in range(600):
+            placed, _ = _place(len(anchors), 3, _learner(model, 0, rng, guesses), 3)
+            over += placed - 0 >= 2
+        return over / 600
+
+    assert over_rate(1 / 3) > over_rate(0.1) + 0.02
 
 
 @pytest.mark.parametrize(("model", "hint"), sorted(REAL_BARS))
@@ -357,7 +407,7 @@ def test_outcome_covers_anchors_off_the_frontiers_chain() -> None:
     assert {
         "count_to_10",
         "add_within_10",
-        "compare_numbers_100",
+        "place_value_tens_ones",
         "add_2digit_regroup",
         "equivalent_fractions",
     } <= set(result.provisional)

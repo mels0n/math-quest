@@ -16,7 +16,7 @@ screens:
       params: {min: 10, max: 20, start: 16, jumps: [-1], end: 15}
   - title: Missing numbers
     body_md: >-
-      Look at 12, 13, _, 15. Say 12 and 13. Then the missing number fits in order. It is 14.
+      Look at twelve, thirteen, a hidden number, and fifteen. Say them in order. The missing number is fourteen.
     visual:
       kind: number_line
       params: {min: 10, max: 20, start: 12, jumps: [1, 1, 1], end: 15}

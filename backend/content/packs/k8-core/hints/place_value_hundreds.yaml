@@ -4,6 +4,6 @@ levels:
   - text_template: >-
       Think about each place. Ten ones make a ten. Ten tens make a hundred.
   - text_template: >-
-      Look at the question. Work out each part, one place at a time.
+      Say what the question asks you to count or build. Then do it step by step.
   - text_template: >-
       Work it out place by place. The answer is {answer}.

@@ -4,7 +4,7 @@ skill: count_to_100
 approaches:
   - style: visual
     body_md: >-
-      Picture a hundred chart with ten rows. Put your finger on {near}. The answer is {rel} {near}. Slide {dir}. At the end of a row, move to the next row.
+      Picture a hundred chart with ten rows. Put your finger on {near}. The answer is {rel} {near}. Count {dir} from there, one number at a time.
   - style: steps
     body_md: |-
       1. Say the number in the question out loud.
@@ -27,6 +27,6 @@ misconceptions:
   kept_the_tens: >-
     Look at the tens digit. When you pass the end of a ten, the tens digit changes. The ones start over.
   counted_start: >-
-    Nearly! It looks like you counted {near} as one. Start at {near}. The next number you say is one.
+    Nearly! Do not count {near}. It is where you start. Your first count is the next number.
   went_one_too_far: >-
     Nearly! You went one number too far. The answer is {rel} {near}. Stop there.

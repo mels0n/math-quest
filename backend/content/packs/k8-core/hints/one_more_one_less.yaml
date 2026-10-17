@@ -2,7 +2,7 @@
 skill: one_more_one_less
 levels:
   - text_template: >-
-      You need one {direction} than {n}.
+      Find {n} in the question. Read the key word that comes before it.
   - text_template: >-
       Count {dir} one number from {n}. Say it out loud.
   - text_template: >-

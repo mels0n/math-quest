@@ -1211,3 +1211,31 @@ async def test_a_learner_placed_high_before_counting_existed_is_not_sent_back(
     session = await service.start_session(db, pid, "adventure")
     problem = await _next_problem(db, CATALOG, pid, session.session_id)
     assert problem.skill_id != "teen_numbers"
+
+
+async def test_a_typed_skill_serves_choice_bank_items_of_the_learners_tier(
+    db: AsyncSession,
+) -> None:
+    """The comparing skills are typed, with a bank of button questions served beside them."""
+    pid = await _player(db)
+    session = await service.start_practice(db, CATALOG, pid, skill_id="compare_numbers_100")
+    source = CATALOG.source("compare_numbers_100")
+    assert source.skill.keypad == "numpad" and source.bank is not None
+    variants: dict[str, int] = {"bare": 0, "bank": 0}
+    for _ in range(40):
+        out = await _next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
+        inst = await db.get(ProblemInstance, out.problem_id)
+        assert inst is not None
+        variants[inst.variant] += 1
+        if inst.variant == "bank":
+            assert out.keypad == "choice" and out.choices and out.dev_answer_choice is not None
+            item = next(i for i in source.bank.items if i.id == inst.template_id)
+            assert item.tier in (None, inst.tier)
+            hit = await service.submit_answer(
+                db, POOL, CATALOG, pid, out.problem_id, choice=out.dev_answer_choice
+            )
+            assert hit.verdict is Verdict.CORRECT
+        else:
+            assert out.keypad == "numpad" and out.choices is None
+            await _submit(db, pid, out.problem_id, out.dev_answer_latex or "")
+    assert variants["bank"] > 3 and variants["bare"] > 10

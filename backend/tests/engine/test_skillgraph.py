@@ -47,7 +47,7 @@ def test_load_slice_pack() -> None:
         "count_to_10",
         "add_within_10",
         "add_within_20",
-        "compare_numbers_100",
+        "place_value_tens_ones",
         "add_2digit_regroup",
         "add_fractions_unlike",
     }
@@ -79,10 +79,8 @@ def test_ready_after_mastery() -> None:
 def test_pack_skills_name_their_keypad() -> None:
     keypads = {sid: s.keypad for sid, s in _graph().skills.items()}
     assert keypads["add_fractions_unlike"] == "fraction"
-    choice = {"compare_groups", "compare_numbers_20", "compare_numbers_100"}
-    assert {sid for sid, k in keypads.items() if k == "choice"} == choice
-    others = {k for sid, k in keypads.items() if sid not in choice | {"add_fractions_unlike"}}
-    assert others == {"numpad"}
+    # The comparing skills are typed too: their button questions are bank items beside them.
+    assert {k for sid, k in keypads.items() if sid != "add_fractions_unlike"} == {"numpad"}
 
 
 def test_promoted_skills_sit_under_the_skills_they_unlock() -> None:

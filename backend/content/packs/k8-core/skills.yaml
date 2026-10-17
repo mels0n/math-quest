@@ -32,7 +32,7 @@ skills:
       - {id: 2, label: Count 9 and 10}
     grade_band: "K"
     keypad: numpad
-    standards: [K.CC.A.1, K.CC.B.4, K.CC.B.5]
+    standards: [K.CC.A.1, K.CC.A.2]
   - id: add_within_10
     name: Add to 10
     region: number_meadows
@@ -72,7 +72,7 @@ skills:
       - {id: 2, label: Count 18 to 20}
     grade_band: "K"
     keypad: numpad
-    standards: [K.CC.A.1, K.CC.B.5]
+    standards: [K.CC.A.1, K.CC.A.2]
   - id: count_to_100
     name: Count to 100
     region: number_meadows
@@ -99,10 +99,9 @@ skills:
       - {id: 1, label: Groups up to 10}
       - {id: 2, label: Groups that look tricky}
     grade_band: "K"
-    keypad: choice
-    word_share: 0.0
+    keypad: numpad
     banked: true
-    bank_share: 1.0
+    bank_share: 0.3
     standards: [K.CC.C.6]
   - id: compare_numbers_20
     name: Compare to 20
@@ -116,10 +115,9 @@ skills:
       - {id: 1, label: Numbers 11 to 20}
       - {id: 2, label: Numbers close together}
     grade_band: "K"
-    keypad: choice
-    word_share: 0.0
+    keypad: numpad
     banked: true
-    bank_share: 1.0
+    bank_share: 0.3
     standards: [K.CC.C.7]
   - id: one_more_one_less
     name: One More, One Less
@@ -211,7 +209,7 @@ skills:
     region: number_meadows
     prerequisites: [teen_numbers]
     fluency: false
-    anchor: false
+    anchor: true
     generator: place_value_tens_ones
     tiers:
       - {id: 0, label: Two-digit numbers}
@@ -240,17 +238,16 @@ skills:
     region: number_meadows
     prerequisites: [place_value_tens_ones, compare_numbers_20]
     fluency: false
-    anchor: true
+    anchor: false
     generator: compare_numbers_100
     tiers:
       - {id: 0, label: Different tens}
       - {id: 1, label: Same tens}
       - {id: 2, label: Tricky pairs}
     grade_band: "1"
-    keypad: choice
-    word_share: 0.0
+    keypad: numpad
     banked: true
-    bank_share: 1.0
+    bank_share: 0.3
     standards: [1.NBT.B.3]
   - id: add_2digit_no_regroup
     name: Add Big Numbers

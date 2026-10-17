@@ -4,19 +4,19 @@ skill: teen_numbers
 screens:
   - title: A ten and some ones
     body_md: >-
-      A teen number is one ten and some ones. This picture shows one ten and 4 ones. That makes 14.
+      A teen number is one ten and some ones. This picture shows one ten and four ones. That makes fourteen.
     visual:
       kind: base_ten
       params: {tens: 1, ones: 4}
   - title: Read the digits
     body_md: >-
-      The 1 in 14 is the ten. The 4 is the ones. Ten and four ones make fourteen.
+      The first digit is the ten. The second digit is the ones. Ten and four ones make fourteen.
     visual:
       kind: base_ten
       params: {tens: 1, ones: 4}
   - title: Take the ten away
     body_md: >-
-      Take the ten away from 16. Six ones are left. So 16 is a ten and 6 ones.
+      Take the ten away from sixteen. Six ones are left. So sixteen is a ten and six ones.
     visual:
       kind: base_ten
       params: {tens: 1, ones: 6}

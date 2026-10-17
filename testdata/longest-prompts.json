@@ -81,11 +81,11 @@
   },
   "compare_groups": {
     "tier": 1,
-    "seed": 105,
+    "seed": 5,
     "prompt": [
       {
         "kind": "text",
-        "value": "There are 10 apples and 4 pears. How many are in the group with fewer?"
+        "value": "There are 10 apples and 5 rocks. How many are in the group with fewer?"
       }
     ]
   },
@@ -95,7 +95,7 @@
     "prompt": [
       {
         "kind": "text",
-        "value": "Dad is in the kitchen. The blue crate has "
+        "value": "The yellow basket has "
       },
       {
         "kind": "math",
@@ -103,7 +103,7 @@
       },
       {
         "kind": "text",
-        "value": " marbles. The yellow crate has "
+        "value": " cherries. The brown basket has "
       },
       {
         "kind": "math",
@@ -111,7 +111,7 @@
       },
       {
         "kind": "text",
-        "value": " marbles. Which crate has fewer?"
+        "value": " cherries. Which basket has more?"
       }
     ]
   },
@@ -125,7 +125,7 @@
       },
       {
         "kind": "math",
-        "value": "71"
+        "value": "70"
       },
       {
         "kind": "text",
@@ -133,7 +133,7 @@
       },
       {
         "kind": "math",
-        "value": "45"
+        "value": "44"
       },
       {
         "kind": "text",
@@ -147,27 +147,27 @@
     "prompt": [
       {
         "kind": "text",
-        "value": "A fox hides in the woods. A miner has "
+        "value": "The brown bucket has "
       },
       {
         "kind": "math",
-        "value": "34"
+        "value": "27"
       },
       {
         "kind": "text",
-        "value": " coins and "
+        "value": " buns. The green bucket has "
       },
       {
         "kind": "math",
-        "value": "85"
+        "value": "27"
       },
       {
         "kind": "text",
-        "value": " pins. Which sign fits: "
+        "value": " buns. Which sign makes this true: "
       },
       {
         "kind": "math",
-        "value": "34 \\square 85"
+        "value": "27 \\square 27"
       }
     ]
   },
@@ -203,43 +203,29 @@
     "prompt": [
       {
         "kind": "text",
-        "value": "The bus is on the road. The number of pies is "
+        "value": "The red basket has the number "
       },
       {
         "kind": "math",
-        "value": "9"
+        "value": "12"
       },
       {
         "kind": "text",
-        "value": ". The number of plums is "
+        "value": ". The orange basket has the number "
       },
       {
         "kind": "math",
-        "value": "7"
+        "value": "13"
       },
       {
         "kind": "text",
-        "value": ". Which number is bigger?"
+        "value": ". Which number is smaller?"
       }
     ]
   },
   "count_to_10": {
     "tier": 0,
-    "seed": 0,
-    "prompt": [
-      {
-        "kind": "text",
-        "value": "Count on. What comes next? "
-      },
-      {
-        "kind": "math",
-        "value": "1, 2, 3, ?"
-      }
-    ]
-  },
-  "count_to_100": {
-    "tier": 2,
-    "seed": 4,
+    "seed": 9,
     "prompt": [
       {
         "kind": "text",
@@ -247,7 +233,7 @@
       },
       {
         "kind": "math",
-        "value": "25"
+        "value": "2"
       },
       {
         "kind": "text",
@@ -255,25 +241,75 @@
       },
       {
         "kind": "math",
-        "value": "5"
+        "value": "2"
       },
       {
         "kind": "text",
-        "value": " more numbers. Which number do you say last?"
+        "value": " more numbers."
+      },
+      {
+        "kind": "text",
+        "value": " Which number do you say last?"
+      }
+    ]
+  },
+  "count_to_100": {
+    "tier": 0,
+    "seed": 12,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Start at "
+      },
+      {
+        "kind": "math",
+        "value": "39"
+      },
+      {
+        "kind": "text",
+        "value": ". Count on "
+      },
+      {
+        "kind": "math",
+        "value": "3"
+      },
+      {
+        "kind": "text",
+        "value": " more numbers."
+      },
+      {
+        "kind": "text",
+        "value": " Which number do you say last?"
       }
     ]
   },
   "count_to_20": {
     "tier": 0,
-    "seed": 0,
+    "seed": 9,
     "prompt": [
       {
         "kind": "text",
-        "value": "Count on. What comes next? "
+        "value": "Start at "
       },
       {
         "kind": "math",
-        "value": "11, 12, 13, ?"
+        "value": "11"
+      },
+      {
+        "kind": "text",
+        "value": ". Count on "
+      },
+      {
+        "kind": "math",
+        "value": "3"
+      },
+      {
+        "kind": "text",
+        "value": " more numbers."
+      },
+      {
+        "kind": "text",
+        "value": " Which number do you say last?"
       }
     ]
   },
@@ -288,16 +324,16 @@
     ]
   },
   "one_more_one_less": {
-    "tier": 2,
-    "seed": 30,
+    "tier": 0,
+    "seed": 11,
     "prompt": [
       {
         "kind": "text",
-        "value": "What is 1 less than "
+        "value": "What number is 1 less than "
       },
       {
         "kind": "math",
-        "value": "100"
+        "value": "10"
       },
       {
         "kind": "text",
@@ -307,11 +343,11 @@
   },
   "pairs_to_10": {
     "tier": 2,
-    "seed": 0,
+    "seed": 1,
     "prompt": [
       {
-        "kind": "math",
-        "value": "? + 7 = 10"
+        "kind": "text",
+        "value": "You have 3. How many more make 10?"
       }
     ]
   },
@@ -369,11 +405,11 @@
   },
   "skip_count_10": {
     "tier": 1,
-    "seed": 6,
+    "seed": 19,
     "prompt": [
       {
         "kind": "text",
-        "value": "Count by tens. "
+        "value": "Keep counting by tens. "
       },
       {
         "kind": "math",
@@ -413,15 +449,19 @@
   },
   "teen_numbers": {
     "tier": 0,
-    "seed": 0,
+    "seed": 16,
     "prompt": [
+      {
+        "kind": "text",
+        "value": "How many ones are in "
+      },
       {
         "kind": "math",
         "value": "12"
       },
       {
         "kind": "text",
-        "value": " is a ten and how many more ones?"
+        "value": " after you take out the ten?"
       }
     ]
   }
