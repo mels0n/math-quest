@@ -1,11 +1,15 @@
 """The one prerequisite-cycle check, used by the pack loader and the skill graph."""
 
 from collections.abc import Mapping
+from typing import Protocol
 
-from mathquest.engine.content.schema import Skill
+
+class HasPrerequisites(Protocol):
+    @property
+    def prerequisites(self) -> tuple[str, ...]: ...
 
 
-def find_cycle(skills: Mapping[str, Skill]) -> list[str] | None:
+def find_cycle(skills: Mapping[str, HasPrerequisites]) -> list[str] | None:
     """A prerequisite cycle as skill ids (the first repeated at the end), or None.
 
     Prerequisites that are not in ``skills`` are ignored; callers check them first.
