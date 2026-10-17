@@ -3,19 +3,13 @@
 import dataclasses
 from collections.abc import Callable
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
 import sympy
 
 from mathquest.engine.content import Pack, load_pack
-from mathquest.engine.content.lint import (
-    Finding,
-    _always_shown,  # pyright: ignore[reportPrivateUsage]
-    errors,
-    lint,
-)
+from mathquest.engine.content.lint import Finding, errors, lint
 from mathquest.engine.generators import all_generators
 from mathquest.engine.types import Generator
 from tests.engine.content.packbuilder import CONTENT, SLOTS, WORDS, base, load
@@ -162,18 +156,30 @@ def test_a_number_always_equal_to_a_shown_one_counts_as_shown(tmp_path: Path) ->
     assert _rule(_lint(load(tmp_path, files)), "answers") == []
 
 
-def test_a_digit_of_a_shown_number_counts_as_shown() -> None:
-    generator = REGISTRY["add_2digit_no_regroup"]
-    source: Any = SimpleNamespace(
-        generator=generator, tier_difficulties=generator.tier_difficulties
-    )
-    # The tens and ones of the shown numbers are always digits of them.
-    shown = frozenset({"a", "b"})
-    for name in ("a_tens", "a_ones", "b_tens", "b_ones"):
-        assert _always_shown(source, shown, name)
-    # A digit of a number that is not shown is still left out.
-    assert not _always_shown(source, frozenset({"a"}), "b_tens")
-    assert not _always_shown(source, frozenset({"a"}), "b")
+def _two_digit(files: dict[str, Any], template: str) -> dict[str, Any]:
+    """The base pack on the two-digit generator, with one word template."""
+    files["skills.yaml"]["skills"][0]["generator"] = "add_2digit_no_regroup"
+    files["explanations/alpha.yaml"]["misconceptions"] = {}
+    files["word_problems/alpha.yaml"]["templates"][1]["text_template"] = template
+    return files
+
+
+def test_the_digits_of_shown_numbers_count_as_shown(tmp_path: Path) -> None:
+    files = _two_digit(base(), "There are {a} red cars and {b} blue cars. How many cars?")
+    assert _rule(_lint(load(tmp_path, files)), "answers") == []
+
+
+def test_a_digit_of_a_number_that_is_not_shown_is_still_left_out(tmp_path: Path) -> None:
+    files = _two_digit(base(), "There are {a} red cars and some blue cars. How many cars?")
+    (finding,) = _rule(_lint(load(tmp_path, files)), "answers")
+    assert finding.message.endswith("never shows b, b_ones, b_tens")
+
+
+def test_tens_are_not_shown_by_a_template_that_shows_only_ones_digits(tmp_path: Path) -> None:
+    # No place beyond a number's own length is a digit of it, so a number never "shows" a zero.
+    files = _two_digit(base(), "There are {a_ones} red cars and {b_ones} blue cars. How many?")
+    (finding,) = _rule(_lint(load(tmp_path, files)), "answers")
+    assert finding.message.endswith("never shows a, a_tens, b, b_tens")
 
 
 def test_a_template_that_fails_to_render_for_some_seed(tmp_path: Path) -> None:
@@ -318,6 +324,37 @@ def test_a_lesson_example_the_skill_can_ask_is_an_error(tmp_path: Path) -> None:
     findings = _rule(_lint(load(tmp_path, _edit(base(), "lessons/alpha.yaml", asked))), "example")
     assert {f.path for f in findings} == {"worked_example.prompt", "screens[0].body_md"}
     assert all("is a problem this skill asks" in f.message for f in findings)
+
+
+def test_an_example_with_the_terms_the_other_way_round_is_an_error(tmp_path: Path) -> None:
+    def asked(lesson: dict[str, Any]) -> None:
+        lesson["worked_example"]["prompt"] = [{"kind": "math", "value": "5 + 8 = ?"}]
+
+    findings = _rule(_lint(load(tmp_path, _edit(base(), "lessons/alpha.yaml", asked))), "example")
+    assert {f.path for f in findings} == {"worked_example.prompt"}
+
+
+def test_a_worked_question_in_words_is_checked_against_the_questions_asked(
+    tmp_path: Path,
+) -> None:
+    def lesson(place: str) -> Callable[[dict[str, Any]], None]:
+        def edit(data: dict[str, Any]) -> None:
+            question = f"Which digit is in the {place} place of 68?"
+            data["worked_example"]["prompt"] = [{"kind": "text", "value": question}]
+
+        return edit
+
+    def with_place_value(files: dict[str, Any]) -> dict[str, Any]:
+        files["skills.yaml"]["skills"][0]["generator"] = "place_value_tens_ones"
+        files["explanations/alpha.yaml"]["misconceptions"] = {}
+        return files
+
+    asked = _edit(with_place_value(base()), "lessons/alpha.yaml", lesson("tens"))
+    assert [f.path for f in _rule(_lint(load(tmp_path, asked)), "example")] == [
+        "worked_example.prompt"
+    ]
+    never = _edit(with_place_value(base()), "lessons/alpha.yaml", lesson("hundreds"))
+    assert _rule(_lint(load(tmp_path, never)), "example") == []
 
 
 def test_an_explanation_example_the_skill_can_ask_is_an_error(tmp_path: Path) -> None:

@@ -1,5 +1,6 @@
-# Lesson shown the first time a learner meets Tens and Ones. The numbers are written as
-# plain words in the text, so a replayed lesson never shows a question the skill asks.
+# Lesson shown the first time a learner meets Tens and Ones. The screens use plain numbers
+# only to draw pictures. The worked example asks for the ones place of a three-digit
+# number, which the skill never asks, so a replayed lesson never repeats a question.
 skill: place_value_tens_ones
 screens:
   - title: Tens and ones
@@ -27,11 +28,10 @@ screens:
       params: {hundreds: 3, tens: 5, ones: 2}
 worked_example:
   prompt:
-    - {kind: text, value: "Which digit is in the tens place of 68?"}
+    - {kind: text, value: "Which digit is in the ones place of 352?"}
   steps:
-    - Start from the right. The 8 is in the ones place.
-    - The next digit to the left is in the tens place.
-    - That digit is 6.
-    - So the 6 is in the tens place.
+    - Start from the right. The last digit is in the ones place.
+    - In 352, the last digit is 2.
+    - So the 2 is in the ones place.
 try_it:
   tier: 0

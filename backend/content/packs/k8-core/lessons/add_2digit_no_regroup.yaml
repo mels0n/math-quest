@@ -1,33 +1,35 @@
-# Lesson shown the first time a learner meets Add Big Numbers. Adding is shown with
-# tens and ones, so a child sees why each column is added on its own.
+# Lesson shown the first time a learner meets Add Big Numbers. Its examples add a
+# one-digit number to a two-digit number: the skill itself always adds two two-digit
+# numbers, so a replayed lesson never repeats a question, and the pictures never show
+# an answer.
 skill: add_2digit_no_regroup
 screens:
   - title: Tens and ones
     body_md: >-
-      A two-digit number has tens and ones. The number 34 is 3 tens and 4
+      A two-digit number has tens and ones. The number 46 is 4 tens and 6
       ones. Here it is as blocks. A stick is one ten. A cube is one one.
     visual:
       kind: base_ten
-      params: {tens: 3, ones: 4}
-  - title: Add the tens
+      params: {tens: 4, ones: 6}
+  - title: Add the ones
     body_md: >-
-      To add 34 and 25, add tens with tens. 3 tens and 2 tens make
-      {{= 3 + 2 }} tens. Add ones with ones too. 4 ones and 5 ones make
-      {{= 4 + 5 }} ones.
+      Now add 3 more. Add ones with ones. 6 ones and 3 ones make
+      {{= 6 + 3 }} ones. The tens stay the same. There are still 4 tens.
     visual:
       kind: base_ten
-      params: {tens: 5, ones: 9}
+      params: {tens: 4, ones: 6}
   - title: Put it together
     body_md: >-
-      Now put the tens and the ones together. {{= 3 + 2 }} tens and
-      {{= 4 + 5 }} ones make {{= 34 + 25 }}. So \(34 + 25 = {{= 34 + 25 }}\).
+      Now put the tens and the ones together. 4 tens and {{= 6 + 3 }} ones
+      make {{= 46 + 3 }}. So \(46 + 3 = {{= 46 + 3 }}\). With two big numbers,
+      add the tens too.
 worked_example:
   prompt:
-    - {kind: math, value: "52 + 36 = ?"}
+    - {kind: math, value: "52 + 7 = ?"}
   steps:
-    - Split both numbers into tens and ones.
-    - Add the tens. 5 tens and 3 tens make {{= 5 + 3 }} tens.
-    - Add the ones. 2 ones and 6 ones make {{= 2 + 6 }} ones.
-    - So \(52 + 36 = {{= 52 + 36 }}\).
+    - Split 52 into tens and ones. It is 5 tens and 2 ones.
+    - Add the ones. 2 ones and 7 ones make {{= 2 + 7 }} ones.
+    - The tens stay the same. There are still 5 tens.
+    - So \(52 + 7 = {{= 52 + 7 }}\).
 try_it:
   tier: 0
