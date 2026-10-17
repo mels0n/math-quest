@@ -36,6 +36,19 @@ Use a short slug for the batch, such as `content/meadows-hints`.
 
 ## 3. Write the YAML
 
+Before you write:
+
+- Set `word_problems_fit: true` on the skill in `skills.yaml` before adding word
+  problems; the loader rejects them otherwise.
+- Mistake feedback is keyed by the mistakes the generator declares. A new mistake needs a
+  generator change (with a property test) before it can have feedback.
+- A lesson or explanation example must never be a problem the skill asks. The lint scans
+  the generator's problems, counts sums with the terms in either order, and checks a
+  worked question written in words against the whole prompts the skill asks.
+- Digits of a number a word problem shows count as shown, so hints may use them
+  ([ADR-0018](../adr/0018-digits-count-as-shown-in-word-problems.md)).
+
+
 Files live in `content/packs/<pack>/`, one file per skill and kind:
 `lessons/<skill>.yaml`, `hints/<skill>.yaml`, `explanations/<skill>.yaml`,
 `word_problems/<skill>.yaml`, `bank/<skill>.yaml`. The schemas are in
