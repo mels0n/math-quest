@@ -5,7 +5,11 @@ const CSRF = { 'X-Requested-With': 'mathquest' };
 
 interface Step {
 	done: boolean;
-	problem?: { skill_id: string; dev_answer_latex: string | null };
+	problem?: {
+		skill_id: string;
+		dev_answer_latex: string | null;
+		dev_answer_choice: number | null;
+	};
 }
 
 interface NextBody {
@@ -86,7 +90,12 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 			// Right on everything below fractions.
 			const right = step.problem?.skill_id !== 'add_fractions_unlike';
 			const pending = page.waitForResponse(isPlacement);
-			await typeAnswer(page, right ? (step.problem?.dev_answer_latex ?? '') : '99999');
+			const choice = step.problem?.dev_answer_choice ?? null;
+			if (choice !== null) {
+				await page.getByTestId('choice').nth(right ? choice : (choice + 1) % 3).click();
+			} else {
+				await typeAnswer(page, right ? (step.problem?.dev_answer_latex ?? '') : '99999');
+			}
 			step = (await (await pending).json()) as Step;
 		}
 		await expect(page.getByTestId('placement-done')).toBeVisible();
@@ -129,10 +138,10 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 		await expect(page.getByTestId('region-fraction_forest')).toContainText('1 more to unlock');
 		expect(await page.evaluate(fits)).toBe(true);
 		if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/practice-picker.png`, fullPage: true });
-		// Compact enough for a phone: about a screen and a half (roughly 1030 px today; the
-		// old one-card-per-row picker was over 2200). The margin absorbs font differences
-		// between machines.
-		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(1200);
+		// Compact enough for a phone: roughly 1800 px with the
+		// sixteen Number Meadows skills open (the old one-card-per-row picker was over 2200
+		// for nine skills). The margin absorbs font differences between machines.
+		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(1900);
 
 		const started = page.waitForResponse(isStart);
 		const first = page.waitForResponse(isNext);
