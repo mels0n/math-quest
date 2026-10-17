@@ -1166,3 +1166,48 @@ async def test_a_provisional_skill_reads_as_provisional(db: AsyncSession) -> Non
         CATALOG, "add_within_10", row, datetime.now(UTC) + timedelta(days=3)
     )
     assert later.state is SkillState.REVIEW_DUE
+
+
+async def test_an_old_learner_keeps_the_skill_they_were_on(db: AsyncSession) -> None:
+    """add_within_10 gained count_to_10 as a prerequisite after this learner started it."""
+    pid = await _player(db, fresh=True)
+    row = await mastery.lock(db, pid, "add_within_10", -1.0)
+    row.attempts = 4
+    row.state = "learning"
+    await db.commit()
+
+    out = await service.list_skills(db, CATALOG, pid)
+    states = {s.skill_id: s.state for s in out.skills}
+    assert states["add_within_10"] is SkillState.LEARNING
+    assert states["sub_within_10"] is SkillState.LOCKED  # never started: waits for counting
+    session = await service.start_practice(db, CATALOG, pid, skill_id="add_within_10")
+    assert [f.skill_id for f in session.focus] == ["add_within_10"]
+    ready = CATALOG.graph.ready(set(), {"add_within_10"})
+    assert "add_within_10" in ready and "count_to_10" in ready
+    adventure = await service.start_session(db, pid, "adventure")
+    problem = await _next_problem(db, CATALOG, pid, adventure.session_id)
+    assert problem.skill_id in ready
+
+
+async def test_a_learner_placed_high_before_counting_existed_is_not_sent_back(
+    db: AsyncSession,
+) -> None:
+    """A grade 2 placement from before: the old anchors' ancestors, none of the new skills."""
+    pid = await _player(db, fresh=True)
+    old = (
+        "add_within_10",
+        "add_within_20",
+        "place_value_tens_ones",
+        "add_2digit_no_regroup",
+        "add_2digit_regroup",
+    )
+    await _mark_provisional(db, pid, *old)
+    out = await service.list_skills(db, CATALOG, pid)
+    states = {s.skill_id: s.state for s in out.skills}
+    assert states["place_value_tens_ones"] is SkillState.PROVISIONAL
+    # Under skills they know, so open to practice but never offered by the scheduler.
+    assert states["teen_numbers"] is SkillState.READY
+    assert "teen_numbers" not in CATALOG.graph.ready(set(old), set(old))
+    session = await service.start_session(db, pid, "adventure")
+    problem = await _next_problem(db, CATALOG, pid, session.session_id)
+    assert problem.skill_id != "teen_numbers"

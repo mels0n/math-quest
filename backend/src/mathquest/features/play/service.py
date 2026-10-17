@@ -327,7 +327,8 @@ async def _player_states(
 ) -> dict[str, MasteryOut]:
     rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
     mastered = {sid for sid, r in rows.items() if r.state in mastery.COUNTS_AS_MASTERED}
-    ready = set(catalog.graph.ready(mastered))
+    # A skill implied by what the learner has mastered is open to practice, not offered.
+    ready = set(catalog.graph.ready(mastered, set(rows))) | catalog.graph.implied(mastered)
     return {
         sid: _state(catalog, sid, rows.get(sid), ready, now) for sid in catalog.graph.topo_order()
     }
@@ -520,7 +521,9 @@ async def next_problem(
     if practice:
         pick = plan_practice(graph, ratings, list(session.focus or []), history)
     else:
-        pick = plan_next(graph, ratings, mastered, due, session.problem_count, history)
+        pick = plan_next(
+            graph, ratings, mastered, due, session.problem_count, history, set(by_skill)
+        )
     skill_id = pick.skill_id
     if offer_lessons and await _lesson_due(
         db, catalog, player_id, skill_id, by_skill.get(skill_id)

@@ -95,3 +95,39 @@ def test_promoted_skills_sit_under_the_skills_they_unlock() -> None:
         "place_value_tens_ones",
         "compare_numbers_20",
     )
+
+
+def test_a_started_skill_stays_ready_whatever_prerequisites_it_gained() -> None:
+    graph = _graph()
+    assert "add_within_10" not in graph.ready(set())
+    assert "add_within_10" in graph.ready(set(), {"add_within_10"})
+    # Mastered skills are never offered, started or not.
+    assert "add_within_10" not in graph.ready({"add_within_10"}, {"add_within_10"})
+
+
+def test_a_skill_under_what_the_learner_knows_is_implied() -> None:
+    graph = _graph()
+    # teen_numbers sits only under place_value_tens_ones among the built skills.
+    assert graph.implied({"place_value_tens_ones"}) == {"teen_numbers"}
+    assert "teen_numbers" not in graph.ready({"place_value_tens_ones"})
+    # With a prerequisite chain above it known too, what builds on it opens up.
+    assert "place_value_hundreds" in graph.ready({"place_value_tens_ones"})
+    # One dependent still unplayed keeps count_to_10 an ordinary ready skill.
+    known = {"add_within_10", "sub_within_10"}
+    assert "count_to_10" not in graph.implied(known)
+    assert "count_to_10" in graph.ready(known)
+    # Every dependent known: nothing is implied below a skill with no dependents.
+    assert graph.implied(set()) == set()
+
+
+def test_implied_skills_chain_down_the_graph() -> None:
+    graph = _graph()
+    everything_above = {
+        "add_within_10",
+        "sub_within_10",
+        "count_to_100",
+        "compare_groups",
+        "compare_numbers_20",
+        "teen_numbers",
+    }
+    assert {"count_to_10", "count_to_20"} <= graph.implied(everything_above)

@@ -1,6 +1,6 @@
 """Skill dependency graph, built from a loaded content pack's skills."""
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from types import MappingProxyType
 
 from mathquest.engine.content.errors import ContentError
@@ -58,10 +58,39 @@ class SkillGraph:
     def topo_order(self) -> list[str]:
         return list(self._order)
 
-    def ready(self, mastered: set[str]) -> list[str]:
-        """Unmastered skills whose prerequisites are all mastered, in topological order."""
+    def implied(self, mastered: Collection[str]) -> set[str]:
+        """Skills the learner can be taken to know without ever having played them: a skill
+        that is not mastered, but has dependents, every one of which is mastered or itself
+        implied. Content added later under skills a learner already knows must not send
+        them back to it (docs/adr/0020-readiness-for-existing-learners.md)."""
+        known = set(mastered)
+        found: set[str] = set()
+        dependents: dict[str, list[str]] = {sid: [] for sid in self.skills}
+        for sid, skill in self.skills.items():
+            for prereq in skill.prerequisites:
+                dependents[prereq].append(sid)
+        changed = True
+        while changed:
+            changed = False
+            for sid in self._order:
+                if sid in known or not dependents[sid]:
+                    continue
+                if all(d in known for d in dependents[sid]):
+                    known.add(sid)
+                    found.add(sid)
+                    changed = True
+        return found
+
+    def ready(self, mastered: Collection[str], started: Collection[str] = ()) -> list[str]:
+        """Unmastered skills to play, in topological order: those whose prerequisites are
+        all mastered (or implied, see ``implied``), and every skill the learner has already
+        started, whatever prerequisites were added to it since. ``started`` is the skills
+        the learner has a record of; mastered ones are not offered."""
+        done = set(mastered)
+        known = done | self.implied(done)
         return [
             sid
             for sid in self._order
-            if sid not in mastered and all(p in mastered for p in self.skills[sid].prerequisites)
+            if sid not in known
+            and (sid in started or all(p in known for p in self.skills[sid].prerequisites))
         ]
