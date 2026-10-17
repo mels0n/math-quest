@@ -22,11 +22,12 @@ additions, both in `SkillGraph`:
 - **A started skill stays ready.** A skill the learner has a record of (learning,
   mastered, provisional or due for review) is offered whatever prerequisites it gained
   since. Mastered skills are still never offered.
-- **A skill under what the learner knows is implied.** A skill that has dependents, none
-  of which is unmet (each is mastered, provisionally mastered or itself implied), counts
-  as known for the prerequisite check, whether or not it was ever played. It is not
-  offered by the scheduler, but the practice picker shows it as open, so a child can still
-  choose it.
+- **A skill under what the learner knows is implied.** A skill the learner has not
+  mastered, but which is a prerequisite (directly or through other prerequisites) of a skill
+  they have mastered or provisionally mastered, counts as known for the prerequisite check,
+  whether or not it was ever played. It is not offered by the scheduler, but the practice
+  picker shows it as open, so a child can still choose it. A skill whose only dependents are
+  unplayed is not implied.
 
 The play service passes the learner's record of started skills to the scheduler and to
 the skill list; no stored row changes.
@@ -38,12 +39,13 @@ the skill list; no stored row changes.
 - **Ignore the problem until content is released.** The branch changes the graph under
   accounts that already exist, and the first symptom would be a child's current skill
   locking.
-- **Imply a skill when any dependent is known.** One placed skill would then hide
-  everything under it, including skills with other dependents the learner has not met.
+- **Imply a skill only when every dependent is known.** A learner placed at grade 2
+  before the change knows nothing built on counting except what they were placed on, so
+  counting would still be offered first. Knowing something above a skill is what implies it.
 
 ## Consequences
-A learner who knows every skill that builds on a new foundation never meets it, and one
-who knows only some still does (a new player gets counting first, as intended). The
-implied rule is deliberately narrow: it needs every dependent known, so a skill with no
-dependents in the pack is never implied. Placement already marks every ancestor of the
-frontier, so new learners are not affected.
+A learner who knows anything above a new foundation never meets it, and a new player gets
+counting first, as intended. Skills that build on the foundation but which the learner has
+not met stay open to them. Implication goes down the graph only, from what is known to what
+it needs, so a skill no known skill needs is never implied. Placement already marks every
+ancestor of the frontier, so new learners are not affected.

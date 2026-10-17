@@ -59,27 +59,16 @@ class SkillGraph:
         return list(self._order)
 
     def implied(self, mastered: Collection[str]) -> set[str]:
-        """Skills the learner can be taken to know without ever having played them: a skill
-        that is not mastered, but has dependents, every one of which is mastered or itself
-        implied. Content added later under skills a learner already knows must not send
-        them back to it (docs/adr/0020-readiness-for-existing-learners.md)."""
+        """Skills the learner can be taken to know without ever having played them: every
+        prerequisite, direct or transitive, of a skill they have mastered, that is not
+        mastered itself. Content added later under skills a learner already knows must not
+        send them back to it (docs/adr/0020-readiness-for-existing-learners.md)."""
         known = set(mastered)
         found: set[str] = set()
-        dependents: dict[str, list[str]] = {sid: [] for sid in self.skills}
-        for sid, skill in self.skills.items():
-            for prereq in skill.prerequisites:
-                dependents[prereq].append(sid)
-        changed = True
-        while changed:
-            changed = False
-            for sid in self._order:
-                if sid in known or not dependents[sid]:
-                    continue
-                if all(d in known for d in dependents[sid]):
-                    known.add(sid)
-                    found.add(sid)
-                    changed = True
-        return found
+        for sid in known:
+            if sid in self.skills:
+                found |= self.ancestors(sid)
+        return found - known
 
     def ready(self, mastered: Collection[str], started: Collection[str] = ()) -> list[str]:
         """Unmastered skills to play, in topological order: those whose prerequisites are

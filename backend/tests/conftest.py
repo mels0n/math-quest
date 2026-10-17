@@ -132,13 +132,12 @@ EARLY_SKILLS = (
     "one_more_one_less",
     "skip_count_10",
     "teen_numbers",
-    "pairs_to_10",
-    "place_value_hundreds",
-    "compare_numbers_100",
 )
-"""The skills built after the first seven. Most tests are about the addition, subtraction
-and place value skills, so `pass_early_skills` gives a player these as passed (not due for
-review for a year) and the ready set is the one those tests describe."""
+"""The skills built after the first seven that the first seven do not build on (pairs,
+hundreds and comparing to 100 would imply add_within_10 and place_value_tens_ones). Most
+tests are about the addition, subtraction and place value skills, so `pass_early_skills`
+gives a player these as passed (not due for review for a year) and the ready set is the
+one those tests describe."""
 
 
 async def pass_early_skills(h: Api) -> None:

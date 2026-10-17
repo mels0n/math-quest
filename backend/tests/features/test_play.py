@@ -1206,11 +1206,13 @@ async def test_a_learner_placed_high_before_counting_existed_is_not_sent_back(
     states = {s.skill_id: s.state for s in out.skills}
     assert states["place_value_tens_ones"] is SkillState.PROVISIONAL
     # Under skills they know, so open to practice but never offered by the scheduler.
-    assert states["teen_numbers"] is SkillState.READY
-    assert "teen_numbers" not in CATALOG.graph.ready(set(old), set(old))
+    for implied in ("count_to_10", "count_to_20", "teen_numbers"):
+        assert states[implied] is SkillState.READY
+        assert implied not in CATALOG.graph.ready(set(old), set(old))
+    assert "count_to_100" in CATALOG.graph.ready(set(old), set(old))
     session = await service.start_session(db, pid, "adventure")
     problem = await _next_problem(db, CATALOG, pid, session.session_id)
-    assert problem.skill_id != "teen_numbers"
+    assert problem.skill_id not in ("count_to_10", "count_to_20", "teen_numbers")
 
 
 async def test_a_typed_skill_serves_choice_bank_items_of_the_learners_tier(
@@ -1218,6 +1220,7 @@ async def test_a_typed_skill_serves_choice_bank_items_of_the_learners_tier(
 ) -> None:
     """The comparing skills are typed, with a bank of button questions served beside them."""
     pid = await _player(db)
+    await _mark_provisional(db, pid, "place_value_tens_ones")
     session = await service.start_practice(db, CATALOG, pid, skill_id="compare_numbers_100")
     source = CATALOG.source("compare_numbers_100")
     assert source.skill.keypad == "numpad" and source.bank is not None

@@ -105,27 +105,33 @@ def test_a_started_skill_stays_ready_whatever_prerequisites_it_gained() -> None:
 
 def test_a_skill_under_what_the_learner_knows_is_implied() -> None:
     graph = _graph()
-    # teen_numbers sits only under place_value_tens_ones among the built skills.
-    assert graph.implied({"place_value_tens_ones"}) == {"teen_numbers"}
+    # Everything that place_value_tens_ones builds on, directly or not.
+    assert graph.implied({"place_value_tens_ones"}) == {
+        "teen_numbers",
+        "count_to_20",
+        "count_to_10",
+    }
     assert "teen_numbers" not in graph.ready({"place_value_tens_ones"})
-    # With a prerequisite chain above it known too, what builds on it opens up.
     assert "place_value_hundreds" in graph.ready({"place_value_tens_ones"})
-    # One dependent still unplayed keeps count_to_10 an ordinary ready skill.
-    known = {"add_within_10", "sub_within_10"}
-    assert "count_to_10" not in graph.implied(known)
-    assert "count_to_10" in graph.ready(known)
-    # Every dependent known: nothing is implied below a skill with no dependents.
+    # Nothing known, nothing implied.
     assert graph.implied(set()) == set()
 
 
-def test_implied_skills_chain_down_the_graph() -> None:
+def test_a_grade_two_learner_from_before_counting_existed_is_not_sent_back() -> None:
     graph = _graph()
-    everything_above = {
-        "add_within_10",
-        "sub_within_10",
-        "count_to_100",
-        "compare_groups",
-        "compare_numbers_20",
-        "teen_numbers",
-    }
-    assert {"count_to_10", "count_to_20"} <= graph.implied(everything_above)
+    old = {"add_within_10", "add_within_20", "add_2digit_regroup"}
+    assert {"count_to_10", "count_to_20", "teen_numbers"} <= graph.implied(old)
+    assert not {"count_to_10", "count_to_20"} & set(graph.ready(old))
+    # What builds on counting that they have not met stays open to them.
+    assert "compare_groups" in graph.ready(old)
+    # With only add_within_10 known, count_to_20 is under nothing they know.
+    assert graph.implied({"add_within_10"}) == {"count_to_10"}
+    assert "count_to_20" in graph.ready({"add_within_10"})
+
+
+def test_a_skill_whose_dependents_are_all_unplayed_is_not_implied() -> None:
+    graph = _graph()
+    known = {"add_within_10"}
+    for sid in ("count_to_20", "compare_groups", "sub_within_10", "teen_numbers"):
+        assert sid not in graph.implied(known)
+    assert graph.implied(known) == {"count_to_10"}
