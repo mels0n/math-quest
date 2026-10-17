@@ -23,12 +23,14 @@ into ``skills.yaml`` when their generators exist.
     or an earlier batch (or is already built). A batch of more than ``MAX_BATCH`` skills
     is a warning.
 ``planned-anchors``
-    Within the scope's regions, anchors in topological order never fall to an earlier
-    grade band, and every grade band of the scope has one.
+    Within the scope's regions, an anchor is never on an earlier grade band than an anchor
+    it builds on (only anchors joined by a prerequisite path are compared), and every
+    grade band of the scope has one. Skipped when the graph has a cycle.
 ``planned-tiers``
     At least ``MIN_TIERS`` tiers.
 ``planned-standards``
-    A skill does not cite a standard from a later grade or the same one twice.
+    A skill, planned or built, does not cite a standard from a later grade or the same
+    one twice.
 ``planned-text``
     Names and tier labels are short and use no dash (em dash, en dash, ``--`` or a
     spaced hyphen).
@@ -37,12 +39,13 @@ The standards codes themselves, the keypad and the field names are checked when 
 file loads, so a malformed plan is a ``ContentError`` rather than a finding.
 """
 
+from collections import Counter
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
-from itertools import pairwise
 from pathlib import Path
 
 from mathquest.engine.content.coverage import MIN_TIERS
+from mathquest.engine.content.errors import ContentError
 from mathquest.engine.content.graph import find_cycle
 from mathquest.engine.content.lint import Finding
 from mathquest.engine.content.loader import load_validated
@@ -53,8 +56,6 @@ MAX_BATCH = 12
 MAX_NAME = 32
 MAX_LABEL = 40
 DASHES = (chr(0x2014), chr(0x2013), "--", " - ")
-
-_FILE = PLAN_FILE
 
 
 @dataclass(frozen=True)
@@ -70,8 +71,11 @@ class _Node:
 
 def load_planned(pack_dir: Path) -> PlannedList | None:
     """The pack's plan, or None when it has none. A ``ContentError`` if it is malformed."""
-    if not (pack_dir / PLAN_FILE).is_file():
+    path = pack_dir / PLAN_FILE
+    if not path.exists():
         return None
+    if not path.is_file():
+        raise ContentError(f"{PLAN_FILE}: not a file")
     return load_validated(PlannedList, pack_dir, PLAN_FILE)
 
 
@@ -121,15 +125,16 @@ def lint_planned(pack: Pack, plan: PlannedList) -> list[Finding]:
     out += _scope(pack, plan)
     out += _graph(pack, plan, nodes)
     out += _batches(pack, plan)
-    out += _anchors(pack, plan, nodes)
+    if find_cycle(nodes) is None:
+        out += _anchors(plan, nodes)
     out += _tiers(plan)
-    out += _standards(plan)
+    out += _standards(pack, plan)
     out += _text(plan)
     return out
 
 
 def _error(path: str, rule: str, message: str) -> Finding:
-    return Finding("error", _FILE, path, rule, message)
+    return Finding("error", PLAN_FILE, path, rule, message)
 
 
 # --- ids and scope ---------------------------------------------------------------
@@ -151,7 +156,7 @@ def _ids(pack: Pack, plan: PlannedList) -> Iterator[Finding]:
         other = names.setdefault(p.name.lower(), p.id)
         if other != p.id:
             yield Finding(
-                "warning", _FILE, f"planned[{i}].name", "planned-ids",
+                "warning", PLAN_FILE, f"planned[{i}].name", "planned-ids",
                 f"{p.id} has the same name as {other}",
             )  # fmt: skip
 
@@ -263,7 +268,7 @@ def _batches(pack: Pack, plan: PlannedList) -> Iterator[Finding]:
     for b, size in sizes.items():
         if size > MAX_BATCH:
             yield Finding(
-                "warning", _FILE, "planned", "planned-batch",
+                "warning", PLAN_FILE, "planned", "planned-batch",
                 f"batch {b} has {size} skills; keep a batch to about 10",
             )  # fmt: skip
     for i, p in enumerate(plan.planned):
@@ -288,33 +293,36 @@ def _batches(pack: Pack, plan: PlannedList) -> Iterator[Finding]:
 # --- anchors ---------------------------------------------------------------------
 
 
-def _topological(nodes: Mapping[str, _Node]) -> list[str]:
-    """Kahn's algorithm, ties broken by declaration order, like the skill graph's."""
-    remaining = {sid: set(node.prerequisites) & nodes.keys() for sid, node in nodes.items()}
-    out: list[str] = []
-    while remaining:
-        ready = [sid for sid, deps in remaining.items() if not deps]
-        if not ready:  # a cycle, reported by the graph rule
-            break
-        out.append(ready[0])
-        del remaining[ready[0]]
-        for deps in remaining.values():
-            deps.discard(out[-1])
-    return out
+def _ancestors(nodes: Mapping[str, _Node], sid: str) -> set[str]:
+    found: set[str] = set()
+    stack = list(nodes[sid].prerequisites)
+    while stack:
+        other = stack.pop()
+        if other in nodes and other not in found:
+            found.add(other)
+            stack.extend(nodes[other].prerequisites)
+    return found
 
 
-def _anchors(pack: Pack, plan: PlannedList, nodes: Mapping[str, _Node]) -> Iterator[Finding]:
+def _anchors(plan: PlannedList, nodes: Mapping[str, _Node]) -> Iterator[Finding]:
+    """An anchor never sits on a later grade band than an anchor that builds on it.
+
+    Only anchors joined by a prerequisite path are compared, so the result does not
+    depend on the order skills are declared in. Within the scope's regions.
+    """
     inside = {sid: n for sid, n in nodes.items() if n.region in plan.scope.regions}
-    spine = [sid for sid in _topological(inside) if inside[sid].anchor]
-    for before, after in pairwise(spine):
-        if inside[after].band < inside[before].band:
-            yield _error(
-                "planned",
-                "planned-anchors",
-                f"anchor {after} (grade {GRADE_BANDS[inside[after].band]}) comes after "
-                f"{before} (grade {GRADE_BANDS[inside[before].band]}) in the spine",
-            )
-    have = {inside[sid].band for sid in spine}
+    anchors = [sid for sid, n in inside.items() if n.anchor]
+    for after in anchors:
+        below = _ancestors(inside, after)
+        for before in anchors:
+            if before in below and inside[before].band > inside[after].band:
+                yield _error(
+                    "planned",
+                    "planned-anchors",
+                    f"anchor {after} (grade {GRADE_BANDS[inside[after].band]}) builds on "
+                    f"anchor {before} (grade {GRADE_BANDS[inside[before].band]})",
+                )
+    have = {inside[sid].band for sid in anchors}
     for grade in plan.scope.grade_bands:
         if _band(grade) not in have:
             yield _error("scope.grade_bands", "planned-anchors", f"no anchor for grade {grade}")
@@ -333,14 +341,23 @@ def _tiers(plan: PlannedList) -> Iterator[Finding]:
             )
 
 
-def _standards(plan: PlannedList) -> Iterator[Finding]:
+def _standard_problems(band: int, standards: Sequence[str]) -> Iterator[tuple[int, str]]:
+    for j, code in enumerate(standards):
+        if _standard_band(code) > band:
+            yield j, f"{code} is from a later grade than the skill"
+        if code in standards[:j]:
+            yield j, f"{code} is listed twice"
+
+
+def _standards(pack: Pack, plan: PlannedList) -> Iterator[Finding]:
     for i, p in enumerate(plan.planned):
-        for j, code in enumerate(p.standards):
-            path = f"planned[{i}].standards[{j}]"
-            if _standard_band(code) > _band(p.grade_band):
-                yield _error(path, "planned-standards", f"{code} is from a later grade than {p.id}")
-            if code in p.standards[:j]:
-                yield _error(path, "planned-standards", f"{code} is listed twice")
+        for j, message in _standard_problems(_band(p.grade_band), p.standards):
+            yield _error(f"planned[{i}].standards[{j}]", "planned-standards", message)
+    for i, skill in enumerate(pack.skills.values()):
+        for j, message in _standard_problems(_band(skill.grade_band), skill.standards):
+            yield Finding(
+                "error", "skills.yaml", f"skills[{i}].standards[{j}]", "planned-standards", message
+            )
 
 
 def _dashed(text: str) -> bool:
@@ -405,11 +422,7 @@ def plan_summary(pack: Pack, plan: PlannedList) -> PlanSummary:
     batches: list[BatchPlan] = []
     for b in sorted({p.batch for p in plan.planned}):
         members: Sequence[PlannedSkill] = [p for p in plan.planned if p.batch == b]
-        per_region = {r.region_id: 0 for r in regions}
-        for p in members:
-            per_region[p.region] += 1
+        per_region = Counter(p.region for p in members)
         grades = sorted({p.grade_band for p in members}, key=_band)
-        batches.append(
-            BatchPlan(b, len(members), {k: v for k, v in per_region.items() if v}, tuple(grades))
-        )
+        batches.append(BatchPlan(b, len(members), dict(per_region), tuple(grades)))
     return PlanSummary(regions, tuple(batches))

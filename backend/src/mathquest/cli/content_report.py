@@ -15,6 +15,7 @@ problem a learner could not solve, and adds a count per skill.
 
 import argparse
 import dataclasses
+import io
 import json
 import sys
 from collections import Counter
@@ -157,12 +158,21 @@ def as_json(
     return data
 
 
+def _printable() -> None:
+    """Keep a console that is not UTF-8 (a Windows code page) from crashing on the report's
+    warning marks: unencodable characters print as ``?``."""
+    out = sys.stdout
+    if isinstance(out, io.TextIOWrapper) and out.encoding.lower().replace("-", "") != "utf8":
+        out.reconfigure(errors="replace")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="content-report", description="Content coverage.")
     parser.add_argument("packs", nargs="*", help="pack directories (default: content/packs/*)")
     parser.add_argument("--json", action="store_true", help="print JSON instead of Markdown")
     parser.add_argument("--stuck", type=Path, help="stuck-problem export (JSON) to count")
     args = parser.parse_args(argv)
+    _printable()
     stuck: Counter[str] | None = None
     if args.stuck is not None:
         try:
