@@ -83,6 +83,15 @@ class Part(_Model):
 Parts = Annotated[tuple[Part, ...], Field(min_length=1)]
 
 
+Standard = Annotated[
+    str,
+    StringConstraints(
+        pattern=r"^(K|[1-8])\.(CC|OA|NBT|NF|MD|G|RP|NS|EE|F|SP)\.[A-E]\.[0-9]{1,2}[a-z]?$"
+    ),
+]
+"""A Common Core State Standards code such as ``K.CC.A.1`` or ``2.NBT.B.5``."""
+
+
 class Tier(_Model):
     id: Annotated[int, Field(ge=0)]
     label: Text
@@ -106,6 +115,8 @@ class Skill(_Model):
     vocabulary: tuple[Annotated[str, StringConstraints(pattern=r"^[a-z][a-z']*$")], ...] = ()
     """Words the content lint accepts in this skill's early-reader text beyond the
     shared simple word list (lowercase, one word each)."""
+    standards: tuple[Standard, ...] = ()
+    """Common Core codes the skill covers, carried over from the planned graph."""
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:
@@ -115,6 +126,53 @@ class Skill(_Model):
         if self.word_share + self.bank_share > 1.0:
             raise ValueError("word_share + bank_share must not exceed 1")
         return self
+
+
+class PlannedSkill(_Model):
+    """A skill on the build plan: a ``Skill`` with no generator yet.
+
+    ``batch`` is the build order. ``unlocks`` names skills (built or planned) that gain
+    this one as a prerequisite when it is built; it is how a plan puts a new foundation
+    under a skill that already exists.
+    """
+
+    id: Id
+    name: Text
+    region: Id
+    prerequisites: tuple[Id, ...] = ()
+    unlocks: tuple[Id, ...] = ()
+    fluency: bool
+    anchor: bool
+    tiers: Annotated[tuple[Tier, ...], Field(min_length=1)]
+    grade_band: GradeBand
+    keypad: KeypadProfile
+    word_problems_fit: bool = False
+    banked: bool = False
+    standards: Annotated[tuple[Standard, ...], Field(min_length=1)]
+    batch: Annotated[int, Field(ge=1)]
+
+    @model_validator(mode="after")
+    def _consistent(self) -> Self:
+        ids = [t.id for t in self.tiers]
+        if ids != list(range(len(ids))):
+            raise ValueError("tier ids must be 0, 1, 2, ... in order")
+        if self.keypad == "choice" and not self.banked:
+            raise ValueError("a choice keypad needs banked: true")
+        return self
+
+
+class PlanScope(_Model):
+    """The part of the map a plan covers."""
+
+    regions: Annotated[tuple[Id, ...], Field(min_length=1)]
+    grade_bands: Annotated[tuple[GradeBand, ...], Field(min_length=1)]
+
+
+class PlannedList(_Model):
+    """``planned_skills.yaml``: skills to build, never loaded for play or placement."""
+
+    scope: PlanScope
+    planned: tuple[PlannedSkill, ...]
 
 
 class Screen(_Model):

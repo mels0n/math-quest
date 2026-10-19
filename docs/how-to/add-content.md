@@ -138,3 +138,30 @@ before merging.
 - **Explanations are different ways in.** Each approach (visual, steps, story, worked)
   should make sense on its own: a child who asks again gets the next one, and a child
   who has seen them all and still misses is logged as stuck for review.
+
+## Build a batch of planned skills
+
+Skills that are designed but have no generator yet live in
+`content/packs/<pack>/planned_skills.yaml` ([ADR-0017](../adr/0017-planned-skill-graph.md)).
+The file is never loaded for play; `content-lint` checks it together with the built
+skills, and `content-report` ends with the planned skills per region and per batch. The
+fields and rules are described in the header of the file. Batch numbers are permanent:
+when a batch is built its entries leave the file, and the plan starts at its lowest
+remaining batch. To build the next batch, take that number from the report and:
+
+1. Write and register a generator for each skill, with the tier count the plan gives
+   (see [ADR-0012](../adr/0012-content-packs.md)).
+2. Move each entry from `planned_skills.yaml` to `skills.yaml`: add `generator`, drop
+   `batch` and `unlocks`, and keep `standards`. Put it in `skills.yaml` where it sits in
+   the plan, ahead of the first skill of any later region, because the file order breaks
+   ties in the topological order and so decides the placement spine.
+3. Apply each promoted skill's `unlocks`: for every built skill it named, add the new
+   skill's id to that skill's `prerequisites` in `skills.yaml`.
+   When it names a skill that is still planned, add the promoted id to that planned
+   entry's `prerequisites` in `planned_skills.yaml` instead.
+4. Delete the moved entries from `planned_skills.yaml`. A skill left in both files is a
+   lint error. If a later batch needs a different shape (a skill split, merged or
+   moved), change the plan in the same pull request.
+5. Write the teaching content for the new skills (the steps above), and bump `version`
+   in `pack.yaml`. A change that touches only `planned_skills.yaml` changes nothing a
+   learner sees and needs no bump.

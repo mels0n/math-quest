@@ -4,7 +4,8 @@ Usage: ``uv run content-lint [PACK_DIR ...]`` (run in ``backend/``; default: eve
 under ``content/packs``). Each pack is loaded with the validating loader, then linted
 against the built-in generators, the shared slot lists (``content/slots.yaml``) and the
 early-reader word list (``content/lint/k2_words.txt``), both found two levels above the
-pack directory. Every finding is printed as ``level: file:path: rule: message``.
+pack directory. A pack's build plan (``planned_skills.yaml``) is checked together with
+its built skills. Every finding is printed as ``level: file:path: rule: message``.
 """
 
 import argparse
@@ -14,6 +15,7 @@ from pathlib import Path
 
 from mathquest.engine.content import ContentError, load_pack, load_slots
 from mathquest.engine.content.lint import errors, lint, load_word_list
+from mathquest.engine.content.planned import lint_planned, load_planned
 from mathquest.engine.generators import all_generators
 
 DEFAULT_PACKS = Path("content") / "packs"
@@ -32,11 +34,14 @@ def lint_dir(pack_dir: Path) -> tuple[int, int]:
     try:
         pack = load_pack(pack_dir)
         slots = load_slots(content_dir / "slots.yaml")
+        plan = load_planned(pack_dir)
     except ContentError as err:
         print(f"error: {pack_dir}/{err}")
         return 1, 0
     words = load_word_list(content_dir / WORD_LIST)
     findings = lint(pack, all_generators(), slots=slots, words=words)
+    if plan is not None:
+        findings += lint_planned(pack, plan)
     for finding in sorted(findings, key=lambda f: f.level != "error"):
         print(f"{finding.level}: {pack_dir}/{finding}")
     failed = len(errors(findings))

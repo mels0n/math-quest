@@ -605,3 +605,13 @@ def test_dashes_in_slot_lists_and_word_list(tmp_path: Path) -> None:
     words = WORDS | {"grown-up"}
     found = _rule(lint(pack, REGISTRY, slots=slots, words=words), "dashes")
     assert sorted(f.file for f in found) == ["../../lint/k2_words.txt", "../../slots.yaml"]
+
+
+def test_built_skill_standards_are_checked_without_a_plan(tmp_path: Path) -> None:
+    files = base()
+    files["skills.yaml"]["skills"][0]["standards"] = ["1.OA.A.1", "2.OA.A.1", "1.OA.A.1"]
+    found = _rule(_lint(load(tmp_path, files)), "standards")
+    assert [(f.level, f.file, f.path) for f in found] == [
+        ("error", "skills.yaml", "skills[0].standards[1]"),
+        ("error", "skills.yaml", "skills[0].standards[2]"),
+    ]
