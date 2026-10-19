@@ -168,6 +168,7 @@ from mathquest.engine.mastery import (
     SkillRating,
     SkillState,
     choose_tier,
+    first_try_only,
     help_used,
     initial_rating,
     is_mastered,
@@ -875,13 +876,15 @@ async def submit_answer(
                 skill_id=skill_id,
                 at=received,
             )
-        # A generator with two likely answers scores only a first-try solve as correct;
-        # bank choice items keep the plain rule (they allow two tries, not a free guess).
-        first_try = bool(getattr(catalog.source(skill_id).generator, "first_try_counts", False))
+        # Two likely answers (a flagged generator, or a bank item with two choices) score
+        # only a first-try solve as correct; a bank item with more choices keeps the plain
+        # rule, since two tries over three or more choices are not a free guess.
+        flagged = bool(getattr(catalog.source(skill_id).generator, "first_try_counts", False))
+        n_choices = None if problem.choices is None else len(problem.choices)
         wrong_tries = sum(1 for a in attempts if a.verdict == Verdict.INCORRECT.value)
         outcome = Outcome(
             correct=scores_as_correct(
-                solved, wrong_tries, first_try and instance.variant != "bank"
+                solved, wrong_tries, first_try_only(flagged, instance.variant, n_choices)
             ),
             hints_used=help_used(
                 tried,

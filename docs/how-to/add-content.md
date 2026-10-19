@@ -64,8 +64,9 @@ version is live.
 A bank item that has shipped is never edited in place: changing its meaning, its
 choices (even their order) or its answer means adding a new item with a new `id` and
 removing the old one. Open problems store only the id, so an edited item would be
-checked against an answer the learner never saw. A choice item needs at least three
-choices.
+checked against an answer the learner never saw. A choice item needs at least two
+choices; with exactly two (true or false), only the first try counts
+([ADR-0023](../adr/0023-two-option-items-count-the-first-try.md)).
 
 Template forms beyond `{a}` and `{{= expr }}`:
 
@@ -177,7 +178,8 @@ remaining batch. To build the next batch, take that number from the report and:
    ties in the topological order and so decides the placement spine.
    A typed skill can serve a bank of button questions: set `banked: true`, a
    `bank_share` such as 0.3 and a `tier` on each item
-   ([ADR-0021](../adr/0021-typed-comparing-skills-with-a-tiered-bank.md)). A `choice`
+   ([ADR-0021](../adr/0021-typed-comparing-skills-with-a-tiered-bank.md)). A generator whose
+   answer is always one of the numbers its prompt shows is flagged `first_try_counts`. A `choice`
    keypad skill is answered by buttons alone and needs `bank_share: 1` and its bank in the
    same change; prefer a typed skill with a bank. Bank items need at least 30 different
    wordings, not different numbers. Counting objects needs a picture that is not built yet,

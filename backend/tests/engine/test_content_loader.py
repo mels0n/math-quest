@@ -313,12 +313,9 @@ INVALID: list[tuple[str, dict[str, Any], str]] = [
         "Value error, stray '{' in text",
     ),
     (
-        "only two choices",
-        _mutated(
-            ["bank/beta.yaml", "items", 0, "choices"],
-            [[{"kind": "math", "value": "3"}], [{"kind": "math", "value": "7"}]],
-        ),
-        "bank/beta.yaml: items[0]: Value error, a choice answer needs at least 3 choices",
+        "only one choice",
+        _mutated(["bank/beta.yaml", "items", 0, "choices"], [[{"kind": "math", "value": "3"}]]),
+        "bank/beta.yaml: items[0]: Value error, a choice answer needs at least 2 choices",
     ),
     (
         "expr answer that does not parse",

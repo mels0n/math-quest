@@ -12,6 +12,7 @@ from mathquest.engine.mastery import (
     SkillRating,
     choose_tier,
     correct_streak,
+    first_try_only,
     help_used,
     initial_rating,
     is_mastered,
@@ -332,3 +333,21 @@ def test_scores_as_correct_follows_the_flag() -> None:
     assert not scores_as_correct(True, 1, True)
     assert scores_as_correct(True, 1, False)
     assert not scores_as_correct(False, 0, True)
+
+
+def test_first_try_only_follows_the_flag_for_typed_problems_and_the_choice_count() -> None:
+    assert first_try_only(True, "bare", None)
+    assert first_try_only(True, "word", None)
+    assert not first_try_only(True, "bank", None)  # a typed bank item has no free guess
+    assert not first_try_only(False, "bare", None)
+    assert first_try_only(False, "bank", 2)  # true or false, whatever the generator says
+    assert first_try_only(True, "bank", 2)
+    assert not first_try_only(True, "bank", 3)
+    assert not first_try_only(False, "bank", 4)
+
+
+def test_guessing_a_two_option_item_never_masters_the_skill() -> None:
+    """The guesser of ``_simulate_guesser`` finds the right one of two on a second try; with
+    the two-option rule they never reach mastery, and with the plain rule they do."""
+    assert _simulate_guesser(first_try_counts=first_try_only(False, "bank", 3))
+    assert not _simulate_guesser(first_try_counts=first_try_only(False, "bank", 2))
