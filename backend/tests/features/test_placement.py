@@ -135,12 +135,15 @@ async def test_answers_stay_hidden_without_the_dev_setting(db: AsyncSession) -> 
 async def test_a_round_marks_provisional_mastery(db: AsyncSession) -> None:
     pid = await _player(db)
     before = datetime.now(UTC)
-    done, asked = await _round(db, pid, level=4)
+    carry = ANCHORS.index("add_2digit_regroup")
+    done, asked = await _round(db, pid, level=carry)
 
     assert done.frontier == ["add_2digit_regroup"]
     assert len(asked) <= MAX_QUESTIONS
     # Every anchor up to the frontier, each with everything it builds on.
-    expected = {sid for anchor in ANCHORS[:5] for sid in {anchor} | CATALOG.graph.ancestors(anchor)}
+    expected = {
+        sid for anchor in ANCHORS[: carry + 1] for sid in {anchor} | CATALOG.graph.ancestors(anchor)
+    }
     assert {
         "count_to_10",
         "add_within_20",
@@ -256,7 +259,7 @@ async def test_a_finished_round_answers_with_its_outcome(db: AsyncSession) -> No
 
 async def test_retake_resets_unconfirmed_marks_and_keeps_real_mastery(db: AsyncSession) -> None:
     pid = await _player(db)
-    first, _ = await _round(db, pid, level=5)
+    first, _ = await _round(db, pid, level=ANCHORS.index("add_fractions_unlike"))
     assert "add_fractions_unlike" in first.provisional
     # One skill was confirmed since (mastered), one was played and is learning.
     confirmed = await mastery.lock(db, pid, "add_within_10", 0.0)

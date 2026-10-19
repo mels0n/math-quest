@@ -249,10 +249,183 @@ skills:
     banked: true
     bank_share: 0.3
     standards: [1.NBT.B.3]
+  - id: count_on
+    name: Count On
+    region: number_meadows
+    prerequisites: [add_within_10]
+    fluency: false
+    anchor: false
+    generator: count_on
+    tiers:
+      - {id: 0, label: Count on in words}
+      - {id: 1, label: Count on from the first number}
+      - {id: 2, label: Count on from the bigger number}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.C.5]
+  - id: make_ten_strategy
+    name: Make a Ten
+    region: number_meadows
+    prerequisites: [pairs_to_10, add_within_20]
+    fluency: false
+    anchor: false
+    generator: make_ten_strategy
+    tiers:
+      - {id: 0, label: Make a ten to add}
+      - {id: 1, label: Split to make a ten}
+      - {id: 2, label: Find the missing part}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.C.6]
+  - id: add_three_numbers
+    name: Add Three Numbers
+    region: number_meadows
+    prerequisites: [add_within_20]
+    fluency: false
+    anchor: false
+    generator: add_three_numbers
+    tiers:
+      - {id: 0, label: Add three numbers}
+      - {id: 1, label: Find the pair that makes ten}
+      - {id: 2, label: Add three kinds in a story}
+    grade_band: "1"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [1.OA.A.2]
+  - id: missing_number_20
+    name: Find the Missing Number
+    region: number_meadows
+    prerequisites: [add_within_20, sub_within_20]
+    fluency: false
+    anchor: true
+    generator: missing_number_20
+    tiers:
+      - {id: 0, label: Missing part of a sum}
+      - {id: 1, label: Missing number in any spot}
+      - {id: 2, label: Missing start of a take-away}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.D.8]
+  - id: fact_families_20
+    name: Fact Families
+    region: number_meadows
+    prerequisites: [missing_number_20]
+    fluency: false
+    anchor: false
+    generator: fact_families_20
+    tiers:
+      - {id: 0, label: Swap the two numbers}
+      - {id: 1, label: Add facts and take-away facts}
+      - {id: 2, label: Finish the whole family}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.B.3, 1.OA.B.4]
+  - id: doubles_near_doubles
+    name: Doubles and Near Doubles
+    region: number_meadows
+    prerequisites: [add_within_20]
+    fluency: true
+    anchor: false
+    generator: doubles_near_doubles
+    tiers:
+      - {id: 0, label: Doubles}
+      - {id: 1, label: Near doubles}
+      - {id: 2, label: Find the double}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.OA.C.6]
+  - id: ten_more_ten_less
+    name: Ten More, Ten Less
+    region: number_meadows
+    prerequisites: [place_value_tens_ones]
+    fluency: false
+    anchor: false
+    generator: ten_more_ten_less
+    tiers:
+      - {id: 0, label: Ten more or less in words}
+      - {id: 1, label: Ten more or less in a sentence}
+      - {id: 2, label: Find the starting number}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.NBT.C.5]
+  - id: sub_tens_within_100
+    name: Subtract Tens
+    region: number_meadows
+    prerequisites: [sub_within_20, ten_more_ten_less]
+    fluency: false
+    anchor: false
+    generator: sub_tens_within_100
+    tiers:
+      - {id: 0, label: Subtract tens in a sentence}
+      - {id: 1, label: Subtract tens in words}
+      - {id: 2, label: Find the missing number}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.NBT.C.6]
+  - id: add_within_100_basic
+    name: Add Ones and Tens
+    region: number_meadows
+    prerequisites: [add_within_20, ten_more_ten_less]
+    fluency: false
+    anchor: false
+    generator: add_within_100_basic
+    tiers:
+      - {id: 0, label: "Add ones, no new ten"}
+      - {id: 1, label: Add whole tens}
+      - {id: 2, label: Add ones and make a new ten}
+    grade_band: "1"
+    keypad: numpad
+    standards: [1.NBT.C.4]
+  - id: equal_or_not
+    name: Equal or Not
+    region: number_meadows
+    prerequisites: [add_within_20, sub_within_20]
+    fluency: false
+    anchor: false
+    generator: equal_or_not
+    tiers:
+      - {id: 0, label: One sum and a number}
+      - {id: 1, label: The blank in any spot}
+      - {id: 2, label: Sums and take-aways}
+    grade_band: "1"
+    keypad: numpad
+    banked: true
+    bank_share: 0.6
+    vocabulary: ["false"]
+    standards: [1.OA.D.7]
+  - id: skip_count_2_5
+    name: Count by Twos and Fives
+    region: number_meadows
+    prerequisites: [skip_count_10]
+    fluency: false
+    anchor: false
+    generator: skip_count_2_5
+    tiers:
+      - {id: 0, label: Count up by 2s and 5s}
+      - {id: 1, label: Count back and count odd numbers}
+      - {id: 2, label: Fill in the missing number}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.A.2]
+  - id: word_problems_20
+    name: Story Problems to 20
+    region: number_meadows
+    prerequisites: [add_within_20, sub_within_20]
+    fluency: false
+    anchor: false
+    generator: word_problems_20
+    tiers:
+      - {id: 0, label: Add to or take from}
+      - {id: 1, label: "Put together, take apart, compare"}
+      - {id: 2, label: Find the change or the start}
+    grade_band: "1"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [1.OA.A.1]
   - id: add_2digit_no_regroup
     name: Add Big Numbers
     region: operation_canyon
-    prerequisites: [add_within_20, place_value_tens_ones]
+    prerequisites: [add_within_20, place_value_tens_ones, add_within_100_basic]
     fluency: false
     anchor: false
     generator: add_2digit_no_regroup

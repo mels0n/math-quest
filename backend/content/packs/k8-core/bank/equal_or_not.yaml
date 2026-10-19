@@ -1,0 +1,357 @@
+# Bank items for Equal or Not: is this number sentence true? Two choices each, about
+# half true. Every wording is different, since two items that read alike fail the lint.
+skill: equal_or_not
+items:
+  - id: eq_01
+    tier: 0
+    prompt:
+      - {kind: text, value: "Is this number sentence true: "}
+      - {kind: math, value: "3 + 4 = 7"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "True"}]
+      - [{kind: text, value: "False"}]
+  - id: eq_02
+    tier: 0
+    prompt:
+      - {kind: text, value: "Read this: "}
+      - {kind: math, value: "6 = 2 + 5"}
+      - {kind: text, value: ". Is it true?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Yes, it is"}]
+      - [{kind: text, value: "No, it is not"}]
+  - id: eq_03
+    tier: 0
+    prompt:
+      - {kind: text, value: "A girl writes "}
+      - {kind: math, value: "4 + 4 = 8"}
+      - {kind: text, value: ". Is she right?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eq_04
+    tier: 0
+    prompt:
+      - {kind: text, value: "Add "}
+      - {kind: math, value: "5 + 2"}
+      - {kind: text, value: ". Do you get "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eq_05
+    tier: 0
+    prompt:
+      - {kind: text, value: "Which sentence is true?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "2 + 6 = 8"}]
+      - [{kind: math, value: "2 + 6 = 9"}]
+  - id: eq_06
+    tier: 0
+    prompt:
+      - {kind: text, value: "Look at "}
+      - {kind: math, value: "8 = 3 + 4"}
+      - {kind: text, value: ". Do the two sides match?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "They match"}]
+      - [{kind: text, value: "They do not match"}]
+  - id: eq_07
+    tier: 0
+    prompt:
+      - {kind: text, value: "One box has "}
+      - {kind: math, value: "2 + 3"}
+      - {kind: text, value: " blocks. Another box has "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " blocks. Do the boxes hold the same number?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Same"}]
+      - [{kind: text, value: "Not the same"}]
+  - id: eq_08
+    tier: 0
+    prompt:
+      - {kind: text, value: "A boy says "}
+      - {kind: math, value: "9 = 4 + 4"}
+      - {kind: text, value: ". Is he right?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "He is right"}]
+      - [{kind: text, value: "He is not right"}]
+  - id: eq_09
+    tier: 0
+    prompt:
+      - {kind: text, value: "Look at "}
+      - {kind: math, value: "1 + 6"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "3 + 4"}
+      - {kind: text, value: ". Are they equal?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Equal"}]
+      - [{kind: text, value: "Not equal"}]
+  - id: eq_10
+    tier: 0
+    prompt:
+      - {kind: text, value: "A robot says "}
+      - {kind: math, value: "5 + 3 = 9"}
+      - {kind: text, value: ". Is the robot right?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Right"}]
+      - [{kind: text, value: "Not right"}]
+  - id: eq_11
+    tier: 0
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "6"}
+      - {kind: text, value: " the same as "}
+      - {kind: math, value: "2 + 3"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Same"}]
+      - [{kind: text, value: "Different"}]
+  - id: eq_12
+    tier: 1
+    prompt:
+      - {kind: text, value: "The teacher writes "}
+      - {kind: math, value: "9 + 8 = 16"}
+      - {kind: text, value: " on the board. Is it a true sentence?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "True"}]
+      - [{kind: text, value: "False"}]
+  - id: eq_13
+    tier: 1
+    prompt:
+      - {kind: text, value: "Check the sentence: "}
+      - {kind: math, value: "12 = 7 + 6"}
+      - {kind: text, value: ". Does the equal sign fit?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "It fits"}]
+      - [{kind: text, value: "It does not fit"}]
+  - id: eq_14
+    tier: 1
+    prompt:
+      - {kind: text, value: "Count the bells in each place. The jar has "}
+      - {kind: math, value: "8 + 7"}
+      - {kind: text, value: ". The pot has "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: ". Are they the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "They are the same"}]
+      - [{kind: text, value: "They are not the same"}]
+  - id: eq_15
+    tier: 1
+    prompt:
+      - {kind: text, value: "True or false: "}
+      - {kind: math, value: "14 = 9 + 4"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "True"}]
+      - [{kind: text, value: "False"}]
+  - id: eq_16
+    tier: 1
+    prompt:
+      - {kind: text, value: "Say yes if this is true: "}
+      - {kind: math, value: "6 + 9 = 15"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eq_17
+    tier: 1
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "13"}
+      - {kind: text, value: " equal to "}
+      - {kind: math, value: "7 + 7"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Equal"}]
+      - [{kind: text, value: "Not equal"}]
+  - id: eq_18
+    tier: 1
+    prompt:
+      - {kind: text, value: "Count it up: "}
+      - {kind: math, value: "11 + 4 = 16"}
+      - {kind: text, value: ". Is that true?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eq_19
+    tier: 1
+    prompt:
+      - {kind: text, value: "On the card it says "}
+      - {kind: math, value: "18 = 9 + 9"}
+      - {kind: text, value: ". Is the card right?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The card is right"}]
+      - [{kind: text, value: "The card is not right"}]
+  - id: eq_20
+    tier: 1
+    prompt:
+      - {kind: text, value: "Two bags hold "}
+      - {kind: math, value: "10 + 5"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "8 + 8"}
+      - {kind: text, value: " beads. Are the bags equal?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The bags are equal"}]
+      - [{kind: text, value: "The bags are not equal"}]
+  - id: eq_21
+    tier: 1
+    prompt:
+      - {kind: text, value: "The sign says "}
+      - {kind: math, value: "5 + 12 = 17"}
+      - {kind: text, value: ". Is that a true sentence?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "True sentence"}]
+      - [{kind: text, value: "Not a true sentence"}]
+  - id: eq_22
+    tier: 1
+    prompt:
+      - {kind: text, value: "Does the equal sign belong in "}
+      - {kind: math, value: "17 = 8 + 8"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "It belongs"}]
+      - [{kind: text, value: "It does not belong"}]
+  - id: eq_23
+    tier: 1
+    prompt:
+      - {kind: text, value: "A friend says "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " is the same as "}
+      - {kind: math, value: "6 + 6"}
+      - {kind: text, value: ". Is that right?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "It is right"}]
+      - [{kind: text, value: "It is not right"}]
+  - id: eq_24
+    tier: 2
+    prompt:
+      - {kind: text, value: "Work out each side. Is "}
+      - {kind: math, value: "4 + 3 = 5 + 2"}
+      - {kind: text, value: " true?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "True"}]
+      - [{kind: text, value: "False"}]
+  - id: eq_25
+    tier: 2
+    prompt:
+      - {kind: text, value: "Look at both sides of "}
+      - {kind: math, value: "9 + 6 = 8 + 8"}
+      - {kind: text, value: ". Are they equal?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Equal sides"}]
+      - [{kind: text, value: "Different sides"}]
+  - id: eq_26
+    tier: 2
+    prompt:
+      - {kind: text, value: "Are both sides of "}
+      - {kind: math, value: "13 - 4 = 5 + 4"}
+      - {kind: text, value: " the same?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes, the same"}]
+      - [{kind: text, value: "No, not the same"}]
+  - id: eq_27
+    tier: 2
+    prompt:
+      - {kind: text, value: "A sign at the zoo says "}
+      - {kind: math, value: "15 - 6 = 7 + 3"}
+      - {kind: text, value: ". Is the sign right?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The sign is right"}]
+      - [{kind: text, value: "The sign is not right"}]
+  - id: eq_28
+    tier: 2
+    prompt:
+      - {kind: text, value: "Two sides, one sign: "}
+      - {kind: math, value: "8 + 8 = 20 - 4"}
+      - {kind: text, value: ". Is the sign right?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eq_29
+    tier: 2
+    prompt:
+      - {kind: text, value: "Help the robot. Is "}
+      - {kind: math, value: "17 - 9 = 4 + 4"}
+      - {kind: text, value: " true?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "It is true"}]
+      - [{kind: text, value: "It is false"}]
+  - id: eq_30
+    tier: 2
+    prompt:
+      - {kind: text, value: "Match or no match: "}
+      - {kind: math, value: "6 + 6 = 14 - 3"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Match"}]
+      - [{kind: text, value: "No match"}]
+  - id: eq_31
+    tier: 2
+    prompt:
+      - {kind: text, value: "Check the sums on both sides: "}
+      - {kind: math, value: "10 + 7 = 20 - 3"}
+      - {kind: text, value: ". Do they match?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes, they match"}]
+      - [{kind: text, value: "No, they do not match"}]
+  - id: eq_32
+    tier: 2
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "12 - 5 = 3 + 3"}
+      - {kind: text, value: " a good number sentence?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "It is good"}]
+      - [{kind: text, value: "It is not good"}]
+  - id: eq_33
+    tier: 2
+    prompt:
+      - {kind: text, value: "One side is "}
+      - {kind: math, value: "18 - 8"}
+      - {kind: text, value: ". The other side is "}
+      - {kind: math, value: "6 + 4"}
+      - {kind: text, value: ". Are the two sides equal?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Equal"}]
+      - [{kind: text, value: "Not equal"}]
+  - id: eq_34
+    tier: 2
+    prompt:
+      - {kind: text, value: "A friend adds both sides of "}
+      - {kind: math, value: "7 + 8 = 9 + 7"}
+      - {kind: text, value: ". Does it add up?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "It adds up"}]
+      - [{kind: text, value: "It does not add up"}]

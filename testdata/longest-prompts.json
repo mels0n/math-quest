@@ -49,6 +49,16 @@
       }
     ]
   },
+  "add_three_numbers": {
+    "tier": 2,
+    "seed": 112,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Lily finds 10 roses, 6 tulips and 2 daisies. How many flowers does Lily find in all?"
+      }
+    ]
+  },
   "add_within_10": {
     "tier": 0,
     "seed": 0,
@@ -56,6 +66,32 @@
       {
         "kind": "math",
         "value": "4 + 1 = ?"
+      }
+    ]
+  },
+  "add_within_100_basic": {
+    "tier": 1,
+    "seed": 3,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "What is "
+      },
+      {
+        "kind": "math",
+        "value": "40"
+      },
+      {
+        "kind": "text",
+        "value": " plus "
+      },
+      {
+        "kind": "math",
+        "value": "58"
+      },
+      {
+        "kind": "text",
+        "value": "?"
       }
     ]
   },
@@ -223,6 +259,32 @@
       }
     ]
   },
+  "count_on": {
+    "tier": 0,
+    "seed": 8,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Say "
+      },
+      {
+        "kind": "math",
+        "value": "12"
+      },
+      {
+        "kind": "text",
+        "value": ". Then count on "
+      },
+      {
+        "kind": "math",
+        "value": "2"
+      },
+      {
+        "kind": "text",
+        "value": " more. What is the last number you say?"
+      }
+    ]
+  },
   "count_to_10": {
     "tier": 2,
     "seed": 6,
@@ -313,6 +375,60 @@
       }
     ]
   },
+  "doubles_near_doubles": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Two same numbers make "
+      },
+      {
+        "kind": "math",
+        "value": "14"
+      },
+      {
+        "kind": "text",
+        "value": ". What is the number?"
+      }
+    ]
+  },
+  "equal_or_not": {
+    "tier": 0,
+    "seed": 12,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "9 + 10 = 14 + ?"
+      }
+    ]
+  },
+  "equal_or_not-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "One box has "
+      },
+      {
+        "kind": "math",
+        "value": "2 + 3"
+      },
+      {
+        "kind": "text",
+        "value": " blocks. Another box has "
+      },
+      {
+        "kind": "math",
+        "value": "5"
+      },
+      {
+        "kind": "text",
+        "value": " blocks. Do the boxes hold the same number?"
+      }
+    ]
+  },
   "equivalent_fractions": {
     "tier": 0,
     "seed": 0,
@@ -320,6 +436,60 @@
       {
         "kind": "math",
         "value": "\\frac{1}{5} = \\frac{?}{15}"
+      }
+    ]
+  },
+  "fact_families_20": {
+    "tier": 1,
+    "seed": 7,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You know that "
+      },
+      {
+        "kind": "math",
+        "value": "3 + 10 = 13"
+      },
+      {
+        "kind": "text",
+        "value": ". What is "
+      },
+      {
+        "kind": "math",
+        "value": "13 - 10"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "make_ten_strategy": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Make a ten first. "
+      },
+      {
+        "kind": "math",
+        "value": "8 + 6 = ?"
+      }
+    ]
+  },
+  "missing_number_20": {
+    "tier": 0,
+    "seed": 7,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Find the missing number. "
+      },
+      {
+        "kind": "math",
+        "value": "? + 10 = 13"
       }
     ]
   },
@@ -417,6 +587,46 @@
       }
     ]
   },
+  "skip_count_2_5": {
+    "tier": 2,
+    "seed": 16,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Fill in the missing number. "
+      },
+      {
+        "kind": "math",
+        "value": "80, 85, ?, 95, 100"
+      }
+    ]
+  },
+  "sub_tens_within_100": {
+    "tier": 1,
+    "seed": 1,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have "
+      },
+      {
+        "kind": "math",
+        "value": "50"
+      },
+      {
+        "kind": "text",
+        "value": ". You give away "
+      },
+      {
+        "kind": "math",
+        "value": "30"
+      },
+      {
+        "kind": "text",
+        "value": ". How many are left?"
+      }
+    ]
+  },
   "sub_within_10": {
     "tier": 2,
     "seed": 0,
@@ -462,6 +672,30 @@
       {
         "kind": "text",
         "value": " after you take out the ten?"
+      }
+    ]
+  },
+  "ten_more_ten_less": {
+    "tier": 2,
+    "seed": 33,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Find the missing number. "
+      },
+      {
+        "kind": "math",
+        "value": "? + 10 = 100"
+      }
+    ]
+  },
+  "word_problems_20": {
+    "tier": 2,
+    "seed": 125,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Omar has some shells. Ava gives Omar 2 more. Now Omar has 8. How many shells did Omar have at first?"
       }
     ]
   }
