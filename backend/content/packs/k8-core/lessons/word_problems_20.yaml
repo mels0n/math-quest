@@ -1,0 +1,23 @@
+# Lesson for Story Problems to 20. The examples are told in words, so a replayed lesson never
+# shows a story the skill asks.
+skill: word_problems_20
+screens:
+  - title: Read and picture
+    body_md: >-
+      A story problem tells a story with numbers. Read it slowly. Picture what happens.
+  - title: Grow or get smaller
+    body_md: >-
+      If more come, the group grows. If some go, the group gets smaller. Ask which one happens.
+  - title: Compare and find the start
+    body_md: >-
+      Some stories compare two groups. Line them up and see how many are left over. Some stories hide the start or the change. Draw it to find out.
+worked_example:
+  prompt:
+    - {kind: text, value: "A tree has 14 pears. Some fall down. Now 9 are left. How many fell?"}
+  steps:
+    - The tree starts with 14.
+    - Now there are 9.
+    - Count back from 14 to 9. That is 5 counts.
+    - So 5 pears fell.
+try_it:
+  tier: 0

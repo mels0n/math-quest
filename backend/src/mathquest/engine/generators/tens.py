@@ -71,6 +71,8 @@ def _build_ten_more_less(rng: random.Random, tier: int) -> Built:
         ),
         values={
             "n": shown,
+            "tens": shown // 10,
+            "ones": shown % 10,
             "answer": answer,
             "dir": "up" if step > 0 else "down",
             "way": "more" if step > 0 else "less",
@@ -242,6 +244,7 @@ def _build_skip_count_2_5(rng: random.Random, tier: int) -> Built:
         values={
             "previous": previous,
             "step": step,
+            "step_word": "two" if step == 2 else "five",
             "jump": sign * step,
             "dir": "back" if back else "up",
             "way": "less" if back else "more",

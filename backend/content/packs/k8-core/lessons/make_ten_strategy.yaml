@@ -1,0 +1,29 @@
+# Lesson for Make a Ten. Every example is told in words and plain numbers, so a replayed
+# lesson never shows a problem the skill asks.
+skill: make_ten_strategy
+screens:
+  - title: Ten is easy
+    body_md: >-
+      Ten is an easy number to add to. 9 and 1 make ten. Then ten and 4 more is 14.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: 9, jumps: [1, 4], end: 14}
+  - title: Split a number
+    body_md: >-
+      To add 8 and 5, split the 5 into 2 and 3. 8 and 2 make ten. Then ten and 3 more is 13.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: 8, jumps: [2, 3], end: 13}
+  - title: Use the bigger number
+    body_md: >-
+      Start with the bigger number. See how far it is from ten. Take that many from the other number. Then add what is left.
+worked_example:
+  prompt:
+    - {kind: text, value: "A tray has 9 cookies. Then 6 more come. How many cookies are there?"}
+  steps:
+    - 9 needs 1 more to make ten.
+    - Take 1 from the 6. That leaves 5.
+    - Ten and 5 more is 15.
+    - So there are 15 cookies.
+try_it:
+  tier: 0

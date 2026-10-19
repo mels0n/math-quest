@@ -59,6 +59,16 @@
       }
     ]
   },
+  "add_three_numbers-word": {
+    "tier": 0,
+    "seed": 76,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "On Monday Fatima walks 8 centimeters. On Tuesday Fatima walks 4 centimeters. On Wednesday Fatima walks 2 centimeters. How far does Fatima walk in all?"
+      }
+    ]
+  },
   "add_within_10": {
     "tier": 0,
     "seed": 0,
@@ -696,6 +706,16 @@
       {
         "kind": "text",
         "value": "Omar has some shells. Ava gives Omar 2 more. Now Omar has 8. How many shells did Omar have at first?"
+      }
+    ]
+  },
+  "word_problems_20-word": {
+    "tier": 0,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Before the party, Arjun has some puzzle pieces. At the party, Arjun gets 2 more. Now Arjun has 18. How many puzzle pieces were there before?"
       }
     ]
   }

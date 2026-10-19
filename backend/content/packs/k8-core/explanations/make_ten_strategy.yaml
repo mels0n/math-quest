@@ -1,0 +1,35 @@
+# Four ways to explain making a ten, plus feedback for each mistake the generator knows.
+# None of them shows the answer: the number line marks the start and ten, never the parts.
+skill: make_ten_strategy
+approaches:
+  - style: visual
+    body_md: >-
+      Picture a number line. Start at {first}. Hop up to ten first. Then see how far you must go past ten.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: "{first}", end: 10}
+  - style: steps
+    body_md: |-
+      1. Start at {first}.
+      2. Count up to ten. See how many counts that takes.
+      3. Count the rest of the way.
+      4. Put the two parts together.
+  - style: story
+    body_md: >-
+      A box holds ten crayons. It has {first} crayons in it. You fill the box to the top. Then you put the rest in a new box. Think about the two parts.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Start at {first}. Count up to ten, one at a time. Keep a finger up for each count. Then count the rest.
+misconceptions:
+  counted_start: >-
+    You were close! It looks like you counted {first} again. Do not count the number you start on.
+  subtracted_instead: >-
+    It looks like you took away. Here you put numbers together. Make a ten first, then add.
+  gave_the_leftover: >-
+    It looks like you forgot the ten. The ten is part of the answer. Put it with what is left over.
+  gave_the_total: >-
+    It looks like you gave the whole total. The blank is only one part. Look at both sides of the sentence.
+  gave_the_gap_to_ten: >-
+    It looks like you found how far {first} is from ten. That is a good first step. Now see what is left over.
+  added_instead: >-
+    It looks like you added the numbers you see. A number is hiding. Find what goes with {first}.

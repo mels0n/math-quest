@@ -1,0 +1,32 @@
+# Lesson for Count On. The examples are told in words and use numbers the sums of this skill
+# never reach, so a replayed lesson never shows a problem the skill asks.
+skill: count_on
+screens:
+  - title: Start where you are
+    body_md: >-
+      You do not have to count from one. Start at the first number. Then say the next numbers, one at a time.
+    visual:
+      kind: number_line
+      params: {min: 20, max: 30, start: 23, jumps: [1, 1]}
+  - title: Do not count the start
+    body_md: >-
+      Say the number you start on, but do not count it. Start at 23. Count on 2 more. Say 24, 25. You stop at 25.
+    visual:
+      kind: number_line
+      params: {min: 20, max: 30, start: 23, jumps: 2, end: 25}
+  - title: Start with the bigger one
+    body_md: >-
+      Two numbers can go in any order. Start at the bigger one. Count on the smaller one. Then you count less.
+    visual:
+      kind: number_line
+      params: {min: 20, max: 30, start: 26, jumps: 3, end: 29}
+worked_example:
+  prompt:
+    - {kind: text, value: "A girl has 24 apples. She gets 3 more. How many does she have?"}
+  steps:
+    - Start at 24. Do not count it.
+    - Count on 3 more. Say 25, 26, 27.
+    - You say 27 last.
+    - So she has 27 apples.
+try_it:
+  tier: 0

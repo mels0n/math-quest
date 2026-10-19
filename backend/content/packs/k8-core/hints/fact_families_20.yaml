@@ -1,0 +1,9 @@
+# Three hints for Fact Families: a nudge, the next step, then the whole answer worked out.
+skill: fact_families_20
+levels:
+  - text_template: >-
+      A fact family uses the same three numbers. Find them in the question.
+  - text_template: >-
+      The family is {lo}, {hi} and {total}. The two small numbers make the big one.
+  - text_template: >-
+      {lo} and {hi} make {total}. Take {lo} away from {total}, and {hi} is left. So the answer is {answer}.

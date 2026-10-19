@@ -1,0 +1,9 @@
+# Three hints for Equal or Not: a nudge, the next step, then the whole answer worked out.
+skill: equal_or_not
+levels:
+  - text_template: >-
+      Both sides of an equal sign must match. Work out the side with two numbers.
+  - text_template: >-
+      That side makes {side}. The other side already has {beside}.
+  - text_template: >-
+      Both sides make {side}. {beside} and {answer} make {side}. So the answer is {answer}.

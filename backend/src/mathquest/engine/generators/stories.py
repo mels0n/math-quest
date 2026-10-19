@@ -72,7 +72,7 @@ def _story(shape: str, n: str, f: str, things: str, a: int, b: int) -> tuple[str
         return (
             f"{n} has {a} {many}. {b} of them {verb} red. The rest are blue. How many are blue?",
             a - b,
-            f"Start with {a}. Take away the {b} red ones. That leaves {a - b}.",
+            f"Start with {a}. Take away {b}, the red ones. That leaves {a - b}.",
         )
     if shape == "compare_more":
         return (
@@ -105,7 +105,7 @@ def _story(shape: str, n: str, f: str, things: str, a: int, b: int) -> tuple[str
             f"{n} has some {things}. {f} gives {n} {b} more. Now {n} has {a}. "
             f"How many {things} did {n} have at first?",
             a - b,
-            f"Take away the {b} that came. {a} take away {b} leaves {a - b}.",
+            f"Take {b} from {a}. That leaves {a - b}.",
         )
     return (
         f"{n} has some {things}. {n} gives {b} to {f}. Now {n} has {a}. "

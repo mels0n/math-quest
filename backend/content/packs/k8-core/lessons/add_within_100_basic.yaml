@@ -1,0 +1,32 @@
+# Lesson for Add Ones and Tens. The examples are told in words and plain numbers, so a
+# replayed lesson never shows a problem the skill asks.
+skill: add_within_100_basic
+screens:
+  - title: Add ones
+    body_md: >-
+      To add ones, add to the ones place. Take 24 and add 3. The ones go from 4 to 7. The tens stay. You get 27.
+    visual:
+      kind: base_ten
+      params: {tens: 2, ones: 7}
+  - title: Add tens
+    body_md: >-
+      To add tens, add to the tens place. Take 24 and add 30. The tens go from 2 to 5. The ones stay. You get 54.
+    visual:
+      kind: base_ten
+      params: {tens: 5, ones: 4}
+  - title: A new ten
+    body_md: >-
+      Sometimes the ones make ten or more. Take 27 and add 6. The ones make 13. Ten ones make a new ten. So you get 33.
+    visual:
+      kind: base_ten
+      params: {tens: 3, ones: 3}
+worked_example:
+  prompt:
+    - {kind: text, value: "There are 45 red beads and 8 blue beads. How many beads are there?"}
+  steps:
+    - Split 45 into 4 tens and 5 ones.
+    - Add the ones. 5 and 8 make 13.
+    - 13 is 1 ten and 3 ones.
+    - 4 tens and 1 ten make 5 tens. With 3 ones, that is 53.
+try_it:
+  tier: 0

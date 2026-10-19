@@ -295,6 +295,7 @@ def _build_doubles(rng: random.Random, tier: int) -> Built:
             ("counted_start", 2 * n - 1),
             ("went_one_too_far", 2 * n + 1),
         ]
+        step = f"Say {n} two times, then put them together."
         worked = f"Double {n} is {2 * n}. So the answer is {2 * n}."
     elif tier == 1:
         n = rng.randint(1, 9)
@@ -311,6 +312,7 @@ def _build_doubles(rng: random.Random, tier: int) -> Built:
                 text("?"),
             )
         wrong = [("doubled_the_smaller", 2 * n), ("doubled_the_bigger", 2 * n + 2)]
+        step = f"Double {n} first. Then think about the extra one."
         worked = f"Double {n} is {2 * n}. One more makes {2 * n + 1}. So the answer is {2 * n + 1}."
     else:
         n = rng.randint(1, 10)
@@ -327,12 +329,13 @@ def _build_doubles(rng: random.Random, tier: int) -> Built:
         else:
             prompt = (text("Half of "), math(str(2 * n)), text(" is which number?"))
         wrong = [("gave_the_total", 2 * n), ("doubled_instead", 4 * n)]
+        step = f"Share {2 * n} into two equal parts."
         worked = f"{n} and {n} make {2 * n}. So the number is {n}."
     return Built(
         prompt=prompt,
         answer=_Int(answer),
         wrong=named_wrongs(wrong),
-        values={"shown": shown, "worked": worked, "answer": answer},
+        values={"shown": shown, "step": step, "worked": worked, "answer": answer},
     )
 
 

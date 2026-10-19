@@ -1,0 +1,28 @@
+# Four ways to explain subtracting tens, plus feedback for each mistake the generator knows.
+# None of them shows the answer: each works with the tens digits of the numbers in the question.
+skill: sub_tens_within_100
+approaches:
+  - style: visual
+    body_md: >-
+      Picture a group of ten sticks for each tens digit. Look at the digits {s1_tens} and {s2_tens}. Take groups away, or count the groups that are hiding.
+  - style: steps
+    body_md: |-
+      1. Look at the tens digits.
+      2. Think of each number as some tens.
+      3. Work with the tens digits only.
+      4. Put the zero back at the end.
+  - style: story
+    body_md: >-
+      Sticks come in groups of ten. Each number in your question is some groups. Take groups away. Or find the groups that are hiding.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say each number as tens. The tens digits are {s1_tens} and {s2_tens}. Use your fingers for the tens. Then say the answer with a zero on the end.
+misconceptions:
+  said_the_tens_digit: >-
+    It looks like you said only the tens digit. Put the zero back on the end.
+  added_instead: >-
+    It looks like you added the two numbers you see. Try taking one away from the other.
+  subtracted_instead: >-
+    It looks like you took the numbers apart. Here the start is hiding, so put the tens together.
+  off_by_ten: >-
+    You were close! It looks like you are one ten out. Count the tens again.

@@ -1818,3 +1818,26 @@ def test_batch_two_values_name_the_answer(seed: int, tier: int) -> None:
         problem = get_generator(skill).generate(seed, tier)
         if "answer" in problem.values:
             assert problem.values["answer"] == problem.answer, skill
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_ten_more_values_split_the_number_into_tens_and_ones(seed: int, tier: int) -> None:
+    values = get_generator("ten_more_ten_less").generate(seed, tier).values
+    assert int(values["tens"]) * 10 + int(values["ones"]) == values["n"]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_skip_count_2_5_names_its_step_in_words(seed: int, tier: int) -> None:
+    values = get_generator("skip_count_2_5").generate(seed, tier).values
+    assert values["step_word"] == {2: "two", 5: "five"}[int(values["step"])]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_doubles_hint_step_only_uses_numbers_the_prompt_shows(seed: int, tier: int) -> None:
+    problem = get_generator("doubles_near_doubles").generate(seed, tier)
+    step_numbers = [int(n) for n in re.findall(r"\d+", str(problem.values["step"]))]
+    shown = numbers("doubles_near_doubles", seed, tier)
+    assert step_numbers and set(step_numbers) <= set(shown)

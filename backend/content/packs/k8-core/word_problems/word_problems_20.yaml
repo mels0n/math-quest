@@ -1,0 +1,121 @@
+# Word problems for Story Problems to 20. Each template tells its own story, so it computes
+# its own answer from the generator's {a} and {b} (a is more than b, and a + b is at most 20).
+# Each id starts with the story shape; no shape has more than two templates. {a} is never 1,
+# so it can sit before a fixed plural noun; {b} can be 1, so it is never followed by one, and
+# is written with {b obj} or {b unit} when a noun follows it.
+# Short sentences (12 words or fewer), no sentence that starts with a number, and a question
+# that says whose things are counted.
+skill: word_problems_20
+templates:
+  - id: add_to_pond
+    text_template: "Ducks swim in a pond. Count the white ones: {a}. Then {b} more join them. How many ducks are in the pond now?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 1
+  - id: add_to_collection
+    text_template: "{name} puts {a obj} in a basket. Then {name} puts in {b} more. How many {obj} are in the basket?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 1
+  - id: take_from_jar
+    text_template: "A jar holds {a} cookies. {name} takes {b} out to share. How many cookies are still in the jar?"
+    slots: {name: names}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: take_from_trip
+    text_template: "{name} packs {a obj} for a trip. Then {name} leaves {b} at home. How many {obj} go on the trip?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: put_together_boxes
+    text_template: "{name} has {a obj} in one box and {b obj} in another box. How many {obj} does {name} have in all?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 1
+  - id: put_together_teams
+    text_template: "Two teams play a game. The red team has {a} kids. The blue team has {b}. How many kids play?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 1
+  - id: take_apart_marbles
+    text_template: "{name} has {a obj}. Count the blue ones: {b}. The rest are red. How many are red?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: take_apart_pets
+    text_template: "A shop has {a} pets. Count the cats: {b}. The rest are dogs. How many dogs are there?"
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: compare_more_counting
+    text_template: "{name} and {friend} count their {obj}. {name} counts {a}. {friend} counts {b}. How many more does {name} have?"
+    slots: {name: names, friend: names, obj: objects}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: compare_more_hill
+    text_template: "{name} and {friend} race up a hill. {name} takes {a} steps. {friend} takes {b}. How many more steps does {name} take?"
+    slots: {name: names, friend: names}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: compare_fewer_shelves
+    text_template: "The red shelf holds {a} books. The blue shelf holds {b}. How many fewer books are on the blue shelf?"
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: compare_fewer_towers
+    text_template: "A tall tower has {a} cups. A short tower has {b}. How many fewer cups does the short tower have?"
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: change_add_money
+    text_template: "{name} has {b unit}. {name} earns some more. Now {name} has {a}. How much did {name} earn?"
+    slots: {name: names, unit: money_units}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: change_add_box
+    text_template: "A box has {b obj} in it. {name} puts in some more. Then the box holds {a}. How many did {name} put in?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: change_take_party
+    text_template: "{name} has {a obj}. {name} gives some away. Now {name} has {b}. How many did {name} give away?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: change_take_bus
+    text_template: "A bus has {a} kids on it. Some get off at the park. Now {b} are left on the bus. How many kids got off?"
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: start_add_party
+    text_template: "Before the party, {name} has some {obj}. At the party, {name} gets {b} more. Now {name} has {a}. How many {obj} were there before?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: start_add_log
+    text_template: "Some frogs sit on a log. Then {b} more hop on. Now there are {a} frogs. How many sat there at first?"
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+  - id: start_take_bag
+    text_template: "{name} has some {obj} in a bag. {name} gives {b} to a friend. Now the bag holds {a}. How many {obj} were in the bag at first?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 1
+  - id: start_take_bowl
+    text_template: "A bowl has some grapes. The kids eat {b}. Now {a} grapes are left. How many grapes were in the bowl at first?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 1

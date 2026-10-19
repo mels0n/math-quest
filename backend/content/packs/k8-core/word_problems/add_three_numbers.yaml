@@ -1,0 +1,69 @@
+# Word problems for Add Three Numbers. Every template uses the generator's {a}, {b} and {c}
+# and asks for their total. A number is followed by a slot noun with {a obj} (so one reads
+# "1 rock" and five read "5 rocks"), or by a word that is never a plural, since any of the
+# three can be 1. Each id starts with its story shape; no shape has more than two templates.
+# Short sentences (12 words or fewer), no sentence that starts with a number.
+skill: add_three_numbers
+templates:
+  - id: containers_boxes
+    text_template: "The three boxes hold {a obj}, {b obj} and {c obj}. {name} puts them all in one pile. How many {obj} are in the pile?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: containers_bags
+    text_template: "{name} has three bags. One bag holds {a obj}. Another holds {b}. The last one holds {c}. How many {obj} are in the bags?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: places_room
+    text_template: "A shelf holds {a obj}. A table holds {b obj}. A chair holds {c obj}. How many {obj} are there in all?"
+    slots: {obj: objects}
+    grade_band: 1
+  - id: places_yard
+    text_template: "In the yard, {name} sees {a obj} by the fence. {name} sees {b} by the tree and {c} by the gate. How many {obj} does {name} see?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: add_twice_gifts
+    text_template: "{name} starts with {a obj}. A friend brings {b} more. Later the friend brings {c} more. How many {obj} does {name} have then?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: add_twice_picking
+    text_template: "{name} picks {a obj} in the morning. Then {name} picks {b} more. Later {name} picks {c} more. How many {obj} does {name} have in all?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: days_walk
+    text_template: "On Monday {name} walks {a unit}. On Tuesday {name} walks {b unit}. On Wednesday {name} walks {c unit}. How far does {name} walk in all?"
+    slots: {name: names, unit: length_units}
+    grade_band: 1
+  - id: days_save
+    text_template: "{name} saves {a unit} on Monday, {b unit} on Tuesday and {c unit} on Wednesday. How much does {name} save in all?"
+    slots: {name: names, unit: money_units}
+    grade_band: 1
+  - id: friends_party
+    text_template: "{name} brings {a obj} to the party. {friend} brings {b}. A cousin brings {c}. How many {obj} are at the party in all?"
+    slots: {name: names, friend: names, obj: objects}
+    grade_band: 1
+  - id: friends_found
+    text_template: "{name} finds {a obj}. {friend} finds {b}. A third kid finds {c}. How many {obj} do they find in all?"
+    slots: {name: names, friend: names, obj: objects}
+    grade_band: 1
+  - id: rounds_points
+    text_template: "In round one, {name} scores {a}. In round two, {name} scores {b}. In round three, {name} scores {c}. How many points is that in all?"
+    slots: {name: names}
+    grade_band: 1
+  - id: rounds_prizes
+    text_template: "In round one, {name} wins {a obj}. In round two, {name} wins {b}. In round three, {name} wins {c}. How many {obj} does {name} win?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: colors_beads
+    text_template: "{name} has {a} red, {b} blue and {c} green {obj}. How many {obj} does {name} have in all?"
+    slots: {name: names, obj: objects}
+    grade_band: 1
+  - id: colors_bag
+    text_template: "A bag holds {a} green, {b} yellow and {c} orange {obj}. How many {obj} are in the bag?"
+    slots: {obj: objects}
+    grade_band: 1
+  - id: rows_line
+    text_template: "The first row has {a}. The second row has {b}. The third row has {c}. How many kids are in line?"
+    grade_band: 1
+  - id: rows_bus
+    text_template: "In the van there are {a}. In the bus there are {b}. In the car there are {c}. How many kids are going?"
+    grade_band: 1
