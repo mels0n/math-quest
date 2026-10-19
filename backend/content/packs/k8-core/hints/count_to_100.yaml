@@ -1,0 +1,9 @@
+# Three hints for Count to 100: a nudge, the next step, then the whole answer worked out.
+skill: count_to_100
+levels:
+  - text_template: >-
+      Look at the numbers in the question. Think about which way to count.
+  - text_template: >-
+      The answer is {rel} {near}. Count {dir} from {near}. Watch the tens digit as you go.
+  - text_template: >-
+      Count {dir} from {near} and you say {answer}. So the answer is {answer}.

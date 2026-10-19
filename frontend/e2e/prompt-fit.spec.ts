@@ -55,6 +55,13 @@ const LONGEST = JSON.parse(
 interface NextBody {
 	prompt: PromptPart[];
 	dev_answer_latex: string | null;
+	dev_answer_choice?: number | null;
+}
+
+/** How the real problem under a replaced prompt is answered: typed, or by choice index. */
+interface Answer {
+	latex: string;
+	choice: number | null;
 }
 
 async function signUp(page: Page) {
@@ -68,13 +75,13 @@ async function signUp(page: Page) {
 }
 
 /** Replaces the prompt of each issued problem with the next one from `prompts`. */
-async function servePrompts(page: Page, prompts: PromptPart[][], answers: string[]) {
+async function servePrompts(page: Page, prompts: PromptPart[][], answers: Answer[]) {
 	await page.unroute('**/api/play/sessions/*/next');
 	await page.route('**/api/play/sessions/*/next', async (route) => {
 		const fetched = await fetchProblem(page, route);
 		const response = fetched.response;
 		const body = fetched.body as unknown as NextBody;
-		answers.push(body.dev_answer_latex ?? '');
+		answers.push({ latex: body.dev_answer_latex ?? '', choice: body.dev_answer_choice ?? null });
 		const prompt = prompts.shift();
 		await route.fulfill({ response, json: prompt ? { ...body, prompt } : body });
 	});
@@ -150,13 +157,17 @@ async function expectNoOverflow(page: Page, label: string) {
 	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/longest-${label}.png`, fullPage: true });
 }
 
-async function answerAndGoNext(page: Page, answer: string) {
-	const field = page.getByTestId('math-field');
-	await expect(field).toBeVisible();
-	await field.evaluate((el, value) => {
-		(el as unknown as { value: string }).value = value;
-	}, answer);
-	await page.getByRole('button', { name: 'Go', exact: true }).click();
+async function answerAndGoNext(page: Page, answer: Answer) {
+	if (answer.choice !== null) {
+		await page.getByTestId('choice').nth(answer.choice).click();
+	} else {
+		const field = page.getByTestId('math-field');
+		await expect(field).toBeVisible();
+		await field.evaluate((el, value) => {
+			(el as unknown as { value: string }).value = value;
+		}, answer.latex);
+		await page.getByRole('button', { name: 'Go', exact: true }).click();
+	}
 	await expect(page.getByTestId('feedback')).toHaveText("That's right!");
 	await page.getByRole('button', { name: 'Next' }).click();
 }
@@ -166,7 +177,7 @@ test('long prompts wrap and fit the card at every width', async ({ page }) => {
 
 	for (const width of WIDTHS) {
 		const other = width < 700 ? 1366 : 320;
-		const answers: string[] = [];
+		const answers: Answer[] = [];
 		await servePrompts(page, [PLACE_VALUE, FRACTION_SUM], answers);
 		await page.setViewportSize({ width, height: 900 });
 		await page.goto('/play');
@@ -179,7 +190,7 @@ test('long prompts wrap and fit the card at every width', async ({ page }) => {
 		await page.setViewportSize({ width, height: 900 });
 		await expectFits(page, `place-${width}-back`, NUMBER);
 
-		await answerAndGoNext(page, answers[0] as string);
+		await answerAndGoNext(page, answers[0] as Answer);
 		await expect(page.getByTestId('prompt')).not.toContainText('Which digit');
 		await expectFits(page, `fractions-${width}`);
 
@@ -191,34 +202,42 @@ test('long prompts wrap and fit the card at every width', async ({ page }) => {
 test("every generator's longest prompt fits the card at phone and desktop sizes", async ({
 	page
 }) => {
-	test.setTimeout(180_000);
+	test.setTimeout(240_000);
 	await signUp(page);
 	const skills = Object.keys(LONGEST).sort();
-	expect(skills.length).toBeGreaterThanOrEqual(9);
-	const answers: string[] = [];
-	await servePrompts(
-		page,
-		skills.map((s) => (LONGEST[s] as { prompt: PromptPart[] }).prompt),
-		answers
-	);
-	await page.setViewportSize(VIEWPORTS[0] as { width: number; height: number });
-	await page.goto('/play');
-
-	for (const [i, skill] of skills.entries()) {
-		const text = (LONGEST[skill] as { prompt: PromptPart[] }).prompt
-			.filter((p) => p.kind === 'text')
-			.map((p) => p.value.trim())
-			.join(' ');
-		if (text) await expect(page.getByTestId('prompt')).toContainText(text.split(' ')[0] as string);
-		for (const size of VIEWPORTS) {
-			await page.setViewportSize(size);
-			await expectNoOverflow(page, `${skill}-${size.width}x${size.height}`);
-		}
+	expect(skills.length).toBeGreaterThanOrEqual(20);
+	// A quest ends after a fixed number of problems, so the prompts are laid out in
+	// chunks, each in its own quest (every visit to /play starts a new one). CHUNK must
+	// stay at or below SESSION_PROBLEMS (12) in backend/src/mathquest/engine/scheduler.py.
+	const CHUNK = 8;
+	for (let start = 0; start < skills.length; start += CHUNK) {
+		const chunk = skills.slice(start, start + CHUNK);
+		const answers: Answer[] = [];
+		await servePrompts(
+			page,
+			chunk.map((s) => (LONGEST[s] as { prompt: PromptPart[] }).prompt),
+			answers
+		);
 		await page.setViewportSize(VIEWPORTS[0] as { width: number; height: number });
-		if (i < skills.length - 1) {
-			const before = await page.getByTestId('prompt').textContent();
-			await answerAndGoNext(page, answers[i] as string);
-			if (before) await expect(page.getByTestId('prompt')).not.toHaveText(before);
+		await page.goto('/play');
+
+		for (const [i, skill] of chunk.entries()) {
+			const text = (LONGEST[skill] as { prompt: PromptPart[] }).prompt
+				.filter((p) => p.kind === 'text')
+				.map((p) => p.value.trim())
+				.join(' ');
+			if (text) await expect(page.getByTestId('prompt')).toContainText(text.split(' ')[0] as string);
+			for (const size of VIEWPORTS) {
+				await page.setViewportSize(size);
+				await expectNoOverflow(page, `${skill}-${size.width}x${size.height}`);
+			}
+			await page.setViewportSize(VIEWPORTS[0] as { width: number; height: number });
+			if (i < chunk.length - 1) {
+				const before = await page.getByTestId('prompt').textContent();
+				await answerAndGoNext(page, answers[i] as Answer);
+				if (before) await expect(page.getByTestId('prompt')).not.toHaveText(before);
+			}
 		}
 	}
 });
+

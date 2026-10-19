@@ -1,0 +1,9 @@
+# Three hints for Compare to 20: a nudge, the next step, then the whole answer worked out.
+skill: compare_numbers_20
+levels:
+  - text_template: >-
+      Look at {a} and {b}. Find the {which} number.
+  - text_template: >-
+      Count up from one. The number you say first is smaller. The one you say later is bigger.
+  - text_template: >-
+      You compare {a} and {b}. The {which} number is {answer}. So the answer is {answer}.

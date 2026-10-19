@@ -1,6 +1,6 @@
 # 0015. Placement: a noisy binary search over anchor skills and provisional mastery
 
-- Status: accepted
+- Status: accepted; superseded in part by [0019](0019-six-anchor-placement-spine.md) (the real-pack figures)
 - Date: 2026-10-15
 
 ## Context

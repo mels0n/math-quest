@@ -12,11 +12,13 @@ from mathquest.engine.mastery import (
     SkillRating,
     choose_tier,
     correct_streak,
+    help_used,
     initial_rating,
     is_mastered,
     next_review_days,
     predict,
     score,
+    scores_as_correct,
     step_size,
     update,
 )
@@ -291,3 +293,42 @@ def test_review_steps() -> None:
 
 def test_review_non_step_previous_moves_to_next_larger_step() -> None:
     assert next_review_days(5, True) == 7
+
+
+# --- first try counts ---------------------------------------------------------------
+
+
+def _simulate_guesser(first_try_counts: bool, problems: int = 3000) -> bool:
+    """A learner who knows nothing but always finds the right one of two numbers on a second
+    try: first try right half the time. True when they ever reach mastery."""
+    from mathquest.engine.generators import get_generator
+
+    rng = random.Random(5)
+    tiers = get_generator("compare_numbers_20").tier_difficulties
+    rating = SkillRating(rating=initial_rating(tiers))
+    for _ in range(problems):
+        tier = choose_tier(rating, tiers)
+        wrong_tries = 0 if rng.random() < 0.5 else 1
+        outcome = Outcome(
+            correct=scores_as_correct(True, wrong_tries, first_try_counts),
+            hints_used=help_used(wrong_tries, 0),
+            seconds=5.0,
+            fluency=False,
+            tier=tier,
+        )
+        rating = update(rating, tiers[tier], outcome, max(tiers))
+        if is_mastered(rating, max(tiers)):
+            return True
+    return False
+
+
+def test_only_the_first_try_counts_so_guessing_never_masters_a_comparison() -> None:
+    assert _simulate_guesser(first_try_counts=False)  # what the plain rule allowed
+    assert not _simulate_guesser(first_try_counts=True)
+
+
+def test_scores_as_correct_follows_the_flag() -> None:
+    assert scores_as_correct(True, 0, True)
+    assert not scores_as_correct(True, 1, True)
+    assert scores_as_correct(True, 1, False)
+    assert not scores_as_correct(False, 0, True)

@@ -9,7 +9,7 @@ import pytest
 from mathquest.engine.checker.bounded import CheckerPool
 from mathquest.engine.checker.check import CheckResult, check
 from mathquest.engine.types import Problem
-from tests.conftest import SIGNUP_WORD, Api, ApiFactory
+from tests.conftest import SIGNUP_WORD, Api, ApiFactory, pass_early_skills
 
 CSRF = {"X-Requested-With": "mathquest"}
 PASSWORD = "correct horse battery staple"
@@ -38,6 +38,7 @@ async def _player(api: ApiFactory, password_file: Path) -> Api:
         headers=CSRF,
     )
     assert r.status_code == 200
+    await pass_early_skills(h)
     for skill_id in h.app.state.catalog.pack.lessons:
         assert (await h.client.post(f"/api/lessons/{skill_id}/seen", headers=CSRF)).is_success
     return h

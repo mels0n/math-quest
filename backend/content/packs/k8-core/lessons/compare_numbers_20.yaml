@@ -1,0 +1,29 @@
+# Lesson for Compare to 20. The worked example is written in words, so it is never a
+# problem the skill asks.
+skill: compare_numbers_20
+screens:
+  - title: Which is bigger?
+    body_md: >-
+      The number you say later when you count is bigger. You say 4 before 9. So 9 is bigger than 4.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 4, jumps: 5, end: 9}
+  - title: Which is smaller?
+    body_md: >-
+      The number you say first is smaller. In 12 and 15, you say 12 first. So 12 is smaller.
+    visual:
+      kind: number_line
+      params: {min: 10, max: 20, start: 12, jumps: 3, end: 15}
+  - title: Same size
+    body_md: >-
+      Two numbers can be the same. 13 and 13 are equal. No number is bigger.
+worked_example:
+  prompt:
+    - {kind: text, value: "Which number is bigger, eleven or sixteen?"}
+  steps:
+    - Count up from one. You say eleven first.
+    - You say sixteen later.
+    - The number you say later is bigger.
+    - So sixteen is bigger.
+try_it:
+  tier: 0

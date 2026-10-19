@@ -1,0 +1,28 @@
+# Lesson for Compare to 100. The worked example is a new question in words, so it is
+# never a problem the skill asks.
+skill: compare_numbers_100
+screens:
+  - title: Look at the tens
+    body_md: >-
+      Bigger numbers have more tens. 52 has 5 tens. 38 has 3 tens. 5 tens is more than 3 tens. So 52 is bigger.
+    visual:
+      kind: base_ten
+      params: {tens: 5, ones: 2}
+  - title: Same tens
+    body_md: >-
+      If the tens match, look at the ones. 64 and 67 both have 6 tens. 7 ones is more than 4 ones. So 67 is bigger.
+    visual:
+      kind: base_ten
+      params: {tens: 6, ones: 7}
+  - title: Signs
+    body_md: >-
+      A sign tells which number is bigger. The open side faces the bigger number. \(67 > 64\) and \(64 < 67\). If they are the same, use \(=\).
+worked_example:
+  prompt:
+    - {kind: text, value: "Compare 71 and 68. Which is bigger?"}
+  steps:
+    - Look at the tens. 71 has 7 tens. 68 has 6 tens.
+    - 7 tens is more than 6 tens.
+    - So 71 is bigger.
+try_it:
+  tier: 0

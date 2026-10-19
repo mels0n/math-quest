@@ -5,7 +5,12 @@ const SHOT_DIR = process.env.E2E_SHOT_DIR;
 interface Step {
 	done: boolean;
 	question?: number;
-	problem?: { problem_id: string; skill_id: string; dev_answer_latex: string | null };
+	problem?: {
+		problem_id: string;
+		skill_id: string;
+		dev_answer_latex: string | null;
+		dev_answer_choice: number | null;
+	};
 	provisional?: string[];
 }
 
@@ -39,10 +44,16 @@ async function playRound(page: Page, first: Step, right: (step: Step) => boolean
 		await expect(page.getByRole('img', { name: /tries left/ })).toHaveCount(0);
 		await expect(page.getByRole('button', { name: /hint/i })).toHaveCount(0);
 		expect(await page.content()).not.toContain('dev_answer');
-		const answer = right(step) ? (step.problem?.dev_answer_latex ?? '') : '99999';
-		expect(answer).not.toBe('');
 		const pending = page.waitForResponse(isPlacement);
-		await typeAnswer(page, answer);
+		const choice = step.problem?.dev_answer_choice ?? null;
+		if (choice !== null) {
+			// A choice puzzle: tap the right button, or the one after it.
+			await page.getByTestId('choice').nth(right(step) ? choice : (choice + 1) % 3).click();
+		} else {
+			const answer = right(step) ? (step.problem?.dev_answer_latex ?? '') : '99999';
+			expect(answer).not.toBe('');
+			await typeAnswer(page, answer);
+		}
 		step = (await (await pending).json()) as Step;
 	}
 	return step;

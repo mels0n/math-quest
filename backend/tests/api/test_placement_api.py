@@ -43,12 +43,13 @@ async def _start(
 async def _answer(client: httpx.AsyncClient, step: dict[str, object], latex: str) -> httpx.Response:
     problem = step["problem"]
     assert isinstance(problem, dict)
+    given = {"choice": int(latex)} if problem["dev_answer_choice"] is not None else {"latex": latex}
     return await client.post(
         "/api/placement/answer",
         json={
             "placement_id": step["placement_id"],
             "problem_id": problem["problem_id"],  # pyright: ignore[reportUnknownArgumentType]
-            "latex": latex,
+            **given,
         },
         headers=CSRF,
     )
@@ -77,7 +78,7 @@ async def test_start_returns_a_problem_without_its_answer(api: ApiFactory) -> No
     assert body["max_questions"] == MAX_QUESTIONS
     problem = body["problem"]
     assert problem["type"] == "problem"
-    assert problem["skill_id"] == "add_within_10"
+    assert problem["skill_id"] == "count_to_10"
     assert problem["prompt"]
     assert problem["keypad"] == "numpad"
     assert problem["hint_levels"] == 0
@@ -101,7 +102,9 @@ async def test_a_whole_round_ends_with_the_outcome(api: ApiFactory) -> None:
     step = (await _start(h.client)).json()
     body = step
     for _ in range(MAX_QUESTIONS):
-        answer = step["problem"]["dev_answer_latex"]
+        problem = step["problem"]
+        # A choice anchor is answered by the index of the right choice.
+        answer = problem["dev_answer_latex"] or str(problem["dev_answer_choice"])
         assert answer
         r = await _answer(h.client, step, answer)
         assert r.status_code == 200

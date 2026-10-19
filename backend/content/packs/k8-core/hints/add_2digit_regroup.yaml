@@ -1,0 +1,12 @@
+# Three hints, gentlest first: a nudge, the next step, then the whole answer worked out.
+skill: add_2digit_regroup
+levels:
+  - text_template: >-
+      Add the ones first. If they make ten or more, carry a ten to the tens.
+  - text_template: >-
+      The ones are {a_ones} and {b_ones}. They make {{= a_ones + b_ones }}.
+      Keep the ones that are left. Carry the ten.
+  - text_template: >-
+      Add the tens too. {a_tens} and {b_tens} and the carried ten make
+      {{= a_tens + b_tens + 1 }}. The ones left are {{= a_ones + b_ones - 10 }}.
+      So \({a} + {b} = {{= a + b }}\).

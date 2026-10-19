@@ -256,6 +256,9 @@ class BankAnswer(_Model):
 
 class BankItem(_Model):
     id: Id
+    tier: Annotated[int, Field(ge=0)] | None = None
+    """The tier the item suits; a learner only gets items of their own tier. None suits
+    every tier."""
     prompt: Parts
     answer: BankAnswer
     choices: tuple[Parts, ...] | None = None

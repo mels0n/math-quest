@@ -1,0 +1,29 @@
+# Lesson for Number Pairs. The worked example is written in words, so it is never a
+# problem the skill asks.
+skill: pairs_to_10
+screens:
+  - title: Make five
+    body_md: >-
+      Number pairs make a total. 2 and 3 make 5. Hold up 2 fingers on one hand and 3 on the other. So \(2 + 3 = {{= 2 + 3 }}\).
+    visual:
+      kind: number_line
+      params: {min: 0, max: 5, start: 2, jumps: 3, end: 5}
+  - title: A part is hidden
+    body_md: >-
+      Sometimes one part is hidden. You know 4. The total is 9. Count on from 4 up to 9. You count 5 numbers. So \(4 + 5 = {{= 4 + 5 }}\).
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 4, jumps: 5, end: 9}
+  - title: Make ten
+    body_md: >-
+      Ten is an important total. 6 and 4 make 10. 7 and 3 make 10. Learn the pairs that make ten.
+worked_example:
+  prompt:
+    - {kind: text, value: "A pair makes eight. One part is three. What is the other part?"}
+  steps:
+    - You know one part is 3. The total is 8.
+    - Count on from 3 up to 8. You say 4, 5, 6, 7, 8.
+    - That is five counts.
+    - So the other part is 5.
+try_it:
+  tier: 0

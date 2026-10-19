@@ -1,0 +1,38 @@
+# Four ways to explain adding two-digit numbers, plus feedback for each mistake the
+# generator knows. None of them shows the answer: pictures show the start and the jumps.
+skill: add_2digit_no_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      Here is {a} as blocks. A stick is one ten. A cube is one one. Picture
+      the blocks for {b} next to them. Group the sticks together. Group the
+      cubes together. Then count all the blocks.
+    visual:
+      kind: base_ten
+      params: {tens: "{a_tens}", ones: "{a_ones}"}
+  - style: steps
+    body_md: |-
+      1. Split each number into tens and ones.
+      2. Add the tens of both numbers.
+      3. Add the ones of both numbers.
+      4. Put the tens and the ones together.
+  - style: story
+    body_md: >-
+      A shop has {a} red balloons and {b} blue balloons. How many balloons
+      does the shop have in all? That is \({a} + {b}\).
+  - style: worked
+    body_md: >-
+      Let us do yours together. In {a}, the tens digit is {a_tens}. The
+      ones digit is {a_ones}. In {b}, the tens digit is {b_tens}. The ones
+      digit is {b_ones}. Add the two tens digits. Add the two ones digits.
+      Say the two parts as one number.
+misconceptions:
+  subtracted_instead: >-
+    It looks like you took away. The plus sign means put {a} and {b}
+    together. So the answer is bigger than both.
+  added_digits: >-
+    It looks like every digit was counted as a one. A digit in the tens place
+    counts as ten. Add tens with tens, and ones with ones.
+  left_out_tens: >-
+    You were close! It looks like the tens of {b} got left out. Add the tens
+    of both numbers. Then add the ones of both numbers.

@@ -1,6 +1,6 @@
 # 0017. A planned skill graph for Number Meadows and Operation Canyon
 
-- Status: accepted
+- Status: accepted; superseded in part by [0019](0019-six-anchor-placement-spine.md) (which skill anchors grade 1)
 - Date: 2026-10-17
 
 ## Context

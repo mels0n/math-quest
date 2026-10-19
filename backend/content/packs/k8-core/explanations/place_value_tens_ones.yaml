@@ -1,0 +1,34 @@
+# Four ways to explain place value, plus feedback for each mistake the generator knows.
+# None of them writes a digit of the number or a picture of its blocks, since the answer
+# is one of its digits: they teach how to find a place, not what is in it.
+skill: place_value_tens_ones
+approaches:
+  - style: visual
+    body_md: >-
+      Draw a chart with one box for each digit. Name the boxes from the
+      right. Say ones, then tens, then hundreds, then thousands. Write {number}
+      into the boxes, one digit in each. Now look in the {place} box.
+  - style: steps
+    body_md: |-
+      1. Point at the last digit on the right. It is in the ones place.
+      2. Move one digit to the left. That is the tens place.
+      3. Keep moving left: hundreds, then thousands.
+      4. Stop at the {place} place. That digit is the answer.
+  - style: story
+    body_md: >-
+      A shop packs eggs into boxes. Ones go loose on the table. Tens go in
+      small boxes. Hundreds go in big crates. The number {number} tells how
+      many of each. Which count belongs to the {place}?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Put your finger on the last digit of {number}.
+      Say "ones". Slide your finger left and say the next place name. Stop
+      when you say "{place}". The digit under your finger is the answer.
+misconceptions:
+  confused_tens_ones: >-
+    It looks like you named the digit in the other place. The ones place is
+    the last digit on the right. The tens place is the one right next to it.
+  confused_adjacent_place: >-
+    You were close! It looks like you named the digit next to the right one.
+    Count the places from the right: ones, tens, hundreds, thousands. Stop at
+    the {place} place.

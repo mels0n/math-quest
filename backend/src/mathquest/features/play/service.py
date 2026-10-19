@@ -140,6 +140,7 @@ NOTHING before it is locked.
 import logging
 import secrets
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -173,6 +174,7 @@ from mathquest.engine.mastery import (
     next_review_days,
     placed_keeps_mastery,
     predict,
+    scores_as_correct,
     update,
 )
 from mathquest.engine.placement import probe_tier
@@ -312,6 +314,11 @@ async def start_session(
     return out
 
 
+def _started(rows: Iterable[SkillMastery]) -> set[str]:
+    """The skills the learner has played outside practice (see ``SkillGraph.ready``)."""
+    return {r.skill_id for r in rows if r.played_in_adventure}
+
+
 def _state(
     catalog: Catalog, skill_id: str, row: SkillMastery | None, ready: set[str], now: datetime
 ) -> MasteryOut:
@@ -327,7 +334,10 @@ async def _player_states(
 ) -> dict[str, MasteryOut]:
     rows = {r.skill_id: r for r in await mastery.list_for_player(db, player_id)}
     mastered = {sid for sid, r in rows.items() if r.state in mastery.COUNTS_AS_MASTERED}
-    ready = set(catalog.graph.ready(mastered))
+    # A skill implied by what the learner has mastered is open to practice, not offered.
+    ready = set(catalog.graph.ready(mastered, _started(rows.values()))) | catalog.graph.implied(
+        mastered
+    )
     return {
         sid: _state(catalog, sid, rows.get(sid), ready, now) for sid in catalog.graph.topo_order()
     }
@@ -511,7 +521,8 @@ async def next_problem(
     graph = catalog.graph
     ratings = {sid: _rating(catalog, by_skill.get(sid), sid) for sid in graph.skills}
     mastered = {r.skill_id for r in rows if r.state in mastery.COUNTS_AS_MASTERED}
-    due = await mastery.due_reviews(db, player_id, now)
+    # A skill missing from the pack (a release rolled back) is neither reviewed nor picked.
+    due = [sid for sid in await mastery.due_reviews(db, player_id, now) if sid in graph.skills]
     history = [
         Played(skill_id=sid, correct=correct, stuck=stuck, warmup_for=warmup_for)
         for sid, correct, stuck, warmup_for in await problems.session_history(db, session_id)
@@ -520,7 +531,9 @@ async def next_problem(
     if practice:
         pick = plan_practice(graph, ratings, list(session.focus or []), history)
     else:
-        pick = plan_next(graph, ratings, mastered, due, session.problem_count, history)
+        pick = plan_next(
+            graph, ratings, mastered, due, session.problem_count, history, _started(rows)
+        )
     skill_id = pick.skill_id
     if offer_lessons and await _lesson_due(
         db, catalog, player_id, skill_id, by_skill.get(skill_id)
@@ -530,7 +543,7 @@ async def next_problem(
     source = catalog.source(skill_id)
     tier = guard_tier(choose_tier(ratings[skill_id], source.tier_difficulties), history, skill_id)
     seed = secrets.randbelow(SEED_LIMIT)
-    variant = choose_variant(source, seed)
+    variant = choose_variant(source, seed, tier)
     row = by_skill.get(skill_id)
     if row is not None and row.state == SkillState.PROVISIONAL:
         # A problem that can confirm placement's mark: the generator's, at its tier.
@@ -641,6 +654,9 @@ def _apply_score(
 
 def regenerate(catalog: Catalog, instance: ProblemInstance) -> Problem:
     """The issued problem again, from its stored seed, tier, variant and template."""
+    if instance.skill_id not in catalog.graph.skills:
+        # Issued for a skill the pack no longer has: closed, and the client moves on.
+        raise Conflict("problem_closed")
     return catalog.regenerate(
         instance.skill_id, instance.seed, instance.tier, instance.variant, instance.template_id
     )
@@ -842,7 +858,11 @@ async def submit_answer(
     if scored:
         session = await problems.get_session(db, instance.session_id)
         practice = session.mode == PRACTICE
-        row = await mastery.lock(db, player_id, skill_id, _start_rating(catalog, skill_id))
+        row = await mastery.lock(
+            db, player_id, skill_id, _start_rating(catalog, skill_id), adventure=not practice
+        )
+        if not practice:
+            row.played_in_adventure = True
         if (
             practice
             and skill_id in (session.mastered_at_start or [])
@@ -855,8 +875,14 @@ async def submit_answer(
                 skill_id=skill_id,
                 at=received,
             )
+        # A generator with two likely answers scores only a first-try solve as correct;
+        # bank choice items keep the plain rule (they allow two tries, not a free guess).
+        first_try = bool(getattr(catalog.source(skill_id).generator, "first_try_counts", False))
+        wrong_tries = sum(1 for a in attempts if a.verdict == Verdict.INCORRECT.value)
         outcome = Outcome(
-            correct=solved,
+            correct=scores_as_correct(
+                solved, wrong_tries, first_try and instance.variant != "bank"
+            ),
             hints_used=help_used(
                 tried,
                 instance.hints_used + await teaching.views_on_problem(db, instance.id),

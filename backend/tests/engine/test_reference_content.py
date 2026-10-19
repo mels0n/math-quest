@@ -16,6 +16,7 @@ from mathquest.engine.teaching import (
 )
 from mathquest.engine.templates import plain
 from mathquest.engine.types import MathPart, Prompt
+from tests.conftest import NO_CONTENT_SKILL
 
 CONTENT = Path(__file__).resolve().parents[2] / "content"
 CATALOG = load_catalog(CONTENT, "k8-core")
@@ -24,6 +25,13 @@ SKILL = "add_within_20"
 SOURCE = CATALOG.source(SKILL)
 SEEDS = 200
 DASHES = (chr(0x2014), chr(0x2013))  # em dash, en dash
+
+
+def test_the_skill_used_for_missing_content_still_has_none() -> None:
+    skill = NO_CONTENT_SKILL
+    assert skill not in PACK.lessons
+    assert skill not in PACK.hints
+    assert skill not in PACK.explanations, "pick another NO_CONTENT_SKILL in tests/conftest.py"
 
 
 def _problems():

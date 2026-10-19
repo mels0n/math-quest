@@ -32,7 +32,7 @@ from mathquest.features.play import service
 from mathquest.features.play.schema import AnswerOut, LessonDueOut, ProblemOut, SummaryOut
 from mathquest.features.play.variants import choose_variant
 from mathquest.shared.errors import Conflict, Invalid, NotFound
-from tests.conftest import _database_url  # pyright: ignore[reportPrivateUsage]
+from tests.conftest import EARLY_SKILLS, _database_url  # pyright: ignore[reportPrivateUsage]
 
 CATALOG = load_catalog(Path(__file__).resolve().parents[2] / "content", "k8-core")
 GRAPH = CATALOG.graph
@@ -48,9 +48,10 @@ POOL = _SyncPool()
 
 
 async def _player(
-    db: AsyncSession, name: str = "Tester", *, lessons_seen: bool = True
+    db: AsyncSession, name: str = "Tester", *, lessons_seen: bool = True, fresh: bool = False
 ) -> uuid.UUID:
-    """A new player; by default one who has seen every lesson, so `next` issues problems."""
+    """A new player; by default one who has seen every lesson, so `next` issues problems,
+    and who has passed `EARLY_SKILLS` (`fresh=True`: none, to see where a new player begins)."""
     row = await players.add(
         db,
         nickname=f"{name}{uuid.uuid4().hex[:6]}",
@@ -61,6 +62,8 @@ async def _player(
     if lessons_seen:
         for skill_id in CATALOG.pack.lessons:
             await lessons.mark_seen(db, row.id, skill_id, datetime.now(UTC))
+    if not fresh:
+        await _mark_provisional(db, row.id, *EARLY_SKILLS, due_in=timedelta(days=365))
     return row.id
 
 
@@ -297,7 +300,7 @@ async def test_other_player_problem_404(db: AsyncSession) -> None:
 
 
 async def test_new_player_starts_on_ready_skills(db: AsyncSession) -> None:
-    pid = await _player(db)
+    pid = await _player(db, fresh=True)
     session = await service.start_session(db, pid, "adventure")
 
     problem = await _next_problem(db, CATALOG, pid, session.session_id)
@@ -1163,3 +1166,214 @@ async def test_a_provisional_skill_reads_as_provisional(db: AsyncSession) -> Non
         CATALOG, "add_within_10", row, datetime.now(UTC) + timedelta(days=3)
     )
     assert later.state is SkillState.REVIEW_DUE
+
+
+async def test_an_old_learner_keeps_the_skill_they_were_on(db: AsyncSession) -> None:
+    """add_within_10 gained count_to_10 as a prerequisite after this learner started it."""
+    pid = await _player(db, fresh=True)
+    row = await mastery.lock(db, pid, "add_within_10", -3.0)
+    row.attempts = 4
+    row.state = "learning"
+    await db.commit()
+
+    out = await service.list_skills(db, CATALOG, pid)
+    states = {s.skill_id: s.state for s in out.skills}
+    assert states["add_within_10"] is SkillState.LEARNING
+    assert states["sub_within_10"] is SkillState.LOCKED  # never started: waits for counting
+    session = await service.start_practice(db, CATALOG, pid, skill_id="add_within_10")
+    assert [f.skill_id for f in session.focus] == ["add_within_10"]
+    ready = CATALOG.graph.ready(set(), {"add_within_10"})
+    assert "add_within_10" in ready and "count_to_10" in ready
+    adventure = await service.start_session(db, pid, "adventure")
+    seen: set[str] = set()
+    for _ in range(3):
+        problem = await _next_problem(db, CATALOG, pid, adventure.session_id, expose_answers=True)
+        seen.add(problem.skill_id)
+        await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+    # Without the rule add_within_10 would be locked behind count_to_10 and never come up.
+    assert seen == {"add_within_10"}
+
+
+async def test_a_learner_placed_high_before_counting_existed_is_not_sent_back(
+    db: AsyncSession,
+) -> None:
+    """A grade 2 placement from before: the old anchors' ancestors, none of the new skills."""
+    pid = await _player(db, fresh=True)
+    old = (
+        "add_within_10",
+        "add_within_20",
+        "place_value_tens_ones",
+        "add_2digit_no_regroup",
+        "add_2digit_regroup",
+    )
+    await _mark_provisional(db, pid, *old)
+    out = await service.list_skills(db, CATALOG, pid)
+    states = {s.skill_id: s.state for s in out.skills}
+    assert states["place_value_tens_ones"] is SkillState.PROVISIONAL
+    # Under skills they know, so open to practice but never offered by the scheduler.
+    for implied in ("count_to_10", "count_to_20", "teen_numbers"):
+        assert states[implied] is SkillState.READY
+        assert implied not in CATALOG.graph.ready(set(old), set(old))
+    assert "count_to_100" in CATALOG.graph.ready(set(old), set(old))
+    session = await service.start_session(db, pid, "adventure")
+    problem = await _next_problem(db, CATALOG, pid, session.session_id)
+    assert problem.skill_id not in ("count_to_10", "count_to_20", "teen_numbers")
+
+
+async def test_a_typed_skill_serves_choice_bank_items_of_the_learners_tier(
+    db: AsyncSession,
+) -> None:
+    """The comparing skills are typed, with a bank of button questions served beside them."""
+    pid = await _player(db)
+    await _mark_provisional(db, pid, "place_value_tens_ones")
+    session = await service.start_practice(db, CATALOG, pid, skill_id="compare_numbers_100")
+    source = CATALOG.source("compare_numbers_100")
+    assert source.skill.keypad == "numpad" and source.bank is not None
+    variants: dict[str, int] = {"bare": 0, "bank": 0}
+    for _ in range(40):
+        out = await _next_problem(db, CATALOG, pid, session.session_id, expose_answers=True)
+        inst = await db.get(ProblemInstance, out.problem_id)
+        assert inst is not None
+        variants[inst.variant] += 1
+        if inst.variant == "bank":
+            assert out.keypad == "choice" and out.choices and out.dev_answer_choice is not None
+            item = next(i for i in source.bank.items if i.id == inst.template_id)
+            assert item.tier in (None, inst.tier)
+            hit = await service.submit_answer(
+                db, POOL, CATALOG, pid, out.problem_id, choice=out.dev_answer_choice
+            )
+            assert hit.verdict is Verdict.CORRECT
+        else:
+            assert out.keypad == "numpad" and out.choices is None
+            await _submit(db, pid, out.problem_id, out.dev_answer_latex or "")
+    assert variants["bank"] > 3 and variants["bare"] > 10
+
+
+async def test_a_review_due_on_a_skill_the_pack_lacks_is_ignored(db: AsyncSession) -> None:
+    """Rolling back a release that added skills leaves stored rows for skills the older pack
+    does not have; play goes on without them."""
+    pid = await _player(db)
+    row = await mastery.lock(db, pid, "ghost_skill", 0.0)
+    row.state = SkillState.MASTERED
+    row.review_due_at = datetime.now(UTC) - timedelta(days=1)
+    await db.commit()
+    session = await service.start_session(db, pid, "adventure")
+    await db.execute(
+        update(PlaySession).where(PlaySession.id == session.session_id).values(problem_count=4)
+    )
+    out = await service.next_problem(db, CATALOG, pid, session.session_id)
+    assert isinstance(out, ProblemOut)
+    assert out.skill_id in CATALOG.graph.skills
+
+
+async def test_an_open_problem_on_a_skill_the_pack_lacks_is_closed(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await add_problem(
+        db,
+        session_id=session.session_id,
+        player_id=pid,
+        skill_id="ghost_skill",
+        tier=0,
+        seed=1,
+        difficulty=0.0,
+        issued_at=datetime.now(UTC),
+        variant="bare",
+        template_id=None,
+    )
+    with pytest.raises(Conflict) as err:
+        await _submit(db, pid, inst.id, "1")
+    assert err.value.code == "problem_closed"
+
+
+_OLD_PLACEMENT = (
+    "add_within_10",
+    "add_within_20",
+    "place_value_tens_ones",
+    "add_2digit_no_regroup",
+    "add_2digit_regroup",
+)
+
+
+async def test_trying_an_implied_skill_in_practice_does_not_make_it_offered(
+    db: AsyncSession,
+) -> None:
+    """A grade 2 learner placed before counting existed tries count_to_10 once in practice.
+    That is not playing it in the adventure: it stays implied, and is never offered."""
+    pid = await _player(db, fresh=True)
+    await _mark_provisional(db, pid, *_OLD_PLACEMENT)
+    practice = await service.start_practice(db, CATALOG, pid, skill_id="count_to_10")
+    out = await _next_problem(db, CATALOG, pid, practice.session_id, expose_answers=True)
+    await _submit(db, pid, out.problem_id, out.dev_answer_latex or "")
+    row = await _row(db, pid, "count_to_10")
+    assert row.attempts == 1 and row.played_in_adventure is False
+    assert service._started(await mastery.list_for_player(db, pid)) == set(_OLD_PLACEMENT)  # pyright: ignore[reportPrivateUsage]
+
+    adventure = await service.start_session(db, pid, "adventure")
+    for _ in range(8):
+        problem = await _next_problem(db, CATALOG, pid, adventure.session_id, expose_answers=True)
+        assert problem.skill_id != "count_to_10"
+        if problem.dev_answer_choice is not None:
+            await service.submit_answer(
+                db, POOL, CATALOG, pid, problem.problem_id, choice=problem.dev_answer_choice
+            )
+        else:
+            await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+
+
+async def test_mastering_an_implied_skill_in_practice_still_masters_it(db: AsyncSession) -> None:
+    pid = await _player(db, fresh=True)
+    await _mark_provisional(db, pid, *_OLD_PLACEMENT)
+    practice = await service.start_practice(db, CATALOG, pid, skill_id="count_to_10")
+    await _master(db, pid, practice.session_id, "count_to_10")
+    row = await _row(db, pid, "count_to_10")
+    assert row.state == "mastered" and row.played_in_adventure is False
+
+
+async def test_playing_a_skill_in_the_adventure_marks_it_started(db: AsyncSession) -> None:
+    pid = await _player(db, fresh=True)
+    practice = await service.start_practice(db, CATALOG, pid, skill_id="count_to_10")
+    out = await _next_problem(db, CATALOG, pid, practice.session_id, expose_answers=True)
+    await _submit(db, pid, out.problem_id, out.dev_answer_latex or "")
+    assert (await _row(db, pid, "count_to_10")).played_in_adventure is False
+    adventure = await service.start_session(db, pid, "adventure")
+    problem = await _next_problem(db, CATALOG, pid, adventure.session_id, expose_answers=True)
+    assert problem.skill_id == "count_to_10"
+    await _submit(db, pid, problem.problem_id, problem.dev_answer_latex or "")
+    assert (await _row(db, pid, "count_to_10")).played_in_adventure is True
+
+
+async def test_a_comparison_solved_after_a_wrong_try_counts_as_a_miss(db: AsyncSession) -> None:
+    """Two numbers to pick from: a guess is followed by a sure right answer, so only the
+    first try counts. The tries, feedback and copy are unchanged."""
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, "compare_numbers_20", tier=0, seed=11)
+    miss = await _submit(db, pid, inst.id, _wrong(inst))
+    assert miss.verdict is Verdict.INCORRECT and miss.attempts_left == 2
+    hit = await _submit(db, pid, inst.id, _right(inst))
+    assert hit.solved and hit.verdict is Verdict.CORRECT  # still solved, still shown as right
+    assert (await _row(db, pid, "compare_numbers_20")).recent == [[0, 0]]
+    clean = await _issue(db, pid, session.session_id, "compare_numbers_20", tier=0, seed=12)
+    await _submit(db, pid, clean.id, _right(clean))
+    assert (await _row(db, pid, "compare_numbers_20")).recent == [[0, 0], [1, 0]]
+
+
+async def test_other_skills_and_bank_items_keep_the_plain_rule(db: AsyncSession) -> None:
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    inst = await _issue(db, pid, session.session_id, "add_within_10", tier=0, seed=3)
+    await _submit(db, pid, inst.id, _wrong(inst))
+    await _submit(db, pid, inst.id, _right(inst))
+    assert (await _row(db, pid, "add_within_10")).recent == [[1, 0]]
+
+    source = CATALOG.source("compare_numbers_20")
+    assert source.bank is not None
+    item = next(i for i in source.bank.items if i.tier == 0)
+    bank = await _issue(db, pid, session.session_id, "compare_numbers_20", 0, 5, "bank", item.id)
+    problem = service.regenerate(CATALOG, bank)
+    assert problem.correct_choice is not None
+    wrong = (problem.correct_choice + 1) % len(problem.choices or ())
+    await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=wrong)
+    await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=problem.correct_choice)
+    assert (await _row(db, pid, "compare_numbers_20")).recent == [[1, 0]]

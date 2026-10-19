@@ -1,0 +1,489 @@
+skill: compare_numbers_100
+items:
+  - id: cn100_01
+    tier: 0
+    prompt:
+      - {kind: text, value: "The white bag has "}
+      - {kind: math, value: "83"}
+      - {kind: text, value: " kites. The yellow bag has "}
+      - {kind: math, value: "43"}
+      - {kind: text, value: " kites. Which sign makes this true: "}
+      - {kind: math, value: "83 \\square 43"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_02
+    tier: 1
+    prompt:
+      - {kind: text, value: "A baker wants "}
+      - {kind: math, value: "47"}
+      - {kind: text, value: " seats and "}
+      - {kind: math, value: "47"}
+      - {kind: text, value: " lamps. Which sign fits: "}
+      - {kind: math, value: "47 \\square 47"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_03
+    tier: 2
+    prompt:
+      - {kind: text, value: "Count the rolls: "}
+      - {kind: math, value: "56"}
+      - {kind: text, value: ". Count the ships: "}
+      - {kind: math, value: "94"}
+      - {kind: text, value: ". Pick the sign: "}
+      - {kind: math, value: "56 \\square 94"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_04
+    tier: 0
+    prompt:
+      - {kind: text, value: "The orange pot holds "}
+      - {kind: math, value: "57"}
+      - {kind: text, value: " pins. The yellow pot holds "}
+      - {kind: math, value: "57"}
+      - {kind: text, value: " pins. Which one is true?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "57 > 57"}]
+      - [{kind: math, value: "57 < 57"}]
+      - [{kind: math, value: "57 = 57"}]
+  - id: cn100_05
+    tier: 1
+    prompt:
+      - {kind: text, value: "A clown makes "}
+      - {kind: math, value: "61"}
+      - {kind: text, value: " eggs and "}
+      - {kind: math, value: "61"}
+      - {kind: text, value: " rolls. Which sign fits: "}
+      - {kind: math, value: "61 \\square 61"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_06
+    tier: 2
+    prompt:
+      - {kind: text, value: "Count the cows: "}
+      - {kind: math, value: "73"}
+      - {kind: text, value: ". Count the pies: "}
+      - {kind: math, value: "17"}
+      - {kind: text, value: ". Are the counts equal?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Yes, equal"}]
+      - [{kind: text, value: "No, the cows are more"}]
+      - [{kind: text, value: "No, the pies are more"}]
+  - id: cn100_07
+    tier: 0
+    prompt:
+      - {kind: text, value: "A girl gets "}
+      - {kind: math, value: "61"}
+      - {kind: text, value: " bells and "}
+      - {kind: math, value: "82"}
+      - {kind: text, value: " coins. Which one is true?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "61 > 82"}]
+      - [{kind: math, value: "61 < 82"}]
+      - [{kind: math, value: "61 = 82"}]
+  - id: cn100_08
+    tier: 1
+    prompt:
+      - {kind: text, value: "A king gets "}
+      - {kind: math, value: "66"}
+      - {kind: text, value: " buns and "}
+      - {kind: math, value: "65"}
+      - {kind: text, value: " cards. Which number is bigger?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The buns"}]
+      - [{kind: text, value: "The cards"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_09
+    tier: 2
+    prompt:
+      - {kind: text, value: "The brown bucket has "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " buns. The green bucket has "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " buns. Which sign makes this true: "}
+      - {kind: math, value: "27 \\square 27"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_10
+    tier: 0
+    prompt:
+      - {kind: text, value: "The black pot has "}
+      - {kind: math, value: "64"}
+      - {kind: text, value: " ducks. The brown pot has "}
+      - {kind: math, value: "99"}
+      - {kind: text, value: " ducks. Which sign makes this true: "}
+      - {kind: math, value: "64 \\square 99"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_11
+    tier: 1
+    prompt:
+      - {kind: text, value: "A bear buys "}
+      - {kind: math, value: "95"}
+      - {kind: text, value: " pins and "}
+      - {kind: math, value: "91"}
+      - {kind: text, value: " chairs. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The pins"}]
+      - [{kind: text, value: "The chairs"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_12
+    tier: 2
+    prompt:
+      - {kind: text, value: "The yellow bowl has "}
+      - {kind: math, value: "82"}
+      - {kind: text, value: " bricks. The red bowl has "}
+      - {kind: math, value: "82"}
+      - {kind: text, value: " bricks. Which sign makes this true: "}
+      - {kind: math, value: "82 \\square 82"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_13
+    tier: 0
+    prompt:
+      - {kind: text, value: "A fox finds "}
+      - {kind: math, value: "19"}
+      - {kind: text, value: " bells and "}
+      - {kind: math, value: "77"}
+      - {kind: text, value: " bricks. Which number is bigger?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The bells"}]
+      - [{kind: text, value: "The bricks"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_14
+    tier: 1
+    prompt:
+      - {kind: text, value: "A king buys "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " pies and "}
+      - {kind: math, value: "29"}
+      - {kind: text, value: " hens. Which sign fits: "}
+      - {kind: math, value: "27 \\square 29"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_15
+    tier: 2
+    prompt:
+      - {kind: text, value: "A cook collects "}
+      - {kind: math, value: "68"}
+      - {kind: text, value: " lamps and "}
+      - {kind: math, value: "97"}
+      - {kind: text, value: " stones. Which sign fits: "}
+      - {kind: math, value: "68 \\square 97"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_16
+    tier: 0
+    prompt:
+      - {kind: text, value: "The class brings "}
+      - {kind: math, value: "80"}
+      - {kind: text, value: " tents and "}
+      - {kind: math, value: "80"}
+      - {kind: text, value: " ships. Which number is smaller?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: text, value: "The tents"}]
+      - [{kind: text, value: "The ships"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_17
+    tier: 1
+    prompt:
+      - {kind: text, value: "A chef finds "}
+      - {kind: math, value: "34"}
+      - {kind: text, value: " rolls and "}
+      - {kind: math, value: "33"}
+      - {kind: text, value: " pins. Which sign fits: "}
+      - {kind: math, value: "34 \\square 33"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_18
+    tier: 2
+    prompt:
+      - {kind: text, value: "A guard holds "}
+      - {kind: math, value: "53"}
+      - {kind: text, value: " stones and "}
+      - {kind: math, value: "70"}
+      - {kind: text, value: " ships. Which sign fits: "}
+      - {kind: math, value: "53 \\square 70"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_19
+    tier: 0
+    prompt:
+      - {kind: text, value: "The class collects "}
+      - {kind: math, value: "51"}
+      - {kind: text, value: " buns and "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: " kites. Which sign fits: "}
+      - {kind: math, value: "51 \\square 10"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_20
+    tier: 1
+    prompt:
+      - {kind: text, value: "A boy spots "}
+      - {kind: math, value: "56"}
+      - {kind: text, value: " bells and "}
+      - {kind: math, value: "51"}
+      - {kind: text, value: " tickets. Which sign fits: "}
+      - {kind: math, value: "56 \\square 51"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_21
+    tier: 2
+    prompt:
+      - {kind: text, value: "Dad has "}
+      - {kind: math, value: "60"}
+      - {kind: text, value: " nuts and "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " chairs. Which sign fits: "}
+      - {kind: math, value: "60 \\square 27"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_22
+    tier: 0
+    prompt:
+      - {kind: text, value: "A kid sees "}
+      - {kind: math, value: "75"}
+      - {kind: text, value: " coins and "}
+      - {kind: math, value: "75"}
+      - {kind: text, value: " buns. Which sign fits: "}
+      - {kind: math, value: "75 \\square 75"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_23
+    tier: 1
+    prompt:
+      - {kind: text, value: "A baker holds "}
+      - {kind: math, value: "49"}
+      - {kind: text, value: " tents and "}
+      - {kind: math, value: "43"}
+      - {kind: text, value: " coins. Which number is bigger?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The tents"}]
+      - [{kind: text, value: "The coins"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_24
+    tier: 2
+    prompt:
+      - {kind: text, value: "A girl gets "}
+      - {kind: math, value: "18"}
+      - {kind: text, value: " ships and "}
+      - {kind: math, value: "44"}
+      - {kind: text, value: " bricks. Which sign fits: "}
+      - {kind: math, value: "18 \\square 44"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_25
+    tier: 0
+    prompt:
+      - {kind: text, value: "The brown pot holds "}
+      - {kind: math, value: "34"}
+      - {kind: text, value: " lamps. The orange pot holds "}
+      - {kind: math, value: "34"}
+      - {kind: text, value: " lamps. Which one is true?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "34 > 34"}]
+      - [{kind: math, value: "34 < 34"}]
+      - [{kind: math, value: "34 = 34"}]
+  - id: cn100_26
+    tier: 1
+    prompt:
+      - {kind: text, value: "The green crate has "}
+      - {kind: math, value: "77"}
+      - {kind: text, value: " bells. The white crate has "}
+      - {kind: math, value: "72"}
+      - {kind: text, value: " bells. Which sign makes this true: "}
+      - {kind: math, value: "77 \\square 72"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_27
+    tier: 2
+    prompt:
+      - {kind: text, value: "A kid wants "}
+      - {kind: math, value: "76"}
+      - {kind: text, value: " hens and "}
+      - {kind: math, value: "92"}
+      - {kind: text, value: " bells. Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The hens"}]
+      - [{kind: text, value: "The bells"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_28
+    tier: 0
+    prompt:
+      - {kind: text, value: "A pirate sells "}
+      - {kind: math, value: "82"}
+      - {kind: text, value: " pies and "}
+      - {kind: math, value: "33"}
+      - {kind: text, value: " hens. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The pies"}]
+      - [{kind: text, value: "The hens"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_29
+    tier: 1
+    prompt:
+      - {kind: text, value: "A driver finds "}
+      - {kind: math, value: "35"}
+      - {kind: text, value: " kites and "}
+      - {kind: math, value: "37"}
+      - {kind: text, value: " buns. Which number is smaller?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The kites"}]
+      - [{kind: text, value: "The buns"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_30
+    tier: 2
+    prompt:
+      - {kind: text, value: "Mom brings "}
+      - {kind: math, value: "45"}
+      - {kind: text, value: " bricks and "}
+      - {kind: math, value: "71"}
+      - {kind: text, value: " ducks. Which sign fits: "}
+      - {kind: math, value: "45 \\square 71"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_31
+    tier: 0
+    prompt:
+      - {kind: text, value: "The pink box has "}
+      - {kind: math, value: "51"}
+      - {kind: text, value: " pies. The black box has "}
+      - {kind: math, value: "51"}
+      - {kind: text, value: " pies. Which sign makes this true: "}
+      - {kind: math, value: "51 \\square 51"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn100_32
+    tier: 1
+    prompt:
+      - {kind: text, value: "A sailor packs "}
+      - {kind: math, value: "87"}
+      - {kind: text, value: " bricks and "}
+      - {kind: math, value: "81"}
+      - {kind: text, value: " rolls. Which number is bigger?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The bricks"}]
+      - [{kind: text, value: "The rolls"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_33
+    tier: 2
+    prompt:
+      - {kind: text, value: "The class spots "}
+      - {kind: math, value: "37"}
+      - {kind: text, value: " eggs and "}
+      - {kind: math, value: "60"}
+      - {kind: text, value: " ducks. Which number is bigger?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The eggs"}]
+      - [{kind: text, value: "The ducks"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_34
+    tier: 0
+    prompt:
+      - {kind: text, value: "A driver collects "}
+      - {kind: math, value: "32"}
+      - {kind: text, value: " stones and "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " ships. Which number is bigger?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The stones"}]
+      - [{kind: text, value: "The ships"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_35
+    tier: 1
+    prompt:
+      - {kind: text, value: "A bear wants "}
+      - {kind: math, value: "80"}
+      - {kind: text, value: " boats and "}
+      - {kind: math, value: "86"}
+      - {kind: text, value: " tents. Which number is bigger?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The boats"}]
+      - [{kind: text, value: "The tents"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn100_36
+    tier: 2
+    prompt:
+      - {kind: text, value: "A girl picks "}
+      - {kind: math, value: "95"}
+      - {kind: text, value: " ships and "}
+      - {kind: math, value: "86"}
+      - {kind: text, value: " stones. Which number is smaller?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The ships"}]
+      - [{kind: text, value: "The stones"}]
+      - [{kind: text, value: "They are the same"}]

@@ -64,6 +64,14 @@ def help_used(wrong_tries: int, hints_viewed: int) -> int:
     return min(HELP_CAP, max(0, wrong_tries) + max(0, hints_viewed))
 
 
+def scores_as_correct(solved: bool, wrong_tries: int, first_try_counts: bool) -> bool:
+    """Whether a solved problem counts as correct for mastery. Normally any solve does (the
+    tries only lower the score through ``help_used``). Where a wrong try can be followed by a
+    sure right one (a comparison of two numbers), only the first try counts: a solve after a
+    miss is a miss, so guessing cannot raise the rating."""
+    return solved and not (first_try_counts and wrong_tries > 0)
+
+
 def predict(rating: float, difficulty: float) -> float:
     return 1 / (1 + exp(difficulty - rating))
 
