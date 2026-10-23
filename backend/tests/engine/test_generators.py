@@ -1857,3 +1857,4 @@ def test_doubles_hint_step_only_uses_numbers_the_prompt_shows(seed: int, tier: i
     step_numbers = [int(n) for n in re.findall(r"\d+", str(problem.values["step"]))]
     shown = numbers("doubles_near_doubles", seed, tier)
     assert set(step_numbers) <= set(shown)
+    assert step_numbers or tier == 2  # only the halving step names no number

@@ -10,7 +10,7 @@ import pytest
 
 from mathquest.engine.catalog import load_catalog
 from mathquest.engine.content.coverage import skill_coverage
-from mathquest.engine.content.schema import BankItem, WordTemplate
+from mathquest.engine.content.schema import BankItem, WordProblems, WordTemplate
 from mathquest.engine.teaching import (
     render_explanations,
     render_feedback,
@@ -19,6 +19,7 @@ from mathquest.engine.teaching import (
 )
 from mathquest.engine.templates import plain
 from mathquest.engine.types import Prompt, TextPart
+from mathquest.engine.wordproblems import pick_template
 from tests.engine.test_generators import holds, side_value
 
 CONTENT = Path(__file__).resolve().parents[2] / "content"
@@ -307,3 +308,28 @@ def test_bank_prompts_start_without_a_number_and_read_simply() -> None:
         spoken = "".join(p.value if p.kind == "text" else " # " for p in item.prompt)
         for sentence in re.split(r"(?<=[.?!:]) ", spoken):
             assert len(sentence.split()) <= 12, (item.id, sentence)
+
+
+# --- tier-aware template choice ---------------------------------------------------------------
+
+
+def _template(template_id: str, tiers: tuple[int, ...] | None) -> WordTemplate:
+    return WordTemplate(
+        id=template_id,
+        text_template="Sam has {a} cats.",
+        grade_band="1",
+        tiers=tiers,
+    )
+
+
+def test_pick_template_serves_only_the_tier_a_template_names() -> None:
+    word = WordProblems(skill="s", templates=(_template("one", (1,)), _template("any", None)))
+    assert {pick_template(word, seed, 0).id for seed in range(50)} == {"any"}
+    assert {pick_template(word, seed, 1).id for seed in range(50)} == {"one", "any"}
+    # No tier given: only the templates that serve every tier.
+    assert {pick_template(word, seed).id for seed in range(50)} == {"any"}
+
+
+def test_pick_template_falls_back_to_every_template_when_none_serves_the_tier() -> None:
+    word = WordProblems(skill="s", templates=(_template("a", (1,)), _template("b", (2,))))
+    assert {pick_template(word, seed, 0).id for seed in range(50)} == {"a", "b"}
