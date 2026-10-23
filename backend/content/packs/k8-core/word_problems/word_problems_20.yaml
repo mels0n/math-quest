@@ -38,7 +38,7 @@ templates:
     grade_band: 1
     tiers: [0]
   - id: put_together_boxes
-    text_template: "{name} has {a obj} in one box and {b obj} in another box. How many {obj} does {name} have in all?"
+    text_template: "{name} has {a obj} in a box. {name} has {b obj} in a bag. How many {obj} does {name} have in all?"
     slots: {name: names, obj: objects}
     answer_from: expression
     expression: "a + b"

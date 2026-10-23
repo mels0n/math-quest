@@ -193,6 +193,8 @@ def _build_add_ones_tens(rng: random.Random, tier: int) -> Built:
             "a_ones": a % 10,
             "b_tens": b // 10,
             "b_ones": b % 10,
+            # Only a sum whose ones reach ten has a new ten to talk about.
+            "new_ten": "Ten ones make a new ten. " if a % 10 + b % 10 >= 10 else "",
         },
     )
 

@@ -6,7 +6,7 @@
 skill: add_three_numbers
 templates:
   - id: containers_boxes
-    text_template: "The three boxes hold {a obj}, {b obj} and {c obj}. {name} puts them all in one pile. How many {obj} are in the pile?"
+    text_template: "Boxes hold {a obj}, {b obj} and {c obj}. {name} puts them in one pile. How many {obj} are in the pile?"
     slots: {name: names, obj: objects}
     grade_band: 1
   - id: containers_bags
@@ -34,7 +34,7 @@ templates:
     slots: {name: names, unit: length_units}
     grade_band: 1
   - id: days_save
-    text_template: "{name} saves {a unit} on Monday, {b unit} on Tuesday and {c unit} on Wednesday. How much does {name} save in all?"
+    text_template: "{name} saves {a unit} on Monday and {b unit} on Tuesday. On Wednesday, {name} saves {c unit}. How much does {name} save in all?"
     slots: {name: names, unit: money_units}
     grade_band: 1
   - id: friends_party

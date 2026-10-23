@@ -6,4 +6,4 @@ levels:
   - text_template: >-
       Add the ones first: {a_ones} and {b_ones}. Then add the tens: {a_tens} and {b_tens}.
   - text_template: >-
-      The ones make {{= a_ones + b_ones }}. The tens make {{= a_tens + b_tens }}. Ten ones make a new ten. Put it all together. So \({a} + {b} = {{= a + b }}\).
+      The ones make {{= a_ones + b_ones }}. The tens make {{= a_tens + b_tens }}. {new_ten}Put it all together. So \({a} + {b} = {{= a + b }}\).

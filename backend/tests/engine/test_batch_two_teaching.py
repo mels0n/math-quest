@@ -225,6 +225,18 @@ def test_story_answers_follow_the_numbers_told() -> None:
             assert 1 <= expected <= 20
 
 
+@pytest.mark.parametrize("skill_id", ["add_three_numbers", "word_problems_20"])
+def test_rendered_stories_keep_to_twelve_words_a_sentence(skill_id: str) -> None:
+    """The lint counts a template's source, where ``{a obj}`` is one word; a child reads the
+    filled-in sentence, so count that."""
+    source = CATALOG.source(skill_id)
+    for template in templates(skill_id):
+        for seed in range(SEEDS):
+            problem = source.generate(seed, seed % 3, "word", template.id)
+            for sentence in re.split(r"(?<=[.!?])\s+", text_of(problem.prompt)):
+                assert len(sentence.split()) <= 12, (template.id, sentence)
+
+
 # --- the true or false bank -----------------------------------------------------------------
 
 
