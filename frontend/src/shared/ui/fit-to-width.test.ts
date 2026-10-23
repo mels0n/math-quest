@@ -41,6 +41,22 @@ function fakeRun(fullWidth: number): FitRun {
 }
 
 describe('fitRuns', () => {
+	it('steps a run down again when whole-pixel glyph advances leave it too wide', () => {
+		// Width moves in 20 px steps of font scale, so a 2% shrink changes nothing.
+		const style = { fontSize: '' };
+		const scale = () => Number(/^([\d.]+)em$/.exec(style.fontSize)?.[1] ?? 1);
+		const width = () => (scale() > 0.95 ? 243 : 232);
+		const run: FitRun = {
+			style,
+			get scrollWidth() {
+				return width();
+			},
+			getBoundingClientRect: () => ({ width: width() })
+		};
+		fitRuns({ clientWidth: 240, querySelectorAll: () => [run] });
+		expect(run.scrollWidth).toBeLessThanOrEqual(240);
+	});
+
 	it('reads every width before writing any font size', () => {
 		const log: string[] = [];
 		const run = (name: string): FitRun => {
@@ -62,7 +78,8 @@ describe('fitRuns', () => {
 			};
 		};
 		fitRuns({ clientWidth: 300, querySelectorAll: () => [run('a'), run('b')] });
-		expect(log).toEqual(['read a', 'read b', 'write a', 'write b']);
+		// Every width is read before the first size is written; later reads only verify.
+		expect(log.slice(0, 4)).toEqual(['read a', 'read b', 'write a', 'write b']);
 	});
 
 	it('shrinks only the runs wider than the container, and they then fit', () => {
