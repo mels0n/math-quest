@@ -1,0 +1,30 @@
+# Four ways to explain even and odd numbers, plus feedback for each mistake the generator
+# knows. None of them shows the answer.
+skill: even_odd
+approaches:
+  - style: visual
+    body_md: >-
+      Draw dots in two columns, one dot at a time. If every dot has a partner, the number is even. If one dot has no partner, the number is odd.
+  - style: steps
+    body_md: |-
+      1. Look at the ones digit of the number.
+      2. Is it zero, two, four, six or eight? Then the number is even.
+      3. Is it one, three, five, seven or nine? Then the number is odd.
+      4. Check what the question asks for.
+  - style: story
+    body_md: >-
+      Kids line up in pairs to walk to the park. If a kid has no partner, the group is odd. If every kid has a partner, the group is even.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Check the ones digit of each number. Ask if it is even or odd. Then check what the question asks for.
+misconceptions:
+  picked_the_other_kind: >-
+    It looks like you picked the other kind of number. Check the ones digit. Does it make pairs with none left over?
+  gave_the_other_kind: >-
+    It looks like your number is the other kind. Check its ones digit.
+  skipped_one: >-
+    It looks like you went one number too far. Say the numbers in order. Stop at the first one that fits.
+  counted_the_pairs: >-
+    It looks like you counted the pairs. The question asks how many are left over.
+  mixed_up_left_over: >-
+    It looks like the left over count got mixed up. Make pairs and see if anything has no partner.

@@ -1,0 +1,26 @@
+# Four ways to explain a story problem with bigger numbers, plus feedback for each mistake the
+# generator knows. None of them says whether to add or take away, and none shows the answer.
+skill: word_problems_100
+approaches:
+  - style: visual
+    body_md: >-
+      Sketch the story with tens and ones. Draw {told1} first, then {told2}. Put a ring around what the question asks about. Count what is in the ring.
+  - style: steps
+    body_md: |-
+      1. Read the whole story once.
+      2. Circle the two numbers.
+      3. Decide what is happening to the group.
+      4. Say what the question wants.
+  - style: story
+    body_md: >-
+      Act the story out with a friend. Who has something at the start? What changes? What does the question want you to find?
+  - style: worked
+    body_md: >-
+      Let us try yours together. Stack tens and ones blocks to show {told1}. Then show what the story does with {told2}. Count the blocks that answer the question.
+misconceptions:
+  used_the_other_operation: >-
+    It looks like the numbers went together the other way. Act out the story. Does the group grow, or get smaller?
+  gave_the_first_number: >-
+    It looks like you gave a number from the story. The answer is a new number. Work out what the question asks.
+  gave_the_second_number: >-
+    It looks like you gave the other number from the story. The question asks for a number you do not see.

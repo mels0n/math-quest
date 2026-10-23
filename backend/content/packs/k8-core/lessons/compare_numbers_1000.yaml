@@ -1,0 +1,26 @@
+# Lesson for Compare to 1000. The examples are told in words with numbers the skill's bank
+# does not use, so a replayed lesson never shows a question the skill asks.
+skill: compare_numbers_1000
+screens:
+  - title: Start with the hundreds
+    body_md: >-
+      Look at the hundreds digit first. The number with more hundreds is bigger. Small tens and ones do not change that.
+    visual:
+      kind: base_ten
+      params: {hundreds: 3, tens: 8, ones: 6}
+  - title: If the hundreds match
+    body_md: >-
+      Look at the tens digit next. If the tens match, look at the ones. Stop at the first place that is different.
+  - title: A number with four digits
+    body_md: >-
+      A number with more digits is bigger. The number 1000 has four digits. Any number with three digits is smaller.
+worked_example:
+  prompt:
+    - {kind: text, value: "A girl has 724 cards. A boy has 718 cards. Who has more cards?"}
+  steps:
+    - Both numbers have 7 hundreds.
+    - Look at the tens. 724 has 2 tens. 718 has 1 ten.
+    - 2 tens is more than 1 ten.
+    - So the girl has more cards.
+try_it:
+  tier: 0

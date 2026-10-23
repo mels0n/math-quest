@@ -149,6 +149,16 @@
       }
     ]
   },
+  "clock_hours": {
+    "tier": 2,
+    "seed": 1,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The short hand is just past 10. The long hand points to 6. How many minutes after 10 o'clock is it?"
+      }
+    ]
+  },
   "compare_groups": {
     "tier": 1,
     "seed": 5,
@@ -238,6 +248,58 @@
       {
         "kind": "math",
         "value": "27 \\square 27"
+      }
+    ]
+  },
+  "compare_numbers_1000": {
+    "tier": 2,
+    "seed": 9,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Which number is smaller, "
+      },
+      {
+        "kind": "math",
+        "value": "978"
+      },
+      {
+        "kind": "text",
+        "value": " or "
+      },
+      {
+        "kind": "math",
+        "value": "1000"
+      },
+      {
+        "kind": "text",
+        "value": "?"
+      }
+    ]
+  },
+  "compare_numbers_1000-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The red book has "
+      },
+      {
+        "kind": "math",
+        "value": "274"
+      },
+      {
+        "kind": "text",
+        "value": " pages. The blue book has "
+      },
+      {
+        "kind": "math",
+        "value": "247"
+      },
+      {
+        "kind": "text",
+        "value": " pages. Which book has fewer pages?"
       }
     ]
   },
@@ -473,6 +535,34 @@
       }
     ]
   },
+  "even_odd": {
+    "tier": 0,
+    "seed": 30,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Omar has 11 shells. Omar puts them in pairs. How many are left over?"
+      }
+    ]
+  },
+  "even_odd-bank": {
+    "tier": 0,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A girl counts "
+      },
+      {
+        "kind": "math",
+        "value": "607"
+      },
+      {
+        "kind": "text",
+        "value": " beads. She makes pairs. How many beads have no partner?"
+      }
+    ]
+  },
   "fact_families_20": {
     "tier": 1,
     "seed": 7,
@@ -628,6 +718,26 @@
       {
         "kind": "text",
         "value": "?"
+      }
+    ]
+  },
+  "read_data_graphs": {
+    "tier": 1,
+    "seed": 116,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Kids chose a snack. Popcorn: 3. Crackers: 2. Carrots: 11. How many more kids are in the biggest group than the smallest?"
+      }
+    ]
+  },
+  "read_data_graphs-word": {
+    "tier": 1,
+    "seed": 1,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A zoo counts how many came each day. Monday: 8. Tuesday: 12. Wednesday: 11. How many more came on Tuesday than Wednesday?"
       }
     ]
   },
@@ -796,6 +906,26 @@
       {
         "kind": "math",
         "value": "? + 10 = 100"
+      }
+    ]
+  },
+  "word_problems_100": {
+    "tier": 2,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Omar has some stickers. Omar gives 14 to Zoe. Now Omar has 86. How many stickers did Omar have at first?"
+      }
+    ]
+  },
+  "word_problems_100-word": {
+    "tier": 0,
+    "seed": 8,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Diego packs a bag of puzzle pieces. Diego takes out 21. Now 38 are in the bag. How many puzzle pieces were in the bag at first?"
       }
     ]
   },

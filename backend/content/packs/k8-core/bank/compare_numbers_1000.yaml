@@ -1,0 +1,412 @@
+# Bank items for Compare to 1000: the signs, and numbers that are the same. About one item
+# in four has two equal numbers, so always choosing a side is no strategy. Tier 0 pairs have
+# hundreds digits two or more apart, tier 1 pairs share the hundreds digit, and tier 2 pairs
+# are the tricky ones: the smaller number has the bigger last two digits, a zero in the tens
+# place, or a 1000.
+skill: compare_numbers_1000
+items:
+  - id: cn1000_01
+    tier: 0
+    prompt:
+      - {kind: text, value: "Which sign makes this true: "}
+      - {kind: math, value: "472 \\square 815"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_02
+    tier: 0
+    prompt:
+      - {kind: text, value: "A bag has "}
+      - {kind: math, value: "640"}
+      - {kind: text, value: " beads. A box has "}
+      - {kind: math, value: "230"}
+      - {kind: text, value: " beads. Which holds more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The bag"}]
+      - [{kind: text, value: "The box"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_03
+    tier: 0
+    prompt:
+      - {kind: text, value: "Pick the true sentence."}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "905 < 340"}]
+      - [{kind: math, value: "905 = 340"}]
+      - [{kind: math, value: "905 > 340"}]
+  - id: cn1000_04
+    tier: 0
+    prompt:
+      - {kind: text, value: "A girl scores "}
+      - {kind: math, value: "318"}
+      - {kind: text, value: " points. A boy scores "}
+      - {kind: math, value: "705"}
+      - {kind: text, value: " points. Who scores fewer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The girl"}]
+      - [{kind: text, value: "The boy"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_05
+    tier: 0
+    prompt:
+      - {kind: text, value: "Read this: "}
+      - {kind: math, value: "560 \\square 560"}
+      - {kind: text, value: ". Which sign fits?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_06
+    tier: 0
+    prompt:
+      - {kind: text, value: "A farm grows "}
+      - {kind: math, value: "199"}
+      - {kind: text, value: " apples and a garden grows "}
+      - {kind: math, value: "620"}
+      - {kind: text, value: " apples. Which place grows fewer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The farm"}]
+      - [{kind: text, value: "The garden"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_07
+    tier: 0
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "850"}
+      - {kind: text, value: " greater than, less than or equal to "}
+      - {kind: math, value: "310"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Less than"}]
+      - [{kind: text, value: "Greater than"}]
+      - [{kind: text, value: "Equal to"}]
+  - id: cn1000_08
+    tier: 0
+    prompt:
+      - {kind: text, value: "Two jars hold "}
+      - {kind: math, value: "420"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "420"}
+      - {kind: text, value: " marbles. Are the jars equal?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes, equal"}]
+      - [{kind: text, value: "No, the first is bigger"}]
+      - [{kind: text, value: "No, the second is bigger"}]
+  - id: cn1000_09
+    tier: 0
+    prompt:
+      - {kind: text, value: "Three number sentences use "}
+      - {kind: math, value: "260"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "620"}
+      - {kind: text, value: ". Which one is true?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "260 > 620"}]
+      - [{kind: math, value: "260 < 620"}]
+      - [{kind: math, value: "260 = 620"}]
+  - id: cn1000_10
+    tier: 0
+    prompt:
+      - {kind: text, value: "A train goes "}
+      - {kind: math, value: "730"}
+      - {kind: text, value: " miles. A bus goes "}
+      - {kind: math, value: "150"}
+      - {kind: text, value: " miles. Which trip is longer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The train"}]
+      - [{kind: text, value: "The bus"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_11
+    tier: 0
+    prompt:
+      - {kind: text, value: "Look at "}
+      - {kind: math, value: "283"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "283"}
+      - {kind: text, value: ". What do you find?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "They are equal"}]
+      - [{kind: text, value: "The first is bigger"}]
+      - [{kind: text, value: "The second is bigger"}]
+  - id: cn1000_12
+    tier: 1
+    prompt:
+      - {kind: text, value: "Fill in the sign: "}
+      - {kind: math, value: "543 \\square 547"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_13
+    tier: 1
+    prompt:
+      - {kind: text, value: "A boy has "}
+      - {kind: math, value: "615"}
+      - {kind: text, value: " stamps. A girl has "}
+      - {kind: math, value: "651"}
+      - {kind: text, value: " stamps. Who has more?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The boy"}]
+      - [{kind: text, value: "The girl"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_14
+    tier: 1
+    prompt:
+      - {kind: text, value: "A girl writes "}
+      - {kind: math, value: "382"}
+      - {kind: text, value: ". Then she writes "}
+      - {kind: math, value: "382"}
+      - {kind: text, value: " again. How do the two numbers compare?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The first is greater"}]
+      - [{kind: text, value: "They are equal"}]
+      - [{kind: text, value: "The second is greater"}]
+  - id: cn1000_15
+    tier: 1
+    prompt:
+      - {kind: text, value: "One town has "}
+      - {kind: math, value: "826"}
+      - {kind: text, value: " people. Another has "}
+      - {kind: math, value: "862"}
+      - {kind: text, value: " people. Which town has fewer people?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The first town"}]
+      - [{kind: text, value: "The second town"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_16
+    tier: 1
+    prompt:
+      - {kind: text, value: "How does "}
+      - {kind: math, value: "907"}
+      - {kind: text, value: " compare with "}
+      - {kind: math, value: "970"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The first is greater"}]
+      - [{kind: text, value: "The first is less"}]
+      - [{kind: text, value: "They are equal"}]
+  - id: cn1000_17
+    tier: 1
+    prompt:
+      - {kind: text, value: "One card shows "}
+      - {kind: math, value: "456"}
+      - {kind: text, value: ". Another card shows "}
+      - {kind: math, value: "456"}
+      - {kind: text, value: ". Which sign fits between them?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_18
+    tier: 1
+    prompt:
+      - {kind: text, value: "The red book has "}
+      - {kind: math, value: "274"}
+      - {kind: text, value: " pages. The blue book has "}
+      - {kind: math, value: "247"}
+      - {kind: text, value: " pages. Which book has fewer pages?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The red book"}]
+      - [{kind: text, value: "The blue book"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_19
+    tier: 1
+    prompt:
+      - {kind: text, value: "Which sign goes in the box: "}
+      - {kind: math, value: "689 \\square 698"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_20
+    tier: 1
+    prompt:
+      - {kind: text, value: "The first shelf holds "}
+      - {kind: math, value: "510"}
+      - {kind: text, value: " books. The second shelf holds "}
+      - {kind: math, value: "501"}
+      - {kind: text, value: " books. Which holds more?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The first shelf"}]
+      - [{kind: text, value: "The second shelf"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_21
+    tier: 1
+    prompt:
+      - {kind: text, value: "Two bags hold "}
+      - {kind: math, value: "333"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "337"}
+      - {kind: text, value: " marbles. Which bag holds fewer?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The first bag"}]
+      - [{kind: text, value: "The second bag"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_22
+    tier: 1
+    prompt:
+      - {kind: text, value: "A bakery makes "}
+      - {kind: math, value: "744"}
+      - {kind: text, value: " rolls on Monday and "}
+      - {kind: math, value: "744"}
+      - {kind: text, value: " on Tuesday. Is it the same each day?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes, equal"}]
+      - [{kind: text, value: "No, Monday is bigger"}]
+      - [{kind: text, value: "No, Tuesday is bigger"}]
+  - id: cn1000_23
+    tier: 2
+    prompt:
+      - {kind: text, value: "Which sign fits: "}
+      - {kind: math, value: "289 \\square 301"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_24
+    tier: 2
+    prompt:
+      - {kind: text, value: "A path is "}
+      - {kind: math, value: "405"}
+      - {kind: text, value: " steps. Another path is "}
+      - {kind: math, value: "450"}
+      - {kind: text, value: " steps. Which path is longer?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The first path"}]
+      - [{kind: text, value: "The second path"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_25
+    tier: 2
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "999"}
+      - {kind: text, value: " less than, equal to or more than "}
+      - {kind: math, value: "1000"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "More than"}]
+      - [{kind: text, value: "Less than"}]
+      - [{kind: text, value: "Equal to"}]
+  - id: cn1000_26
+    tier: 2
+    prompt:
+      - {kind: text, value: "Put a sign in the box: "}
+      - {kind: math, value: "478 \\square 503"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_27
+    tier: 2
+    prompt:
+      - {kind: text, value: "A tank holds "}
+      - {kind: math, value: "306"}
+      - {kind: text, value: " cups. Another holds "}
+      - {kind: math, value: "360"}
+      - {kind: text, value: " cups. Which holds less?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "The first tank"}]
+      - [{kind: text, value: "The second tank"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_28
+    tier: 2
+    prompt:
+      - {kind: text, value: "Choose the sign that makes "}
+      - {kind: math, value: "598"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "603"}
+      - {kind: text, value: " a true sentence."}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_29
+    tier: 2
+    prompt:
+      - {kind: text, value: "The first number is "}
+      - {kind: math, value: "1000"}
+      - {kind: text, value: ". The second number is "}
+      - {kind: math, value: "1000"}
+      - {kind: text, value: ". Which sign fits between them?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_30
+    tier: 2
+    prompt:
+      - {kind: text, value: "A girl has "}
+      - {kind: math, value: "897"}
+      - {kind: text, value: " coins. A boy has "}
+      - {kind: math, value: "901"}
+      - {kind: text, value: " coins. Who has more?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "The girl"}]
+      - [{kind: text, value: "The boy"}]
+      - [{kind: text, value: "They are the same"}]
+  - id: cn1000_31
+    tier: 2
+    prompt:
+      - {kind: text, value: "Count up from zero. Does "}
+      - {kind: math, value: "470"}
+      - {kind: text, value: " come before or after "}
+      - {kind: math, value: "407"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "After"}]
+      - [{kind: text, value: "Before"}]
+      - [{kind: text, value: "At the same place"}]
+  - id: cn1000_32
+    tier: 2
+    prompt:
+      - {kind: text, value: "Look at both numbers closely: "}
+      - {kind: math, value: "190 \\square 201"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: ">"}]
+      - [{kind: math, value: "<"}]
+      - [{kind: math, value: "="}]
+  - id: cn1000_33
+    tier: 2
+    prompt:
+      - {kind: text, value: "One game scores "}
+      - {kind: math, value: "502"}
+      - {kind: text, value: ". Another game scores "}
+      - {kind: math, value: "502"}
+      - {kind: text, value: ". Do the scores match?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes, equal"}]
+      - [{kind: text, value: "No, the first is bigger"}]
+      - [{kind: text, value: "No, the second is bigger"}]

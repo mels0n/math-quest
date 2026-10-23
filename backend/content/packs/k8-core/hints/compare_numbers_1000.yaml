@@ -1,0 +1,9 @@
+# Three hints for Compare to 1000: a nudge, the next step, then the whole answer worked out.
+skill: compare_numbers_1000
+levels:
+  - text_template: >-
+      Read the question again. Does it ask for the {which} number?
+  - text_template: >-
+      {step}
+  - text_template: >-
+      {worked} So the answer is {answer}.
