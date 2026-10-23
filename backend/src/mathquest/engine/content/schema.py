@@ -232,6 +232,8 @@ class WordTemplate(_Model):
     answer_from: Literal["generator_answer", "expression"] = "generator_answer"
     expression: Expression | None = None
     grade_band: GradeBand
+    tiers: Annotated[tuple[int, ...], Field(min_length=1)] | None = None
+    """The tiers this template serves; unset, every tier."""
 
     @model_validator(mode="after")
     def _expression_when_needed(self) -> Self:

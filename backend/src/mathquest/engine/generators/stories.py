@@ -2,10 +2,11 @@
 """Story problems within 20 (1.OA.A.1): adding to, taking from, putting together, taking
 apart, comparing, and stories where the change or the start is the unknown.
 
-The tiers are the shapes of the story. ``a`` and ``b`` are the two numbers the story tells
-(``b`` is less than ``a``, and ``a + b`` is at most 20, so the same numbers suit every shape,
-whether the answer is their sum or their difference). Word templates retell the numbers with
-their own answer, so the shape is theirs to choose.
+The tiers are the shapes of the story. A story that adds tells ``a`` and ``b`` (``b`` is less
+than ``a``, and ``a + b`` is at most 20). A story that takes away tells ``m`` and ``n`` (``n`` is
+less than ``m``, and ``m`` is at most 20), so take-aways can cross ten, as 15 - 8 does. Word
+templates retell one of the two pairs with their own answer, so the shape is theirs to choose.
+``told1`` and ``told2`` are the pair the bare story tells, for hints.
 """
 
 import random
@@ -42,6 +43,8 @@ _SHAPES_BY_TIER = (
     ("put_together", "take_apart", "compare_more", "compare_fewer"),
     ("change_add", "change_take", "start_add", "start_take"),
 )
+# The shapes whose answer is the sum of the two numbers told; the rest take one from the other.
+_ADDS = frozenset({"add_to", "put_together", "start_take"})
 
 
 def _story(shape: str, n: str, f: str, things: str, a: int, b: int) -> tuple[str, int, str]:
@@ -119,22 +122,34 @@ def _build_story(rng: random.Random, tier: int) -> Built:
     total = rng.randint(3, 20)
     b = rng.randint(1, (total - 1) // 2)
     a = total - b
+    m = rng.randint(3, 20)
+    n = rng.randint(1, m - 1)
     shape = rng.choice(_SHAPES_BY_TIER[tier])
-    n, f = rng.sample(_NAMES, 2)
+    told_a, told_b = (a, b) if shape in _ADDS else (m, n)
+    who, friend = rng.sample(_NAMES, 2)
     things = rng.choice(_THINGS)
-    story, answer, worked = _story(shape, n, f, things, a, b)
-    other = a - b if answer == a + b else a + b
+    story, answer, worked = _story(shape, who, friend, things, told_a, told_b)
+    other = told_a - told_b if shape in _ADDS else told_a + told_b
     return Built(
         prompt=(text(story),),
         answer=_Int(answer),
         wrong=named_wrongs(
             [
                 ("used_the_other_operation", other),
-                ("gave_the_first_number", a),
-                ("gave_the_second_number", b),
+                ("gave_the_first_number", told_a),
+                ("gave_the_second_number", told_b),
             ]
         ),
-        values={"a": a, "b": b, "answer": answer, "worked": worked},
+        values={
+            "a": a,
+            "b": b,
+            "told1": told_a,
+            "told2": told_b,
+            "m": m,
+            "n": n,
+            "answer": answer,
+            "worked": worked,
+        },
     )
 
 

@@ -129,16 +129,21 @@ def test_three_number_stories_use_the_generator_answer_and_show_every_number() -
 
 EXPRESSIONS = {
     "add_to": "a + b",
-    "take_from": "a - b",
+    "take_from": "m - n",
     "put_together": "a + b",
-    "take_apart": "a - b",
-    "compare_more": "a - b",
-    "compare_fewer": "a - b",
-    "change_add": "a - b",
-    "change_take": "a - b",
-    "start_add": "a - b",
+    "take_apart": "m - n",
+    "compare_more": "m - n",
+    "compare_fewer": "m - n",
+    "change_add": "m - n",
+    "change_take": "m - n",
+    "start_add": "m - n",
     "start_take": "a + b",
 }
+WORD_SHAPES_BY_TIER = (
+    ("add_to", "take_from"),
+    ("put_together", "take_apart", "compare_more", "compare_fewer"),
+    ("change_add", "change_take", "start_add", "start_take"),
+)
 KEYWORDS = {
     "add_to": ("more",),
     "take_from": ("take", "leave", "left", "give", "gives"),
@@ -186,15 +191,36 @@ def test_stories_agree_with_one_and_show_both_numbers() -> None:
                     assert int(problem.answer) >= 1
 
 
+def test_story_templates_serve_the_tier_of_their_shape() -> None:
+    tiers_of = {
+        "add_to": 0,
+        "take_from": 0,
+        "put_together": 1,
+        "take_apart": 1,
+        "compare_more": 1,
+        "compare_fewer": 1,
+    }
+    for template in templates("word_problems_20"):
+        expected = tiers_of.get(story_shape(template.id), 2)
+        assert template.tiers == (expected,), template.id
+    source = CATALOG.source("word_problems_20")
+    for tier in range(3):
+        for seed in range(200):
+            problem = source.generate(seed, tier, "word")
+            assert problem.template_id is not None
+            assert story_shape(problem.template_id) in WORD_SHAPES_BY_TIER[tier]
+
+
 def test_story_answers_follow_the_numbers_told() -> None:
     source = CATALOG.source("word_problems_20")
     for template in templates("word_problems_20"):
         for seed in range(80):
             problem = source.generate(seed, seed % 3, "word", template.id)
-            a, b = int(problem.values["a"]), int(problem.values["b"])
+            adds = EXPRESSIONS[story_shape(template.id)] == "a + b"
+            a, b = (int(problem.values[k]) for k in (("a", "b") if adds else ("m", "n")))
             shown = [int(n) for n in re.findall(r"\d+", text_of(problem.prompt))]
             assert sorted(shown) == sorted([a, b]), (template.id, shown, a, b)
-            expected = a + b if EXPRESSIONS[story_shape(template.id)] == "a + b" else a - b
+            expected = a + b if adds else a - b
             assert problem.answer == expected
             assert 1 <= expected <= 20
 

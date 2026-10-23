@@ -4,7 +4,7 @@ skill: word_problems_20
 approaches:
   - style: visual
     body_md: >-
-      Draw the story. Show {a} with dots and {b} with dots. Circle what the question asks about. Count the dots in the circle.
+      Draw the story. Show {told1} with dots and {told2} with dots. Circle what the question asks about. Count the dots in the circle.
   - style: steps
     body_md: |-
       1. Read the story two times.
@@ -16,7 +16,7 @@ approaches:
       Tell the story to a friend in your own words. What happens first? What happens next? What does the question ask?
   - style: worked
     body_md: >-
-      Let us do yours together. Use blocks. Show {a} blocks. Now act out the story with {b}. Count the blocks you need to answer.
+      Let us do yours together. Use blocks. Show {told1} blocks. Now act out the story with {told2}. Count the blocks you need to answer.
 misconceptions:
   used_the_other_operation: >-
     It looks like the numbers went together the other way. Act out the story. Does the group grow, or get smaller?

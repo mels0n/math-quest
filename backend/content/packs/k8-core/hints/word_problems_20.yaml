@@ -5,6 +5,6 @@ levels:
   - text_template: >-
       Read the story slowly. Picture it, or act it out.
   - text_template: >-
-      Use blocks or a picture to show the story. The numbers in the story are {a} and {b}.
+      Use blocks or a picture to show the story. The numbers in the story are {told1} and {told2}.
   - text_template: >-
       {worked} So the answer is {answer}.

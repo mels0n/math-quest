@@ -2,8 +2,8 @@
 skill: fact_families_20
 levels:
   - text_template: >-
-      A fact family uses the same three numbers. Find them in the question.
+      A fact family uses the same three numbers. Find the numbers in the question.
   - text_template: >-
-      The family is {lo}, {hi} and {total}. The two small numbers make the big one.
+      The sentence has {s1} and {s2}. The number you want is {role}.
   - text_template: >-
-      {lo} and {hi} make {total}. Take {lo} away from {total}, and {hi} is left. So the answer is {answer}.
+      The family is {lo}, {hi} and {total}. {lo} and {hi} make {total}. So the number you want is {answer}.

@@ -133,7 +133,7 @@ _THREES = (
     ("ducks", "frogs", "fish", "animals"),
     ("apples", "pears", "plums", "fruits"),
     ("balls", "kites", "drums", "toys"),
-    ("roses", "tulips", "daisies", "flowers"),
+    ("roses", "tulips", "violets", "flowers"),
     ("cats", "dogs", "birds", "pets"),
     ("cups", "plates", "spoons", "things"),
 )
@@ -225,8 +225,9 @@ def _build_missing_number(rng: random.Random, tier: int) -> Built:
 def _build_fact_family(rng: random.Random, tier: int) -> Built:
     """Three numbers ``x``, ``y`` and ``z = x + y`` (x and y differ). Tier 0 gives an addition
     fact and asks the same sum the other way round, tier 1 asks the related subtraction (or
-    the addition that goes with a subtraction fact), tier 2 gives only the three numbers and
-    a sentence to finish. The answer is always one of the three numbers the prompt shows."""
+    the addition that goes with a subtraction fact), tier 2 gives only a sentence to finish.
+    Tiers 0 and 1 show the whole family, so their answer is one of the
+    numbers on the page; tier 2 shows only the two numbers of its sentence."""
     z = rng.randint(3, 20)
     x = rng.choice([n for n in range(1, z) if 2 * n != z])
     y = z - x
@@ -252,6 +253,7 @@ def _build_fact_family(rng: random.Random, tier: int) -> Built:
             known, ask = f"{z} - {take} = {left}", f"{take} + {left}"
         prompt = (text("You know that "), math(known), text(". What is "), math(ask), text("?"))
     else:
+        # Only the two numbers of the sentence are shown, so the answer is not on the page.
         sentence, answer, shown = rng.choice(
             (
                 (f"{x} + {y} = ?", z, (x, y)),
@@ -262,12 +264,20 @@ def _build_fact_family(rng: random.Random, tier: int) -> Built:
                 (f"{z} - ? = {y}", x, (z, y)),
             )
         )
-        prompt = (text(f"Use {lo}, {hi} and {z}. Finish it: "), math(sentence))
+        prompt = (text("Finish the fact family. "), math(sentence))
     return Built(
         prompt=prompt,
         answer=_Int(answer),
         wrong=named_wrongs(_shown_wrongs(*shown)),
-        values={"lo": lo, "hi": hi, "total": z, "answer": answer},
+        values={
+            "lo": lo,
+            "hi": hi,
+            "total": z,
+            "answer": answer,
+            "s1": shown[0],
+            "s2": shown[1],
+            "role": "the whole, the biggest of the three" if answer == z else "a part of the whole",
+        },
     )
 
 

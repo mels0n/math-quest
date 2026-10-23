@@ -24,9 +24,11 @@ from mathquest.engine.types import Problem
 NUMBER_SLOT_RANGE = (2, 9)
 
 
-def pick_template(word_problems: WordProblems, seed: int) -> WordTemplate:
-    """The template a seed selects."""
-    return random.Random(f"{seed}:word").choice(word_problems.templates)
+def pick_template(word_problems: WordProblems, seed: int, tier: int | None = None) -> WordTemplate:
+    """The template a seed selects. A template that names its tiers serves only those, so a
+    tier-0 problem is never retold as a tier-2 story; with none left, any template serves."""
+    pool = [t for t in word_problems.templates if t.tiers is None or tier in t.tiers]
+    return random.Random(f"{seed}:word").choice(pool or word_problems.templates)
 
 
 def find_template(word_problems: WordProblems, template_id: str) -> WordTemplate | None:

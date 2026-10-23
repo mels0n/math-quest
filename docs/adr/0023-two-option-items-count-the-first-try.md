@@ -17,7 +17,9 @@ The second batch of skills meets the same trap in two more places:
 - "Is this number sentence true?" (1.OA.D.7) has exactly two answers, true and false. A
   bank item with three choices would need a made-up third one.
 - A fact family question ("You know that 4 + 9 = 13. What is 13 - 4?") has an answer that
-  is always one of the numbers the prompt shows, so a few guesses reach it.
+  is one of the numbers the prompt shows (tiers 0 and 1 show the whole family), so a few
+  guesses reach it. Tier 2 shows only the two numbers of the sentence, so its answer is not
+  on the page, but it keeps the same scoring so a child's rating does not depend on the tier.
 
 The skill for true and false sentences was also planned as a `choice` keypad skill. A
 lesson's try-it is a generated problem answered by typing
@@ -33,8 +35,9 @@ buttons alone cannot have a try-it that the child can answer.
   more choices keeps the plain rule. The test is `first_try_only` in the mastery module,
   which the play service applies to the problem it regenerated, so it covers every bank
   item that has two choices and nothing else that has choices.
-- **A generator whose answer is always one of the numbers its prompt shows is flagged
-  `first_try_counts`.** The fact family generator is, as the comparing generators are.
+- **A generator whose answer is, in most of its tiers, one of the numbers its prompt shows
+  is flagged `first_try_counts`.** The fact family generator is, as the comparing
+  generators are.
 - **Equal or Not is a typed skill with a bank.** Its generator asks the learner to make
   both sides of a sentence equal (`4 + 3 = 5 + ?`), which a lesson's try-it can ask. Its
   bank holds the true or false items, tagged by tier, with two choices each and about half

@@ -631,8 +631,8 @@ PINNED_PROBLEMS = (
     ("fact_families_20", 0, 42, "You know that 1 + 5 = 6. What is 5 + 1?", 6),
     ("fact_families_20", 1, 7, "You know that 3 + 10 = 13. What is 13 - 10?", 3),
     ("fact_families_20", 1, 42, "You know that 1 + 5 = 6. What is 6 - 5?", 1),
-    ("fact_families_20", 2, 7, "Use 3, 10 and 13. Finish it: 13 - 10 = ?", 3),
-    ("fact_families_20", 2, 42, "Use 1, 5 and 6. Finish it: 6 - ? = 5", 1),
+    ("fact_families_20", 2, 7, "Finish the fact family. 13 - 10 = ?", 3),
+    ("fact_families_20", 2, 42, "Finish the fact family. 6 - ? = 5", 1),
     ("doubles_near_doubles", 0, 7, "6 + 6 = ?", 12),
     ("doubles_near_doubles", 0, 42, "2 + 2 = ?", 4),
     ("doubles_near_doubles", 1, 7, "What is 6 plus 7?", 13),
@@ -673,45 +673,43 @@ PINNED_PROBLEMS = (
         "word_problems_20",
         0,
         7,
-        "Ana has 11 cats. Ana gives 2 to Mia. How many cats does Ana have left?",
-        9,
+        "Leo has 11 dogs. Nora gives Leo 2 more. How many dogs does Leo have now?",
+        13,
     ),
     (
         "word_problems_20",
         0,
         42,
-        "Sam has 5 birds. Sam gives 1 to Kai. How many birds does Sam have left?",
-        4,
+        "Ava has 5 cats. Leo gives Ava 1 more. How many cats does Ava have now?",
+        6,
     ),
     (
         "word_problems_20",
         1,
         7,
-        "Ana has 11 cats. Mia has 2. How many fewer cats does Mia have?",
-        9,
-    ),
-    (
-        "word_problems_20",
-        1,
-        42,
-        "Sam has 5 birds. Kai has 1. How many more birds does Sam have?",
-        4,
-    ),
-    (
-        "word_problems_20",
-        2,
-        7,
-        "Ana has some cats. Ana gives 2 to Mia. Now Ana has 11. "
-        "How many cats did Ana have at first?",
+        "Leo has 11 red dogs and 2 blue dogs. How many dogs does Leo have in all?",
         13,
     ),
     (
         "word_problems_20",
+        1,
+        42,
+        "Ava has 11 cats. 4 of them are red. The rest are blue. How many are blue?",
+        7,
+    ),
+    (
+        "word_problems_20",
+        2,
+        7,
+        "Leo has 11 dogs. Then Leo gets some more. Now Leo has 15. How many did Leo get?",
+        4,
+    ),
+    (
+        "word_problems_20",
         2,
         42,
-        "Sam has some birds. Kai gives Sam 1 more. Now Sam has 5. "
-        "How many birds did Sam have at first?",
-        4,
+        "Ava has 11 cats. Ava gives some away. Now Ava has 4. How many did Ava give away?",
+        7,
     ),
 )
 
@@ -1440,15 +1438,20 @@ def test_missing_number_tiers_use_the_forms_they_name() -> None:
 
 @prop
 @given(seed=seeds, tier=tiers)
-def test_fact_family_prompts_use_three_numbers_and_the_answer_is_one_of_them(
+def test_fact_family_prompts_show_the_family_until_tier_two_hides_the_answer(
     seed: int, tier: int
 ) -> None:
     problem = get_generator("fact_families_20").generate(seed, tier)
     lo, hi, total = (int(problem.values[k]) for k in ("lo", "hi", "total"))
     assert 1 <= lo < hi and lo + hi == total <= 20
     answer = int(problem.answer)
-    assert set(numbers("fact_families_20", seed, tier)) == {lo, hi, total}
     assert answer in (lo, hi, total) and problem.values["answer"] == answer
+    if tier < 2:
+        assert set(numbers("fact_families_20", seed, tier)) == {lo, hi, total}
+    else:  # the sentence shows two numbers of the family, never the one it asks for
+        shown = set(numbers("fact_families_20", seed, tier))
+        assert shown == {lo, hi, total} - {answer}
+        assert {problem.values["s1"], problem.values["s2"]} == shown
     parts = maths("fact_families_20", seed, tier)
     if tier < 2:
         assert prompt("fact_families_20", seed, tier).startswith("You know that ")
@@ -1730,22 +1733,35 @@ def story_shape(text: str) -> tuple[str, str]:
 def test_word_problem_shapes_and_answers_by_tier(seed: int, tier: int) -> None:
     problem = get_generator("word_problems_20").generate(seed, tier)
     a, b = int(problem.values["a"]), int(problem.values["b"])
+    m, n = int(problem.values["m"]), int(problem.values["n"])
     assert 1 <= b < a and a + b <= 20
+    assert 1 <= n < m <= 20 and m >= 3
     text = prompt("word_problems_20", seed, tier)
     story, op = story_shape(text)
     assert story in WORD_SHAPES[tier]
-    answer = a + b if op == "add" else a - b
+    told1, told2 = (a, b) if op == "add" else (m, n)
+    answer = told1 + told2 if op == "add" else told1 - told2
+    assert (problem.values["told1"], problem.values["told2"]) == (told1, told2)
     assert problem.answer == answer == problem.values["answer"]
-    assert set(numbers("word_problems_20", seed, tier)) == {a, b}
+    assert set(numbers("word_problems_20", seed, tier)) == {told1, told2}
     assert str(answer) in str(problem.values["worked"])
-    other = a - b if op == "add" else a + b
+    other = told1 - told2 if op == "add" else told1 + told2
     rules = {
         "used_the_other_operation": other,
-        "gave_the_first_number": a,
-        "gave_the_second_number": b,
+        "gave_the_first_number": told1,
+        "gave_the_second_number": told2,
     }
     assert wrong_answers("word_problems_20", seed, tier) == kept(answer, rules)
-    assert not re.search(r"\b1 (?!of\b)[a-z]+s\b", text), text
+    assert not re.search(r"1 (?!of)[a-z]+s", text), text
+
+
+def test_take_aways_to_20_cross_ten() -> None:
+    crossing = 0
+    for seed in range(600):
+        problem = get_generator("word_problems_20").generate(seed, 0)
+        if problem.values["worked"].startswith("Start with"):
+            crossing += int(problem.values["told1"]) > 10 > int(problem.answer)
+    assert crossing > 0
 
 
 def test_word_problems_tell_every_shape_in_its_tier() -> None:
