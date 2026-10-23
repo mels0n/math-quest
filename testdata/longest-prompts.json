@@ -155,7 +155,7 @@
     "prompt": [
       {
         "kind": "text",
-        "value": "The short hand is just past 10. The long hand points to 6. How many minutes after 10 o'clock is it?"
+        "value": "The short hand is between 10 and 11. The long hand points to 6. How many minutes past the hour is it?"
       }
     ]
   },
