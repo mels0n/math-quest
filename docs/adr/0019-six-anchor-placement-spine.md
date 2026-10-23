@@ -1,6 +1,6 @@
 # 0019. The placement spine grows to six anchors, all typed
 
-- Status: accepted
+- Status: accepted; extended by [0024](0024-missing-number-joins-the-placement-spine.md) (a seventh anchor)
 - Date: 2026-10-17
 
 ## Context

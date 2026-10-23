@@ -9,7 +9,9 @@ permissions:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, which has no postgresql-client-16 package, and the
+    # backup tests need a pg_dump that matches the server's major version.
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend

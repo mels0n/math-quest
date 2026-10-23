@@ -1,0 +1,9 @@
+# Three hints for Count On: a nudge, the next step, then the whole answer worked out.
+skill: count_on
+levels:
+  - text_template: >-
+      Pick a number to start on. Do not count it. Count on from there.
+  - text_template: >-
+      Start at {start}. Count on {more}. Hold up a finger for each count.
+  - text_template: >-
+      Start at {start} and count on {more}. You land on {{= start + more }}. So the answer is {{= start + more }}.

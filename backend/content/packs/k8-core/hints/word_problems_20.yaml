@@ -1,0 +1,10 @@
+# Three hints for Story Problems to 20: a nudge, the next step, then the whole answer worked out.
+# The first two never say whether to add or take away.
+skill: word_problems_20
+levels:
+  - text_template: >-
+      Read the story slowly. Picture it, or act it out.
+  - text_template: >-
+      Use blocks or a picture to show the story. The numbers in the story are {told1} and {told2}.
+  - text_template: >-
+      {worked} So the answer is {answer}.

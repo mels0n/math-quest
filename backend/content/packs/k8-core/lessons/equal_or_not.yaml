@@ -1,0 +1,23 @@
+# Lesson for Equal or Not. The examples are told in words and plain numbers, so a replayed
+# lesson never shows a number sentence the skill asks.
+skill: equal_or_not
+screens:
+  - title: The equal sign
+    body_md: >-
+      The equal sign means the same as. Both sides must have the same value. 3 and 4 make 7. So 3 + 4 is the same as 7.
+  - title: Work out each side
+    body_md: >-
+      To check a sentence, work out each side. Do both sides match? Then the sentence is true. If not, it is false. 5 + 2 and 3 + 4 both make 7. They match.
+  - title: Find the missing part
+    body_md: >-
+      Sometimes one part is hiding. Say one side is 6 + 3. The other side is 4 and a blank. 6 and 3 make 9. Count up from 4 to 9 to find the blank.
+worked_example:
+  prompt:
+    - {kind: text, value: "Is 6 + 4 the same as 3 + 7?"}
+  steps:
+    - 6 and 4 make ten.
+    - 3 and 7 make ten.
+    - Both sides make ten, so they match.
+    - Yes, it is true.
+try_it:
+  tier: 0

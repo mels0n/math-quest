@@ -1,0 +1,26 @@
+# Lesson for Find the Missing Number. The examples are told in words and plain numbers, so a
+# replayed lesson never shows a number sentence the skill asks.
+skill: missing_number_20
+screens:
+  - title: A number is hiding
+    body_md: >-
+      A number sentence can hide a number. A question mark stands for it. Find the number that makes the sentence true.
+  - title: A family of three
+    body_md: >-
+      Three numbers can go together. 4, 6 and 10 are a family. 4 and 6 make 10. 10 take away 4 leaves 6.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 4, jumps: [6], end: 10}
+  - title: Count up or count back
+    body_md: >-
+      Count up from the small number to the big one. Or count back from the big one. Count how far you go.
+worked_example:
+  prompt:
+    - {kind: text, value: "Some birds sit on a branch. Four more come. Now there are nine. How many sat there first?"}
+  steps:
+    - The story says some birds and 4 more make 9.
+    - Count up from 4 to 9. Say 5, 6, 7, 8, 9.
+    - That is 5 counts.
+    - So 5 birds sat there first.
+try_it:
+  tier: 0

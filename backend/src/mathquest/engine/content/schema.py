@@ -38,8 +38,9 @@ Template = Annotated[str, StringConstraints(min_length=1), AfterValidator(check_
 """Kid-facing text in the template language of ``mathquest.engine.templates``."""
 Expression = Annotated[str, StringConstraints(min_length=1), AfterValidator(check_expression)]
 
-MIN_CHOICES = 3
-"""Fewer choices make guessing too easy, even with only two tries."""
+MIN_CHOICES = 2
+"""A choice needs two answers to pick from. With exactly two, only the first try counts
+(docs/adr/0023-two-option-items-count-the-first-try.md)."""
 
 GRADE_BANDS = ("K", "1", "2", "3", "4", "5", "6", "7", "8", "A1", "A2")
 
@@ -231,6 +232,8 @@ class WordTemplate(_Model):
     answer_from: Literal["generator_answer", "expression"] = "generator_answer"
     expression: Expression | None = None
     grade_band: GradeBand
+    tiers: Annotated[tuple[int, ...], Field(min_length=1)] | None = None
+    """The tiers this template serves; unset, every tier."""
 
     @model_validator(mode="after")
     def _expression_when_needed(self) -> Self:

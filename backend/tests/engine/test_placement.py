@@ -198,6 +198,7 @@ def test_spine_is_the_anchors_in_topological_order() -> None:
         "add_within_10",
         "add_within_20",
         "place_value_tens_ones",
+        "missing_number_20",
         "add_2digit_regroup",
         "add_fractions_unlike",
     )
@@ -222,8 +223,8 @@ def test_start_anchor_falls_back_to_an_earlier_band() -> None:
     assert start_anchor(real, anchors, None) == 2  # add_within_20, the K-2 middle
     assert start_anchor(real, anchors, "K") == 0
     assert start_anchor(real, anchors, "1") == 2
-    assert start_anchor(real, anchors, "3") == 4  # no grade 3 anchor: the grade 2 one
-    assert start_anchor(real, anchors, "8") == 5
+    assert start_anchor(real, anchors, "3") == 5  # no grade 3 anchor: the grade 2 one
+    assert start_anchor(real, anchors, "8") == 6
     late = SkillGraph(
         [_skill("a", anchor=True, grade="4"), _skill("b", "a", anchor=True, grade="6")]
     )
@@ -319,16 +320,16 @@ def test_simulated_learners_across_models(model: str, hint: str) -> None:
         assert asked <= MAX_QUESTIONS
 
 
-# The real pack's six anchors, per model and hint: lowest share within one anchor and highest
+# The real pack's seven anchors, per model and hint: lowest share within one anchor and highest
 # share placed two or more too high, over every level from "nothing passed" to "everything
 # passed", each one point looser than measured (ADR-0019 has the figures; ADR-0015 the targets).
 # Each anchor has the guess rate its answer format gives (`guess_rate`). Without a hint the
-# reference learner is at the limit of fifteen questions on six anchors; with the hint of the
+# reference learner is at the limit of fifteen questions on seven anchors; with the hint of the
 # learner's own grade it meets ADR-0015's bar.
 REAL_BARS: dict[tuple[str, str], tuple[float, float]] = {
-    ("reference", "none"): (0.937, 0.034),
-    ("reference", "same"): (0.969, 0.020),
-    ("steep", "none"): (0.982, 0.018),
+    ("reference", "none"): (0.940, 0.034),
+    ("reference", "same"): (0.950, 0.020),
+    ("steep", "none"): (0.980, 0.020),
     ("steep", "same"): (0.986, 0.014),
 }
 
@@ -340,7 +341,7 @@ def test_guess_rates_follow_the_answer_format() -> None:
     assert guess_rate(choice, 0.1) == pytest.approx(1 / 3)
     real = SkillGraph(load_pack(PACK).skills.values())
     # Every anchor of the real pack is a typed skill that is not a comparison.
-    assert [guess_rate(real.skills[a], 0.1) for a in spine(real)] == [0.1] * 6
+    assert [guess_rate(real.skills[a], 0.1) for a in spine(real)] == [0.1] * 7
 
 
 def test_a_choice_anchor_would_miss_the_bar_the_real_spine_meets() -> None:
@@ -404,12 +405,13 @@ def test_outcome_covers_anchors_off_the_frontiers_chain() -> None:
     passing it still places the learner past every anchor below it."""
     real = SkillGraph(load_pack(PACK).skills.values())
     anchors = spine(real)
-    result = outcome(real, anchors, [Answer(4, True), Answer(5, True)] * 3)
+    result = outcome(real, anchors, [Answer(5, True), Answer(6, True)] * 3)
     assert result.frontier == "add_fractions_unlike"
     assert {
         "count_to_10",
         "add_within_10",
         "place_value_tens_ones",
+        "missing_number_20",
         "add_2digit_regroup",
         "equivalent_fractions",
     } <= set(result.provisional)

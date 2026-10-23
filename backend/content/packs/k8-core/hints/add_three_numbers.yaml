@@ -1,0 +1,9 @@
+# Three hints for Add Three Numbers: a nudge, the next step, then the whole answer worked out.
+skill: add_three_numbers
+levels:
+  - text_template: >-
+      Pick two of the numbers to add first. Look for a pair that is easy.
+  - text_template: >-
+      Add {p} and {q} first. Then add the last number.
+  - text_template: >-
+      {p} and {q} make {{= p + q }}. Then add {r}. That makes {{= p + q + r }}. So the answer is {{= p + q + r }}.

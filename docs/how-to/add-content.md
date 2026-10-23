@@ -64,8 +64,9 @@ version is live.
 A bank item that has shipped is never edited in place: changing its meaning, its
 choices (even their order) or its answer means adding a new item with a new `id` and
 removing the old one. Open problems store only the id, so an edited item would be
-checked against an answer the learner never saw. A choice item needs at least three
-choices.
+checked against an answer the learner never saw. A choice item needs at least two
+choices; with exactly two (true or false), only the first try counts
+([ADR-0023](../adr/0023-two-option-items-count-the-first-try.md)).
 
 Template forms beyond `{a}` and `{{= expr }}`:
 
@@ -136,6 +137,11 @@ before merging.
   rather than writing names in, and spread templates across home, school, nature, food
   and games. Two templates that read nearly the same fail the lint, even with one noun
   or verb swapped. Use `{obj.a}` and `{n obj}` so articles and plurals stay right.
+- **Count the filled-in sentence.** The lint counts words in a template as written, where
+  `{a obj}` is one word. A child reads it filled in, with two-word objects and two-digit
+  numbers, so keep a K-2 sentence to twelve words after filling too.
+- **Match templates to tiers when the tiers are story shapes.** A word template may list
+  `tiers: [0]`; it is then used only for those tiers. Without it, any tier may use it.
 - **Let numbers compute.** Write any number that depends on other numbers as
   `{{= a + b }}`, and numbers in worked examples as `{{= 9 + 6 }}`, so the lint
   recomputes them. Never type a sum by hand.
@@ -177,7 +183,8 @@ remaining batch. To build the next batch, take that number from the report and:
    ties in the topological order and so decides the placement spine.
    A typed skill can serve a bank of button questions: set `banked: true`, a
    `bank_share` such as 0.3 and a `tier` on each item
-   ([ADR-0021](../adr/0021-typed-comparing-skills-with-a-tiered-bank.md)). A `choice`
+   ([ADR-0021](../adr/0021-typed-comparing-skills-with-a-tiered-bank.md)). A generator whose
+   answer is, in most tiers, one of the numbers its prompt shows is flagged `first_try_counts`. A `choice`
    keypad skill is answered by buttons alone and needs `bank_share: 1` and its bank in the
    same change; prefer a typed skill with a bank. Bank items need at least 30 different
    wordings, not different numbers. Counting objects needs a picture that is not built yet,

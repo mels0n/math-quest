@@ -1,0 +1,9 @@
+# Three hints for Ten More, Ten Less: a nudge, the next step, then the whole answer worked out.
+skill: ten_more_ten_less
+levels:
+  - text_template: >-
+      Ten changes the tens digit. The ones digit stays the same.
+  - text_template: >-
+      Start at {n}. Make one jump of ten. The question says which way.
+  - text_template: >-
+      One jump of ten {dir} from {n} lands on {answer}. So the answer is {answer}.

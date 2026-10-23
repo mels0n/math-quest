@@ -1,0 +1,9 @@
+# Three hints for Doubles and Near Doubles: a nudge, the next step, then the whole answer worked out.
+skill: doubles_near_doubles
+levels:
+  - text_template: >-
+      Doubles are the same number twice. Near doubles are one apart.
+  - text_template: >-
+      {step}
+  - text_template: >-
+      {worked}

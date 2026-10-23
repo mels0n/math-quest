@@ -63,7 +63,7 @@ class SkillSource:
         problem = dataclasses.replace(bare, skill_id=self.skill.id)
         if variant == "word" and self.word_problems is not None:
             template = (
-                pick_template(self.word_problems, seed)
+                pick_template(self.word_problems, seed, tier)
                 if template_id is None
                 else find_template(self.word_problems, template_id)
             )

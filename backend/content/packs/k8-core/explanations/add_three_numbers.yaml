@@ -1,0 +1,29 @@
+# Four ways to explain adding three numbers, plus feedback for each mistake the generator
+# knows. None of them shows the answer: the number line shows the jumps, not where they end.
+skill: add_three_numbers
+approaches:
+  - style: visual
+    body_md: >-
+      Picture a number line. Start at {p}. Jump {q}. Then jump again, with the last number.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: "{p}", jumps: ["{q}", "{r}"]}
+  - style: steps
+    body_md: |-
+      1. Look at the three numbers.
+      2. Pick two that are easy to add.
+      3. Add them.
+      4. Add the last number to what you got.
+  - style: story
+    body_md: >-
+      A girl has three bags. They hold {p}, {q} and {r}. She pours them all into one jar. How many are in the jar?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Add {p} and {q} first. Say what you get. Then count on {r} more from there.
+misconceptions:
+  left_out_the_last: >-
+    It looks like you left out a number. Use all three numbers. Add the last one too.
+  left_out_the_first: >-
+    It looks like the first number is missing. All three numbers go in the total.
+  left_out_the_middle: >-
+    It looks like the middle number is missing. All three numbers go in the total.

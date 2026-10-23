@@ -1,0 +1,35 @@
+# Four ways to explain doubles, plus feedback for each mistake the generator knows.
+# Every explanation and feedback line avoids written digits it does not need, so it never
+# shows an answer.
+skill: doubles_near_doubles
+approaches:
+  - style: visual
+    body_md: >-
+      Picture two rows of dots with the same number in each row. Count all the dots. That is a double.
+  - style: steps
+    body_md: |-
+      1. Look at the numbers. Are they the same, or one apart?
+      2. If they are the same, say the number twice.
+      3. If they are one apart, double the smaller one. Then add one more.
+      4. If you know the total, share it into two equal parts.
+  - style: story
+    body_md: >-
+      Two friends have the same number of cards. They put all their cards in one pile. How many cards are in the pile? Look at {shown} to help you.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Look at {shown}. Is there a double in your question? Say it out loud. Then fix it with one more, or share the total in two.
+misconceptions:
+  gave_the_number: >-
+    It looks like you said just one of the numbers. A double uses the number twice.
+  counted_start: >-
+    You were close! It looks like you counted one too few. Say the number, then count on the same number again.
+  went_one_too_far: >-
+    It looks like you went one too far. A double is the number twice, and no more.
+  doubled_the_smaller: >-
+    It looks like you doubled only the smaller number. The bigger number is one more. Add that one.
+  doubled_the_bigger: >-
+    It looks like you doubled the bigger number. The smaller number is one less. Take that one away.
+  gave_the_total: >-
+    It looks like you said the total. The question asks for one of the two same numbers.
+  doubled_instead: >-
+    It looks like you doubled again. The total is already a double. Share it into two equal parts.

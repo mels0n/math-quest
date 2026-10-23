@@ -1,0 +1,27 @@
+# Four ways to explain fact families, plus feedback for each mistake the generator knows.
+# The answer can be any of the three numbers of the family, so none of these names a number
+# the learner could be asked for; the sentence's own numbers are the only ones used.
+skill: fact_families_20
+approaches:
+  - style: visual
+    body_md: >-
+      Picture three numbers in a triangle. The big number sits on top. The two small numbers sit at the bottom. Every fact uses all three.
+  - style: steps
+    body_md: |-
+      1. Find the three numbers in the question.
+      2. Find the big one. It is the total.
+      3. Work out which number the sentence is missing.
+      4. Use the family to find it.
+  - style: story
+    body_md: >-
+      A box holds some red crayons and some blue crayons. Put the red and the blue together. You get all of them. Take the red away. The blue are left.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Your sentence has {s1} and {s2}. The number you want is {role}. Is it bigger or smaller than {s1} and {s2}? Now read your sentence again.
+misconceptions:
+  added_the_shown: >-
+    It looks like you added the two numbers in the sentence. Think about the whole family. Only the two small numbers make the big one.
+  subtracted_the_shown: >-
+    It looks like you took the two numbers apart. Think about the whole family of three.
+  gave_a_shown_number: >-
+    It looks like you copied a number from the sentence. The answer goes with the other two numbers.
