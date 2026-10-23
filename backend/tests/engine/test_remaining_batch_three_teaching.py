@@ -531,3 +531,26 @@ def test_compare_1000_items_reach_1000_and_ask_both_directions() -> None:
     assert any(1000 in math_numbers(i.prompt) or "1000" in joined(i.prompt) for i in COMPARE_ITEMS)
     asked = " ".join(joined(i.prompt) for i in COMPARE_ITEMS)
     assert re.search(r"\b(more|longer)\b", asked) and re.search(r"\b(fewer|less)\b", asked)
+
+
+def test_compare_1000_sign_items_answer_greater_than_as_often_as_less_than() -> None:
+    """Choices are shuffled when served, so only the answer sign can be skewed. In each tier
+    that has sign items, both signs are an answer, and neither is more than twice the other."""
+    signs: dict[int, Counter[str]] = {0: Counter(), 1: Counter(), 2: Counter()}
+    for item in COMPARE_ITEMS:
+        assert item.choices is not None and item.tier is not None
+        texts = [joined(c) for c in item.choices]
+        if texts == [">", "<", "="]:
+            signs[item.tier][texts[int(item.answer.value)]] += 1
+    overall = sum(signs.values(), Counter())
+    assert overall[">"] >= 3 and overall["<"] >= 3
+    assert max(overall[">"], overall["<"]) <= 2 * min(overall[">"], overall["<"]), overall
+    for tier in (1, 2):
+        assert signs[tier][">"] >= 1 and signs[tier]["<"] >= 1, (tier, signs[tier])
+
+
+def test_no_story_to_100_asks_a_bare_how_many_left() -> None:
+    """A bare "How many left?" can mean how many remain, and the count that remains may be
+    printed just above it; the question names what is counted."""
+    for template in templates("word_problems_100"):
+        assert not re.search(r"How many (left|more|fewer)\?", template.text_template), template.id

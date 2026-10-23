@@ -143,8 +143,8 @@ items:
     tier: 1
     prompt:
       - {kind: text, value: "Fill in the sign: "}
-      - {kind: math, value: "543 \\square 547"}
-    answer: {kind: choice, value: 1}
+      - {kind: math, value: "547 \\square 543"}
+    answer: {kind: choice, value: 0}
     choices:
       - [{kind: math, value: ">"}]
       - [{kind: math, value: "<"}]
@@ -316,8 +316,8 @@ items:
     tier: 2
     prompt:
       - {kind: text, value: "Put a sign in the box: "}
-      - {kind: math, value: "478 \\square 503"}
-    answer: {kind: choice, value: 1}
+      - {kind: math, value: "503 \\square 478"}
+    answer: {kind: choice, value: 0}
     choices:
       - [{kind: math, value: ">"}]
       - [{kind: math, value: "<"}]
@@ -339,11 +339,11 @@ items:
     tier: 2
     prompt:
       - {kind: text, value: "Choose the sign that makes "}
-      - {kind: math, value: "598"}
-      - {kind: text, value: " and "}
       - {kind: math, value: "603"}
+      - {kind: text, value: " and "}
+      - {kind: math, value: "598"}
       - {kind: text, value: " a true sentence."}
-    answer: {kind: choice, value: 1}
+    answer: {kind: choice, value: 0}
     choices:
       - [{kind: math, value: ">"}]
       - [{kind: math, value: "<"}]

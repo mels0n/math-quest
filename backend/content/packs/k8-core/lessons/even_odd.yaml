@@ -1,5 +1,6 @@
-# Lesson for Even or Odd. The examples are told in words with numbers the skill's bank does
-# not use, so a replayed lesson never shows a question the skill asks.
+# Lesson for Even or Odd. The worked example is a number over 100 told as beads in pairs, a
+# story the skill tells only for numbers to 100, so a replayed lesson never shows a question
+# the skill asks.
 skill: even_odd
 screens:
   - title: Make pairs
@@ -13,10 +14,10 @@ screens:
       Count up and listen. Odd, even, odd, even. Each number is a different kind from the one before.
 worked_example:
   prompt:
-    - {kind: text, value: "A girl has 52 beads. Will they make pairs with none left over?"}
+    - {kind: text, value: "A girl has 346 beads. Will they make pairs with none left over?"}
   steps:
-    - Look at the ones digit of 52. It is 2.
-    - Numbers that end in 2 are even.
-    - So 52 beads make pairs with none left over.
+    - Look at the ones digit of 346. It is 6.
+    - Numbers that end in 6 are even.
+    - So 346 beads make pairs with none left over.
 try_it:
   tier: 0

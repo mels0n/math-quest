@@ -132,13 +132,9 @@ items:
   - id: eo_13
     tier: 1
     prompt:
-      - {kind: text, value: "The ones digit of "}
+      - {kind: text, value: "A card shows "}
       - {kind: math, value: "68"}
-      - {kind: text, value: " is "}
-      - {kind: math, value: "8"}
-      - {kind: text, value: ". Is "}
-      - {kind: math, value: "68"}
-      - {kind: text, value: " even or odd?"}
+      - {kind: text, value: ". Is the card even or odd?"}
     answer: {kind: choice, value: 1}
     choices:
       - [{kind: text, value: "Odd"}]
@@ -233,7 +229,7 @@ items:
   - id: eo_22
     tier: 1
     prompt:
-      - {kind: text, value: "One number has a left over when made into pairs. Which one?"}
+      - {kind: text, value: "One number has one left over when made into pairs. Which one?"}
     answer: {kind: choice, value: 1}
     choices:
       - [{kind: math, value: "62"}]
