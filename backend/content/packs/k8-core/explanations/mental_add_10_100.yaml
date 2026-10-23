@@ -1,0 +1,30 @@
+# Four ways to explain moving a number by a ten or a hundred, plus feedback for each
+# mistake the generator knows. None of them shows the answer: the blocks show the number
+# in the question.
+skill: mental_add_10_100
+approaches:
+  - style: visual
+    body_md: >-
+      These blocks show {n}. Flats are hundreds, sticks are tens and cubes are ones. Add or take away blocks of one kind only.
+    visual:
+      kind: base_ten
+      params: {hundreds: "{n_hundreds}", tens: "{n_tens}", ones: "{n_ones}"}
+  - style: steps
+    body_md: |-
+      1. Find out if the change is a ten or a hundred.
+      2. Find that place in the number.
+      3. Make that digit one bigger or one smaller.
+      4. Keep the other digits the same.
+  - style: story
+    body_md: >-
+      A shelf holds {n} books. Then {step_say} books come or go. Does the number go up or down? Think about the {place} digit.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Find the {place} digit of {n}. Make it one bigger or one smaller. Keep the other digits the same. Then say your new number.
+misconceptions:
+  wrong_direction: >-
+    It looks like you went the other way. Read the question again. Should the number get bigger or smaller?
+  used_the_other_step: >-
+    It looks like you changed the {other_place} place. This question changes the {place} place.
+  changed_the_ones: >-
+    It looks like you changed the ones place. This question changes the {place} place.

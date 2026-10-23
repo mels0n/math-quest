@@ -1,0 +1,30 @@
+# Four ways to explain taking one two-digit number from another, plus feedback for each
+# mistake the generator knows. None of them shows the answer: the line marks the two
+# numbers of the question and the story uses them.
+skill: sub_2digit_no_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      The line shows {bottom} and {top}. Count how far it is from {bottom} to {top}. Hop by tens first. Then hop by ones.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 100, start: "{bottom}", end: "{top}"}
+  - style: steps
+    body_md: |-
+      1. Look at the ones of both numbers.
+      2. Take the ones from the ones.
+      3. Take the tens from the tens.
+      4. Put the tens and the ones together.
+  - style: story
+    body_md: >-
+      A jar holds {top} beads. {story} Think about the ones and the tens.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Start with the ones. Take the bottom ones from the top ones. Then do the same with the tens. Say the tens and ones together.
+misconceptions:
+  added_instead: >-
+    It looks like you added the two numbers you see. The sentence has a minus sign. Try taking one from the other.
+  left_out_the_ones: >-
+    It looks like you only worked with the tens. The ones need taking away too.
+  left_out_the_tens: >-
+    It looks like you only worked with the ones. The tens need taking away too.

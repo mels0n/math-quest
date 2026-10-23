@@ -1,0 +1,32 @@
+# Lesson for Fast Facts to 20. The skill asks facts within 20, so its examples use bigger
+# numbers, and a replayed lesson never shows a fact the skill asks.
+skill: fluency_within_20
+screens:
+  - title: Doubles
+    body_md: >-
+      A double adds a number to the same number. Double 11 is {{= 11 + 11 }}. Double 12 is {{= 12 + 12 }}. Near doubles are one more or one less than a double.
+  - title: Make a ten
+    body_md: >-
+      Make a ten to add fast. Take 18 and 5. The 18 needs 2 to make 20. Take 2 from the 5. That leaves 3. So 20 and 3 make {{= 18 + 5 }}.
+    visual:
+      kind: number_line
+      params: {min: 15, max: 25, start: 18, jumps: [2, 3], end: 23}
+  - title: Count back to a ten
+    body_md: >-
+      Count back to a ten to take away fast. Take 23 and take away 6. Count back 3 to reach 20. Then count back 3 more. You land on {{= 23 - 6 }}.
+    visual:
+      kind: number_line
+      params: {min: 15, max: 25, start: 23, jumps: [-3, -3], end: 17}
+  - title: Think addition
+    body_md: >-
+      A take away is like an add. Say 40 and 30 make {{= 40 + 30 }}. Then 70 take away 40 leaves {{= 70 - 40 }}.
+worked_example:
+  prompt:
+    - {kind: text, value: "A pond has 27 frogs. Then 6 more frogs come. How many frogs are in the pond now?"}
+  steps:
+    - The 27 needs 3 to make 30.
+    - Take 3 from the 6. That leaves 3.
+    - 30 and 3 make {{= 30 + 3 }}.
+    - So there are {{= 27 + 6 }} frogs in the pond.
+try_it:
+  tier: 0

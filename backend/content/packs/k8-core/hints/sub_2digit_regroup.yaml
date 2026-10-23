@@ -1,0 +1,9 @@
+# Three hints for Subtract and Borrow: a nudge, the next step, then the whole answer worked out.
+skill: sub_2digit_regroup
+levels:
+  - text_template: >-
+      Start with the ones. Then do the tens.
+  - text_template: >-
+      Look at the ones in {top} and {bottom}. The top ones are too few to take from. Borrow a ten from the tens.
+  - text_template: >-
+      Borrow a ten. The ones become {{= 10 + top_ones }}. Take away {bottom_ones} to leave {{= 10 + top_ones - bottom_ones }}. In the tens place you have {{= top_tens - 1 }}. Take away {bottom_tens} to leave {{= top_tens - 1 - bottom_tens }}. So the answer is {answer}.

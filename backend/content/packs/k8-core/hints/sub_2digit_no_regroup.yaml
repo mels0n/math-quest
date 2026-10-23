@@ -1,0 +1,9 @@
+# Three hints for Subtract Big Numbers: a nudge, the next step, then the whole answer worked out.
+skill: sub_2digit_no_regroup
+levels:
+  - text_template: >-
+      Take ones from ones and tens from tens.
+  - text_template: >-
+      Look at the ones in {top} and {bottom}. Work with the ones first. Then do the tens.
+  - text_template: >-
+      The ones: {top_ones} take away {bottom_ones} is {{= top_ones - bottom_ones }}. The tens: {top_tens} take away {bottom_tens} is {{= top_tens - bottom_tens }}. So the answer is {answer}.

@@ -49,6 +49,30 @@
       }
     ]
   },
+  "add_several_2digit": {
+    "tier": 1,
+    "seed": 1,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Add all the numbers. "
+      },
+      {
+        "kind": "math",
+        "value": "18 + 14 + 26 + 17 = ?"
+      }
+    ]
+  },
+  "add_several_2digit-word": {
+    "tier": 1,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The red team has 18 points. The blue team has 28. The green team has 18 and the yellow team has 16. How many points in all?"
+      }
+    ]
+  },
   "add_three_numbers": {
     "tier": 2,
     "seed": 112,
@@ -475,6 +499,16 @@
       }
     ]
   },
+  "fluency_within_20": {
+    "tier": 0,
+    "seed": 6,
+    "prompt": [
+      {
+        "kind": "math",
+        "value": "10 + 10 = ?"
+      }
+    ]
+  },
   "make_ten_strategy": {
     "tier": 0,
     "seed": 0,
@@ -486,6 +520,20 @@
       {
         "kind": "math",
         "value": "8 + 6 = ?"
+      }
+    ]
+  },
+  "mental_add_10_100": {
+    "tier": 2,
+    "seed": 1,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Find the missing number. "
+      },
+      {
+        "kind": "math",
+        "value": "220 = ? - 100"
       }
     ]
   },
@@ -608,6 +656,58 @@
       {
         "kind": "math",
         "value": "80, 85, ?, 95, 100"
+      }
+    ]
+  },
+  "sub_2digit_no_regroup": {
+    "tier": 1,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have "
+      },
+      {
+        "kind": "math",
+        "value": "80"
+      },
+      {
+        "kind": "text",
+        "value": ". You give away "
+      },
+      {
+        "kind": "math",
+        "value": "70"
+      },
+      {
+        "kind": "text",
+        "value": ". How many are left?"
+      }
+    ]
+  },
+  "sub_2digit_regroup": {
+    "tier": 1,
+    "seed": 20,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have "
+      },
+      {
+        "kind": "math",
+        "value": "41"
+      },
+      {
+        "kind": "text",
+        "value": ". You give away "
+      },
+      {
+        "kind": "math",
+        "value": "22"
+      },
+      {
+        "kind": "text",
+        "value": ". How many are left?"
       }
     ]
   },

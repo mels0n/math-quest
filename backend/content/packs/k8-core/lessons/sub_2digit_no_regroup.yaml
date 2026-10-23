@@ -1,0 +1,30 @@
+# Lesson for Subtract Big Numbers. The skill always takes a two-digit number from a
+# two-digit number, so its examples take a one-digit number or whole tens, and a replayed
+# lesson never shows a problem the skill asks.
+skill: sub_2digit_no_regroup
+screens:
+  - title: Ones from ones
+    body_md: >-
+      To take away, work with the ones first. Take 78 and take away 5. The ones go from 8 to 3. The tens stay. You get 73.
+    visual:
+      kind: base_ten
+      params: {tens: 7, ones: 3}
+  - title: Tens from tens
+    body_md: >-
+      Then work with the tens. Take 9 tens and 6 ones. Take away 4 tens. You have 5 tens and 6 ones left. That is 56.
+    visual:
+      kind: base_ten
+      params: {tens: 5, ones: 6}
+  - title: Check by adding
+    body_md: >-
+      You can check by adding. Add the 5 back to 73. You should get 78 again.
+worked_example:
+  prompt:
+    - {kind: text, value: "A shop has 86 pencils. It sells 5 of them. How many pencils are left?"}
+  steps:
+    - Split 86 into 8 tens and 6 ones.
+    - Take away the ones. 6 take away 5 leaves {{= 6 - 5 }}.
+    - The tens stay the same. There are still 8 tens.
+    - 8 tens and 1 one make {{= 86 - 5 }}.
+try_it:
+  tier: 0

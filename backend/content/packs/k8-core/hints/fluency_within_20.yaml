@@ -1,0 +1,9 @@
+# Three hints for Fast Facts to 20: a nudge, the next step, then the whole answer worked out.
+skill: fluency_within_20
+levels:
+  - text_template: >-
+      Pick a trick you know. Try a double, a near double, making a ten or counting.
+  - text_template: >-
+      Look at {a} and {b}. Which trick fits these two numbers?
+  - text_template: >-
+      {worked} So the answer is {answer}.
