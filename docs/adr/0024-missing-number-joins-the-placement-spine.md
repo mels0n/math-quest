@@ -1,6 +1,6 @@
 # 0024. Finding a missing number joins the placement spine
 
-- Status: accepted
+- Status: accepted; extended by [0026](0026-subtraction-with-borrowing-joins-the-placement-spine.md) (an eighth anchor)
 - Date: 2026-10-19
 
 ## Context
