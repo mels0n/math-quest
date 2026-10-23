@@ -16,7 +16,7 @@ items:
     tier: 0
     prompt:
       - {kind: text, value: "Read this: "}
-      - {kind: math, value: "6 = 2 + 5"}
+      - {kind: math, value: "3 = 2 + 5"}
       - {kind: text, value: ". Is it true?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -56,7 +56,7 @@ items:
     tier: 0
     prompt:
       - {kind: text, value: "Look at "}
-      - {kind: math, value: "8 = 3 + 4"}
+      - {kind: math, value: "10 = 3 + 4"}
       - {kind: text, value: ". Do the two sides match?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -110,7 +110,7 @@ items:
     tier: 0
     prompt:
       - {kind: text, value: "Is "}
-      - {kind: math, value: "6"}
+      - {kind: math, value: "8"}
       - {kind: text, value: " the same as "}
       - {kind: math, value: "2 + 3"}
       - {kind: text, value: "?"}
@@ -132,7 +132,7 @@ items:
     tier: 1
     prompt:
       - {kind: text, value: "Check the sentence: "}
-      - {kind: math, value: "12 = 7 + 6"}
+      - {kind: math, value: "11 = 7 + 6"}
       - {kind: text, value: ". Does the equal sign fit?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -154,7 +154,7 @@ items:
     tier: 1
     prompt:
       - {kind: text, value: "True or false: "}
-      - {kind: math, value: "14 = 9 + 4"}
+      - {kind: math, value: "5 = 9 + 4"}
     answer: {kind: choice, value: 1}
     choices:
       - [{kind: text, value: "True"}]
@@ -184,7 +184,7 @@ items:
     tier: 1
     prompt:
       - {kind: text, value: "Count it up: "}
-      - {kind: math, value: "11 + 4 = 16"}
+      - {kind: math, value: "11 + 4 = 7"}
       - {kind: text, value: ". Is that true?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -206,7 +206,7 @@ items:
       - {kind: text, value: "Two bags hold "}
       - {kind: math, value: "10 + 5"}
       - {kind: text, value: " and "}
-      - {kind: math, value: "8 + 8"}
+      - {kind: math, value: "9 + 8"}
       - {kind: text, value: " beads. Are the bags equal?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -226,7 +226,7 @@ items:
     tier: 1
     prompt:
       - {kind: text, value: "Does the equal sign belong in "}
-      - {kind: math, value: "17 = 8 + 8"}
+      - {kind: math, value: "18 = 8 + 8"}
       - {kind: text, value: "?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -258,7 +258,7 @@ items:
     tier: 2
     prompt:
       - {kind: text, value: "Look at both sides of "}
-      - {kind: math, value: "9 + 6 = 8 + 8"}
+      - {kind: math, value: "9 + 6 = 10 + 8"}
       - {kind: text, value: ". Are they equal?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -278,7 +278,7 @@ items:
     tier: 2
     prompt:
       - {kind: text, value: "A sign at the zoo says "}
-      - {kind: math, value: "15 - 6 = 7 + 3"}
+      - {kind: math, value: "15 - 6 = 6 + 6"}
       - {kind: text, value: ". Is the sign right?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -308,7 +308,7 @@ items:
     tier: 2
     prompt:
       - {kind: text, value: "Match or no match: "}
-      - {kind: math, value: "6 + 6 = 14 - 3"}
+      - {kind: math, value: "6 + 6 = 14 - 5"}
     answer: {kind: choice, value: 1}
     choices:
       - [{kind: text, value: "Match"}]
@@ -327,7 +327,7 @@ items:
     tier: 2
     prompt:
       - {kind: text, value: "Is "}
-      - {kind: math, value: "12 - 5 = 3 + 3"}
+      - {kind: math, value: "12 - 5 = 9 + 3"}
       - {kind: text, value: " a good number sentence?"}
     answer: {kind: choice, value: 1}
     choices:
@@ -349,7 +349,7 @@ items:
     tier: 2
     prompt:
       - {kind: text, value: "A friend adds both sides of "}
-      - {kind: math, value: "7 + 8 = 9 + 7"}
+      - {kind: math, value: "7 + 8 = 9 + 4"}
       - {kind: text, value: ". Does it add up?"}
     answer: {kind: choice, value: 1}
     choices:

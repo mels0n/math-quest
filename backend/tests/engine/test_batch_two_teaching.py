@@ -276,6 +276,19 @@ def test_the_true_or_false_bank_is_sound() -> None:
     assert 0.4 <= share <= 0.6, share
 
 
+def test_false_items_are_wrong_by_more_than_one() -> None:
+    """A child who learns "false means off by one" has learned nothing about equality."""
+    gaps: list[int] = []
+    for item in PACK.bank["equal_or_not"].items:
+        math = [p.value for p in item.prompt if p.kind == "math"]
+        if not math or bank_truth(item):
+            continue
+        sides = math[0].split("=") if len(math) == 1 else math
+        gaps.append(abs(side_value(sides[0]) - side_value(sides[1])))
+    assert len(set(gaps)) >= 4, sorted(gaps)
+    assert gaps.count(1) / len(gaps) <= 0.4, sorted(gaps)
+
+
 def test_the_true_or_false_bank_is_served_to_every_tier_with_two_choices() -> None:
     source = CATALOG.source("equal_or_not")
     for tier in range(3):
@@ -284,7 +297,7 @@ def test_the_true_or_false_bank_is_served_to_every_tier_with_two_choices() -> No
         assert all(len(p.choices or ()) == 2 for p in served)
         assert len({p.template_id for p in served}) >= 8
         assert {p.correct_choice for p in served} == {0, 1}
-    assert source.skill.keypad == "numpad" and source.skill.bank_share == 0.6
+    assert source.skill.keypad == "numpad" and source.skill.bank_share == 0.4
 
 
 def test_bank_prompts_start_without_a_number_and_read_simply() -> None:

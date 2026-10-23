@@ -385,12 +385,12 @@ skills:
     generator: equal_or_not
     tiers:
       - {id: 0, label: One sum and a number}
-      - {id: 1, label: The blank in any spot}
+      - {id: 1, label: "Bigger sums, the blank anywhere"}
       - {id: 2, label: Sums and take-aways}
     grade_band: "1"
     keypad: numpad
     banked: true
-    bank_share: 0.6
+    bank_share: 0.4
     vocabulary: ["false"]
     standards: [1.OA.D.7]
   - id: skip_count_2_5

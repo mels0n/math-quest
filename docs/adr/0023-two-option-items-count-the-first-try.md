@@ -41,7 +41,7 @@ buttons alone cannot have a try-it that the child can answer.
 - **Equal or Not is a typed skill with a bank.** Its generator asks the learner to make
   both sides of a sentence equal (`4 + 3 = 5 + ?`), which a lesson's try-it can ask. Its
   bank holds the true or false items, tagged by tier, with two choices each and about half
-  of them true. The bank serves 60% of the draws.
+  of them true. The bank serves 40% of the draws.
 
 ## Alternatives rejected
 - **Keep Equal or Not as a `choice` keypad skill with a full bank.** Its lesson could not
