@@ -422,6 +422,21 @@ skills:
     keypad: numpad
     word_problems_fit: true
     standards: [1.OA.A.1]
+  - id: fluency_within_20
+    name: Fast Facts to 20
+    region: number_meadows
+    prerequisites: [doubles_near_doubles, make_ten_strategy, sub_within_20]
+    fluency: true
+    anchor: false
+    generator: fluency_within_20
+    tiers:
+      - {id: 0, label: Add to 20}
+      - {id: 1, label: Subtract from 20}
+      - {id: 2, label: Mixed facts to 20}
+    grade_band: "2"
+    keypad: numpad
+    vocabulary: [trick]
+    standards: [2.OA.B.2]
   - id: add_2digit_no_regroup
     name: Add Big Numbers
     region: operation_canyon
@@ -450,6 +465,65 @@ skills:
     grade_band: "2"
     keypad: numpad
     word_problems_fit: true
+  - id: sub_2digit_no_regroup
+    name: Subtract Big Numbers
+    region: operation_canyon
+    prerequisites: [sub_tens_within_100, sub_within_20]
+    fluency: false
+    anchor: false
+    generator: sub_2digit_no_regroup
+    tiers:
+      - {id: 0, label: Take away in a sentence}
+      - {id: 1, label: Take away in words}
+      - {id: 2, label: Find the missing number}
+    grade_band: "2"
+    keypad: numpad
+    standards: [2.NBT.B.5]
+  - id: sub_2digit_regroup
+    name: Subtract and Borrow
+    region: operation_canyon
+    prerequisites: [sub_2digit_no_regroup]
+    fluency: false
+    anchor: true
+    generator: sub_2digit_regroup
+    tiers:
+      - {id: 0, label: Borrow in a sentence}
+      - {id: 1, label: Borrow in words}
+      - {id: 2, label: Find the missing number}
+    grade_band: "2"
+    keypad: numpad
+    vocabulary: [borrow]
+    standards: [2.NBT.B.5]
+  - id: add_several_2digit
+    name: Add Many Numbers
+    region: operation_canyon
+    prerequisites: [add_2digit_regroup]
+    fluency: false
+    anchor: false
+    generator: add_several_2digit
+    tiers:
+      - {id: 0, label: Three numbers}
+      - {id: 1, label: Four numbers}
+      - {id: 2, label: Three numbers over 100}
+    grade_band: "2"
+    keypad: numpad
+    word_problems_fit: true
+    standards: [2.NBT.B.6]
+  - id: mental_add_10_100
+    name: Add 10 or 100
+    region: operation_canyon
+    prerequisites: [ten_more_ten_less, place_value_hundreds]
+    fluency: false
+    anchor: false
+    generator: mental_add_10_100
+    tiers:
+      - {id: 0, label: Ten more or less}
+      - {id: 1, label: Hundred more or less}
+      - {id: 2, label: "Mixed, and find the start"}
+    grade_band: "2"
+    keypad: numpad
+    vocabulary: [ones, tens, hundreds, digit]
+    standards: [2.NBT.B.8]
   - id: equivalent_fractions
     name: Same-Size Fractions
     region: fraction_forest

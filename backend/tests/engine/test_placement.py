@@ -200,6 +200,7 @@ def test_spine_is_the_anchors_in_topological_order() -> None:
         "place_value_tens_ones",
         "missing_number_20",
         "add_2digit_regroup",
+        "sub_2digit_regroup",
         "add_fractions_unlike",
     )
 
@@ -220,11 +221,12 @@ def test_start_anchor_from_the_grade_hint() -> None:
 def test_start_anchor_falls_back_to_an_earlier_band() -> None:
     real = SkillGraph(load_pack(PACK).skills.values())
     anchors = spine(real)
-    assert start_anchor(real, anchors, None) == 2  # add_within_20, the K-2 middle
+    assert start_anchor(real, anchors, None) == 3  # place_value_tens_ones, the K-2 middle
     assert start_anchor(real, anchors, "K") == 0
     assert start_anchor(real, anchors, "1") == 2
-    assert start_anchor(real, anchors, "3") == 5  # no grade 3 anchor: the grade 2 one
-    assert start_anchor(real, anchors, "8") == 6
+    assert start_anchor(real, anchors, "2") == 5  # the first of the two grade 2 anchors
+    assert start_anchor(real, anchors, "3") == 6  # no grade 3 anchor: the last grade 2 one
+    assert start_anchor(real, anchors, "8") == 7
     late = SkillGraph(
         [_skill("a", anchor=True, grade="4"), _skill("b", "a", anchor=True, grade="6")]
     )
@@ -320,18 +322,25 @@ def test_simulated_learners_across_models(model: str, hint: str) -> None:
         assert asked <= MAX_QUESTIONS
 
 
-# The real pack's seven anchors, per model and hint: lowest share within one anchor and highest
+# The real pack's eight anchors, per model and hint: lowest share within one anchor and highest
 # share placed two or more too high, over every level from "nothing passed" to "everything
-# passed", each one point looser than measured (ADR-0019 has the figures; ADR-0015 the targets).
+# passed" (ADR-0026 has the measured figures; ADR-0015 the targets).
 # Each anchor has the guess rate its answer format gives (`guess_rate`). Without a hint the
-# reference learner is at the limit of fifteen questions on seven anchors; with the hint of the
-# learner's own grade it meets ADR-0015's bar.
+# reference learner is past the limit of fifteen questions on eight anchors (it measures 93.3%
+# within one and 2.5% over, and the bar is one point looser); with the hint of the learner's own
+# grade it still meets ADR-0015's bar (measured 95.5% and 1.1%), and the steep learner is
+# within a point of the bars it had on seven anchors.
 REAL_BARS: dict[tuple[str, str], tuple[float, float]] = {
-    ("reference", "none"): (0.940, 0.034),
+    ("reference", "none"): (0.923, 0.035),
     ("reference", "same"): (0.950, 0.020),
     ("steep", "none"): (0.980, 0.020),
     ("steep", "same"): (0.986, 0.014),
 }
+
+
+REAL_MEAN_QUESTIONS = 14.5
+"""The most questions the real pack's placement asks on average over the levels (the
+simulated learners measure 13.9 to 14.3)."""
 
 
 def test_guess_rates_follow_the_answer_format() -> None:
@@ -341,7 +350,7 @@ def test_guess_rates_follow_the_answer_format() -> None:
     assert guess_rate(choice, 0.1) == pytest.approx(1 / 3)
     real = SkillGraph(load_pack(PACK).skills.values())
     # Every anchor of the real pack is a typed skill that is not a comparison.
-    assert [guess_rate(real.skills[a], 0.1) for a in spine(real)] == [0.1] * 7
+    assert [guess_rate(real.skills[a], 0.1) for a in spine(real)] == [0.1] * 8
 
 
 def test_a_choice_anchor_would_miss_the_bar_the_real_spine_meets() -> None:
@@ -375,11 +384,15 @@ def test_simulated_learners_on_the_real_pack(model: str, hint: str) -> None:
         return None if hint == "none" else real.skills[anchors[max(level, 0)]].grade_band
 
     bar, over_bar = REAL_BARS[(model, hint)]
+    asked_by_level: list[float] = []
     for level in range(-1, len(anchors)):
-        rate, over, _ = _rates(real, MODELS[model], level, grade, seed=4000 + level)
+        rate, over, asked = _rates(real, MODELS[model], level, grade, seed=4000 + level)
         where = f"real pack, {model}, hint {hint}, level {level}"
         assert rate >= bar, f"{where}: within one {rate:.3f}"
         assert over <= over_bar, f"{where}: over {over:.3f}"
+        asked_by_level.append(asked)
+    mean_asked = sum(asked_by_level) / len(asked_by_level)
+    assert mean_asked <= REAL_MEAN_QUESTIONS, f"{model}, hint {hint}: {mean_asked:.1f} questions"
 
 
 def test_outcome_marks_the_frontier_and_everything_below() -> None:
@@ -405,7 +418,7 @@ def test_outcome_covers_anchors_off_the_frontiers_chain() -> None:
     passing it still places the learner past every anchor below it."""
     real = SkillGraph(load_pack(PACK).skills.values())
     anchors = spine(real)
-    result = outcome(real, anchors, [Answer(5, True), Answer(6, True)] * 3)
+    result = outcome(real, anchors, [Answer(6, True), Answer(7, True)] * 3)
     assert result.frontier == "add_fractions_unlike"
     assert {
         "count_to_10",
@@ -413,6 +426,7 @@ def test_outcome_covers_anchors_off_the_frontiers_chain() -> None:
         "place_value_tens_ones",
         "missing_number_20",
         "add_2digit_regroup",
+        "sub_2digit_regroup",
         "equivalent_fractions",
     } <= set(result.provisional)
     assert set(result.revealed_regions) == {

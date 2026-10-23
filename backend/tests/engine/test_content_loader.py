@@ -202,8 +202,13 @@ def test_real_pack_loads_and_binds() -> None:
         "equal_or_not": "1",
         "skip_count_2_5": "2",
         "word_problems_20": "1",
+        "fluency_within_20": "2",
         "add_2digit_no_regroup": "2",
         "add_2digit_regroup": "2",
+        "sub_2digit_no_regroup": "2",
+        "sub_2digit_regroup": "2",
+        "add_several_2digit": "2",
+        "mental_add_10_100": "2",
         "equivalent_fractions": "3",
         "add_fractions_unlike": "5",
     }
