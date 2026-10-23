@@ -43,7 +43,7 @@ Three things in the plan did not fit what the app can show or score:
   the signs and "the same" are the bank, served with `bank_share` 0.4 for even or odd and
   0.3 for comparing to 1000. Each bank has more than thirty items with different wordings,
   tagged by tier, and a wrong choice is sometimes one off and sometimes further. About one
-  comparing item in four holds two equal numbers, so always choosing a side is no strategy.
+  comparing item in four holds two equal numbers (8 of 33), so always choosing a side is no strategy.
   This changes the plan's keypad for both skills from `choice` to `numpad`.
 - **Four of the five count only the first try.** Clock hours, reading a graph, even or odd
   and comparing to 1000 carry `first_try_counts`: in most of their forms the answer is one

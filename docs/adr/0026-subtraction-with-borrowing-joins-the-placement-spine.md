@@ -14,7 +14,7 @@ re-run the real-pack tests and record the result.
 The third batch builds the skill. It is typed (the child types the number left), so every
 anchor of the spine is still a skill with a ten percent guess rate. It needs only
 subtracting two-digit numbers without borrowing, which needs taking away within 20 and
-taking away tens, so it sits after adding with carrying and before unlike fractions.
+taking away tens, so it comes after adding with carrying and before unlike fractions in the skill order by its place in the file, not because it requires them.
 
 ## Decision
 **The skill is an anchor.** The spine is counting to 10, adding to 10, adding to 20, tens
