@@ -12,9 +12,11 @@ from mathquest.engine.generators import (
     counting,
     early,
     fractions,
+    mental,
     place_value,
     stories,
     strategies,
+    subtraction,
     tens,
 )
 from mathquest.engine.types import Generator
@@ -31,6 +33,8 @@ _REGISTRY: Mapping[str, Generator] = MappingProxyType(
             *strategies.generators(),
             *tens.generators(),
             *stories.generators(),
+            *subtraction.generators(),
+            *mental.generators(),
         ]
     }
 )
