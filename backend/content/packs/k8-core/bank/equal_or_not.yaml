@@ -331,8 +331,8 @@ items:
       - {kind: text, value: " a good number sentence?"}
     answer: {kind: choice, value: 1}
     choices:
-      - [{kind: text, value: "It is good"}]
-      - [{kind: text, value: "It is not good"}]
+      - [{kind: text, value: "Yes, it is right"}]
+      - [{kind: text, value: "No, it is not right"}]
   - id: eq_33
     tier: 2
     prompt:
@@ -353,5 +353,5 @@ items:
       - {kind: text, value: ". Does it add up?"}
     answer: {kind: choice, value: 1}
     choices:
-      - [{kind: text, value: "It adds up"}]
-      - [{kind: text, value: "It does not add up"}]
+      - [{kind: text, value: "The sides match"}]
+      - [{kind: text, value: "The sides do not match"}]

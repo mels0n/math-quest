@@ -214,7 +214,7 @@ def _build_skip_count_2_5(rng: random.Random, tier: int) -> Built:
     prompt: Prompt
     if tier == 2:
         count = 5
-        first = step * rng.randint(1, top // step - count + 1) + odd
+        first = step * rng.randint(1, (top - odd) // step - count + 1) + odd
         row = [first + step * i for i in range(count)]
         hide = rng.randint(1, 3)
         answer, previous = row[hide], row[hide - 1]
@@ -222,7 +222,7 @@ def _build_skip_count_2_5(rng: random.Random, tier: int) -> Built:
         prompt = (text("Fill in the missing number. "), math(", ".join(shown)))
     else:
         count = rng.randint(2, 4)
-        reach = rng.randint(count + 1, top // step)
+        reach = rng.randint(count + 1, (top - odd) // step)
         if back:
             row = [step * reach + odd - step * i for i in range(count)]
             answer = row[-1] - step

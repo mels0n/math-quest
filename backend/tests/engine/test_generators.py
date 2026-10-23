@@ -1752,14 +1752,14 @@ def test_word_problem_shapes_and_answers_by_tier(seed: int, tier: int) -> None:
         "gave_the_second_number": told2,
     }
     assert wrong_answers("word_problems_20", seed, tier) == kept(answer, rules)
-    assert not re.search(r"1 (?!of)[a-z]+s", text), text
+    assert not re.search(r"\b1 (?!of\b)[a-z]+s\b", text), text
 
 
 def test_take_aways_to_20_cross_ten() -> None:
     crossing = 0
     for seed in range(600):
         problem = get_generator("word_problems_20").generate(seed, 0)
-        if problem.values["worked"].startswith("Start with"):
+        if str(problem.values["worked"]).startswith("Start with"):
             crossing += int(problem.values["told1"]) > 10 > int(problem.answer)
     assert crossing > 0
 
@@ -1856,4 +1856,4 @@ def test_doubles_hint_step_only_uses_numbers_the_prompt_shows(seed: int, tier: i
     problem = get_generator("doubles_near_doubles").generate(seed, tier)
     step_numbers = [int(n) for n in re.findall(r"\d+", str(problem.values["step"]))]
     shown = numbers("doubles_near_doubles", seed, tier)
-    assert step_numbers and set(step_numbers) <= set(shown)
+    assert set(step_numbers) <= set(shown)

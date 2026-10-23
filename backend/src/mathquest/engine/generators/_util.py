@@ -50,6 +50,9 @@ def math_prompt(latex: str) -> Prompt:
 
 Builder = Callable[[random.Random, int], Built]
 
+NAMES = ("Mia", "Leo", "Ava", "Sam", "Zoe", "Ben", "Lily", "Max", "Nora", "Omar", "Ana", "Kai")
+"""First names for story prompts."""
+
 
 def noun(count: int, plural: str) -> str:
     """``plural`` agreeing with ``count``: the singular for one (every noun passed here

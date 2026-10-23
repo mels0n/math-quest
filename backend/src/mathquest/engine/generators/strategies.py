@@ -12,6 +12,7 @@ import random
 import sympy
 
 from mathquest.engine.generators._util import (
+    NAMES,
     Built,
     SkillGenerator,
     math,
@@ -138,7 +139,6 @@ _THREES = (
     ("cups", "plates", "spoons", "things"),
 )
 _THREE_VERBS = (("has", "have"), ("sees", "see"), ("finds", "find"))
-_NAMES = ("Mia", "Leo", "Ava", "Sam", "Zoe", "Ben", "Lily", "Max", "Nora", "Omar", "Ana", "Kai")
 
 
 def _build_add_three(rng: random.Random, tier: int) -> Built:
@@ -161,7 +161,7 @@ def _build_add_three(rng: random.Random, tier: int) -> Built:
         prompt = math_prompt(f"{a} + {b} + {c} = ?")
     else:
         n1, n2, n3, kind = rng.choice(_THREES)
-        name = rng.choice(_NAMES)
+        name = rng.choice(NAMES)
         does, do = rng.choice(_THREE_VERBS)
         prompt = (
             text(
@@ -339,7 +339,7 @@ def _build_doubles(rng: random.Random, tier: int) -> Built:
         else:
             prompt = (text("Half of "), math(str(2 * n)), text(" is which number?"))
         wrong = [("gave_the_total", 2 * n), ("doubled_instead", 4 * n)]
-        step = f"The two parts are the same size. What could one part be?"
+        step = "The two parts are the same size. What could one part be?"
         worked = f"{n} and {n} make {2 * n}. So the number is {n}."
     return Built(
         prompt=prompt,

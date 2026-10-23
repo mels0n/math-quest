@@ -328,7 +328,7 @@ def test_simulated_learners_across_models(model: str, hint: str) -> None:
 # learner's own grade it meets ADR-0015's bar.
 REAL_BARS: dict[tuple[str, str], tuple[float, float]] = {
     ("reference", "none"): (0.940, 0.034),
-    ("reference", "same"): (0.950, 0.022),
+    ("reference", "same"): (0.950, 0.020),
     ("steep", "none"): (0.980, 0.020),
     ("steep", "same"): (0.986, 0.014),
 }

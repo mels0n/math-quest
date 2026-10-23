@@ -21,22 +21,22 @@ ones, finding a missing number, adding with carrying and adding unlike fractions
 is unchanged.
 
 **The figures,** from the placement simulator with the honest per-anchor guess rates of
-ADR-0019, over every level from "nothing passed" to "everything passed", 4000 seeded runs
-per level (the worst level is shown):
+ADR-0019, over every level from "nothing passed" to "everything passed", 1000 seeded runs
+per level (the worst level is shown, questions are the mean over levels):
 
 | Learner | Hint | Within one anchor | Placed two or more too high | Questions |
 | --- | --- | --- | --- | --- |
-| reference | none | 94.8% | 1.4% | 14.1 |
-| reference | own grade | 96.5% | 0.9% | 14.0 |
-| steep | none | 98.9% | 1.1% | 13.9 |
-| steep | own grade | 99.4% | 0.6% | 13.8 |
+| reference | none | 95.0% | 2.4% | 14.1 |
+| reference | own grade | 95.8% | 1.2% | 14.0 |
+| steep | none | 99.0% | 1.0% | 14.0 |
+| steep | own grade | 99.6% | 0.4% | 13.8 |
 
-[ADR-0015](0015-placement.md)'s bar is met: the reference learner with a grade hint is
-placed within one anchor at least 95% of the time and two or more anchors too high at most
-2% of the time. Without a hint it sits where ADR-0019 left it, at the limit of what fifteen
-one-problem questions can tell apart. The real-pack test bars are about one point looser
-than the figures the test measures with its own seeds (95.0% and 2.4% without a hint,
-95.8% and 1.2% with one, for the reference learner).
+[ADR-0015](0015-placement.md)'s bar is met where it applies: the reference learner with a
+grade hint is placed within one anchor at least 95% of the time and two or more anchors too
+high at most 2% of the time. Without a hint the reference learner is at the limit of what
+fifteen one-problem questions can tell apart, and its over-placement (2.4%) is a little above
+the 2% target, as it was under ADR-0019. The real-pack test bars sit a little looser than
+these figures for the same reason.
 
 ## Alternatives rejected
 - **Leave it as an ordinary skill.** The target holds with it on the spine, and a single

@@ -13,12 +13,18 @@ import random
 
 import sympy
 
-from mathquest.engine.generators._util import Built, SkillGenerator, named_wrongs, noun, text
+from mathquest.engine.generators._util import (
+    NAMES,
+    Built,
+    SkillGenerator,
+    named_wrongs,
+    noun,
+    text,
+)
 from mathquest.engine.types import AnswerForm
 
 _Int = sympy.Integer
 
-_NAMES = ("Mia", "Leo", "Ava", "Sam", "Zoe", "Ben", "Lily", "Max", "Nora", "Omar", "Ana", "Kai")
 # Plural nouns that add only an s, so one of them takes the singular.
 _THINGS = (
     "apples",
@@ -126,7 +132,7 @@ def _build_story(rng: random.Random, tier: int) -> Built:
     n = rng.randint(1, m - 1)
     shape = rng.choice(_SHAPES_BY_TIER[tier])
     told_a, told_b = (a, b) if shape in _ADDS else (m, n)
-    who, friend = rng.sample(_NAMES, 2)
+    who, friend = rng.sample(NAMES, 2)
     things = rng.choice(_THINGS)
     story, answer, worked = _story(shape, who, friend, things, told_a, told_b)
     other = told_a - told_b if shape in _ADDS else told_a + told_b

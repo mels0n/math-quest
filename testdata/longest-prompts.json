@@ -55,7 +55,7 @@
     "prompt": [
       {
         "kind": "text",
-        "value": "Lily finds 10 roses, 6 tulips and 2 daisies. How many flowers does Lily find in all?"
+        "value": "Lily finds 10 roses, 6 tulips and 2 violets. How many flowers does Lily find in all?"
       }
     ]
   },
@@ -701,11 +701,11 @@
   },
   "word_problems_20": {
     "tier": 2,
-    "seed": 125,
+    "seed": 56,
     "prompt": [
       {
         "kind": "text",
-        "value": "Omar has some shells. Ava gives Omar 2 more. Now Omar has 8. How many shells did Omar have at first?"
+        "value": "Nora has some balls. Lily gives Nora 17 more. Now Nora has 18. How many balls did Nora have at first?"
       }
     ]
   },
@@ -715,7 +715,7 @@
     "prompt": [
       {
         "kind": "text",
-        "value": "Before the party, Arjun has some puzzle pieces. At the party, Arjun gets 2 more. Now Arjun has 18. How many puzzle pieces were there before?"
+        "value": "Before the party, Arjun has some puzzle pieces. At the party, Arjun gets 10 more. Now Arjun has 14. How many puzzle pieces were there before?"
       }
     ]
   }

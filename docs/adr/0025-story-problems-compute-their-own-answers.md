@@ -16,22 +16,26 @@ numbers). A template has no way to ask for a shape, so a template that kept the 
 answer would be wrong for every draw that asked another shape.
 
 ## Decision
-- **The generator gives two numbers.** `a` is more than `b`, and `a + b` is at most 20, so
-  both a sum and a difference stay within 20 whatever the shape. Its own typed problems tell
-  a story in a fixed shape per tier (result unknown, then put together, take apart and
-  compare, then the change or the start unknown) and have hints and mistake feedback.
+- **The generator gives two pairs of numbers.** For a story that adds, `a` is more than `b`
+  and `a + b` is at most 20. For a story that takes away, `m` is at most 20 and `n` is less
+  than `m`, so a take-away can cross ten (15 - 8). Its own typed problems tell a story in a
+  fixed shape per tier (result unknown, then put together, take apart and compare, then the
+  change or the start unknown) and have hints and mistake feedback.
 - **Every word template computes its own answer** (`answer_from: expression`, over `a` and
-  `b`), so it can tell any shape. A template id starts with its shape and no shape has more
-  than two templates, so the set stays varied. A test pins each shape to its expression and
-  keywords, and renders every template for many numbers to check agreement with 1.
+  `b` for a story that adds, `m` and `n` for one that takes away), so it can tell any shape.
+  A template id starts with its shape and no shape has more than two templates, so the set
+  stays varied. A test pins each shape to its expression and keywords, and renders every
+  template for many numbers to check agreement with 1 and the twelve word limit.
+- **A template serves the tier of its shape** (`tiers` in the template), so a tier 0 problem
+  is never retold as a tier 2 story.
 - **Hints hand over no operation.** The first two hints and all feedback and explanations
   for the skill say nothing about adding or taking away; a test enforces it.
 
 ## Alternatives rejected
 - **Tag templates with a shape and match it to the generator's.** It keeps hints on word
-  problems, but it adds a schema field, a filter in template choice and a second preview
-  path in the admin area, for one skill. It is the right follow-up if hints on story
-  variants prove missed.
+  problems, but it needs a second preview path in the admin area for one skill. Templates
+  are tagged with a tier instead, which keeps the difficulty honest without that. Matching
+  the shape is the right follow-up if hints on story variants prove missed.
 - **Draw only one shape per template list and split the skill.** It would make the skill
   about adding stories or taking-away stories, which is what the plan does not want
   children to rely on.

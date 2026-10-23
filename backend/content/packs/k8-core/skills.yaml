@@ -406,7 +406,7 @@ skills:
       - {id: 2, label: Fill in the missing number}
     grade_band: "2"
     keypad: numpad
-    standards: [2.NBT.A.2]
+    standards: [2.NBT.A.2, 2.OA.C.3]
   - id: word_problems_20
     name: Story Problems to 20
     region: number_meadows
