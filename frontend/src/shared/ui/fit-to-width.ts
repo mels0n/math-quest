@@ -43,7 +43,8 @@ export const MATH_RUN_SELECTOR = `.${MATH_RUN_CLASS}`;
 export function fitRuns(container: FitContainer): void {
 	const available = container.clientWidth;
 	const runs = [...container.querySelectorAll(MATH_RUN_SELECTOR)];
-	// Reset, then read every width, then write every size: one layout, no thrashing.
+	// Reset, then read every width, then write every size: one layout, no thrashing. Only the
+	// bounded verify pass below reads again after writing, and only for runs that shrank.
 	for (const run of runs) run.style.fontSize = '';
 	const widths = runs.map((run) => Math.max(run.getBoundingClientRect().width, run.scrollWidth));
 	const scales = runs.map((run, i) => {
@@ -53,7 +54,7 @@ export function fitRuns(container: FitContainer): void {
 		return scale;
 	});
 	// Glyph advances are rounded to whole pixels on some platforms, so a small shrink can
-	// leave a run a few pixels too wide. Check the shrunk runs and step them down further.
+	// leave a run a few pixels too wide. Check the shrunk runs (against the full width, no slack) and step them down further.
 	runs.forEach((run, i) => {
 		let scale = scales[i] as number;
 		for (let step = 0; step < MAX_EXTRA_STEPS && scale < 1 && scale > MIN_SCALE; step++) {

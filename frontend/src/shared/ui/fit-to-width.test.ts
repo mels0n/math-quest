@@ -55,6 +55,8 @@ describe('fitRuns', () => {
 		};
 		fitRuns({ clientWidth: 240, querySelectorAll: () => [run] });
 		expect(run.scrollWidth).toBeLessThanOrEqual(240);
+		// It stops at the first step that fits: 0.979 and 0.959 were still too wide.
+		expect(run.style.fontSize).toBe('0.939em');
 	});
 
 	it('reads every width before writing any font size', () => {
