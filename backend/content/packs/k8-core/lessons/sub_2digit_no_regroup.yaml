@@ -1,6 +1,7 @@
 # Lesson for Subtract Big Numbers. The skill always takes a two-digit number from a
-# two-digit number, so its examples take a one-digit number or whole tens, and a replayed
-# lesson never shows a problem the skill asks.
+# two-digit number (whole tens included, and a top number of 20 or more), so its examples
+# take a one-digit number or start below 20, and a replayed lesson never shows a problem the
+# skill asks. The lint cannot see an example told in place-value words, so check by hand.
 skill: sub_2digit_no_regroup
 screens:
   - title: Ones from ones
@@ -11,10 +12,10 @@ screens:
       params: {tens: 7, ones: 3}
   - title: Tens from tens
     body_md: >-
-      Then work with the tens. Take 9 tens and 6 ones. Take away 4 tens. You have 5 tens and 6 ones left. That is 56.
+      Then work with the tens. Take 1 ten and 4 ones. Take away 1 ten. You have 0 tens and 4 ones left. That is 4.
     visual:
       kind: base_ten
-      params: {tens: 5, ones: 6}
+      params: {tens: 0, ones: 4}
   - title: Check by adding
     body_md: >-
       You can check by adding. Add the 5 back to 73. You should get 78 again.

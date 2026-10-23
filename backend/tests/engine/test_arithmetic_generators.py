@@ -411,3 +411,42 @@ def test_batch_three_arithmetic_text_is_short_and_has_no_dash(skill: str) -> Non
 def test_batch_three_arithmetic_values_name_the_answer(skill: str, seed: int, tier: int) -> None:
     problem = get_generator(skill).generate(seed, tier)
     assert problem.values["answer"] == problem.answer
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_fast_fact_values_name_the_numbers_in_the_order_the_sentence_shows_them(
+    seed: int, tier: int
+) -> None:
+    """The explanation marks the first number of the fact and the hint reads "a and b", so
+    both follow the sentence, not the order the pair was drawn in."""
+    values = get_generator("fluency_within_20").generate(seed, tier).values
+    (sentence,) = maths("fluency_within_20", seed, tier)
+    first, second = (int(n) for n in re.findall(r"\d+", sentence.split("=")[0]))
+    assert (values["a"], values["b"]) == (first, second) == (values["top"], values["take"])
+
+
+def test_the_carry_note_counts_tens_and_a_single_ten_is_singular() -> None:
+    seen: set[tuple[int, str]] = set()
+    for tier in range(3):
+        for seed in range(400):
+            note = str(
+                get_generator("add_several_2digit").generate(seed, tier).values["carry_note"]
+            )
+            if note:
+                m = re.fullmatch(
+                    r"Keep \d+ in the ones place\. Carry (\d+) (tens?) to the tens place\. ", note
+                )
+                assert m, note
+                seen.add((int(m[1]), m[2]))
+    assert {word for count, word in seen if count == 1} == {"ten"}
+    assert {word for count, word in seen if count > 1} == {"tens"}
+
+
+@pytest.mark.parametrize("tier", range(3))
+def test_no_borrowing_subtraction_never_starts_below_20_or_takes_one_digit(tier: int) -> None:
+    """The lesson's examples start below 20 or take a one-digit number, so a replayed lesson
+    never shows a problem the skill asks (the lint cannot read place-value words)."""
+    for seed in range(400):
+        values = get_generator("sub_2digit_no_regroup").generate(seed, tier).values
+        assert int(values["a"]) >= 20 and int(values["b"]) >= 10

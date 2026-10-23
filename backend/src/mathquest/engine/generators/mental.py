@@ -12,6 +12,7 @@ from mathquest.engine.generators._util import (
     math,
     math_prompt,
     named_wrongs,
+    noun,
     text,
 )
 from mathquest.engine.types import AnswerForm, Prompt
@@ -38,18 +39,14 @@ def _draw_numbers(rng: random.Random, tier: int, count: int) -> list[int]:
             return numbers
 
 
-def _plural(count: int, one: str) -> str:
-    return f"{count} {one}" if count == 1 else f"{count} {one}s"
-
-
 def _hundreds_note(tens_total: int) -> str:
     """Tens that make a hundred or more, in words; empty when they do not."""
     if tens_total < 10:
         return ""
     hundreds, tens = divmod(tens_total, 10)
-    spoken = _plural(hundreds, "hundred")
+    spoken = f"{hundreds} {noun(hundreds, 'hundreds')}"
     if tens:
-        spoken += f" and {_plural(tens, 'ten')}"
+        spoken += f" and {tens} {noun(tens, 'tens')}"
     return f"That is {spoken}. "
 
 
@@ -66,7 +63,10 @@ def _build_add_several(rng: random.Random, tier: int) -> Built:
     carry, ones_left = divmod(ones_total, 10)
     tens_total = sum(n // 10 for n in numbers) + carry
     carry_note = (
-        f"Keep {ones_left} in the ones place. Carry {carry} to the tens place. " if carry else ""
+        f"Keep {ones_left} in the ones place. "
+        f"Carry {carry} {noun(carry, 'tens')} to the tens place. "
+        if carry
+        else ""
     )
     values: dict[str, int | str] = {
         "count": _COUNT_WORDS[count],
@@ -109,6 +109,7 @@ def _build_add_several(rng: random.Random, tier: int) -> Built:
 _MENTAL_ASKS = (("What is", "?"), ("Find", "."), ("What number is", "?"))
 _STEP_WORDS = {10: "ten", 100: "hundred"}
 _PLACES = {10: "tens", 100: "hundreds"}
+_OTHER_STEP = {10: 100, 100: 10}
 
 
 def _build_mental(rng: random.Random, tier: int) -> Built:
@@ -145,7 +146,7 @@ def _build_mental(rng: random.Random, tier: int) -> Built:
         else:
             prompt = math_prompt(f"{shown} - {step} = ?")
     sign = 1 if move > 0 else -1
-    other = 110 - step
+    other = _OTHER_STEP[step]
     place = (shown // step) % 10
     return Built(
         prompt=prompt,
@@ -224,7 +225,8 @@ def _build_fluency(rng: random.Random, tier: int) -> Built:
         prompt = math_prompt(f"{left} + {right} = ?")
         answer, worked = total, _add_worked(a, b)
         wrong = [("subtracted_instead", abs(a - b))]
-        top, take = a, b
+        a, b = left, right
+        top, take = left, right
     else:
         top = rng.randint(2, 20)
         take = rng.randint(1, top - 1)

@@ -3,7 +3,8 @@
 
 Both skills ask in three forms that get harder: a sentence, the same take-away in words,
 and a sentence with the amount taken away hidden. Every tier covers the whole range of its
-skill (a top number from 20 to 99).
+skill (a top number from 20 to 99, or to 98 when borrowing, since the ones digit of the
+top number is less than that of the bottom number).
 
 In every form the answer is the top number less the other number shown beside it, so the
 values name that pair: ``top`` and ``bottom``.
