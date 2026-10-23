@@ -1,0 +1,10 @@
+# Three hints for Read a Graph: a nudge, the next step, then the whole answer worked out.
+# The first two never say whether to add or take away.
+skill: read_data_graphs
+levels:
+  - text_template: >-
+      Read the graph slowly. Find the groups the question talks about.
+  - text_template: >-
+      {step}
+  - text_template: >-
+      {worked} So the answer is {answer}.

@@ -1,0 +1,139 @@
+# Word problems for Story Problems to 100. Each template tells its own story, so it computes
+# its own answer from the generator's numbers: {a} and {b} for a story that adds ({a} is at
+# least {b}, and {a} plus {b} is at most 100), {m} and {n} for a story that takes away ({n} is
+# at least 10, and less than {m}, which is at most 100). A template serves only the tiers of
+# its story shape (`tiers`). Each id starts with the story shape; no shape has more than two
+# templates. Every number is two-digit, so a noun after one is always plural. Short sentences
+# (12 words or fewer), no sentence that starts with a number, and a question that says whose
+# things are counted.
+skill: word_problems_100
+templates:
+  - id: add_to_zoo
+    text_template: "A zoo has {a} birds. Then {b} more birds fly in. How many birds are at the zoo now?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 2
+    tiers: [0]
+  - id: add_to_shelf
+    text_template: "{name} has {a} {obj} on a shelf. {name} puts {b} more on it. How many {obj} are on the shelf?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 2
+    tiers: [0]
+  - id: take_from_pool
+    text_template: "A pool has {m} kids. Then {n} kids get out. How many kids are left in the pool?"
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [0]
+  - id: take_from_box
+    text_template: "{name} has {m} {obj} in a box. {name} gives {n} to a friend. How many {obj} are left in the box?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [0]
+  - id: put_together_garden
+    text_template: "A garden has {a} red flowers and {b} yellow flowers. How many flowers are there in all?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 2
+    tiers: [1]
+  - id: put_together_classes
+    text_template: "One class has {a} kids. Another class has {b} kids. Both classes go to a play. How many kids go?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 2
+    tiers: [1]
+  - id: take_apart_marbles
+    text_template: "{name} has {m} marbles. Of these, {n} are blue. The rest are green. How many are green?"
+    slots: {name: names}
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [1, 2]
+  - id: take_apart_farm
+    text_template: "A farm has {m} animals. The cows number {n}. The rest are pigs. How many pigs are there?"
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [1, 2]
+  - id: compare_more_laps
+    text_template: "{name} runs {m} laps this week. {friend} runs {n} laps. How many more laps does {name} run?"
+    slots: {name: names, friend: names}
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [1, 2]
+  - id: compare_more_trees
+    text_template: "A park has {m} big trees and {n} small trees. How many more big trees does it have?"
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [1, 2]
+  - id: compare_fewer_chairs
+    text_template: "The hall has {m} chairs. The gym has {n} chairs. How many fewer chairs are in the gym?"
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [1, 2]
+  - id: compare_fewer_bikes
+    text_template: "A shop has {m} red bikes and {n} blue bikes. How many fewer blue bikes does it have?"
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [1, 2]
+  - id: change_add_savings
+    text_template: "A box holds {n unit}. {name} adds some more. Now it holds {m}. How much did {name} add?"
+    slots: {name: names, unit: money_units}
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [2]
+  - id: change_add_jar
+    text_template: "A jar has {n} coins. {name} puts in some more coins. Now the jar holds {m}. How many coins did {name} add?"
+    slots: {name: names}
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [2]
+  - id: change_take_gifts
+    text_template: "{name} owns {m} {obj}. {name} gives some to the class. Now {name} owns {n}. How many did {name} give?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [2]
+  - id: change_take_ferry
+    text_template: "A ferry carries {m} cars. Some cars leave at the dock. Now {n} cars are on the ferry. How many cars left the ferry?"
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [2]
+  - id: start_add_sticker
+    text_template: "{name} has some {obj}. {friend} gives {name} {n} more. Now {name} has {m}. How many {obj} did {name} have at first?"
+    slots: {name: names, friend: names, obj: objects}
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [2]
+  - id: start_add_pond
+    text_template: "Some ducks swim in a pond. Then {n} more ducks swim in. Now {m} ducks swim there. How many were there at first?"
+    answer_from: expression
+    expression: "m - n"
+    grade_band: 2
+    tiers: [2]
+  - id: start_take_cart
+    text_template: "A cart has some apples. A shopper buys {b}. Now {a} apples are left. How many apples were in the cart at first?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 2
+    tiers: [2]
+  - id: start_take_friend
+    text_template: "{name} packs a bag of {obj}. {name} takes out {b}. Now {a} are in the bag. How many {obj} were in the bag at first?"
+    slots: {name: names, obj: objects}
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 2
+    tiers: [2]

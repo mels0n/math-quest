@@ -1,0 +1,29 @@
+# Lesson for Add 10 or 100. The skill works with numbers from 100 to 1000, so its examples
+# start from two-digit numbers, and a replayed lesson never shows a problem the skill asks.
+skill: mental_add_10_100
+screens:
+  - title: Ten changes the tens
+    body_md: >-
+      Ten more changes the tens digit. It goes up by one. Take 47. Ten more is {{= 47 + 10 }}. The ones stay the same.
+    visual:
+      kind: base_ten
+      params: {tens: 5, ones: 7}
+  - title: A hundred changes the hundreds
+    body_md: >-
+      A hundred more changes the hundreds digit. It goes up by one. Take 38. It has no hundreds yet. A hundred more is {{= 38 + 100 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 1, tens: 3, ones: 8}
+  - title: When a digit is nine
+    body_md: >-
+      Sometimes the digit is 9. Ten more than 90 is {{= 90 + 10 }}. The tens digit goes back to 0. The next place goes up by one.
+worked_example:
+  prompt:
+    - {kind: text, value: "A shop has 96 marbles. A box of one hundred more marbles comes in. How many marbles does the shop have now?"}
+  steps:
+    - A hundred changes the hundreds digit.
+    - 96 has 0 hundreds. Now it has 1 hundred.
+    - The tens and the ones stay the same.
+    - So the shop has {{= 96 + 100 }} marbles.
+try_it:
+  tier: 0

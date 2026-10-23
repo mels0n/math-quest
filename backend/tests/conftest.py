@@ -133,8 +133,11 @@ EARLY_SKILLS = (
     "skip_count_10",
     "skip_count_2_5",
     "teen_numbers",
+    "clock_hours",
+    "even_odd",
 )
-"""The skills built after the first seven that the first seven do not build on (pairs,
+"""The skills built after the first seven that the first seven do not build on (including
+telling time and even or odd, from batch 3; pairs,
 hundreds, comparing to 100 and the rest of batch 2 would imply add_within_10 and
 place_value_tens_ones; counting by twos and fives builds only on counting by tens). Most
 tests are about the addition, subtraction and place value skills, so `pass_early_skills`

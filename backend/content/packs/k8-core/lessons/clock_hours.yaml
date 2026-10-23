@@ -1,0 +1,29 @@
+# Lesson for Clock Hours. The skill describes the clock in words, so the lesson is where the
+# picture is. The examples use times the skill's questions do not ask in these words.
+skill: clock_hours
+screens:
+  - title: The short hand tells the hour
+    body_md: >-
+      A clock has two hands. The short hand tells the hour. The long hand tells the minutes. When the long hand points to 12, it is o'clock. Written with numbers, 5 o'clock is 5:00.
+    visual:
+      kind: clock
+      params: {hour: 5, minute: 0}
+  - title: Half past
+    body_md: >-
+      When the long hand points to 6, it is half past. The short hand sits between two numbers. The hour is the number it has passed.
+    visual:
+      kind: clock
+      params: {hour: 2, minute: 30}
+  - title: Half an hour
+    body_md: >-
+      From one hour to the next is sixty minutes. Half of that is thirty minutes. Two half hours make one hour.
+worked_example:
+  prompt:
+    - {kind: text, value: "A clock has its short hand between 9 and 10. Its long hand points to 6. What time is it?"}
+  steps:
+    - The long hand points to 6, so it is half past.
+    - The short hand is past 9. It has not reached 10.
+    - So the time is half past 9.
+    - We can write it as 9:30.
+try_it:
+  tier: 0

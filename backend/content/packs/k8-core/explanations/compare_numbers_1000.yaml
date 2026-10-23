@@ -1,0 +1,28 @@
+# Four ways to explain comparing numbers to 1000, plus feedback for each mistake the generator
+# knows. None of them shows the answer.
+skill: compare_numbers_1000
+approaches:
+  - style: visual
+    body_md: >-
+      Build both numbers with blocks. Flats are hundreds, sticks are tens and cubes are ones. Line them up. The number with more flats is bigger.
+  - style: steps
+    body_md: |-
+      1. Look at the hundreds digit of each number.
+      2. If they are different, you are done.
+      3. If they match, look at the tens. Then the ones.
+      4. Check if the question wants the {which} number.
+  - style: story
+    body_md: >-
+      Two kids count their coins. Each pile has flats, sticks and cubes of coins. Who has more flats? That kid has the bigger pile.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say the hundreds digit of {a}. Say the hundreds digit of {b}. Compare them. If they match, go to the tens.
+misconceptions:
+  confused_bigger_smaller: >-
+    It looks like you picked the other number. Read the question again. Does it ask for the {which} number?
+  compared_ones_only: >-
+    It looks like you looked at the ones digits only. Start with the biggest place first.
+  compared_tens_only: >-
+    It looks like you looked at the tens digits only. Start with the biggest place first.
+  gave_the_difference: >-
+    It looks like you found how far apart the numbers are. The question asks for one of the two numbers.

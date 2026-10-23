@@ -1,0 +1,24 @@
+# Lesson for Read a Graph. A graph is told as a short table of numbers, and the examples use
+# a topic the generator's graphs never use (a vote for a toy), so a replayed lesson
+# never shows a graph it asks.
+skill: read_data_graphs
+screens:
+  - title: Read each group
+    body_md: >-
+      A graph tells how many are in each group. Read the name of the group. Then read the number beside it.
+  - title: Compare two groups
+    body_md: >-
+      To compare two groups, match them up. The ones left over are how many more, or how many fewer.
+  - title: Use every group
+    body_md: >-
+      To count everyone in the graph, use every group. Do not leave one out.
+worked_example:
+  prompt:
+    - {kind: text, value: "Kids vote for a toy. Robots: 3. Trains: 6. Dolls: 5. How many more kids chose trains than robots?"}
+  steps:
+    - The graph says trains got 6 and robots got 3.
+    - Match them up. Each robot kid stands by a train kid.
+    - The train kids left over are the extra ones.
+    - So {{= 6 - 3 }} more kids chose trains.
+try_it:
+  tier: 0

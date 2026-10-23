@@ -1,0 +1,28 @@
+# Lesson for Compare to 1000. The worked example compares two numbers whose hundreds differ
+# by one and whose last two digits are in order, a pair no tier makes (tier 0 hundreds differ
+# by two or more, tier 1 shares them, tier 2 has the smaller number's last two digits bigger),
+# so a replayed lesson never shows a question the skill asks.
+skill: compare_numbers_1000
+screens:
+  - title: Start with the hundreds
+    body_md: >-
+      Look at the hundreds digit first. The number with more hundreds is bigger. Small tens and ones do not change that.
+    visual:
+      kind: base_ten
+      params: {hundreds: 3, tens: 8, ones: 6}
+  - title: If the hundreds match
+    body_md: >-
+      Look at the tens digit next. If the tens match, look at the ones. Stop at the first place that is different.
+  - title: A number with four digits
+    body_md: >-
+      A number with more digits is bigger. The number 1000 has four digits. Any number with three digits is smaller.
+worked_example:
+  prompt:
+    - {kind: text, value: "A girl has 724 cards. A boy has 835 cards. Who has more cards?"}
+  steps:
+    - Look at the hundreds first. 724 has 7 hundreds. 835 has 8 hundreds.
+    - 8 hundreds is more than 7 hundreds.
+    - The tens and the ones do not change that.
+    - So the boy has more cards.
+try_it:
+  tier: 0

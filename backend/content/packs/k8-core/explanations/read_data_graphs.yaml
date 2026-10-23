@@ -1,0 +1,32 @@
+# Four ways to explain reading a graph, plus feedback for each mistake the generator knows.
+# None of them says whether to add or take away, and none shows the answer.
+skill: read_data_graphs
+approaches:
+  - style: visual
+    body_md: >-
+      Draw a bar for each group. Make each bar as tall as its number. Look at the bars the question talks about.
+  - style: steps
+    body_md: |-
+      1. Read the first line of the graph.
+      2. Read the name of each group and its number.
+      3. Find the groups the question names.
+      4. Think about what the question asks you to find.
+  - style: story
+    body_md: >-
+      Pretend you asked every kid in the class. Each kid chose one group. The graph is the list of what they said. What does the question want to know?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Find the groups the question names. Say each number out loud. Then think about what the question asks.
+misconceptions:
+  read_a_different_group: >-
+    It looks like you read the number of a different group. Check the name beside the number.
+  confused_most_fewest: >-
+    It looks like you picked the other end of the graph. Read the question again. Does it ask for the biggest or the smallest?
+  added_instead: >-
+    It looks like the two numbers went together. The question compares the groups. Match them up and see what is left over.
+  gave_one_count: >-
+    It looks like you gave the number of one group. The question asks about two groups.
+  left_out_a_group: >-
+    It looks like one group was left out. Check that you used every group the question asks about.
+  subtracted_instead: >-
+    It looks like you took numbers away. Read the question again. Does it count the groups together?

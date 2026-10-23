@@ -1,0 +1,31 @@
+# Four ways to explain adding several two-digit numbers, plus feedback for each mistake the
+# generator knows. None of them shows the answer: the picture shows only the first number.
+skill: add_several_2digit
+approaches:
+  - style: visual
+    body_md: >-
+      Here is {a} as blocks. Picture the blocks for the other numbers too. Count all the cubes. Trade ten cubes for a stick as often as you can. Then count the sticks.
+    visual:
+      kind: base_ten
+      params: {tens: "{first_tens}", ones: "{first_ones}"}
+  - style: steps
+    body_md: |-
+      1. Add the ones of every number.
+      2. Keep the ones that are left. Carry the tens.
+      3. Add the tens of every number, and the carried tens too.
+      4. If the tens make ten or more, trade them for a hundred.
+  - style: story
+    body_md: >-
+      Some friends count their marbles. They have {nums}. How many marbles do they have in all?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Write each number in a column. Add the ones first. Do they make ten or more? Carry the tens. Then add the tens column.
+misconceptions:
+  left_out_the_last: >-
+    It looks like one number got left out. Add every number you see. Check that you used all of them.
+  forgot_the_carry: >-
+    You were close! It looks like the carried tens got lost. When the ones make ten or more, carry the tens.
+  carried_one_ten: >-
+    You were close! The ones made more than one ten. Carry every ten, not just one.
+  dropped_the_hundred: >-
+    You were close! It looks like a hundred is missing. Ten tens make one hundred. Write it in the hundreds place.

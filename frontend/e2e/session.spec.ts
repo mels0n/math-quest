@@ -138,11 +138,12 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 		await expect(page.getByTestId('region-fraction_forest')).toContainText('1 more to unlock');
 		expect(await page.evaluate(fits)).toBe(true);
 		if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/practice-picker.png`, fullPage: true });
-		// Compact enough for a phone: 2544 px measured at 320 px with the twenty-eight Number
-		// Meadows skills open (the old one-card-per-row picker was over 2200 for nine skills). The
-		// bound is 15% above that, for font differences between machines. Collapsing the picker as
-		// skills grow is a separate follow-up.
-		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(2930);
+		// Compact enough for a phone: 2544 px measured at 320 px with twenty-eight Number Meadows
+		// skills open (the old one-card-per-row picker was over 2200 for nine skills). Batch 3 adds
+		// two more Meadows skills and eight in other regions; the bound is an estimate of 15% above
+		// the extrapolated height until it is measured again, so tighten it from the next CI run.
+		// Collapsing the picker as skills grow is a separate follow-up.
+		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(4000);
 
 		const started = page.waitForResponse(isStart);
 		const first = page.waitForResponse(isNext);

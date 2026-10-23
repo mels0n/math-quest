@@ -1,0 +1,101 @@
+# Word problems for Read a Graph. Each template shows a small graph as a table of numbers and
+# asks its own question, so it computes its own answer. The generator gives three different
+# counts, {a} the biggest, {b} the middle and {c} the smallest, and a template puts them against
+# the groups in any order. Tier 0 templates read one count, tier 1 templates compare two, and tier 2
+# templates put groups together (the three add to at most 20). No count is followed by a noun, so
+# a count of 1 needs no plural. Short sentences (12 words or fewer), no sentence that starts with a number.
+skill: read_data_graphs
+templates:
+  - id: read_votes
+    text_template: "Kids vote for a snack. Apples: {a}. Pears: {b}. Plums: {c}. How many kids voted for pears?"
+    answer_from: expression
+    expression: "b"
+    grade_band: 1
+    tiers: [0]
+  - id: read_pets
+    text_template: "A graph shows the pets in a class. Cats: {b}. Dogs: {a}. Fish: {c}. How many pets are dogs?"
+    answer_from: expression
+    expression: "a"
+    grade_band: 1
+    tiers: [0]
+  - id: read_cars
+    text_template: "{name} counts cars by color. Red: {c}. Blue: {a}. Green: {b}. How many cars are red?"
+    slots: {name: names}
+    answer_from: expression
+    expression: "c"
+    grade_band: 1
+    tiers: [0]
+  - id: read_biggest
+    text_template: "A class picks a game. Tag: {b}. Cards: {c}. Ball: {a}. How many kids are in the biggest group?"
+    answer_from: expression
+    expression: "a"
+    grade_band: 1
+    tiers: [0]
+  - id: read_smallest
+    text_template: "A teacher counts hats. Red hats: {b}. Blue hats: {a}. Green hats: {c}. How many are in the smallest group?"
+    answer_from: expression
+    expression: "c"
+    grade_band: 1
+    tiers: [0]
+  - id: compare_fruit
+    text_template: "Kids chose a fruit. Apples: {a}. Pears: {c}. Plums: {b}. How many more kids chose apples than pears?"
+    answer_from: expression
+    expression: "a - c"
+    grade_band: 1
+    tiers: [1]
+  - id: compare_fewer
+    text_template: "Kids chose a pet. Cats: {b}. Dogs: {a}. Fish: {c}. How many fewer kids chose fish than cats?"
+    answer_from: expression
+    expression: "b - c"
+    grade_band: 1
+    tiers: [1]
+  - id: compare_days
+    text_template: "A zoo counts how many came each day. Monday: {c}. Tuesday: {a}. Wednesday: {b}. How many more came on Tuesday than Wednesday?"
+    answer_from: expression
+    expression: "a - b"
+    grade_band: 1
+    tiers: [1]
+  - id: compare_shells
+    text_template: "{name} sorts shells by color. White: {b}. Pink: {c}. Gray: {a}. How many more are white than pink?"
+    slots: {name: names}
+    answer_from: expression
+    expression: "b - c"
+    grade_band: 1
+    tiers: [1]
+  - id: compare_ride
+    text_template: "Kids tell how they get to school. Bus: {a}. Walk: {b}. Bike: {c}. How many more ride the bus than bike?"
+    answer_from: expression
+    expression: "a - c"
+    grade_band: 1
+    tiers: [1]
+  - id: total_game
+    text_template: "Kids chose a game. Tag: {a}. Cards: {b}. Ball: {c}. How many kids are there in all?"
+    answer_from: expression
+    expression: "a + b + c"
+    grade_band: 1
+    tiers: [2]
+  - id: total_pies
+    text_template: "A baker sells pies. Apple: {b}. Cherry: {a}. Peach: {c}. How many pies are apple or peach?"
+    answer_from: expression
+    expression: "b + c"
+    grade_band: 1
+    tiers: [2]
+  - id: total_cars
+    text_template: "Cars pass a school. Red: {c}. Blue: {a}. Green: {b}. How many cars are blue or green?"
+    answer_from: expression
+    expression: "a + b"
+    grade_band: 1
+    tiers: [2]
+  - id: total_toys
+    text_template: "{name} counts toys. Dolls: {b}. Robots: {a}. Trains: {c}. How many toys does {name} count in all?"
+    slots: {name: names}
+    answer_from: expression
+    expression: "a + b + c"
+    grade_band: 1
+    tiers: [2]
+  - id: total_stories
+    text_template: "Kids choose a story. Pirates: {a}. Robots: {c}. Wizards: {b}. How many kids chose pirates or robots?"
+    answer_from: expression
+    expression: "a + c"
+    grade_band: 1
+    tiers: [2]
