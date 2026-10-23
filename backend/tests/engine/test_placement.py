@@ -329,7 +329,7 @@ def test_simulated_learners_across_models(model: str, hint: str) -> None:
 # reference learner is past the limit of fifteen questions on eight anchors (it measures 93.3%
 # within one and 2.5% over, and the bar is one point looser); with the hint of the learner's own
 # grade it still meets ADR-0015's bar (measured 95.5% and 1.1%), and the steep learner is
-# within a point of the bars it had on seven anchors.
+# within a point of the bars it had on seven anchors (its bars did not change).
 REAL_BARS: dict[tuple[str, str], tuple[float, float]] = {
     ("reference", "none"): (0.923, 0.035),
     ("reference", "same"): (0.950, 0.020),
@@ -338,7 +338,7 @@ REAL_BARS: dict[tuple[str, str], tuple[float, float]] = {
 }
 
 
-REAL_MEAN_QUESTIONS = 14.5
+REAL_MEAN_QUESTIONS = 14.4
 """The most questions the real pack's placement asks on average over the levels (the
 simulated learners measure 13.9 to 14.3)."""
 
