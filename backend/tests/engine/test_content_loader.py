@@ -209,6 +209,11 @@ def test_real_pack_loads_and_binds() -> None:
         "sub_2digit_regroup": "2",
         "add_several_2digit": "2",
         "mental_add_10_100": "2",
+        "compare_numbers_1000": "2",
+        "clock_hours": "1",
+        "read_data_graphs": "1",
+        "even_odd": "2",
+        "word_problems_100": "2",
         "equivalent_fractions": "3",
         "add_fractions_unlike": "5",
     }
