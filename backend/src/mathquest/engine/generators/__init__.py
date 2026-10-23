@@ -8,13 +8,18 @@ from collections.abc import Mapping
 from types import MappingProxyType
 
 from mathquest.engine.generators import (
+    clock,
+    compare_1000,
     comparing,
     counting,
     early,
     fractions,
+    graphs,
     mental,
+    parity,
     place_value,
     stories,
+    stories_100,
     strategies,
     subtraction,
     tens,
@@ -35,6 +40,11 @@ _REGISTRY: Mapping[str, Generator] = MappingProxyType(
             *stories.generators(),
             *subtraction.generators(),
             *mental.generators(),
+            *clock.generators(),
+            *graphs.generators(),
+            *parity.generators(),
+            *compare_1000.generators(),
+            *stories_100.generators(),
         ]
     }
 )

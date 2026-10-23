@@ -55,6 +55,11 @@ BASES = {
     "add_several_2digit": 0.2,
     "mental_add_10_100": -0.2,
     "fluency_within_20": -0.4,
+    "clock_hours": -1.5,
+    "read_data_graphs": -0.9,
+    "even_odd": -0.7,
+    "compare_numbers_1000": -0.2,
+    "word_problems_100": 0.4,
 }
 
 seeds = st.integers(0, 2**32 - 1)
@@ -168,7 +173,7 @@ def test_registry_covers_pack() -> None:
     assert set(PACK_SKILLS) <= set(all_generators())
     for gen_id, gen in all_generators().items():
         assert gen.generator_id == gen_id
-    assert len(all_generators()) == 37
+    assert len(all_generators()) == 42
 
 
 def test_unknown_skill_is_keyerror() -> None:
@@ -1263,9 +1268,10 @@ def test_count_on_is_one_form_in_five_in_every_tier_of_count_to_100() -> None:
         assert 0.14 <= forms.count("count_on") / 1000 <= 0.26, tier
 
 
-def test_only_two_candidate_generators_count_the_first_try_only() -> None:
-    """The comparing skills (two numbers to pick from) and fact families (the answer is
-    always one of the numbers shown)."""
+def test_only_generators_with_few_candidate_answers_count_the_first_try_only() -> None:
+    """The comparing skills (two numbers to pick from), fact families (the answer is always
+    one of the numbers shown) and four batch 3 skills whose answer is, in most forms, one of
+    two or three numbers the question shows: clock hours, reading a graph, even or odd."""
     flagged = {
         gid for gid, gen in all_generators().items() if getattr(gen, "first_try_counts", False)
     }
@@ -1273,7 +1279,11 @@ def test_only_two_candidate_generators_count_the_first_try_only() -> None:
         "compare_groups",
         "compare_numbers_20",
         "compare_numbers_100",
+        "compare_numbers_1000",
         "fact_families_20",
+        "clock_hours",
+        "read_data_graphs",
+        "even_odd",
     }
 
 
