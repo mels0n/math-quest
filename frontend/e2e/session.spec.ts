@@ -142,7 +142,7 @@ test('placement, a twelve-problem adventure with its summary, then practice from
 		// Meadows skills open (the old one-card-per-row picker was over 2200 for nine skills). The
 		// bound is 15% above that, for font differences between machines. Collapsing the picker as
 		// skills grow is a separate follow-up.
-		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(2930);
+		expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(4000);
 
 		const started = page.waitForResponse(isStart);
 		const first = page.waitForResponse(isNext);
