@@ -44,7 +44,7 @@ templates:
     grade_band: 1
     tiers: [1]
   - id: compare_fewer
-    text_template: "A graph shows pets. Cats: {b}. Dogs: {a}. Fish: {c}. How many fewer kids chose fish than cats?"
+    text_template: "Kids chose a pet. Cats: {b}. Dogs: {a}. Fish: {c}. How many fewer kids chose fish than cats?"
     answer_from: expression
     expression: "b - c"
     grade_band: 1

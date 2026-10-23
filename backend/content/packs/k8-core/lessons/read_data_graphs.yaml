@@ -1,5 +1,6 @@
 # Lesson for Read a Graph. A graph is told as a short table of numbers, and the examples use
-# a topic the skill's graphs never use (toys), so a replayed lesson never shows a graph it asks.
+# a topic the generator's graphs never use (a vote for a toy), so a replayed lesson
+# never shows a graph it asks.
 skill: read_data_graphs
 screens:
   - title: Read each group

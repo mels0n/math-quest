@@ -81,18 +81,24 @@ def clock_form(text: str) -> tuple[str, int, int]:
     ):
         return "half_past_game", hour(int(m[1]) + 1), int(m[1])
     if m := re.fullmatch(
-        r"A clock shows (\d+):30\. How many minutes after \1 o'clock is that\?", text
+        r"It is half past (\d+)\. How many minutes after \1 o'clock is that\?", text
     ):
         return "minutes_after_hour", 30, int(m[1])
+    if m := re.fullmatch(r"It is half past (\d+)\. How many minutes until (\d+) o'clock\?", text):
+        assert int(m[2]) == hour(int(m[1]) + 1)
+        return "minutes_until_hour", 30, int(m[1])
+    if m := re.fullmatch(r"It is half past (\d+)\. What hour will it be in half an hour\?", text):
+        return "half_hour_later", hour(int(m[1]) + 1), int(m[1])
     if m := re.fullmatch(
-        r"The short hand is just past (\d+)\. The long hand points to 6\. "
-        r"How many minutes after \1 o'clock is it\?",
+        r"The short hand is between (\d+) and (\d+)\. The long hand points to 6\. "
+        r"How many minutes past the hour is it\?",
         text,
     ):
+        assert int(m[2]) == hour(int(m[1]) + 1)
         return "minutes_from_hands", 30, int(m[1])
     if m := re.fullmatch(
         r"The short hand points to (\d+)\. The long hand points to 12\. "
-        r"How many minutes after \1 o'clock is it\?",
+        r"How many minutes past the hour is it\?",
         text,
     ):
         return "minutes_from_hands", 0, int(m[1])
@@ -102,10 +108,11 @@ def clock_form(text: str) -> tuple[str, int, int]:
         text,
     ):
         halves = (int(m[3]) - int(m[2])) * 2 + (1 if m[4] == "30" else 0)
-        assert 1 <= halves <= 5
         if m[1] == "walk":
+            assert 1 <= halves <= 4
             assert m[5] == "half hours is that"
             return "half_hours_between", halves, int(m[2])
+        assert 1 <= halves <= 2
         assert m[5] == "minutes long is it"
         return "minutes_between", halves * 30, int(m[2])
     raise AssertionError(text)
@@ -113,8 +120,14 @@ def clock_form(text: str) -> tuple[str, int, int]:
 
 CLOCK_FORMS = (
     {"hands_hour", "hour_later", "hour_before"},
-    {"hands_half_past", "digital_half_past", "half_past_game", "minutes_after_hour"},
-    {"minutes_from_hands", "half_hours_between", "minutes_between"},
+    {
+        "hands_half_past",
+        "digital_half_past",
+        "half_past_game",
+        "minutes_after_hour",
+        "minutes_until_hour",
+    },
+    {"half_hour_later", "minutes_from_hands", "half_hours_between", "minutes_between"},
 )
 
 
@@ -160,6 +173,10 @@ def test_clock_hours_wrong_answers_are_the_rules_give(seed: int, tier: int) -> N
         rules = [("gave_the_minutes", 30), ("off_by_one_hour", hour(told + 1))]
     elif form == "minutes_after_hour":
         rules = [("gave_the_hour", told), ("gave_the_long_hand_number", 6)]
+    elif form == "minutes_until_hour":
+        rules = [("gave_the_hour", hour(told + 1)), ("gave_the_long_hand_number", 6)]
+    elif form == "half_hour_later":
+        rules = [("gave_the_hour", told), ("off_by_one_hour", hour(told + 2))]
     elif form == "minutes_from_hands":
         rules = [("gave_the_long_hand_number", 6 if answer else 12), ("gave_the_hour", told)]
     elif form == "half_hours_between":
@@ -168,6 +185,21 @@ def test_clock_hours_wrong_answers_are_the_rules_give(seed: int, tier: int) -> N
         halves = answer // 30
         rules = [("gave_the_half_hours", halves), ("counted_whole_hours", 60 * (halves // 2))]
     assert got == expected_pairs(answer, rules)
+
+
+def test_a_minutes_question_does_not_print_its_own_answer() -> None:
+    """Half past is told in words, so a child cannot copy the 30 off the page."""
+    for tier in (1, 2):
+        for seed in range(600):
+            form, answer, _ = clock_form(prompt("clock_hours", seed, tier))
+            if form in ("minutes_after_hour", "minutes_until_hour", "minutes_from_hands"):
+                assert answer in (0, 30)
+                assert "30" not in prompt("clock_hours", seed, tier), form
+
+
+def test_clock_hours_never_asks_for_more_than_an_hour_of_minutes() -> None:
+    answers = {clock_form(prompt("clock_hours", seed, 2))[1] for seed in range(600)}
+    assert max(answers) <= 60
 
 
 def test_clock_hours_tier_zero_answers_cover_every_hour() -> None:
@@ -271,9 +303,20 @@ def test_graph_wrong_answers_are_the_rules_give(seed: int, tier: int) -> None:
     assert wrong_pairs("read_data_graphs", seed, tier) == expected_pairs(answer, rules)
 
 
+@prop
+@given(seed=seeds, tier=tiers)
+def test_graph_hints_name_no_operation_and_use_no_verb_after_a_group(seed: int, tier: int) -> None:
+    values = get_generator("read_data_graphs").generate(seed, tier).values
+    step = str(values["step"]).lower()
+    for word in ("left over", "together", "add", "take away", "subtract", "plus", "minus"):
+        assert word not in step, step
+    # Group names are often plural ("cats", "puzzles"), so the working never says "has".
+    assert " has " not in str(values["worked"]), values["worked"]
+
+
 # --- even or odd ----------------------------------------------------------------------------
 
-EVEN_ODD_RANGES = ((1, 20), (21, 99), (101, 999))
+EVEN_ODD_RANGES = ((1, 20), (21, 100), (101, 1000))
 
 
 def parity_form(text: str) -> tuple[str, int, list[int]]:

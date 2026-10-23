@@ -105,9 +105,9 @@ def _compare_two(rng: random.Random, tier: int) -> Built:
         counts,
         big - small,
         [("added_instead", big + small), ("gave_one_count", big), ("gave_one_count", small)],
-        f"Find {more_name} and {less_name}. Match them up and see what is left over.",
-        f"{more_name.capitalize()} has {big} and {less_name} has {small}. "
-        f"The gap is {big - small}.",
+        f"Find {more_name} and {less_name}. Say both numbers.",
+        f"{more_name.capitalize()}: {big}. {less_name.capitalize()}: {small}. "
+        f"Match them up. The gap is {big - small}.",
         told=(big, small),
     )
 
@@ -120,8 +120,8 @@ def _compare_extremes(rng: random.Random, tier: int) -> Built:
         counts,
         a - c,
         [("added_instead", a + c), ("gave_one_count", a), ("gave_one_count", c)],
-        "Find the biggest group and the smallest group. Match them up.",
-        f"The biggest has {a} and the smallest has {c}. The gap is {a - c}.",
+        "Find the biggest group and the smallest group. Say both numbers.",
+        f"Biggest: {a}. Smallest: {c}. Match them up. The gap is {a - c}.",
         told=(a, c),
     )
 
@@ -150,8 +150,8 @@ def _total_two(rng: random.Random, tier: int) -> Built:
         counts,
         x + y,
         [("subtracted_instead", abs(x - y)), ("gave_one_count", max(x, y))],
-        f"Find {first} and {second}. Think about the two groups together.",
-        f"{first.capitalize()} has {x} and {second} has {y}. Together that is {x + y}.",
+        f"Find {first} and {second}. Say both numbers.",
+        f"{first.capitalize()}: {x}. {second.capitalize()}: {y}. Together that is {x + y}.",
         told=(x, y),
     )
 

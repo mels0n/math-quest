@@ -7,7 +7,8 @@ shows ("4:30"). The answer is always a whole number: an hour, or a count of minu
 hours. The picture of a clock is for the lesson, which can show one.
 
 Tier 0 is the hour (long hand on 12), tier 1 is half past (long hand on 6), and tier 2 mixes
-the hour and the half hour and counts minutes and half hours between two times.
+the hour and the half hour, and counts half hours and up to sixty minutes between two times (longer
+spans of time belong to the elapsed time skill).
 """
 
 import random
@@ -126,8 +127,8 @@ def _digital_half_past(rng: random.Random) -> Built:
         h,
         [("gave_the_minutes", 30), ("off_by_one_hour", _hour(h + 1))],
         _NUDGE_HALF,
-        "In a digital time, the number before the colon is the hour.",
-        f"The hour is {h}. So it is half past {h}.",
+        "Look at the digital time. Which part of it tells the hour?",
+        f"The number before the colon is the hour. The hour is {h}. So it is half past {h}.",
         hour=h,
     )
 
@@ -149,12 +150,26 @@ def _half_past_game(rng: random.Random) -> Built:
 def _minutes_after_hour(rng: random.Random) -> Built:
     h = rng.randint(1, 12)
     return _built(
-        f"A clock shows {h}:30. How many minutes after {h} o'clock is that?",
+        f"It is half past {h}. How many minutes after {h} o'clock is that?",
         30,
         [("gave_the_hour", h), ("gave_the_long_hand_number", 6)],
-        "Half past means half of an hour has gone by.",
-        "An hour has sixty minutes. Think about half of them.",
+        "Half past means part of an hour has gone by.",
+        "An hour has sixty minutes. How much of the hour has gone by?",
         f"Half an hour after {h} o'clock is half past {h}. That is 30 minutes.",
+        hour=h,
+    )
+
+
+def _minutes_until_hour(rng: random.Random) -> Built:
+    h = rng.randint(1, 12)
+    nxt = _hour(h + 1)
+    return _built(
+        f"It is half past {h}. How many minutes until {nxt} o'clock?",
+        30,
+        [("gave_the_hour", nxt), ("gave_the_long_hand_number", 6)],
+        "Half past means part of an hour has gone by. Some of it is still to come.",
+        "An hour has sixty minutes. How much of the hour has gone by?",
+        f"Half past {h} is half an hour before {nxt} o'clock. That is 30 minutes.",
         hour=h,
     )
 
@@ -162,39 +177,54 @@ def _minutes_after_hour(rng: random.Random) -> Built:
 # --- tier 2: the hour or the half hour -----------------------------------------------------
 
 
+def _half_hour_later(rng: random.Random) -> Built:
+    h = rng.randint(1, 12)
+    answer = _hour(h + 1)
+    return _built(
+        f"It is half past {h}. What hour will it be in half an hour?",
+        answer,
+        [("gave_the_hour", h), ("off_by_one_hour", _hour(h + 2))],
+        _NUDGE_AFTER,
+        "Two half hours make one hour. Where does the short hand stand after one of them?",
+        f"Half an hour after half past {h} is {answer} o'clock.",
+        hour=h,
+    )
+
+
 def _minutes_from_hands(rng: random.Random) -> Built:
     h = rng.randint(1, 12)
     half = rng.choice((True, False))
     first = (
-        f"The short hand is just past {h}. The long hand points to 6."
+        f"The short hand is between {h} and {_hour(h + 1)}. The long hand points to 6."
         if half
         else f"The short hand points to {h}. The long hand points to 12."
     )
     answer = 30 if half else 0
     return _built(
-        f"{first} How many minutes after {h} o'clock is it?",
+        f"{first} How many minutes past the hour is it?",
         answer,
         [
             ("gave_the_long_hand_number", 6 if half else 12),
             ("gave_the_hour", h),
         ],
         "The long hand tells the minutes. Where does it point?",
-        "On twelve no minutes have gone by. On six a half hour has gone by.",
-        f"The long hand points to {6 if half else 12}. So {answer} minutes have gone by.",
+        "Think about how far around the clock the long hand has gone.",
+        f"The long hand points to {6 if half else 12}. "
+        f"On {6 if half else 12} that is {answer} minutes past the hour.",
         hour=h,
     )
 
 
-def _span(rng: random.Random) -> tuple[int, int, int, str, str]:
-    """A start on the hour, an end 1 to 5 half hours later, and both as digital times."""
+def _span(rng: random.Random, most: int) -> tuple[int, int, str, str]:
+    """A start on the hour, an end 1 to ``most`` half hours later, and both as digital times."""
     start = rng.randint(1, 7)
-    halves = rng.randint(1, 5)
+    halves = rng.randint(1, most)
     end_hour, end_half = divmod(start * 2 + halves, 2)
-    return start, halves, end_hour, f"{start}:00", f"{end_hour}:{'30' if end_half else '00'}"
+    return start, halves, f"{start}:00", f"{end_hour}:{'30' if end_half else '00'}"
 
 
 def _half_hours_between(rng: random.Random) -> Built:
-    start, halves, _, begin, finish = _span(rng)
+    start, halves, begin, finish = _span(rng, 4)
     return _built(
         f"A walk starts at {begin} and ends at {finish}. How many half hours is that?",
         halves,
@@ -210,7 +240,8 @@ def _half_hours_between(rng: random.Random) -> Built:
 
 
 def _minutes_between(rng: random.Random) -> Built:
-    start, halves, _, begin, finish = _span(rng)
+    """Up to two half hours, so the most it asks for is sixty minutes."""
+    start, halves, begin, finish = _span(rng, 2)
     return _built(
         f"A film starts at {begin} and ends at {finish}. How many minutes long is it?",
         halves * 30,
@@ -234,8 +265,9 @@ _FORMS: tuple[tuple[Callable[[random.Random], Built], ...], ...] = (
         _half_past_game,
         _hands_half_past,
         _minutes_after_hour,
+        _minutes_until_hour,
     ),
-    (_minutes_from_hands, _half_hours_between, _minutes_between),
+    (_half_hour_later, _minutes_from_hands, _half_hours_between, _minutes_between),
 )
 
 

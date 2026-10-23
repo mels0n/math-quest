@@ -27,7 +27,7 @@ from mathquest.engine.types import AnswerForm, PromptPart
 
 _Int = sympy.Integer
 
-_RANGES = ((1, 20), (21, 99), (101, 999))
+_RANGES = ((1, 20), (21, 100), (101, 1000))
 _THINGS = ("shells", "stones", "cubes", "socks", "shoes", "cups", "hats", "beads", "stars")
 _ENDINGS = {
     "even": "Even numbers end in zero, two, four, six or eight.",

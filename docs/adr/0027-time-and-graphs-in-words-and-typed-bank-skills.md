@@ -29,7 +29,9 @@ Three things in the plan did not fit what the app can show or score:
   digital clock shows ("4:30"). The answer is always a whole number: an hour, a count of
   minutes after the hour, or a count of half hours between two times. The lesson, not the
   question, shows the clock picture. The tiers are the hour, half past, and the hour or half
-  hour mixed with time between two clock times.
+  hour mixed with half hours between two clock times. No question asks for more than sixty
+  minutes; longer spans are the elapsed time skill. The minutes in a half past question are
+  never written as a numeral in the question, so the answer cannot be copied from it.
 - **A graph is a short table of numerals.** A question lists three groups with how many
   kids chose each ("Cats: 4. Dogs: 7. Birds: 3.") and asks one question about it. The three
   counts are always different, so the biggest and the smallest group are each one group.
@@ -53,7 +55,7 @@ Three things in the plan did not fit what the app can show or score:
   answer and serves the tiers its shape is told in, and hints and feedback name no
   operation. Tier 0 adds to or takes from, tier 1 puts together, takes apart or compares,
   and tier 2 mixes the shapes that take apart and compare with the ones where the change or
-  the start is unknown. Every number told is two-digit, so a noun after one is always plural.
+  the start is unknown. Every number told is at least 10, so a noun after one is always plural.
 
 ## Alternatives rejected
 - **Build the clock and graph pictures first.** It would hold back the skills until a

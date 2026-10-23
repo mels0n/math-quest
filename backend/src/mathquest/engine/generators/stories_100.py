@@ -3,7 +3,7 @@
 
 A story that adds tells ``a`` and ``b`` (``a`` is at least ``b``, both at least 10, and
 ``a + b`` is at most 100). A story that takes away tells ``m`` and ``n`` (``n`` is at least
-10 and at least 5 less than ``m``, and ``m`` is at most 100). Every number told is two-digit, so
+10 and at least 5 less than ``m``, and ``m`` is at most 100). Every number told is at least 10, so
 a noun after one is always plural. Word templates retell one of the two pairs with their own
 answer, as in Story Problems to 20 (ADR-0025). ``told1`` and ``told2`` are the pair the bare
 story tells, for hints.
