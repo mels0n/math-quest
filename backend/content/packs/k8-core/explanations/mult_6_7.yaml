@@ -7,7 +7,7 @@ approaches:
         Each row of dots is one group. Turn the fact around so the table comes first. Draw a line after the fifth row. The top rows are a fives fact. The rows left are the extra groups.
     visual:
       kind: array
-      params: {rows: "{g}", cols: "{s}"}
+      params: {rows: "{table}", cols: "{other}"}
   - style: steps
     body_md: |-
       1. Find the table in the fact. It is 6 or 7. Turn the fact so it comes first.

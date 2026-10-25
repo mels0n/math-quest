@@ -7,7 +7,7 @@ approaches:
         Each row of dots is one group. Turn the fact around so the table comes first. A 3 is a 2 and a 1. A 4 is two 2s. Look for the double inside the dots, then count on.
     visual:
       kind: array
-      params: {rows: "{g}", cols: "{s}"}
+      params: {rows: "{table}", cols: "{other}"}
   - style: steps
     body_md: |-
       1. Find the table in the fact. It is 3 or 4. Turn the fact so it comes first.

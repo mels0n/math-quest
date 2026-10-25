@@ -2,7 +2,6 @@
 """Teaching content of the four times tables skills: complete, renders for every problem, keeps
 to short sentences, teaches a strategy for each table and tells equal groups that are equal."""
 
-import random
 import re
 from pathlib import Path
 
@@ -105,12 +104,6 @@ def test_hints_before_the_last_never_show_the_answer_unless_the_question_does(
                     assert int(number) != answer or answer in shown, (tier, seed, hint)
 
 
-def own_table(skill_id: str, tier: int, seed: int) -> int:
-    """The table a fact was drawn for: tier 0 and 1 name one, the mixed tier draws first."""
-    first, second = TABLES[skill_id]
-    return random.Random(seed).choice((first, second)) if tier == 2 else (first, second)[tier]
-
-
 @pytest.mark.parametrize("skill_id", TABLES)
 def test_every_hint_teaches_the_strategy_for_the_table_the_fact_was_drawn_for(
     skill_id: str,
@@ -122,7 +115,7 @@ def test_every_hint_teaches_the_strategy_for_the_table_the_fact_was_drawn_for(
         for seed in range(SEEDS):
             problem = source.generate(seed, tier)
             g, s = int(problem.values["g"]), int(problem.values["s"])
-            table = own_table(skill_id, tier, seed)
+            table = int(problem.values["table"])
             assert table in (g, s)
             hints = [plain(h) for h in render_hints(PACK.hints[skill_id], problem)]
             words = " ".join(hints[:2]).lower()
@@ -141,16 +134,33 @@ def test_a_table_that_is_the_second_factor_is_turned_around_first(skill_id: str)
         for seed in range(SEEDS):
             problem = source.generate(seed, tier)
             g, s = int(problem.values["g"]), int(problem.values["s"])
+            table, other = int(problem.values["table"]), int(problem.values["other"])
             nudge = plain(render_hints(PACK.hints[skill_id], problem)[0])
-            if g not in (first, second):
-                assert nudge.startswith(f"Turn it around: {s} groups of {g}."), (g, s, nudge)
+            prefix = f"Turn it around: {table} groups of {other}."
+            if s == table != g:
+                assert nudge.startswith(prefix), (g, s, nudge)
                 turned += 1
-            elif "Turn it around" in nudge:
-                # Both numbers are in the pair (8 times 9): the table drawn was the second.
-                assert nudge.startswith(f"Turn it around: {s} groups of {g}."), (g, s, nudge)
             else:
+                assert not nudge.startswith("Turn it around"), (g, s, nudge)
                 straight += 1
     assert turned and straight
+
+
+@pytest.mark.parametrize("skill_id", TABLES)
+def test_the_explanation_picture_has_the_table_as_its_rows(skill_id: str) -> None:
+    """The text says to turn the fact around so the table comes first, so the dots are drawn
+    as that many rows of the other number whichever way round the question was asked."""
+    source = CATALOG.source(skill_id)
+    explanations = PACK.explanations[skill_id]
+    for tier in range(3):
+        for seed in range(SEEDS):
+            problem = source.generate(seed, tier)
+            for approach in render_explanations(explanations, problem):
+                if approach.visual is None:
+                    continue
+                params = approach.visual.params
+                assert params.rows == int(problem.values["table"]), (tier, seed)
+                assert params.cols == int(problem.values["other"]), (tier, seed)
 
 
 def test_the_nines_teach_the_digit_pattern() -> None:

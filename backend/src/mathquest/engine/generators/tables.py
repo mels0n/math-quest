@@ -119,6 +119,8 @@ def _builder(skill: str) -> Callable[[random.Random, int], Built]:
             values={
                 "g": g,
                 "s": s,
+                "table": table,
+                "other": other,
                 "nudge": nudge,
                 "step": step(other),
                 "finish": finish(other),

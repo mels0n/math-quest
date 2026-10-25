@@ -7,7 +7,7 @@ approaches:
         Each row of dots is one group. Turn the fact around so the table comes first. Count the rows and count one row. Split the rows to make an easier fact. Double the number, or use half of ten rows.
     visual:
       kind: array
-      params: {rows: "{g}", cols: "{s}"}
+      params: {rows: "{table}", cols: "{other}"}
   - style: steps
     body_md: |-
       1. Find the table in the fact. It is 2 or 5. Turn the fact so it comes first.

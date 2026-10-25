@@ -7,7 +7,7 @@ approaches:
         Each row of dots is one group. Find the 8 or the 9 in the fact. Turn it around so the 8 or the 9 comes first. For a 9, picture one more group to make ten groups. Take that extra group away again. For an 8, double the other number, then double again, and again.
     visual:
       kind: array
-      params: {rows: "{g}", cols: "{s}"}
+      params: {rows: "{table}", cols: "{other}"}
   - style: steps
     body_md: |-
       1. Find the table in the fact. It is 8 or 9. Turn the fact so it comes first.
