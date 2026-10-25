@@ -12,8 +12,8 @@ with borrowing. [ADR-0024](0024-missing-number-joins-the-placement-spine.md) and
 batch which adds an anchor re-run the real-pack placement tests and record the result.
 
 The skill is typed, so it has the ten percent guess rate of every other anchor. It builds on
-adding three-digit numbers without carrying, which sits under adding with carrying in the
-same way two-digit adding does.
+adding three-digit numbers without carrying and on two-digit adding with carrying, the anchor
+whose method it extends by a place.
 
 ## Decision
 **The skill is not an anchor.** The spine stays at eight anchors: counting to 10, adding to
@@ -57,7 +57,9 @@ keeps the figures ADR-0026 recorded and the real-pack bars in
   measured option to revisit.
 
 ## Consequences
-A child placed at borrowing is not marked past three-digit adding; it is the next skill
-in the canyon, and the first practice settles it. A later batch that wants a grade 3 anchor should build one on a skill that is not one rung
-above an existing anchor, or settle the question-limit trade above first, and should record
-its figures as this record does.
+A child placed at either two-digit anchor (adding with carrying or subtracting with
+borrowing) is not marked past any of the four three-digit skills, because none of them is
+below those anchors: they are the next skills in the canyon, and the first practice settles
+each. A later batch that wants a grade 3 anchor should build one on a skill that is not one
+rung above an existing anchor, or settle the question-limit trade above first, and should
+record its figures as this record does.

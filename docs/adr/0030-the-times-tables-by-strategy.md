@@ -26,6 +26,8 @@ deciding:
   The other number runs from 2 to 10 and the fact is written either way round. Times 0 and 1
   stay in `mult_0_1_10`, and 10 only appears here as the other number. No tier asks for a
   missing factor or divides; those are the next batch.
+  Because the tables ask "times 10" and their hints use ten times, `mult_2_5` has `mult_0_1_10`
+  as a prerequisite, so every table sits above it.
 - **Forms.** The form climbs with the tier. The first tier asks the sentence (`7 \times 6 = ?`)
   and "What is" with the sentence in it. The second adds "There are 7 groups of 6." The third
   adds "What is 7 times 6?" in words. The questions are the same two numbers underneath (`g`

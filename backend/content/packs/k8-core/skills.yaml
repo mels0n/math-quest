@@ -636,7 +636,7 @@ skills:
   - id: add_3digit_regroup
     name: Add Hundreds and Carry
     region: operation_canyon
-    prerequisites: [add_3digit_no_regroup]
+    prerequisites: [add_3digit_no_regroup, add_2digit_regroup]
     fluency: true
     anchor: false
     generator: add_3digit_regroup
@@ -726,7 +726,7 @@ skills:
   - id: mult_2_5
     name: Times 2 and 5
     region: operation_canyon
-    prerequisites: [mult_as_groups, skip_count_2_5]
+    prerequisites: [mult_as_groups, mult_0_1_10, skip_count_2_5]
     fluency: true
     anchor: false
     generator: mult_2_5
