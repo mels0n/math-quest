@@ -1,0 +1,28 @@
+# Lesson for Times 8 and 9. Its examples use 11 and 12, which the skill never asks (the other number is 2 to 10),
+# so a replayed lesson never shows a problem the skill asks.
+skill: mult_8_9
+screens:
+  - title: Times 8 is double, double, double
+    body_md: >-
+        Double the number three times. Double 11 is {{= 2 \times 11 }}. Double again to get {{= 4 \times 11 }}. Double once more to get {{= 8 \times 11 }}. So \(8 \times 11 = {{= 8 \times 11 }}\).
+    visual:
+      kind: array
+      params: {rows: 8, cols: 11}
+  - title: Times 9 is one less than ten
+    body_md: >-
+        Find ten groups first. Then take away one group. Ten times 11 is {{= 10 \times 11 }}. Take away 11 to get {{= 9 \times 11 }}. So \(9 \times 11 = {{= 9 \times 11 }}\).
+    visual:
+      kind: array
+      params: {rows: 9, cols: 11}
+  - title: A pattern in the nines
+    body_md: >-
+        Count by nines: 9, 18, 27, 36, 45. The tens digit goes up by one. The ones digit goes down by one. The two digits always add up to 9.
+worked_example:
+  prompt:
+    - {kind: text, value: "A kite shop has 9 shelves. Each shelf has 12 kites. How many kites is that?"}
+  steps:
+    - There are 9 groups of 12. Write it as \(9 \times 12\).
+    - Ten times 12 is {{= 10 \times 12 }}. Take away one group of 12.
+    - So \(9 \times 12 = {{= 9 \times 12 }}\).
+try_it:
+  tier: 0

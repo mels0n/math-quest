@@ -717,6 +717,86 @@
       }
     ]
   },
+  "mult_2_5": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 5 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_2_5-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A mail carrier drops 10 letters at each stop. How many letters does the carrier drop at 2 stops?"
+      }
+    ]
+  },
+  "mult_3_4": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 4 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_3_4-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The farm stand sells 3 baskets of plums. Each basket has 10 plums. How many plums are for sale?"
+      }
+    ]
+  },
+  "mult_6_7": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 7 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_6_7-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A teacher buys 6 sets of chalk. Each set has 10 sticks. How many sticks does the teacher get?"
+      }
+    ]
+  },
+  "mult_8_9": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 9 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_8_9-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A farmer plants 8 rows of tomatoes. Each row gets 10 plants. How many plants go in the ground?"
+      }
+    ]
+  },
   "mult_as_groups": {
     "tier": 2,
     "seed": 157,

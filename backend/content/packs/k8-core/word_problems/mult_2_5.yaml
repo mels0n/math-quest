@@ -1,0 +1,58 @@
+# Word problems for Times 2 and 5 (3.OA.C.7). Every template uses the generator's {g} groups of
+# {s} and asks for the total. Each story's groups are equal, and there are at least two of
+# them and at least two in each, so a plural noun is always right. No sentence starts with a
+# number.
+skill: mult_2_5
+templates:
+  - id: fish_tanks
+    text_template: "A pet shop has {g} tanks. Each tank has {s} fish. How many fish are in the shop?"
+    grade_band: 3
+  - id: swim_lanes
+    text_template: "A pool has {g} lanes with {s} swimmers in each. How many swimmers are there?"
+    grade_band: 3
+  - id: pear_trees
+    text_template: "{name} picks {s} pears from each tree. How many pears does {name} get from {g} trees?"
+    slots: {name: names}
+    grade_band: 3
+  - id: train_cars
+    text_template: "A train has {g} cars. Each car carries {s} riders. How many riders can the train carry?"
+    grade_band: 3
+  - id: ice_cubes
+    text_template: "{name} drops {s} ice cubes in each cup. How many cubes are in {g} cups?"
+    slots: {name: names}
+    grade_band: 3
+  - id: greenhouse
+    text_template: "The greenhouse has {g} shelves. Each shelf has {s} pots. How many pots are in the greenhouse?"
+    grade_band: 3
+  - id: swing_sets
+    text_template: "Each swing set in the park has {s} swings. How many swings are on {g} sets?"
+    grade_band: 3
+  - id: school_vans
+    text_template: "A school sends {g} vans on a trip. Each van holds {s} kids. How many kids go?"
+    grade_band: 3
+  - id: mail_stops
+    text_template: "A mail carrier drops {s} letters at each stop. How many letters does the carrier drop at {g} stops?"
+    grade_band: 3
+  - id: party_trays
+    text_template: "{name} puts {s obj} on each tray at the party. How many {obj} are on {g} trays?"
+    slots: {name: names, obj: objects}
+    grade_band: 3
+  - id: tall_tree
+    text_template: "In the tall tree, {g} nests each hold {s} eggs. How many eggs are in the tree?"
+    grade_band: 3
+  - id: coin_jars
+    text_template: "Coins go into {g} jars, {s} to a jar. How many coins are there?"
+    grade_band: 3
+  - id: drum_lines
+    text_template: "A band teacher has {g} drum lines. Every line has {s} drummers. How many drummers play?"
+    grade_band: 3
+  - id: puzzle_boxes
+    text_template: "{name} opens {g} puzzle boxes. Each box has {s} pieces. How many pieces is that?"
+    slots: {name: names}
+    grade_band: 3
+  - id: cookie_sheets
+    text_template: "A baker puts {s} cookies on a sheet. How many cookies fit on {g} sheets?"
+    grade_band: 3
+  - id: hikers
+    text_template: "The hikers walk in {g} lines of {s}. How many hikers are on the trail?"
+    grade_band: 3

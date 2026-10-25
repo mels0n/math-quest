@@ -1,0 +1,57 @@
+# Word problems for Times 6 and 7 (3.OA.C.7). Every template uses the generator's {g} groups of
+# {s} and asks for the total. Each story's groups are equal, and there are at least two of
+# them and at least two in each, so a plural noun is always right. No sentence starts with a
+# number.
+skill: mult_6_7
+templates:
+  - id: egg_cartons
+    text_template: "A grocer stacks {g} cartons of eggs. Each carton holds {s} eggs. How many eggs is that?"
+    grade_band: 3
+  - id: week_laps
+    text_template: "{name} runs {s} laps a day for {g} days. How many laps does {name} run?"
+    slots: {name: names}
+    grade_band: 3
+  - id: cabin_beds
+    text_template: "The lodge has {g} cabins. Each cabin has {s} beds. How many beds does the lodge have?"
+    grade_band: 3
+  - id: orchard_crates
+    text_template: "The orchard fills {g} crates with {s} apples each. How many apples are picked?"
+    grade_band: 3
+  - id: choir_risers
+    text_template: "A choir stands on {g} risers. Each riser holds {s} singers. How many singers are in the choir?"
+    grade_band: 3
+  - id: seed_trays
+    text_template: "In spring, {name} fills {g} trays. Each tray gets {s} seeds. How many seeds does {name} plant?"
+    slots: {name: names}
+    grade_band: 3
+  - id: class_teams
+    text_template: "The gym class forms {g} groups. Each group has {s} kids. How many kids are in the class?"
+    grade_band: 3
+  - id: sticker_packs
+    text_template: "A shop sells packs of {s} stickers. How many stickers are in {g} packs?"
+    grade_band: 3
+  - id: canal_boats
+    text_template: "Boats cross the canal in {g} trips. Each trip carries {s} riders. How many riders cross?"
+    grade_band: 3
+  - id: tile_rows
+    text_template: "A floor has {g} rows of tiles. Each row has {s} tiles. How many tiles cover the floor?"
+    grade_band: 3
+  - id: math_club
+    text_template: "The math club meets {g} days. Each day has {s} puzzles. How many puzzles do they solve?"
+    grade_band: 3
+  - id: trail_mix
+    text_template: "{name} scoops {s} raisins into each bag of mix. How many raisins go in {g} bags?"
+    slots: {name: names}
+    grade_band: 3
+  - id: lamp_posts
+    text_template: "A street has {g} lamp posts. Each post has {s} bulbs. How many bulbs light the street?"
+    grade_band: 3
+  - id: ferry_decks
+    text_template: "The ferry has {g} decks. Every deck has {s} benches. How many benches are on the ferry?"
+    grade_band: 3
+  - id: chalk_sets
+    text_template: "A teacher buys {g} sets of chalk. Each set has {s} sticks. How many sticks does the teacher get?"
+    grade_band: 3
+  - id: pie_slices
+    text_template: "For the fair, bakers make {g} pies. Each pie gets {s} apple slices. How many slices do they use?"
+    grade_band: 3
