@@ -35,9 +35,8 @@ Four things in these skills as first listed in
   already reads `\times`. The sentence form appears from the second tier.
 - **Tiers.**
   - Equal groups keeps its first size ladder ("groups of 2", "groups of 3, 4 or 5", "mixed
-    groups"), which holds the spread rule (groups of 2 with 2
-    to 9 groups, groups of 3, 4 or 5, then mixed sizes with 10). The top tier also gives the
-    repeated addition as a sum in about a third of its draws.
+    groups"), which already holds the spread rule. The top tier also gives the repeated
+    addition as a sum in 30% of its draws.
   - Rows and columns moves to a form ladder: "rows of", "rows and columns", then an array that
     gains or loses a row. Every array stays within 5 by 5, the standard's limit, and every
     tier has at least eight different answers.
