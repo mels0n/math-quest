@@ -723,6 +723,70 @@ skills:
     keypad: numpad
     vocabulary: [group, groups, times]
     standards: [3.OA.C.7, 3.OA.B.5]
+  - id: mult_2_5
+    name: Times 2 and 5
+    region: operation_canyon
+    prerequisites: [mult_as_groups, skip_count_2_5]
+    fluency: true
+    anchor: false
+    generator: mult_2_5
+    tiers:
+      - {id: 0, label: Times 2}
+      - {id: 1, label: Times 5}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    vocabulary: [group, groups, times]
+    standards: [3.OA.C.7]
+  - id: mult_3_4
+    name: Times 3 and 4
+    region: operation_canyon
+    prerequisites: [mult_2_5]
+    fluency: true
+    anchor: false
+    generator: mult_3_4
+    tiers:
+      - {id: 0, label: Times 3}
+      - {id: 1, label: Times 4}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    vocabulary: [group, groups, times]
+    standards: [3.OA.C.7]
+  - id: mult_6_7
+    name: Times 6 and 7
+    region: operation_canyon
+    prerequisites: [mult_3_4]
+    fluency: true
+    anchor: false
+    generator: mult_6_7
+    tiers:
+      - {id: 0, label: Times 6}
+      - {id: 1, label: Times 7}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    vocabulary: [group, groups, times]
+    standards: [3.OA.C.7]
+  - id: mult_8_9
+    name: Times 8 and 9
+    region: operation_canyon
+    prerequisites: [mult_6_7]
+    fluency: true
+    anchor: false
+    generator: mult_8_9
+    tiers:
+      - {id: 0, label: Times 8}
+      - {id: 1, label: Times 9}
+      - {id: 2, label: Mixed}
+    grade_band: "3"
+    keypad: numpad
+    word_problems_fit: true
+    vocabulary: [group, groups, times]
+    standards: [3.OA.C.7]
   - id: equivalent_fractions
     name: Same-Size Fractions
     region: fraction_forest

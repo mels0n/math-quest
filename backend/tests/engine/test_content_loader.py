@@ -222,6 +222,10 @@ def test_real_pack_loads_and_binds() -> None:
         "arrays": "2",
         "mult_as_groups": "3",
         "mult_0_1_10": "3",
+        "mult_2_5": "3",
+        "mult_3_4": "3",
+        "mult_6_7": "3",
+        "mult_8_9": "3",
         "equivalent_fractions": "3",
         "add_fractions_unlike": "5",
     }
