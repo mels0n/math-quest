@@ -128,7 +128,6 @@ def test_a_table_that_is_the_second_factor_is_turned_around_first(skill_id: str)
     """The strategies count the table as the number of groups, so 4 times 2 is first turned
     around to 2 groups of 4; the fact 2 times 4 needs no turning."""
     source = CATALOG.source(skill_id)
-    first, second = TABLES[skill_id]
     turned = straight = 0
     for tier in range(3):
         for seed in range(SEEDS):
