@@ -7,8 +7,8 @@ templates:
   - id: bike_rack
     text_template: "The school has {g} bike racks. Each rack holds {s} bikes. How many bikes fit at the school?"
     grade_band: 3
-  - id: theater_rows
-    text_template: "A theater has {g} rows of seats. Every row has {s} seats. How many seats does the theater have?"
+  - id: magic_hats
+    text_template: "A magician pulls {s} scarves from each hat. How many scarves come out of {g} hats?"
     grade_band: 3
   - id: camp_tents
     text_template: "At camp, {g} tents each sleep {s} campers. How many campers sleep in tents?"
@@ -16,8 +16,8 @@ templates:
   - id: flower_shop
     text_template: "A florist fills {g} vases with {s} tulips each. How many tulips does the florist use?"
     grade_band: 3
-  - id: pizza_slices
-    text_template: "Every pizza is cut into {s} slices. How many slices come from {g} pizzas?"
+  - id: pizza_olives
+    text_template: "A pizza shop puts {s} olives on each pizza. How many olives go on {g} pizzas?"
     grade_band: 3
   - id: bead_strings
     text_template: "{name} puts {s} beads on each necklace. How many beads does {name} need for {g} necklaces?"
@@ -33,8 +33,8 @@ templates:
     text_template: "{name} packs {s} books in every bag. How many books are in {g} bags?"
     slots: {name: names}
     grade_band: 3
-  - id: fair_ride
-    text_template: "A fair ride has {g} carts. Each cart seats {s} riders. How many riders fit on the ride?"
+  - id: fair_prizes
+    text_template: "A fair game has {g} shelves. Each shelf holds {s} prizes. How many prizes are in the game?"
     grade_band: 3
   - id: pond_ducks
     text_template: "On the pond, {g} duck families swim. Each family has {s} ducks. How many ducks are there?"

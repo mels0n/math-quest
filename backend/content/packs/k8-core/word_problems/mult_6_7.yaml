@@ -4,8 +4,8 @@
 # number.
 skill: mult_6_7
 templates:
-  - id: egg_cartons
-    text_template: "A grocer stacks {g} cartons of eggs. Each carton holds {s} eggs. How many eggs is that?"
+  - id: egg_bowls
+    text_template: "A chef cracks {s} eggs into each bowl. How many eggs go into {g} bowls?"
     grade_band: 3
   - id: week_laps
     text_template: "{name} runs {s} laps a day for {g} days. How many laps does {name} run?"
@@ -24,8 +24,8 @@ templates:
     text_template: "In spring, {name} fills {g} trays. Each tray gets {s} seeds. How many seeds does {name} plant?"
     slots: {name: names}
     grade_band: 3
-  - id: class_teams
-    text_template: "The gym class forms {g} groups. Each group has {s} kids. How many kids are in the class?"
+  - id: field_teams
+    text_template: "At field day, {g} teams line up. Each team has {s} kids. How many kids are at field day?"
     grade_band: 3
   - id: sticker_packs
     text_template: "A shop sells packs of {s} stickers. How many stickers are in {g} packs?"
@@ -33,8 +33,8 @@ templates:
   - id: canal_boats
     text_template: "Boats cross the canal in {g} trips. Each trip carries {s} riders. How many riders cross?"
     grade_band: 3
-  - id: tile_rows
-    text_template: "A floor has {g} rows of tiles. Each row has {s} tiles. How many tiles cover the floor?"
+  - id: mosaic_strips
+    text_template: "A mosaic uses {g} strips. Each strip has {s} tiles. How many tiles are in the mosaic?"
     grade_band: 3
   - id: math_club
     text_template: "The math club meets {g} days. Each day has {s} puzzles. How many puzzles do they solve?"
@@ -43,11 +43,11 @@ templates:
     text_template: "{name} scoops {s} raisins into each bag of mix. How many raisins go in {g} bags?"
     slots: {name: names}
     grade_band: 3
-  - id: lamp_posts
-    text_template: "A street has {g} lamp posts. Each post has {s} bulbs. How many bulbs light the street?"
+  - id: street_windows
+    text_template: "A street has {g} houses. Each house has {s} windows. How many windows are on the street?"
     grade_band: 3
-  - id: ferry_decks
-    text_template: "The ferry has {g} decks. Every deck has {s} benches. How many benches are on the ferry?"
+  - id: park_benches
+    text_template: "A city has {g} parks. Each park has {s} benches. How many benches are in the city?"
     grade_band: 3
   - id: chalk_sets
     text_template: "A teacher buys {g} sets of chalk. Each set has {s} sticks. How many sticks does the teacher get?"

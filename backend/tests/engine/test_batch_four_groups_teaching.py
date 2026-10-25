@@ -222,7 +222,10 @@ def test_at_least_fifteen_different_stories(skill_id: str) -> None:
     assert all(t.answer_from == "generator_answer" for t in templates)
     for t in templates:
         assert "{g}" in t.text_template, t.id
-        assert "{s}" in t.text_template or "{s obj}" in t.text_template, t.id
+        assert "{s}" in t.text_template, t.id
+        # A container drawn with an object from the general list reads wrong ("6 rocks on
+        # each tray"), so these stories name their things.
+        assert "objects" not in t.slots.values(), t.id
 
 
 @pytest.mark.parametrize("skill_id", STORY_SKILLS)

@@ -4,12 +4,13 @@
 # times sign. Short sentences (12 words or fewer), no sentence that starts with a number.
 skill: equal_groups
 templates:
-  - id: home_shelves
-    text_template: "{name} has {g} bags. Each bag holds {s obj}. How many {obj} does {name} have?"
-    slots: {name: names, obj: objects}
+  - id: home_bags
+    text_template: "{name} has {g} bags. Each bag holds {s} marbles. How many marbles does {name} have?"
+    slots: {name: names}
     grade_band: 2
-  - id: home_drawers
-    text_template: "A dresser has {g} drawers. Each drawer has {s} socks. How many socks are in the dresser?"
+  - id: home_laundry
+    text_template: "{name} sorts socks into {g} piles. Each pile has {s} socks. How many socks does {name} sort?"
+    slots: {name: names}
     grade_band: 2
   - id: home_lunch
     text_template: "{name} packs {g} lunch bags. Each lunch bag has {s} carrots. How many carrots does {name} pack?"
@@ -25,8 +26,8 @@ templates:
     text_template: "{name} hands out {g} packs of pencils. Each pack has {s} pencils. How many pencils does {name} hand out?"
     slots: {name: names}
     grade_band: 2
-  - id: school_stickers
-    text_template: "A teacher gives each of {g} kids {s} books. How many books does the teacher give out?"
+  - id: school_stars
+    text_template: "A teacher gives each of {g} kids {s} stars. How many stars does the teacher give out?"
     grade_band: 2
   - id: nature_pond
     text_template: "A park has {g} ponds. Each pond has {s} frogs. How many frogs are in the park?"
@@ -43,15 +44,15 @@ templates:
     slots: {name: names}
     grade_band: 2
   - id: food_plates
-    text_template: "{name} puts {s obj} on each plate. There are {g} plates. How many {obj} are on the plates?"
-    slots: {name: names, obj: objects}
+    text_template: "{name} puts {s} cookies on each plate. There are {g} plates. How many cookies are on the plates?"
+    slots: {name: names}
     grade_band: 2
   - id: food_trays
     text_template: "A baker bakes {g} trays. Each tray has {s} muffins. How many muffins does the baker bake?"
     grade_band: 2
   - id: food_boxes
-    text_template: "{name} packs {g} boxes for a picnic. Each box holds {s obj}. How many {obj} is that?"
-    slots: {name: names, obj: objects}
+    text_template: "{name} packs {g} boxes for a picnic. Each box holds {s} grapes. How many grapes is that?"
+    slots: {name: names}
     grade_band: 2
   - id: games_cards
     text_template: "In a card game, each kid gets {s} cards. There are {g} kids. How many cards are in the game?"
@@ -59,7 +60,7 @@ templates:
   - id: games_teams
     text_template: "The game has {g} teams. Each team has {s} kids. How many kids are in the game?"
     grade_band: 2
-  - id: games_beanbags
+  - id: games_balls
     text_template: "{name} tosses {s} balls in each round. The game has {g} rounds. How many balls does {name} toss?"
     slots: {name: names}
     grade_band: 2
