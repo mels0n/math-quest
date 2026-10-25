@@ -9,7 +9,8 @@ groups (2.OA.C.4), rows and columns (2.OA.C.4), multiplying groups (3.OA.A.1, 3.
 the zero, one and ten facts (3.OA.C.7, 3.OA.B.5). The times tables and division build on
 them, so the choices here set the pattern for those skills.
 
-Four things in the plan did not fit what the app can show or score:
+Four things in these skills as first listed in
+[ADR-0017](0017-planned-skill-graph.md) did not fit what the app can show or score:
 
 - A question cannot carry a picture, and counting drawn objects is the gap that
   [ADR-0021](0021-typed-comparing-skills-with-a-tiered-bank.md) and
@@ -17,7 +18,7 @@ Four things in the plan did not fit what the app can show or score:
   graphs. Groups and arrays are pictures too.
 - Grade 2 finds a total by adding the group again and again or by skip counting. The times
   sign is a grade 3 idea.
-- The plan's array tiers ("up to 3 by 3", "up to 4 by 4", "up to 5 by 5") have too few
+- The array tiers as first listed ("up to 3 by 3", "up to 4 by 4", "up to 5 by 5") have too few
   answers at the bottom: a 2 or 3 by 2 or 3 array totals 4, 6 or 9, and the spread rule asks
   for five different answers in every tier and no answer in more than a third of the draws.
 - Times 0 would answer 0 in half the draws of a tier made of times 1 and times 0.
@@ -33,15 +34,16 @@ Four things in the plan did not fit what the app can show or score:
   sentence, so the sign is always tied to the words it stands for. The checker's LaTeX parser
   already reads `\times`. The sentence form appears from the second tier.
 - **Tiers.**
-  - Equal groups keeps the plan's size ladder, which holds the spread rule (groups of 2 with 2
+  - Equal groups keeps its first size ladder ("groups of 2", "groups of 3, 4 or 5", "mixed
+    groups"), which holds the spread rule (groups of 2 with 2
     to 9 groups, groups of 3, 4 or 5, then mixed sizes with 10). The top tier also gives the
     repeated addition as a sum in about a third of its draws.
   - Rows and columns moves to a form ladder: "rows of", "rows and columns", then an array that
     gains or loses a row. Every array stays within 5 by 5, the standard's limit, and every
     tier has at least eight different answers.
-  - Multiplying groups keeps the plan's ladder by number of groups (two, up to five, up to
-    ten).
-  - Zero, one and ten keeps the plan's kinds (1 and 0, 10, mixed). Times 0 is drawn in a
+  - Multiplying groups keeps its first ladder by number of groups ("two groups", "up to five
+    groups", "up to ten groups").
+  - Zero, one and ten keeps its first kinds ("times 1 and 0", "times 10", "mixed"). Times 0 is drawn in a
     quarter of the first tier and a fifth of the mixed tier, so that no one answer is a third
     of the draws. Both orders come up in every tier ("3 times 0" and "0 times 3"), which is
     the turn-around idea of 3.OA.B.5, and the groups form ("There are 5 groups of 0") joins
@@ -71,7 +73,7 @@ Four things in the plan did not fit what the app can show or score:
   is unchanged.
 
 ## Alternatives rejected
-- **Keep the plan's array tiers.** The bottom tier would have three answers.
+- **Keep the first array tiers.** The bottom tier would have three answers.
 - **Use the times sign in grade 2.** It would teach the sign before the idea it stands for,
   and the standard asks for skip counting and repeated addition.
 - **Wait for a picture in the question.** It would hold back the skills for a feature the
