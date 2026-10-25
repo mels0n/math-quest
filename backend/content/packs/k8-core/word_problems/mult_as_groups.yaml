@@ -1,0 +1,63 @@
+# Word problems for Multiply Groups (3.OA.A.3). Every template uses the generator's {g} groups of
+# {s} and asks for the total. Each story's groups are equal, and there are at least two of them,
+# so a plural noun is always right. No sentence starts with a number.
+skill: mult_as_groups
+templates:
+  - id: hall_rows
+    text_template: "There are {g} rows of seats in the hall. Each row has {s} seats. How many seats are in the hall?"
+    grade_band: 3
+  - id: reading_nights
+    text_template: "{name} reads {s} pages each night. How many pages does {name} read in {g} nights?"
+    slots: {name: names}
+    grade_band: 3
+  - id: pack_buy
+    text_template: "A pack holds {s obj}. {name} buys {g} packs. How many {obj} does {name} buy?"
+    slots: {name: names, obj: objects}
+    grade_band: 3
+  - id: bus_zoo
+    text_template: "Buses go to the zoo. There are {g} buses with {s} kids on each. How many kids go to the zoo?"
+    grade_band: 3
+  - id: bake_berries
+    text_template: "A baker puts {s} berries on each cake. How many berries does the baker use on {g} cakes?"
+    grade_band: 3
+  - id: walk_laps
+    text_template: "{name} walks {s} laps each day. How many laps does {name} walk in {g} days?"
+    slots: {name: names}
+    grade_band: 3
+  - id: corn_rows
+    text_template: "{name} plants {g} rows of corn. Each row has {s} seeds. How many seeds does {name} plant?"
+    slots: {name: names}
+    grade_band: 3
+  - id: crayon_boxes
+    text_template: "Each box of crayons has {s} crayons. The art class opens {g} boxes. How many crayons is that?"
+    grade_band: 3
+  - id: coach_balls
+    text_template: "A coach buys {g} bags of balls. Each bag has {s} balls. How many balls does the coach buy?"
+    grade_band: 3
+  - id: save_coins
+    text_template: "{name} saves {s} coins each week. How many coins does {name} save in {g} weeks?"
+    slots: {name: names}
+    grade_band: 3
+  - id: farm_hens
+    text_template: "A farmer has {g} hen houses with {s} hens in each. How many hens does the farmer have?"
+    grade_band: 3
+  - id: party_balloons
+    text_template: "At a party, {g} kids each get {s} balloons. How many balloons do the kids get?"
+    grade_band: 3
+  - id: board_squares
+    text_template: "Each game board has {s} squares. How many squares are on {g} boards?"
+    grade_band: 3
+  - id: round_points
+    text_template: "{name} scores {s} points in each round. How many points does {name} score in {g} rounds?"
+    slots: {name: names}
+    grade_band: 3
+  - id: kite_bows
+    text_template: "A kite has {s} bows on its tail. How many bows are on {g} kites?"
+    grade_band: 3
+  - id: lunch_slices
+    text_template: "Dad puts {s} apple slices in each lunch box. How many slices go in {g} lunch boxes?"
+    grade_band: 3
+  - id: bracelet_beads
+    text_template: "{name} makes {g} bracelets. Each bracelet has {s} beads. How many beads does {name} use?"
+    slots: {name: names}
+    grade_band: 3

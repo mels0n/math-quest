@@ -37,7 +37,7 @@ def values(skill: str, seed: int, tier: int) -> dict[str, int | str]:
 def test_groups_total_and_mistakes_follow_their_rules(skill: str, seed: int, tier: int) -> None:
     v = values(skill, seed, tier)
     g, s = int(v["g"]), int(v["s"])
-    assert get_generator(skill).generate(seed, tier).answer == g * s == v["total"] == v["answer"]
+    assert get_generator(skill).generate(seed, tier).answer == g * s
     rules = {
         "added_instead": g + s,
         "one_group_too_few": g * s - s,

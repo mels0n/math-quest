@@ -14,7 +14,8 @@ The questions are told in words and numerals, because a prompt cannot carry a pi
   story, as "groups of" and as ``g \\times s``. A tier raises the number of groups.
 - ``mult_0_1_10`` (grade 3): a number times 0, 1 or 10, in either order.
 
-The total of ``g`` groups of ``s`` is ``total``; ``answer`` is what the question asks for.
+The two skills that tell stories (``equal_groups`` and ``mult_as_groups``) give only ``g`` and
+``s`` as numbers, so that a word template shows every number the generator holds.
 """
 
 import random
@@ -50,6 +51,8 @@ _CONTAINERS = (
     ("pack", "packs", "stickers"),
     ("table", "tables", "kids"),
 )
+_STORY_NAMES = NAMES[:4]
+"""A few names, picked by the numbers, so that a tier's questions can all be listed."""
 _ROW_THINGS = (
     "chairs",
     "desks",
@@ -69,7 +72,7 @@ _ROW_THINGS = (
 def _groups_story(rng: random.Random, g: int, s: int) -> tuple[Prompt, dict[str, int | str]]:
     """``g`` equal groups of ``s``, told in words, and the nouns it used."""
     one, many, items = rng.choice(_CONTAINERS)
-    who = rng.choice(NAMES)
+    who = _STORY_NAMES[g * s % len(_STORY_NAMES)]
     story = rng.choice(
         (
             f"There are {g} {many}. Each {one} has {s} {items}. How many {items} are there in all?",
@@ -113,13 +116,18 @@ def _build_equal_groups(rng: random.Random, tier: int) -> Built:
         prompt=prompt,
         answer=_Int(g * s),
         wrong=named_wrongs(_group_wrongs(g, s), floor=1),
-        values={"g": g, "s": s, "total": g * s, "answer": g * s, **nouns},
+        values={"g": g, "s": s, **nouns},
     )
 
 
 # --- arrays ----------------------------------------------------------------------------------
 
 _RANGE = tuple(range(2, 6))
+_ARRAY_NUDGE = (
+    "Picture the rows. Every row has the same number.",
+    "Picture the rows and the columns. Each row has one for every column.",
+    "First find how many rows there are after the change.",
+)
 
 
 def _build_arrays(rng: random.Random, tier: int) -> Built:
@@ -163,7 +171,16 @@ def _build_arrays(rng: random.Random, tier: int) -> Built:
             prompt=prompt,
             answer=_Int(total),
             wrong=named_wrongs(wrong, floor=1),
-            values={"r": r, "c": c, "total": total, "answer": total, "things": things},
+            values={
+                "r": r,
+                "c": c,
+                "rows": r,
+                "total": total,
+                "answer": total,
+                "things": things,
+                "nudge": _ARRAY_NUDGE[tier],
+                "change": "changes",
+            },
         )
     adds = rng.random() < 0.5
     r = rng.choice((2, 3, 4)) if adds else rng.choice((3, 4, 5))
@@ -188,6 +205,8 @@ def _build_arrays(rng: random.Random, tier: int) -> Built:
             "r": r,
             "c": c,
             "now": now,
+            "rows": now,
+            "nudge": _ARRAY_NUDGE[2],
             "total": r * c,
             "answer": now * c,
             "things": things,
@@ -229,7 +248,7 @@ def _build_mult_as_groups(rng: random.Random, tier: int) -> Built:
         prompt=_times_prompt(rng, tier, g, s, story),
         answer=_Int(g * s),
         wrong=named_wrongs(_group_wrongs(g, s), floor=1),
-        values={"g": g, "s": s, "total": g * s, "answer": g * s, **nouns},
+        values={"g": g, "s": s, **nouns},
     )
 
 

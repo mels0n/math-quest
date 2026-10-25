@@ -185,6 +185,16 @@
       }
     ]
   },
+  "arrays": {
+    "tier": 2,
+    "seed": 45,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Lily sets out stickers in 2 rows of 4. Then Lily adds one more row. How many stickers are there now?"
+      }
+    ]
+  },
   "clock_hours": {
     "tier": 2,
     "seed": 1,
@@ -525,6 +535,26 @@
       }
     ]
   },
+  "equal_groups": {
+    "tier": 2,
+    "seed": 33,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 3 packs. Each pack has 10 stickers. How many stickers are there in all?"
+      }
+    ]
+  },
+  "equal_groups-word": {
+    "tier": 0,
+    "seed": 135,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Maya puts 2 puzzle pieces on each plate. There are 6 plates. How many puzzle pieces are on the plates?"
+      }
+    ]
+  },
   "equal_or_not": {
     "tier": 0,
     "seed": 12,
@@ -674,6 +704,36 @@
       {
         "kind": "math",
         "value": "? + 10 = 13"
+      }
+    ]
+  },
+  "mult_0_1_10": {
+    "tier": 1,
+    "seed": 3,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 10 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_as_groups": {
+    "tier": 2,
+    "seed": 157,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 10 plates. Each plate has 3 cookies. How many cookies are there in all?"
+      }
+    ]
+  },
+  "mult_as_groups-word": {
+    "tier": 2,
+    "seed": 9,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 10 rows of seats in the hall. Each row has 6 seats. How many seats are in the hall?"
       }
     ]
   },

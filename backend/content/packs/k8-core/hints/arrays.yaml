@@ -1,0 +1,10 @@
+# Three hints for Rows and Columns: a nudge for the form of the question, the next step, then
+# the whole answer. Only the last names the total.
+skill: arrays
+levels:
+  - text_template: >-
+      {nudge}
+  - text_template: >-
+      Now there are {rows} rows. Each row has {c}. Skip count by {c}, once for each row.
+  - text_template: >-
+      Skip count by {c}, {rows} times. You reach {{= rows \times c }}. So the answer is {{= rows \times c }}.

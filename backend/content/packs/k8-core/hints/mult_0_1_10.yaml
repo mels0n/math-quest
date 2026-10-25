@@ -1,0 +1,11 @@
+# Three hints for Times 0, 1 and 10: a nudge, the rule for the fact, then the whole answer. The
+# nudge and the rule are written by the generator for the kind of fact it asked. Only the last
+# hint names the answer.
+skill: mult_0_1_10
+levels:
+  - text_template: >-
+      {nudge}
+  - text_template: >-
+      {rule}
+  - text_template: >-
+      {rule} So \({a} \times {b} = {answer}\).
