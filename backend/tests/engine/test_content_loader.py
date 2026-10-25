@@ -218,6 +218,10 @@ def test_real_pack_loads_and_binds() -> None:
         "sub_3digit_no_regroup": "2",
         "add_3digit_regroup": "3",
         "sub_3digit_regroup": "3",
+        "equal_groups": "2",
+        "arrays": "2",
+        "mult_as_groups": "3",
+        "mult_0_1_10": "3",
         "equivalent_fractions": "3",
         "add_fractions_unlike": "5",
     }
