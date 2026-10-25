@@ -27,7 +27,6 @@ from mathquest.engine.generators._util import (
     NAMES,
     Built,
     SkillGenerator,
-    math,
     math_prompt,
     named_wrongs,
     text,
@@ -279,12 +278,10 @@ def _build_zero_one_ten(rng: random.Random, tier: int) -> Built:
     a, b = (n, special) if rng.random() < 0.5 else (special, n)
     forms = ("sentence", "words") if tier == 0 else ("sentence", "words", "groups")
     form = rng.choice(forms)
-    if form == "sentence":
-        prompt = math_prompt(rf"{a} \times {b} = ?")
-    elif form == "words":
-        prompt = (text("What is "), math(rf"{a} \times {b}"), text("?"))
-    else:
+    if form == "groups":
         prompt = (text(f"{_groups_line(a, b)} How many are there in all?"),)
+    else:
+        prompt = group_prompt(form, a, b)
     answer = n * special
     wrong = {
         "zero": [("answered_the_other_number", n)],
