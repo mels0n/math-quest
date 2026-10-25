@@ -546,12 +546,12 @@
     ]
   },
   "equal_groups-word": {
-    "tier": 0,
-    "seed": 135,
+    "tier": 2,
+    "seed": 5,
     "prompt": [
       {
         "kind": "text",
-        "value": "Maya puts 2 puzzle pieces on each plate. There are 6 plates. How many puzzle pieces are on the plates?"
+        "value": "Fatima hands out 4 packs of pencils. Each pack has 10 pencils. How many pencils does Fatima hand out?"
       }
     ]
   },
@@ -793,7 +793,7 @@
     "prompt": [
       {
         "kind": "text",
-        "value": "A farmer plants 8 rows of tomatoes. Each row gets 10 plants. How many plants go in the ground?"
+        "value": "At assembly, the school sits in 8 circles. Each circle has 10 kids. How many kids sit at assembly?"
       }
     ]
   },
@@ -809,11 +809,11 @@
   },
   "mult_as_groups-word": {
     "tier": 2,
-    "seed": 9,
+    "seed": 83,
     "prompt": [
       {
         "kind": "text",
-        "value": "There are 10 rows of seats in the hall. Each row has 6 seats. How many seats are in the hall?"
+        "value": "Fatima feeds 10 dogs at the shelter. Each dog gets 5 treats. How many treats does Fatima give out?"
       }
     ]
   },
