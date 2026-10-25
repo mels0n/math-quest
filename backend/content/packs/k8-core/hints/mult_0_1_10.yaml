@@ -1,11 +1,12 @@
-# Three hints for Times 0, 1 and 10: a nudge, the rule for the fact, then the whole answer. The
-# nudge and the rule are written by the generator for the kind of fact it asked. Only the last
-# hint names the answer.
+# Three hints for Times 0, 1 and 10: a nudge, a step, then the rule for the fact and the whole
+# answer. The nudge, the step and the rule are written by the generator for the kind of fact it
+# asked, and are true whichever factor is the 0, 1 or 10. Only the last hint says what the
+# product is.
 skill: mult_0_1_10
 levels:
   - text_template: >-
       {nudge}
   - text_template: >-
-      {rule}
+      {step}
   - text_template: >-
       {rule} So \({a} \times {b} = {answer}\).

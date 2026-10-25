@@ -5,6 +5,6 @@ levels:
   - text_template: >-
       {nudge}
   - text_template: >-
-      Now there are {rows} rows. Each row has {c}. Skip count by {c}, once for each row.
+      {rows_are} {rows} rows. Each row has {c}. Skip count by {c}, once for each row.
   - text_template: >-
       Skip count by {c}, {rows} times. You reach {{= rows \times c }}. So the answer is {{= rows \times c }}.

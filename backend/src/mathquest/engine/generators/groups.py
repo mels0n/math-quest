@@ -6,8 +6,8 @@ The questions are told in words and numerals, because a prompt cannot carry a pi
 
 - ``equal_groups`` (grade 2): ``g`` groups of ``s`` things. The total is found by adding
   the group again and again or by skip counting, and the times sign is not used. A tier
-  narrows the group sizes, as the plan does; the top tier mixes sizes (and 10) and sometimes
-  gives the repeated addition as a sum.
+  narrows the group sizes (groups of 2, then of 3, 4 or 5); the top tier mixes sizes (and 10)
+  and sometimes gives the repeated addition as a sum.
 - ``arrays`` (grade 2): ``r`` rows of ``c``. The tiers get harder by form: rows of, rows and
   columns, then an array that gains or loses a row.
 - ``mult_as_groups`` (grade 3): the same groups, now written with the times sign, in a
@@ -36,21 +36,22 @@ from mathquest.engine.types import AnswerForm, Prompt
 
 _Int = sympy.Integer
 
-# (one, many, what it holds): a container and the plural of what an equal group of it holds.
-# Every count a story draws is at least 2, so the plurals always agree.
+# (one, many, what it holds, whether a person can own it): a container and the plural of what an
+# equal group of it holds. Every count a story draws is at least 2, so the plurals always agree.
+# A table holds kids but nobody has tables of kids, so it is only ever told with "There are".
 _CONTAINERS = (
-    ("bag", "bags", "apples"),
-    ("box", "boxes", "crayons"),
-    ("plate", "plates", "cookies"),
-    ("basket", "baskets", "eggs"),
-    ("jar", "jars", "marbles"),
-    ("vase", "vases", "flowers"),
-    ("tray", "trays", "muffins"),
-    ("shelf", "shelves", "books"),
-    ("pot", "pots", "seeds"),
-    ("bucket", "buckets", "shells"),
-    ("pack", "packs", "stickers"),
-    ("table", "tables", "kids"),
+    ("bag", "bags", "apples", True),
+    ("box", "boxes", "crayons", True),
+    ("plate", "plates", "cookies", True),
+    ("basket", "baskets", "eggs", True),
+    ("jar", "jars", "marbles", True),
+    ("vase", "vases", "flowers", True),
+    ("tray", "trays", "muffins", True),
+    ("shelf", "shelves", "books", True),
+    ("pot", "pots", "seeds", True),
+    ("bucket", "buckets", "shells", True),
+    ("pack", "packs", "stickers", True),
+    ("table", "tables", "kids", False),
 )
 _STORY_NAMES = NAMES[:4]
 """A few names, picked by the numbers, so that a tier's questions can all be listed."""
@@ -72,16 +73,16 @@ _ROW_THINGS = (
 
 def _groups_story(rng: random.Random, g: int, s: int) -> tuple[Prompt, dict[str, int | str]]:
     """``g`` equal groups of ``s``, told in words, and the nouns it used."""
-    one, many, items = rng.choice(_CONTAINERS)
+    one, many, items, owned = rng.choice(_CONTAINERS)
     who = _STORY_NAMES[g * s % len(_STORY_NAMES)]
-    story = rng.choice(
-        (
-            f"There are {g} {many}. Each {one} has {s} {items}. How many {items} are there in all?",
-            f"{who} has {g} {many}. Each {one} holds {s} {items}. "
-            f"How many {items} does {who} have?",
+    tells = [
+        f"There are {g} {many}. Each {one} has {s} {items}. How many {items} are there in all?"
+    ]
+    if owned:
+        tells.append(
+            f"{who} has {g} {many}. Each {one} holds {s} {items}. How many {items} does {who} have?"
         )
-    )
-    return (text(story),), {"group": one, "groups": many, "items": items}
+    return (text(rng.choice(tells)),), {"group": one, "groups": many, "items": items}
 
 
 # --- equal groups ----------------------------------------------------------------------------
@@ -169,6 +170,7 @@ def _build_arrays(rng: random.Random, tier: int) -> Built:
                 "answer": total,
                 "things": things,
                 "nudge": _ARRAY_NUDGE[tier],
+                "rows_are": "There are",
                 "change": "changes",
             },
         )
@@ -197,6 +199,7 @@ def _build_arrays(rng: random.Random, tier: int) -> Built:
             "now": now,
             "rows": now,
             "nudge": _ARRAY_NUDGE[2],
+            "rows_are": "Now there are",
             "total": r * c,
             "answer": now * c,
             "things": things,
@@ -247,17 +250,23 @@ _SPECIAL = {"zero": 0, "one": 1, "ten": 10}
 _HELP = {
     "zero": (
         "Picture the groups. Is anything inside them?",
+        "Find the zero in the fact. Does it count the groups, or what is in each?",
         "Zero groups hold nothing. Groups of zero hold nothing too.",
     ),
     "one": (
         "Picture the groups. How many are in each group?",
+        "Find the 1 in the fact. Does it count the groups, or what is in each?",
         "One group of a number is just that number. Groups of one count one each.",
     ),
     "ten": (
         "Think about tens. One group of ten is 10.",
-        "Count by tens, one for each group. Or write the number and then a zero.",
+        "Find the 10 in the fact. It is ten groups, or groups of ten.",
+        "Ten groups of a number end in a zero. So does a number of tens. "
+        "Write the number, then a zero.",
     ),
 }
+"""Per kind of fact: a nudge, a step and the rule, true whichever factor is the special one.
+Only the rule says what the product is, and it is the last hint."""
 
 
 def _groups_line(a: int, b: int) -> str:
@@ -282,7 +291,7 @@ def _build_zero_one_ten(rng: random.Random, tier: int) -> Built:
         "one": [("added_one", n + 1), ("answered_zero", 0)],
         "ten": [("dropped_the_zero", n), ("put_on_two_zeros", n * 100), ("added_ten", n + 10)],
     }[kind]
-    nudge, rule = _HELP[kind]
+    nudge, step, rule = _HELP[kind]
     return Built(
         prompt=prompt,
         answer=_Int(answer),
@@ -294,6 +303,7 @@ def _build_zero_one_ten(rng: random.Random, tier: int) -> Built:
             "kind": kind,
             "answer": answer,
             "nudge": nudge,
+            "step": step,
             "rule": rule,
         },
     )

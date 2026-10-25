@@ -13,7 +13,7 @@ screens:
       Zero groups of 12 is nothing. Twelve groups of 0 is nothing too. A number times 0 is always 0. It does not matter which way you turn it. \(12 \times 0 = {{= 12 \times 0 }}\) and \(0 \times 12 = {{= 0 \times 12 }}\).
   - title: Times 10
     body_md: >-
-      Twelve groups of 10 is 12 tens. Twelve tens make 1 hundred and 2 tens. A number times 10 gets a zero on the end. \(12 \times 10 = {{= 12 \times 10 }}\).
+      Twelve groups of 10 is 12 tens. Twelve tens make 1 hundred and 2 tens. A number times 10 gets a zero on the end. Turn it around and it is the same. \(12 \times 10 = {{= 12 \times 10 }}\) and \(10 \times 12 = {{= 10 \times 12 }}\).
     visual:
       kind: base_ten
       params: {hundreds: 1, tens: 2}

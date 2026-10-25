@@ -9,6 +9,7 @@ from hypothesis import given
 from mathquest.engine.generators import get_generator
 from mathquest.engine.generators._groups import EACH_KEYS, GROUP_KEYS, each_wrongs, group_wrongs
 from mathquest.engine.types import MathPart, TextPart
+from tests.engine.test_batch_two_teaching import text_of
 from tests.engine.test_generators import (
     kept,
     maths,
@@ -72,6 +73,18 @@ def test_equal_groups_tiers_narrow_the_size_of_a_group() -> None:
     assert sizes[2] == {2, 3, 4, 5, 10}
     counts = {int(values("equal_groups", s, t)["g"]) for s in range(600) for t in range(3)}
     assert counts == set(range(2, 10))
+
+
+@pytest.mark.parametrize("skill", ["equal_groups", "mult_as_groups"])
+def test_stories_never_give_a_person_tables_of_kids(skill: str) -> None:
+    """ "Mia has 4 tables. Each table holds 5 kids" is told as "There are 4 tables" instead."""
+    seen_tables = 0
+    for tier in range(3):
+        for seed in range(1200):
+            words = text_of(get_generator(skill).generate(seed, tier).prompt)
+            assert not re.search(r"has \d+ tables", words), words
+            seen_tables += words.startswith("There are") and " tables." in words
+    assert seen_tables
 
 
 def test_equal_groups_never_uses_the_times_sign_and_tells_the_groups() -> None:

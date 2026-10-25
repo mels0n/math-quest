@@ -127,7 +127,8 @@ def test_the_grade_two_skills_never_write_the_times_sign() -> None:
         assert not any(chr(0xD7) in t for t in written), skill_id
 
 
-def test_the_hints_for_zero_one_and_ten_name_the_rule_of_the_fact() -> None:
+def test_the_hints_for_zero_one_and_ten_name_the_rule_only_in_the_last_hint() -> None:
+    """The nudge and the step lead to the rule; saying it in words gives the answer away."""
     source = CATALOG.source("mult_0_1_10")
     seen: set[str] = set()
     for tier in range(3):
@@ -139,13 +140,55 @@ def test_the_hints_for_zero_one_and_ten_name_the_rule_of_the_fact() -> None:
                 plain(h) for h in render_hints(PACK.hints["mult_0_1_10"], problem)
             )
             assert {
-                "zero": "nothing" in second,
-                "one": "just that number" in second,
-                "ten": "tens" in second and "zero" in second,
-            }[kind], (kind, second)
+                "zero": "nothing" in last,
+                "one": "just that number" in last,
+                "ten": "tens" in last and "zero" in last,
+            }[kind], (kind, last)
+            for early in (first, second):
+                for rule in ("nothing", "just that number", "end in a zero", "same number"):
+                    assert rule not in early, (kind, early)
             assert str(problem.answer) in last
-            assert first != second
+            assert len({first, second, last}) == 3
     assert seen == {"zero", "one", "ten"}
+
+
+def test_the_help_for_times_ten_is_true_whichever_factor_is_the_ten() -> None:
+    """Ten groups of 7 and 7 groups of ten are both 70, but only the second counts by tens
+    "once for each group": no hint, explanation or feedback may say so."""
+    source = CATALOG.source("mult_0_1_10")
+    explanations = PACK.explanations["mult_0_1_10"]
+    ten_first: set[bool] = set()
+    for tier in (1, 2):
+        for seed in range(300):
+            problem = source.generate(seed, tier)
+            if problem.values["kind"] != "ten":
+                continue
+            ten_first.add(int(problem.values["a"]) == 10)
+            shown = [plain(h) for h in render_hints(PACK.hints["mult_0_1_10"], problem)]
+            shown += [plain(a.body) for a in render_explanations(explanations, problem)]
+            for wrong in problem.misconceptions:
+                feedback = render_feedback(explanations, problem, wrong.key)
+                assert feedback is not None
+                shown.append(plain(feedback))
+            for text in shown:
+                lowered = text.lower()
+                assert "count by tens" not in lowered, text
+                assert "one for each group" not in lowered, text
+                assert "once for each group" not in lowered, text
+    assert ten_first == {True, False}
+
+
+def test_the_hints_for_multiplying_groups_do_not_mention_a_times_sign() -> None:
+    """The questions come as a story, as "groups of" and as a sentence."""
+    source = CATALOG.source("mult_as_groups")
+    for tier in range(3):
+        for seed in range(60):
+            hints = [
+                plain(h)
+                for h in render_hints(PACK.hints["mult_as_groups"], source.generate(seed, tier))
+            ]
+            assert "times sign" not in hints[0]
+            assert "groups of" not in hints[0]
 
 
 def test_the_array_hints_use_the_rows_after_the_change() -> None:
@@ -159,6 +202,11 @@ def test_the_array_hints_use_the_rows_after_the_change() -> None:
         problem = source.generate(1, tier)
         _, second, _ = (plain(h) for h in render_hints(PACK.hints["arrays"], problem))
         assert f"{problem.values['r']} rows" in second
+        assert not second.startswith("Now"), second
+        assert second.startswith("There are")
+    assert plain(render_hints(PACK.hints["arrays"], source.generate(1, 2))[1]).startswith(
+        "Now there are"
+    )
 
 
 # --- word problems ---------------------------------------------------------------------------

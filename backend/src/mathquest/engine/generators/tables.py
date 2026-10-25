@@ -37,7 +37,9 @@ _TABLES = {"mult_2_5": (2, 5), "mult_3_4": (3, 4), "mult_6_7": (6, 7), "mult_8_9
 _BASE = {"mult_2_5": 1.0, "mult_3_4": 1.3, "mult_6_7": 1.6, "mult_8_9": 1.9}
 
 # Per table: a nudge, the next step and the finish, each a function of the other number.
-# Only the finish names the answer. No number is ever the first word of a sentence.
+# Only the finish names the answer. No number is ever the first word of a sentence. Each is
+# written for the table as the number of groups; when the table is the second factor the nudge
+# first turns the fact around.
 _Help = tuple[str, Callable[[int], str], Callable[[int], str]]
 _HELP: dict[int, _Help] = {
     2: (
@@ -105,6 +107,8 @@ def _builder(skill: str) -> Callable[[random.Random, int], Built]:
         g, s = (table, other) if rng.random() < 0.5 else (other, table)
         total = g * s
         nudge, step, finish = _HELP[table]
+        if s == table != g:
+            nudge = f"Turn it around: {table} groups of {other}. {nudge}"
         wrong = [*group_wrongs(g, s), *each_wrongs(g, s)]
         if skill == "mult_8_9" and 9 in (g, s):
             wrong.append(("digits_swapped", _swapped(total)))

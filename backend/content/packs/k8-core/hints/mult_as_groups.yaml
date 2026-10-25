@@ -3,7 +3,7 @@
 skill: mult_as_groups
 levels:
   - text_template: >-
-      The times sign means groups of. Find how many groups there are. Find how many are in each group.
+      Find how many groups there are. Find how many are in each group. Every group is the same size.
   - text_template: >-
       Skip count by {s}, once for each of the {g} groups.
   - text_template: >-

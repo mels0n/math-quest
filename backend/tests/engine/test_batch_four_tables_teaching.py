@@ -120,11 +120,43 @@ def test_every_hint_teaches_the_strategy_for_the_table_in_the_fact(skill_id: str
             assert str(g * s) in hints[2]
 
 
+@pytest.mark.parametrize("skill_id", TABLES)
+def test_a_table_that_is_the_second_factor_is_turned_around_first(skill_id: str) -> None:
+    """The strategies count the table as the number of groups, so 4 times 2 is first turned
+    around to 2 groups of 4; the fact 2 times 4 needs no turning."""
+    source = CATALOG.source(skill_id)
+    first, second = TABLES[skill_id]
+    turned = straight = 0
+    for tier in range(3):
+        for seed in range(SEEDS):
+            problem = source.generate(seed, tier)
+            g, s = int(problem.values["g"]), int(problem.values["s"])
+            nudge = plain(render_hints(PACK.hints[skill_id], problem)[0])
+            if g not in (first, second):
+                assert nudge.startswith(f"Turn it around: {s} groups of {g}."), (g, s, nudge)
+                turned += 1
+            elif "Turn it around" in nudge:
+                # Both numbers are in the pair (8 times 9): the table drawn was the second.
+                assert nudge.startswith(f"Turn it around: {s} groups of {g}."), (g, s, nudge)
+            else:
+                straight += 1
+    assert turned and straight
+
+
 def test_the_nines_teach_the_digit_pattern() -> None:
     steps = " ".join(a.body_md for a in PACK.explanations["mult_8_9"].approaches)
     lesson = " ".join(s.body_md for s in PACK.lessons["mult_8_9"].screens)
     assert "add up to 9" in steps and "add up to 9" in lesson
     assert PACK.explanations["mult_8_9"].misconceptions["digits_swapped"]
+
+
+@pytest.mark.parametrize("style", ["visual", "steps", "story"])
+def test_the_nines_explanations_teach_the_eights_too(style: str) -> None:
+    """Every fact in the skill has an 8 or a 9 in it, so each approach covers both."""
+    approach = next(a for a in PACK.explanations["mult_8_9"].approaches if a.style == style)
+    body = approach.body_md.lower()
+    assert "double" in body, style
+    assert "ten" in body, style
 
 
 # --- word problems ---------------------------------------------------------------------------
