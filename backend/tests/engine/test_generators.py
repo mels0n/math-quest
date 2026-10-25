@@ -68,6 +68,10 @@ BASES = {
     "arrays": 0.4,
     "mult_as_groups": 0.8,
     "mult_0_1_10": 0.9,
+    "mult_2_5": 1.0,
+    "mult_3_4": 1.3,
+    "mult_6_7": 1.6,
+    "mult_8_9": 1.9,
 }
 
 seeds = st.integers(0, 2**32 - 1)
@@ -181,7 +185,7 @@ def test_registry_covers_pack() -> None:
     assert set(PACK_SKILLS) <= set(all_generators())
     for gen_id, gen in all_generators().items():
         assert gen.generator_id == gen_id
-    assert len(all_generators()) == 50
+    assert len(all_generators()) == 54
 
 
 def test_unknown_skill_is_keyerror() -> None:
