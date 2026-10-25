@@ -157,9 +157,9 @@ def test_the_explanation_picture_has_the_table_as_its_rows(skill_id: str) -> Non
             for approach in render_explanations(explanations, problem):
                 if approach.visual is None:
                     continue
-                params = approach.visual.params
-                assert params.rows == int(problem.values["table"]), (tier, seed)
-                assert params.cols == int(problem.values["other"]), (tier, seed)
+                params = approach.visual.params.model_dump(mode="json")
+                assert params["rows"] == int(problem.values["table"]), (tier, seed)
+                assert params["cols"] == int(problem.values["other"]), (tier, seed)
 
 
 def test_the_nines_teach_the_digit_pattern() -> None:
