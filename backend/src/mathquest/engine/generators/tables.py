@@ -18,15 +18,15 @@ from collections.abc import Callable
 
 import sympy
 
-from mathquest.engine.generators._util import (
-    Built,
-    SkillGenerator,
-    math,
-    math_prompt,
-    named_wrongs,
-    text,
+from mathquest.engine.generators._groups import (
+    EACH_KEYS,
+    GROUP_KEYS,
+    each_wrongs,
+    group_prompt,
+    group_wrongs,
 )
-from mathquest.engine.types import AnswerForm, Prompt
+from mathquest.engine.generators._util import Built, SkillGenerator, named_wrongs
+from mathquest.engine.types import AnswerForm
 
 _Int = sympy.Integer
 
@@ -96,16 +96,6 @@ def _swapped(total: int) -> int:
     return int(str(total)[::-1])
 
 
-def _prompt(form: str, g: int, s: int) -> Prompt:
-    if form == "sentence":
-        return math_prompt(rf"{g} \times {s} = ?")
-    if form == "words":
-        return (text("What is "), math(rf"{g} \times {s}"), text("?"))
-    if form == "groups_of":
-        return (text(f"There are {g} groups of {s}. How many are there in all?"),)
-    return (text(f"What is {g} times {s}?"),)
-
-
 def _builder(skill: str) -> Callable[[random.Random, int], Built]:
     first, second = _TABLES[skill]
 
@@ -115,17 +105,11 @@ def _builder(skill: str) -> Callable[[random.Random, int], Built]:
         g, s = (table, other) if rng.random() < 0.5 else (other, table)
         total = g * s
         nudge, step, finish = _HELP[table]
-        wrong = [
-            ("added_instead", g + s),
-            ("one_group_too_few", total - s),
-            ("one_group_too_many", total + s),
-            ("one_each_too_few", total - g),
-            ("one_each_too_many", total + g),
-        ]
+        wrong = [*group_wrongs(g, s), *each_wrongs(g, s)]
         if skill == "mult_8_9" and 9 in (g, s):
             wrong.append(("digits_swapped", _swapped(total)))
         return Built(
-            prompt=_prompt(rng.choice(_FORMS_BY_TIER[tier]), g, s),
+            prompt=group_prompt(rng.choice(_FORMS_BY_TIER[tier]), g, s),
             answer=_Int(total),
             wrong=named_wrongs(wrong, floor=1),
             values={
@@ -140,13 +124,7 @@ def _builder(skill: str) -> Callable[[random.Random, int], Built]:
     return build
 
 
-_KEYS = (
-    "added_instead",
-    "one_group_too_few",
-    "one_group_too_many",
-    "one_each_too_few",
-    "one_each_too_many",
-)
+_KEYS = (*GROUP_KEYS, *EACH_KEYS)
 
 
 def generators() -> list[SkillGenerator]:

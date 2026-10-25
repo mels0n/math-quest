@@ -7,6 +7,7 @@ import pytest
 from hypothesis import given
 
 from mathquest.engine.generators import get_generator
+from mathquest.engine.generators._groups import EACH_KEYS, GROUP_KEYS, each_wrongs, group_wrongs
 from mathquest.engine.types import MathPart, TextPart
 from tests.engine.test_generators import (
     kept,
@@ -44,6 +45,24 @@ def test_groups_total_and_mistakes_follow_their_rules(skill: str, seed: int, tie
         "one_group_too_many": g * s + s,
     }
     assert wrong_answers(skill, seed, tier) == kept(g * s, rules, floor=1)
+
+
+def test_the_shared_mistakes_for_groups_and_neighbour_facts_by_hand() -> None:
+    """4 groups of 3 is 12: the numbers added, a group short, a group over; the neighbour
+    facts 3 times 3 and 5 times 3 are four short and four over."""
+    assert group_wrongs(4, 3) == [
+        ("added_instead", 7),
+        ("one_group_too_few", 9),
+        ("one_group_too_many", 15),
+    ]
+    assert each_wrongs(4, 3) == [("one_each_too_few", 8), ("one_each_too_many", 16)]
+
+
+def test_every_skill_that_names_the_group_mistakes_declares_the_same_keys() -> None:
+    for skill in ("equal_groups", "mult_as_groups"):
+        assert get_generator(skill).misconception_keys == GROUP_KEYS
+    for skill in ("mult_2_5", "mult_3_4", "mult_6_7", "mult_8_9"):
+        assert get_generator(skill).misconception_keys[:5] == (*GROUP_KEYS, *EACH_KEYS)
 
 
 def test_equal_groups_tiers_narrow_the_size_of_a_group() -> None:

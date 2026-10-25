@@ -22,6 +22,7 @@ import random
 
 import sympy
 
+from mathquest.engine.generators._groups import GROUP_KEYS, group_prompt, group_wrongs
 from mathquest.engine.generators._util import (
     NAMES,
     Built,
@@ -83,17 +84,6 @@ def _groups_story(rng: random.Random, g: int, s: int) -> tuple[Prompt, dict[str,
     return (text(story),), {"group": one, "groups": many, "items": items}
 
 
-def _group_wrongs(g: int, s: int) -> list[tuple[str, int]]:
-    """What a child types for ``g`` groups of ``s``: the two numbers added, or one group left
-    out or counted twice."""
-    total = g * s
-    return [
-        ("added_instead", g + s),
-        ("one_group_too_few", total - s),
-        ("one_group_too_many", total + s),
-    ]
-
-
 # --- equal groups ----------------------------------------------------------------------------
 
 _GROUPS_BY_TIER = (
@@ -115,7 +105,7 @@ def _build_equal_groups(rng: random.Random, tier: int) -> Built:
     return Built(
         prompt=prompt,
         answer=_Int(g * s),
-        wrong=named_wrongs(_group_wrongs(g, s), floor=1),
+        wrong=named_wrongs(group_wrongs(g, s), floor=1),
         values={"g": g, "s": s, **nouns},
     )
 
@@ -230,14 +220,9 @@ def _times_prompt(rng: random.Random, tier: int, g: int, s: int, story: Prompt) 
     form = rng.choice(("story", "groups_of") if tier == 0 else ("story", "groups_of", "sentence"))
     if form == "story":
         return story
-    if form == "groups_of":
-        return (text(f"There are {g} groups of {s}. How many are there in all?"),)
-    return rng.choice(
-        (
-            math_prompt(rf"{g} \times {s} = ?"),
-            (text("What is "), math(rf"{g} \times {s}"), text("?")),
-        )
-    )
+    if form == "sentence":
+        form = rng.choice(("sentence", "words"))
+    return group_prompt(form, g, s)
 
 
 def _build_mult_as_groups(rng: random.Random, tier: int) -> Built:
@@ -247,7 +232,7 @@ def _build_mult_as_groups(rng: random.Random, tier: int) -> Built:
     return Built(
         prompt=_times_prompt(rng, tier, g, s, story),
         answer=_Int(g * s),
-        wrong=named_wrongs(_group_wrongs(g, s), floor=1),
+        wrong=named_wrongs(group_wrongs(g, s), floor=1),
         values={"g": g, "s": s, **nouns},
     )
 
@@ -322,7 +307,7 @@ def generators() -> list[SkillGenerator]:
             0.3,
             form,
             _build_equal_groups,
-            ("added_instead", "one_group_too_few", "one_group_too_many"),
+            GROUP_KEYS,
         ),
         SkillGenerator(
             "arrays",
@@ -343,7 +328,7 @@ def generators() -> list[SkillGenerator]:
             0.8,
             form,
             _build_mult_as_groups,
-            ("added_instead", "one_group_too_few", "one_group_too_many"),
+            GROUP_KEYS,
         ),
         SkillGenerator(
             "mult_0_1_10",

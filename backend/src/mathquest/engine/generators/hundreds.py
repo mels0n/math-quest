@@ -21,6 +21,7 @@ import random
 import sympy
 
 from mathquest.engine.generators._util import (
+    MISSING_LEADS,
     Built,
     SkillGenerator,
     math,
@@ -32,7 +33,6 @@ from mathquest.engine.types import AnswerForm, Prompt
 
 _Int = sympy.Integer
 
-_LEADS = ("Find the missing number. ", "What number is missing? ")
 _ZERO_SHARE = 0.25
 """How often a regrouping subtraction starts from a number with a zero in the tens place."""
 
@@ -220,7 +220,7 @@ def _ask_sub(rng: random.Random, tier: int, a: int, b: int) -> tuple[Prompt, int
         return prompt, left, b, f"You take {b} out. How many are left?"
     sentence = rng.choice((f"{a} - ? = {left}", f"{left} = {a} - ?"))
     story = f"You take some out. Now it holds {left}. How many did you take out?"
-    return (text(rng.choice(_LEADS)), math(sentence)), b, left, story
+    return (text(rng.choice(MISSING_LEADS)), math(sentence)), b, left, story
 
 
 def _sub_slips(top: int, bottom: int, regroup: bool) -> list[tuple[str, int]]:
