@@ -4,13 +4,13 @@ skill: mult_2_5
 approaches:
   - style: visual
     body_md: >-
-        Each row of dots is one group. Count the rows and count one row. Split the rows to make an easier fact. Double the number, or use half of ten rows.
+        Each row of dots is one group. Turn the fact around so the table comes first. Count the rows and count one row. Split the rows to make an easier fact. Double the number, or use half of ten rows.
     visual:
       kind: array
       params: {rows: "{g}", cols: "{s}"}
   - style: steps
     body_md: |-
-      1. Find the table in the fact. It is 2 or 5.
+      1. Find the table in the fact. It is 2 or 5. Turn the fact so it comes first.
       2. For a 2, double the other number.
       3. For a 5, find ten groups first. Then take half.
       4. Count on in jumps to check.

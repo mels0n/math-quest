@@ -215,3 +215,12 @@ def test_a_story_tells_the_groups_and_agrees_with_the_answer(skill_id: str) -> N
                     assert len(sentence.split()) <= 12, (template.id, sentence)
                     assert not re.match(r"\d", sentence), (template.id, sentence)
     assert served == {t.id for t in PACK.word_problems[skill_id].templates}
+
+
+@pytest.mark.parametrize("skill_id", TABLES)
+def test_the_picture_and_steps_turn_the_fact_around_first(skill_id: str) -> None:
+    """The strategies count the table as the number of groups, so the explanations say to
+    turn the fact around when the table is the second factor."""
+    for approach in PACK.explanations[skill_id].approaches:
+        if approach.style in ("visual", "steps"):
+            assert "turn" in approach.body_md.lower(), (skill_id, approach.style)

@@ -7,5 +7,5 @@
 #                     or bank items where its flags ask for them), or loading fails
 id: k8-core
 title: Kindergarten to Grade 8
-version: 0.14.2
+version: 0.14.3
 complete_regions: []

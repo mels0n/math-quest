@@ -4,13 +4,13 @@ skill: mult_6_7
 approaches:
   - style: visual
     body_md: >-
-        Each row of dots is one group. Draw a line after the fifth row. The top rows are a fives fact. The rows left are the extra groups.
+        Each row of dots is one group. Turn the fact around so the table comes first. Draw a line after the fifth row. The top rows are a fives fact. The rows left are the extra groups.
     visual:
       kind: array
       params: {rows: "{g}", cols: "{s}"}
   - style: steps
     body_md: |-
-      1. Find the table in the fact. It is 6 or 7.
+      1. Find the table in the fact. It is 6 or 7. Turn the fact so it comes first.
       2. Start with five groups of the other number.
       3. For a 6, add one more group. For a 7, add two more.
       4. Add the parts together to get the total.
