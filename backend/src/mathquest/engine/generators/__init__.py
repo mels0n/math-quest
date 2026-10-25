@@ -15,6 +15,7 @@ from mathquest.engine.generators import (
     early,
     fractions,
     graphs,
+    groups,
     hundreds,
     mental,
     parity,
@@ -47,6 +48,7 @@ _REGISTRY: Mapping[str, Generator] = MappingProxyType(
             *compare_1000.generators(),
             *stories_100.generators(),
             *hundreds.generators(),
+            *groups.generators(),
         ]
     }
 )

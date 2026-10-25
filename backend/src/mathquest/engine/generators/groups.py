@@ -1,0 +1,343 @@
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
+"""Equal groups, arrays and the first multiplying (2.OA.C.4, 3.OA.A.1, 3.OA.A.3, 3.OA.C.7).
+
+The questions are told in words and numerals, because a prompt cannot carry a picture
+(ADR-0029). Every question has the same two numbers underneath, named for what they count:
+
+- ``equal_groups`` (grade 2): ``g`` groups of ``s`` things. The total is found by adding
+  the group again and again or by skip counting, and the times sign is not used. A tier
+  narrows the group sizes, as the plan does; the top tier mixes sizes (and 10) and sometimes
+  gives the repeated addition as a sum.
+- ``arrays`` (grade 2): ``r`` rows of ``c``. The tiers get harder by form: rows of, rows and
+  columns, then an array that gains or loses a row.
+- ``mult_as_groups`` (grade 3): the same groups, now written with the times sign, in a
+  story, as "groups of" and as ``g \\times s``. A tier raises the number of groups.
+- ``mult_0_1_10`` (grade 3): a number times 0, 1 or 10, in either order.
+
+The total of ``g`` groups of ``s`` is ``total``; ``answer`` is what the question asks for.
+"""
+
+import random
+
+import sympy
+
+from mathquest.engine.generators._util import (
+    NAMES,
+    Built,
+    SkillGenerator,
+    math,
+    math_prompt,
+    named_wrongs,
+    text,
+)
+from mathquest.engine.types import AnswerForm, Prompt
+
+_Int = sympy.Integer
+
+# (one, many, what it holds): a container and the plural of what an equal group of it holds.
+# Every count a story draws is at least 2, so the plurals always agree.
+_CONTAINERS = (
+    ("bag", "bags", "apples"),
+    ("box", "boxes", "crayons"),
+    ("plate", "plates", "cookies"),
+    ("basket", "baskets", "eggs"),
+    ("jar", "jars", "marbles"),
+    ("vase", "vases", "flowers"),
+    ("tray", "trays", "muffins"),
+    ("shelf", "shelves", "books"),
+    ("pot", "pots", "seeds"),
+    ("bucket", "buckets", "shells"),
+    ("pack", "packs", "stickers"),
+    ("table", "tables", "kids"),
+)
+_ROW_THINGS = (
+    "chairs",
+    "desks",
+    "plants",
+    "tiles",
+    "stickers",
+    "cupcakes",
+    "books",
+    "buttons",
+    "seeds",
+    "stones",
+    "cards",
+    "blocks",
+)
+
+
+def _groups_story(rng: random.Random, g: int, s: int) -> tuple[Prompt, dict[str, int | str]]:
+    """``g`` equal groups of ``s``, told in words, and the nouns it used."""
+    one, many, items = rng.choice(_CONTAINERS)
+    who = rng.choice(NAMES)
+    story = rng.choice(
+        (
+            f"There are {g} {many}. Each {one} has {s} {items}. How many {items} are there in all?",
+            f"{who} has {g} {many}. Each {one} holds {s} {items}. "
+            f"How many {items} does {who} have?",
+        )
+    )
+    return (text(story),), {"group": one, "groups": many, "items": items}
+
+
+def _group_wrongs(g: int, s: int) -> list[tuple[str, int]]:
+    """What a child types for ``g`` groups of ``s``: the two numbers added, or one group left
+    out or counted twice."""
+    total = g * s
+    return [
+        ("added_instead", g + s),
+        ("one_group_too_few", total - s),
+        ("one_group_too_many", total + s),
+    ]
+
+
+# --- equal groups ----------------------------------------------------------------------------
+
+_GROUPS_BY_TIER = (
+    ((2,), tuple(range(2, 10))),
+    ((3, 4, 5), tuple(range(2, 7))),
+    ((2, 3, 4, 5, 10), tuple(range(2, 9))),
+)
+"""Per tier: the sizes of a group, and how many groups there are."""
+_SUM_SHARE = 0.3
+"""How often the top tier of equal groups gives the repeated addition itself."""
+
+
+def _build_equal_groups(rng: random.Random, tier: int) -> Built:
+    sizes, counts = _GROUPS_BY_TIER[tier]
+    s, g = rng.choice(sizes), rng.choice(counts)
+    story, nouns = _groups_story(rng, g, s)
+    as_sum = tier == 2 and rng.random() < _SUM_SHARE
+    prompt: Prompt = math_prompt(" + ".join([str(s)] * g) + " = ?") if as_sum else story
+    return Built(
+        prompt=prompt,
+        answer=_Int(g * s),
+        wrong=named_wrongs(_group_wrongs(g, s), floor=1),
+        values={"g": g, "s": s, "total": g * s, "answer": g * s, **nouns},
+    )
+
+
+# --- arrays ----------------------------------------------------------------------------------
+
+_RANGE = tuple(range(2, 6))
+
+
+def _build_arrays(rng: random.Random, tier: int) -> Built:
+    things = rng.choice(_ROW_THINGS)
+    who = rng.choice(NAMES)
+    if tier < 2:
+        r, c = rng.choice(_RANGE), rng.choice(_RANGE)
+        if tier == 0:
+            prompt = (
+                text(
+                    rng.choice(
+                        (
+                            f"{things.capitalize()} are in {r} rows of {c}. "
+                            f"How many {things} are there?",
+                            f"{who} puts {things} in {r} rows. Each row has {c}. "
+                            f"How many {things} are there?",
+                        )
+                    )
+                ),
+            )
+        else:
+            prompt = (
+                text(
+                    rng.choice(
+                        (
+                            f"{things.capitalize()} are lined up in {r} rows and {c} columns. "
+                            f"How many {things} are there?",
+                            f"{who} sets out {things} in {r} rows and {c} columns. "
+                            f"How many {things} does {who} set out?",
+                        )
+                    )
+                ),
+            )
+        total = r * c
+        wrong = [
+            ("added_rows_and_columns", r + c),
+            ("counted_one_row", c),
+            ("one_row_short", total - c),
+        ]
+        return Built(
+            prompt=prompt,
+            answer=_Int(total),
+            wrong=named_wrongs(wrong, floor=1),
+            values={"r": r, "c": c, "total": total, "answer": total, "things": things},
+        )
+    adds = rng.random() < 0.5
+    r = rng.choice((2, 3, 4)) if adds else rng.choice((3, 4, 5))
+    c = rng.choice(_RANGE)
+    now = r + 1 if adds else r - 1
+    start = f"{who} sets out {things} in {r} rows of {c}."
+    ask = (
+        f"Then {who} adds one more row. How many {things} are there now?"
+        if adds
+        else f"Then {who} takes away one row. How many {things} are left?"
+    )
+    wrong = [
+        ("forgot_the_change", r * c),
+        ("changed_the_total_by_one", r * c + 1 if adds else r * c - 1),
+        ("wrong_direction", (r - 1 if adds else r + 1) * c),
+    ]
+    return Built(
+        prompt=(text(f"{start} {ask}"),),
+        answer=_Int(now * c),
+        wrong=named_wrongs(wrong, floor=1),
+        values={
+            "r": r,
+            "c": c,
+            "now": now,
+            "total": r * c,
+            "answer": now * c,
+            "things": things,
+            "change": "adds" if adds else "takes away",
+            "more": "one more row" if adds else "one row fewer",
+        },
+    )
+
+
+# --- multiplying groups ----------------------------------------------------------------------
+
+_TIMES_BY_TIER = (
+    ((2,), tuple(range(2, 10))),
+    (tuple(range(2, 6)), tuple(range(2, 9))),
+    (tuple(range(3, 11)), tuple(range(2, 7))),
+)
+"""Per tier: how many groups there are, and the size of a group."""
+
+
+def _times_prompt(rng: random.Random, tier: int, g: int, s: int, story: Prompt) -> Prompt:
+    form = rng.choice(("story", "groups_of") if tier == 0 else ("story", "groups_of", "sentence"))
+    if form == "story":
+        return story
+    if form == "groups_of":
+        return (text(f"There are {g} groups of {s}. How many are there in all?"),)
+    return rng.choice(
+        (
+            math_prompt(rf"{g} \times {s} = ?"),
+            (text("What is "), math(rf"{g} \times {s}"), text("?")),
+        )
+    )
+
+
+def _build_mult_as_groups(rng: random.Random, tier: int) -> Built:
+    counts, sizes = _TIMES_BY_TIER[tier]
+    g, s = rng.choice(counts), rng.choice(sizes)
+    story, nouns = _groups_story(rng, g, s)
+    return Built(
+        prompt=_times_prompt(rng, tier, g, s, story),
+        answer=_Int(g * s),
+        wrong=named_wrongs(_group_wrongs(g, s), floor=1),
+        values={"g": g, "s": s, "total": g * s, "answer": g * s, **nouns},
+    )
+
+
+# --- times 0, 1 and 10 -----------------------------------------------------------------------
+
+_KINDS = ("zero", "one", "ten")
+_KIND_WEIGHTS = ((0.25, 0.75, 0.0), (0.0, 0.0, 1.0), (0.2, 0.3, 0.5))
+"""Per tier: how often the question is a times 0, a times 1 or a times 10 fact. Times 0 is
+a fifth to a quarter of the draws, so that no one answer (0) is a third of them."""
+_SPECIAL = {"zero": 0, "one": 1, "ten": 10}
+_HELP = {
+    "zero": (
+        "Picture the groups. Is anything inside them?",
+        "Zero groups hold nothing. Groups of zero hold nothing too.",
+    ),
+    "one": (
+        "Picture the groups. How many are in each group?",
+        "One group of a number is just that number. Groups of one count one each.",
+    ),
+    "ten": (
+        "Think about tens. One group of ten is 10.",
+        "Count by tens, one for each group. Or write the number and then a zero.",
+    ),
+}
+
+
+def _groups_line(a: int, b: int) -> str:
+    return f"There is 1 group of {b}." if a == 1 else f"There are {a} groups of {b}."
+
+
+def _build_zero_one_ten(rng: random.Random, tier: int) -> Built:
+    kind = rng.choices(_KINDS, weights=_KIND_WEIGHTS[tier])[0]
+    special, n = _SPECIAL[kind], rng.randint(2, 10)
+    a, b = (n, special) if rng.random() < 0.5 else (special, n)
+    forms = ("sentence", "words") if tier == 0 else ("sentence", "words", "groups")
+    form = rng.choice(forms)
+    if form == "sentence":
+        prompt = math_prompt(rf"{a} \times {b} = ?")
+    elif form == "words":
+        prompt = (text("What is "), math(rf"{a} \times {b}"), text("?"))
+    else:
+        prompt = (text(f"{_groups_line(a, b)} How many are there in all?"),)
+    answer = n * special
+    wrong = {
+        "zero": [("answered_the_other_number", n)],
+        "one": [("added_one", n + 1), ("answered_zero", 0)],
+        "ten": [("dropped_the_zero", n), ("put_on_two_zeros", n * 100), ("added_ten", n + 10)],
+    }[kind]
+    nudge, rule = _HELP[kind]
+    return Built(
+        prompt=prompt,
+        answer=_Int(answer),
+        wrong=named_wrongs(wrong),
+        values={
+            "a": a,
+            "b": b,
+            "n": n,
+            "kind": kind,
+            "answer": answer,
+            "nudge": nudge,
+            "rule": rule,
+        },
+    )
+
+
+def generators() -> list[SkillGenerator]:
+    form = AnswerForm.INTEGER
+    return [
+        SkillGenerator(
+            "equal_groups",
+            0.3,
+            form,
+            _build_equal_groups,
+            ("added_instead", "one_group_too_few", "one_group_too_many"),
+        ),
+        SkillGenerator(
+            "arrays",
+            0.4,
+            form,
+            _build_arrays,
+            (
+                "added_rows_and_columns",
+                "counted_one_row",
+                "one_row_short",
+                "forgot_the_change",
+                "changed_the_total_by_one",
+                "wrong_direction",
+            ),
+        ),
+        SkillGenerator(
+            "mult_as_groups",
+            0.8,
+            form,
+            _build_mult_as_groups,
+            ("added_instead", "one_group_too_few", "one_group_too_many"),
+        ),
+        SkillGenerator(
+            "mult_0_1_10",
+            0.9,
+            form,
+            _build_zero_one_ten,
+            (
+                "answered_the_other_number",
+                "added_one",
+                "answered_zero",
+                "dropped_the_zero",
+                "put_on_two_zeros",
+                "added_ten",
+            ),
+        ),
+    ]

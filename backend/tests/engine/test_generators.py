@@ -64,6 +64,10 @@ BASES = {
     "sub_3digit_no_regroup": 0.6,
     "add_3digit_regroup": 0.9,
     "sub_3digit_regroup": 1.1,
+    "equal_groups": 0.3,
+    "arrays": 0.4,
+    "mult_as_groups": 0.8,
+    "mult_0_1_10": 0.9,
 }
 
 seeds = st.integers(0, 2**32 - 1)
@@ -177,7 +181,7 @@ def test_registry_covers_pack() -> None:
     assert set(PACK_SKILLS) <= set(all_generators())
     for gen_id, gen in all_generators().items():
         assert gen.generator_id == gen_id
-    assert len(all_generators()) == 46
+    assert len(all_generators()) == 50
 
 
 def test_unknown_skill_is_keyerror() -> None:
