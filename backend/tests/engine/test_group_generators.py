@@ -115,9 +115,8 @@ def test_multiplying_groups_tell_their_numbers_in_every_form(seed: int, tier: in
     v = values("mult_as_groups", seed, tier)
     g, s = int(v["g"]), int(v["s"])
     assert numbers("mult_as_groups", seed, tier) == [g, s]
-    assert 2 <= g <= (2, 5, 10)[tier] and 2 <= s <= 9
-    if tier == 0:
-        assert g == 2
+    low_g, high_g, low_s, high_s = ((2, 2, 2, 9), (2, 5, 2, 8), (3, 10, 2, 6))[tier]
+    assert low_g <= g <= high_g and low_s <= s <= high_s
 
 
 def test_multiplying_groups_use_the_times_sign_after_the_first_tier() -> None:

@@ -7,6 +7,7 @@ import pytest
 from hypothesis import given
 
 from mathquest.engine.generators import get_generator
+from mathquest.engine.generators._groups import each_wrongs, group_wrongs
 from mathquest.engine.types import TextPart
 from tests.engine.test_generators import (
     kept,
@@ -53,6 +54,29 @@ def test_a_fact_is_a_table_times_a_number_and_its_mistakes_follow_their_rules(
     if skill == "mult_8_9" and 9 in (g, s):
         rules["digits_swapped"] = swapped(total)
     assert wrong_answers(skill, seed, tier) == kept(total, rules, floor=1)
+
+
+def test_the_mistakes_for_seven_times_six_by_hand() -> None:
+    """7 times 6 is 42. Read as 7 groups of 6, one group short is 36 and one over is 48; the
+    fact next door, 7 times 5 or 7 times 7, is 35 or 49."""
+    assert group_wrongs(7, 6) == [
+        ("added_instead", 13),
+        ("one_group_too_few", 36),
+        ("one_group_too_many", 48),
+    ]
+    assert each_wrongs(7, 6) == [("one_each_too_few", 35), ("one_each_too_many", 49)]
+    assert each_wrongs(6, 7) == [("one_each_too_few", 36), ("one_each_too_many", 48)]
+
+
+def test_a_generated_seven_times_six_names_those_mistakes() -> None:
+    problem = next(
+        p
+        for seed in range(400)
+        if (p := get_generator("mult_6_7").generate(seed, 2)).values["g"] == 7
+        and p.values["s"] == 6
+    )
+    assert problem.answer == 42
+    assert {int(m.answer) for m in problem.misconceptions} == {13, 36, 48, 35, 49}
 
 
 @pytest.mark.parametrize("skill", TABLES)

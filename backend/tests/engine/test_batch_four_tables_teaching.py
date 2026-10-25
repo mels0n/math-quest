@@ -2,6 +2,7 @@
 """Teaching content of the four times tables skills: complete, renders for every problem, keeps
 to short sentences, teaches a strategy for each table and tells equal groups that are equal."""
 
+import random
 import re
 from pathlib import Path
 
@@ -104,20 +105,29 @@ def test_hints_before_the_last_never_show_the_answer_unless_the_question_does(
                     assert int(number) != answer or answer in shown, (tier, seed, hint)
 
 
-@pytest.mark.parametrize("skill_id", TABLES)
-def test_every_hint_teaches_the_strategy_for_the_table_in_the_fact(skill_id: str) -> None:
-    """The hints name the strategy (doubles, fives, tens) of the table the fact is about."""
-    source = CATALOG.source(skill_id)
+def own_table(skill_id: str, tier: int, seed: int) -> int:
+    """The table a fact was drawn for: tier 0 and 1 name one, the mixed tier draws first."""
     first, second = TABLES[skill_id]
+    return random.Random(seed).choice((first, second)) if tier == 2 else (first, second)[tier]
+
+
+@pytest.mark.parametrize("skill_id", TABLES)
+def test_every_hint_teaches_the_strategy_for_the_table_the_fact_was_drawn_for(
+    skill_id: str,
+) -> None:
+    """A fact such as 8 times 9 has both tables in it, so the strategy asked for is the one of
+    the table the generator drew, not either of them."""
+    source = CATALOG.source(skill_id)
     for tier in range(3):
         for seed in range(SEEDS):
             problem = source.generate(seed, tier)
             g, s = int(problem.values["g"]), int(problem.values["s"])
-            tables = [t for t in (first, second) if t in (g, s)]
+            table = own_table(skill_id, tier, seed)
+            assert table in (g, s)
             hints = [plain(h) for h in render_hints(PACK.hints[skill_id], problem)]
             words = " ".join(hints[:2]).lower()
-            assert any(STRATEGY[t] in words for t in tables), (tables, hints)
-            assert str(g * s) in hints[2]
+            assert STRATEGY[table] in words, (table, hints)
+            assert re.search(rf"\b{g * s}\b", hints[2]), (g, s, hints[2])
 
 
 @pytest.mark.parametrize("skill_id", TABLES)
@@ -179,7 +189,10 @@ def test_at_least_fifteen_different_stories(skill_id: str) -> None:
     assert not others & {t.text_template for t in templates}
     for t in templates:
         assert "{g}" in t.text_template, t.id
-        assert "{s}" in t.text_template or "{s obj}" in t.text_template, t.id
+        assert "{s}" in t.text_template, t.id
+        # A container drawn with an object from the general list reads wrong ("6 rocks on
+        # each tray"), so these stories name their things.
+        assert "objects" not in t.slots.values(), t.id
 
 
 @pytest.mark.parametrize("skill_id", TABLES)
