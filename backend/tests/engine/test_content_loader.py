@@ -214,6 +214,10 @@ def test_real_pack_loads_and_binds() -> None:
         "read_data_graphs": "1",
         "even_odd": "2",
         "word_problems_100": "2",
+        "add_3digit_no_regroup": "2",
+        "sub_3digit_no_regroup": "2",
+        "add_3digit_regroup": "3",
+        "sub_3digit_regroup": "3",
         "equivalent_fractions": "3",
         "add_fractions_unlike": "5",
     }

@@ -29,7 +29,7 @@ def _skill(sid: str, *prereqs: str) -> Skill:
 
 def test_load_slice_pack() -> None:
     graph = _graph()
-    assert len(graph.skills) == 42
+    assert len(graph.skills) == 46
     assert graph.ready(set()) == ["count_to_10", "equivalent_fractions"]
     assert graph.ready({"count_to_10"}) == [
         "add_within_10",
