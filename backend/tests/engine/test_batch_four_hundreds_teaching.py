@@ -85,9 +85,9 @@ def test_rendered_help_keeps_to_twelve_words_a_sentence_and_has_no_dash(skill_id
 
 
 @pytest.mark.parametrize("skill_id", HUNDREDS)
-def test_hints_before_the_last_show_no_single_digit_of_the_working(skill_id: str) -> None:
-    """Hints 1 and 2 may name the numbers of the question and little else, so that a
-    digit that happens to be the answer cannot slip in (the lint would fail it)."""
+def test_hints_before_the_last_do_not_show_the_answer(skill_id: str) -> None:
+    """Hints 1 and 2 never contain the answer, unless it is also a number in the question
+    (the lint would fail it)."""
     source = CATALOG.source(skill_id)
     for tier in range(len(source.tier_difficulties)):
         for seed in range(SEEDS):
