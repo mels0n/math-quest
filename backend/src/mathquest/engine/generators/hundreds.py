@@ -219,7 +219,7 @@ def _ask_sub(rng: random.Random, tier: int, a: int, b: int) -> tuple[Prompt, int
         )
         return prompt, left, b, f"You take {b} out. How many are left?"
     sentence = rng.choice((f"{a} - ? = {left}", f"{left} = {a} - ?"))
-    story = f"You take some out. Now the jar holds {left}. How many did you take out?"
+    story = f"You take some out. Now it holds {left}. How many did you take out?"
     return (text(rng.choice(_LEADS)), math(sentence)), b, left, story
 
 
@@ -265,10 +265,7 @@ def _borrowing(top: int, bottom: int) -> tuple[str, str, str, str]:
     bottom_hundreds, bottom_tens, bottom_ones = _split(bottom)
     first = "The ones are enough. Start there."
     if ones < bottom_ones and tens == 0:
-        first = (
-            "Look at the ones. They are too few. The tens place is a zero,"
-            " so borrow a hundred first."
-        )
+        first = "The ones are too few and the tens place is a zero. Borrow a hundred first."
         ones_line = (
             "The ones are too few and the tens place is a zero. Borrow a hundred."
             f" It makes 10 tens. Borrow a ten from them. The ones become {ones + 10}."
@@ -276,14 +273,16 @@ def _borrowing(top: int, bottom: int) -> tuple[str, str, str, str]:
         )
         hundreds, tens, ones = hundreds - 1, 9, ones + 10
     elif ones < bottom_ones:
-        first = "Look at the ones. They are too few, so borrow a ten."
+        first = "The ones are too few, so borrow a ten."
         ones_line = (
             f"The ones are too few. Borrow a ten. The ones become {ones + 10}."
             f" Take {bottom_ones} from {ones + 10} to leave {ones + 10 - bottom_ones}."
         )
         tens, ones = tens - 1, ones + 10
     else:
-        ones_line = f"Take {bottom_ones} from the {ones} ones. That leaves {ones - bottom_ones}."
+        ones_line = (
+            f"Take {bottom_ones} from {ones} in the ones place. That leaves {ones - bottom_ones}."
+        )
     if tens < bottom_tens:
         if ones >= bottom_ones and first.startswith("The ones are enough"):
             first = "The ones are enough. The tens are too few, so borrow a hundred."
@@ -293,9 +292,11 @@ def _borrowing(top: int, bottom: int) -> tuple[str, str, str, str]:
         )
         hundreds, tens = hundreds - 1, tens + 10
     else:
-        tens_line = f"Take {bottom_tens} from the {tens} tens. That leaves {tens - bottom_tens}."
+        tens_line = (
+            f"Take {bottom_tens} from {tens} in the tens place. That leaves {tens - bottom_tens}."
+        )
     hundreds_line = (
-        f"Take {bottom_hundreds} from the {hundreds} hundreds."
+        f"Take {bottom_hundreds} from {hundreds} in the hundreds place."
         f" That leaves {hundreds - bottom_hundreds}."
     )
     return first, ones_line, tens_line, hundreds_line

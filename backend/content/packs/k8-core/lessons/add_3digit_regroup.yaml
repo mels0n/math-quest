@@ -1,0 +1,33 @@
+# Lesson for Add Hundreds and Carry. The skill always adds two three-digit numbers, so its
+# examples add a number with fewer digits, or are told in words, and a replayed lesson never
+# shows a problem the skill asks.
+skill: add_3digit_regroup
+screens:
+  - title: Ten makes the next place
+    body_md: >-
+      Ten ones swap for one ten. Ten tens swap for one hundred. Moving them to the next place is called carrying.
+    visual:
+      kind: base_ten
+      params: {tens: 10}
+  - title: Carry the ones
+    body_md: >-
+      Add 47 to 278. Start with the ones. 8 and 7 make {{= 8 + 7 }}. That is 1 ten and 5 ones. Write the 5. Carry the 1 ten.
+    visual:
+      kind: base_ten
+      params: {hundreds: 2, tens: 11, ones: 15}
+  - title: Carry the tens
+    body_md: >-
+      Now the tens. 7 and 4 and the carried ten make {{= 7 + 4 + 1 }}. That is 1 hundred and 2 tens. Write the 2. Carry the hundred. The hundreds are 2 and 1, which make {{= 2 + 1 }}. So you get {{= 278 + 47 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 3, tens: 2, ones: 5}
+worked_example:
+  prompt:
+    - {kind: text, value: "A zoo has 365 red fish and 58 blue fish. How many fish in all?"}
+  steps:
+    - Add the ones. 5 and 8 make {{= 5 + 8 }}. Write 3 and carry a ten.
+    - Add the tens. 6 and 5 and the carried ten make {{= 6 + 5 + 1 }}. Write 2 and carry a hundred.
+    - Add the hundreds. 3 and the carried hundred make {{= 3 + 1 }}.
+    - Put it together. The zoo has {{= 365 + 58 }} fish.
+try_it:
+  tier: 0

@@ -1,0 +1,33 @@
+# Lesson for Add Hundreds. The skill always adds two three-digit numbers, so its examples add
+# a number with fewer digits, or are told in words, and a replayed lesson never shows a
+# problem the skill asks.
+skill: add_3digit_no_regroup
+screens:
+  - title: Hundreds, tens and ones
+    body_md: >-
+      A big number has three places. Here is 243. It is 2 hundreds, 4 tens and 3 ones. Add one place at a time.
+    visual:
+      kind: base_ten
+      params: {hundreds: 2, tens: 4, ones: 3}
+  - title: Ones first, then tens
+    body_md: >-
+      Add 52 to 243. Start with the ones. 3 and 2 make {{= 3 + 2 }}. Now the tens. 4 and 5 make {{= 4 + 5 }}. The hundreds stay 2. So you get {{= 243 + 52 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 2, tens: 9, ones: 5}
+  - title: Add the hundreds
+    body_md: >-
+      Hundreds add just like ones. 4 hundreds and 3 hundreds make {{= 4 + 3 }} hundreds. That is {{= 7 \cdot 100 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 7}
+worked_example:
+  prompt:
+    - {kind: text, value: "A shop has 326 beads in one box and 41 in another. How many beads in all?"}
+  steps:
+    - Add the ones. 6 and 1 make {{= 6 + 1 }}.
+    - Add the tens. 2 and 4 make {{= 2 + 4 }}.
+    - The hundreds stay 3.
+    - Put it together. The shop has {{= 326 + 41 }} beads.
+try_it:
+  tier: 0

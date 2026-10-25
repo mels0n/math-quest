@@ -39,6 +39,42 @@
       }
     ]
   },
+  "add_3digit_no_regroup": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Add 2 hundreds, 8 tens and 3 ones to "
+      },
+      {
+        "kind": "math",
+        "value": "704"
+      },
+      {
+        "kind": "text",
+        "value": ". What is the total?"
+      }
+    ]
+  },
+  "add_3digit_regroup": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Add 4 hundreds, 8 tens and 8 ones to "
+      },
+      {
+        "kind": "math",
+        "value": "494"
+      },
+      {
+        "kind": "text",
+        "value": ". What is the total?"
+      }
+    ]
+  },
   "add_fractions_unlike": {
     "tier": 0,
     "seed": 116,
@@ -814,6 +850,58 @@
       {
         "kind": "math",
         "value": "22"
+      },
+      {
+        "kind": "text",
+        "value": ". How many are left?"
+      }
+    ]
+  },
+  "sub_3digit_no_regroup": {
+    "tier": 1,
+    "seed": 2,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have "
+      },
+      {
+        "kind": "math",
+        "value": "215"
+      },
+      {
+        "kind": "text",
+        "value": ". You give away "
+      },
+      {
+        "kind": "math",
+        "value": "105"
+      },
+      {
+        "kind": "text",
+        "value": ". How many are left?"
+      }
+    ]
+  },
+  "sub_3digit_regroup": {
+    "tier": 1,
+    "seed": 2,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have "
+      },
+      {
+        "kind": "math",
+        "value": "404"
+      },
+      {
+        "kind": "text",
+        "value": ". You give away "
+      },
+      {
+        "kind": "math",
+        "value": "164"
       },
       {
         "kind": "text",

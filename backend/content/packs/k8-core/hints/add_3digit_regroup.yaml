@@ -1,0 +1,9 @@
+# Three hints for Add Hundreds and Carry: a nudge, the next step, then the whole answer worked out.
+skill: add_3digit_regroup
+levels:
+  - text_template: >-
+      Add the ones first. If they make ten or more, carry a ten. Do the same with the tens.
+  - text_template: >-
+      {ones_line} Now add the tens.
+  - text_template: >-
+      {ones_line} {tens_line} {hundreds_line} So the answer is {answer}.

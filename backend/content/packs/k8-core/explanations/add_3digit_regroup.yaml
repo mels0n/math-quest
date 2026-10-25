@@ -1,0 +1,29 @@
+# Four ways to explain adding three-digit numbers with carrying, plus feedback for each mistake
+# the generator knows. None of them shows the answer: the picture shows only the first number.
+skill: add_3digit_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      Here is {top} as blocks. Picture the blocks for the other number next to them. Count the cubes. Swap ten cubes for one stick. Swap ten sticks for one flat.
+    visual:
+      kind: base_ten
+      params: {hundreds: "{top_hundreds}", tens: "{top_tens}", ones: "{top_ones}"}
+  - style: steps
+    body_md: |-
+      1. Add the ones. If they make ten or more, write the ones that are left.
+      2. Carry one ten to the tens place.
+      3. Add the tens and the carried ten. If they make ten or more, carry a hundred.
+      4. Add the hundreds and any carried hundred.
+  - style: story
+    body_md: >-
+      A jar holds {top} beads. {story} Does any place make ten or more? Carry it to the next place.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Add the ones first. Do they make ten or more? Write the ones that are left. Carry the ten. Add the tens and the carried ten. Do they make ten or more? Carry the hundred. Add the hundreds last.
+misconceptions:
+  subtracted_instead: >-
+    It looks like you took one number from the other. This question asks you to put them together. Add each place, and carry when it makes ten.
+  forgot_the_carry: >-
+    You were close! It looks like a carried ten or hundred got lost. A place that makes ten or more must carry. Carry one to the next place. Then add it in.
+  carried_to_the_wrong_place: >-
+    You were close! It looks like the carried ten went to the hundreds place. A carried ten belongs in the tens place.

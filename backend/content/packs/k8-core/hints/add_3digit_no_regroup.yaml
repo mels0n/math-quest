@@ -1,0 +1,9 @@
+# Three hints for Add Hundreds: a nudge, the next step, then the whole answer worked out.
+skill: add_3digit_no_regroup
+levels:
+  - text_template: >-
+      Add the ones first. Then add the tens. Then add the hundreds.
+  - text_template: >-
+      The ones are {top_ones} and {bottom_ones}. They make {ones_total}. Now add the tens.
+  - text_template: >-
+      The ones make {ones_total}. The tens make {tens_total}. The hundreds make {hundreds_total}. So the answer is {answer}.

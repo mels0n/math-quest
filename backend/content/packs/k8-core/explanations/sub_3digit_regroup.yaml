@@ -1,0 +1,31 @@
+# Four ways to explain subtracting three-digit numbers with borrowing, plus feedback for each
+# mistake the generator knows. None of them shows the answer: the picture shows only the top
+# number.
+skill: sub_3digit_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      Here is {top} as blocks. {look} Trade a flat for ten sticks when you need more sticks. Trade a stick for ten cubes when you need more cubes.
+    visual:
+      kind: base_ten
+      params: {hundreds: "{top_hundreds}", tens: "{top_tens}", ones: "{top_ones}"}
+  - style: steps
+    body_md: |-
+      1. Look at the ones. Are there enough to take away?
+      2. If not, borrow one ten and make it ten ones.
+      3. Do the same with the tens. Borrow a hundred if you need to.
+      4. A zero has nothing to lend. Borrow from the next place to the left.
+      5. Take away each place. Then put the three answers together.
+  - style: story
+    body_md: >-
+      A box holds {top} blocks. {story} Do you need to open a ten or a hundred?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Start with the ones. Are there enough? If not, borrow a ten. Then look at the tens. Borrow a hundred if you need to. Remember that the place you borrowed from goes down by one.
+misconceptions:
+  added_instead: >-
+    It looks like you added the two numbers you see. This question takes one away from the other. Try taking one from the other.
+  subtracted_backwards: >-
+    It looks like you flipped a column. The top digit always comes first. Borrow when it is too small.
+  forgot_to_lower_the_next_place: >-
+    You were close! It looks like you borrowed but did not lower the next place. After you borrow, that place goes down by one.

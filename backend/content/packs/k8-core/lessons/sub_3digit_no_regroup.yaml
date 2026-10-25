@@ -1,0 +1,33 @@
+# Lesson for Subtract Hundreds. The skill always takes a three-digit number from a three-digit
+# number, so its examples take a number with fewer digits, or are told in words, and a replayed
+# lesson never shows a problem the skill asks.
+skill: sub_3digit_no_regroup
+screens:
+  - title: Take away place by place
+    body_md: >-
+      Here is 587. It is 5 hundreds, 8 tens and 7 ones. Take away one place at a time.
+    visual:
+      kind: base_ten
+      params: {hundreds: 5, tens: 8, ones: 7}
+  - title: Ones first, then tens
+    body_md: >-
+      Take 64 from 587. Start with the ones. 7 take away 4 leaves {{= 7 - 4 }}. Now the tens. 8 take away 6 leaves {{= 8 - 6 }}. The hundreds stay 5. So you get {{= 587 - 64 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 5, tens: 2, ones: 3}
+  - title: Take away hundreds
+    body_md: >-
+      Hundreds take away just like ones. 7 hundreds take away 2 hundreds leaves {{= 7 - 2 }} hundreds. That is {{= 5 \cdot 100 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 5}
+worked_example:
+  prompt:
+    - {kind: text, value: "A box holds 478 beads. A girl takes out 52. How many are left?"}
+  steps:
+    - Take away the ones. 8 take away 2 leaves {{= 8 - 2 }}.
+    - Take away the tens. 7 take away 5 leaves {{= 7 - 5 }}.
+    - The hundreds stay 4.
+    - Put it together. {{= 478 - 52 }} beads are left.
+try_it:
+  tier: 0
