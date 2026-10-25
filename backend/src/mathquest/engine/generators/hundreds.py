@@ -9,8 +9,9 @@ skill (three-digit numbers, sums to 999, differences of at least 100):
 - subtracting: a sentence, the same in words, and a sentence with the amount taken away
   hidden.
 
-A regrouping subtraction often has a zero in the tens place of the top number, so that
-borrowing across a zero (503 - 178) comes up in every tier.
+A regrouping subtraction often has a zero in the tens place of the top number (about two
+questions in five), so that borrowing across a zero (503 - 178, about one in five) comes up
+in every tier.
 
 In every form the answer is the top number worked with the other number shown beside it, so
 the values name that pair: ``top`` and ``bottom``.
@@ -34,7 +35,10 @@ from mathquest.engine.types import AnswerForm, Prompt
 _Int = sympy.Integer
 
 _ZERO_SHARE = 0.25
-"""How often a regrouping subtraction starts from a number with a zero in the tens place."""
+"""How often a draw for a regrouping subtraction starts from a top number with a zero in the
+tens place. A draw that needs no borrowing is thrown away, which favours that form, so about
+39% of the questions have the zero and about 19% borrow across it (the ones are too few as
+well, as in 503 - 178)."""
 
 
 def _split(n: int) -> tuple[int, int, int]:
@@ -98,8 +102,8 @@ def _ask_add(rng: random.Random, tier: int, a: int, b: int) -> tuple[Prompt, str
 
 def _add_slips(a: int, b: int, regroup: bool) -> list[tuple[str, int]]:
     """What a child types for ``a + b``: the numbers subtracted, and (without carrying) the
-    digits counted as ones or the hundreds of the second number left out, or (with it) a
-    carry forgotten or put in the wrong place."""
+    hundreds of the second number left out, or (with it) a carry forgotten or put in the
+    wrong place."""
     total = a + b
     wrong = [("subtracted_instead", abs(a - b))]
     if regroup:
@@ -111,12 +115,8 @@ def _add_slips(a: int, b: int, regroup: bool) -> list[tuple[str, int]]:
             ("carried_to_the_wrong_place", total + 90 * ones_carry),
         ]
     else:
-        wrong += [
-            # Every digit counted as a one: 342 + 125 as 3 + 4 + 2 + 1 + 2 + 5.
-            ("added_digits", sum(int(d) for d in f"{a}{b}")),
-            # The second number's hundreds are left out: 342 + 125 as 342 + 25.
-            ("left_out_the_hundreds", a + b % 100),
-        ]
+        # The second number's hundreds are left out: 342 + 125 as 342 + 25.
+        wrong.append(("left_out_the_hundreds", a + b % 100))
     return wrong
 
 
@@ -264,6 +264,7 @@ def _borrowing(top: int, bottom: int) -> tuple[str, str, str, str]:
     hundreds, tens, ones = _split(top)
     bottom_hundreds, bottom_tens, bottom_ones = _split(bottom)
     first = "The ones are enough. Start there."
+    borrowed_ones = ones < bottom_ones
     if ones < bottom_ones and tens == 0:
         first = "The ones are too few and the tens place is a zero. Borrow a hundred first."
         ones_line = (
@@ -284,7 +285,7 @@ def _borrowing(top: int, bottom: int) -> tuple[str, str, str, str]:
             f"Take {bottom_ones} from {ones} in the ones place. That leaves {ones - bottom_ones}."
         )
     if tens < bottom_tens:
-        if ones >= bottom_ones and first.startswith("The ones are enough"):
+        if not borrowed_ones:
             first = "The ones are enough. The tens are too few, so borrow a hundred."
         tens_line = (
             f"The tens are too few. Borrow a hundred. The tens become {tens + 10}."
@@ -370,7 +371,7 @@ def generators() -> list[SkillGenerator]:
             0.5,
             form,
             _build_add_no_regroup,
-            ("subtracted_instead", "added_digits", "left_out_the_hundreds"),
+            ("subtracted_instead", "left_out_the_hundreds"),
         ),
         SkillGenerator(
             "sub_3digit_no_regroup",

@@ -23,7 +23,5 @@ approaches:
 misconceptions:
   subtracted_instead: >-
     It looks like you took one number from the other. This question asks you to put them together. Add each place.
-  added_digits: >-
-    It looks like you added every digit as a one. A hundred is much bigger than a one. Add each place on its own.
   left_out_the_hundreds: >-
     You were close! It looks like the hundreds of one number got left out. Add the hundreds too.

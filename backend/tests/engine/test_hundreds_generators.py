@@ -8,6 +8,7 @@ import pytest
 from hypothesis import given
 
 from mathquest.engine.generators import get_generator
+from mathquest.engine.generators.hundreds import _add_slips, _sub_slips  # pyright: ignore[reportPrivateUsage]
 from mathquest.engine.types import TextPart
 from tests.engine.test_generators import (
     flatten,
@@ -92,7 +93,6 @@ def test_adding_without_carrying_mistakes_follow_their_rules(seed: int, tier: in
     a, b, r = pair(skill, seed, tier)
     rules = {
         "subtracted_instead": abs(a - b),
-        "added_digits": sum(int(d) for d in f"{a}{b}"),
         "left_out_the_hundreds": a + b % 100,
     }
     assert wrong_answers(skill, seed, tier) == kept(r, rules, floor=1)
@@ -111,6 +111,23 @@ def test_adding_with_carrying_mistakes_follow_their_rules(seed: int, tier: int) 
         "carried_to_the_wrong_place": r + 90 * ones_carry,
     }
     assert wrong_answers(skill, seed, tier) == kept(r, rules, floor=1)
+
+
+def test_the_carry_and_borrow_mistakes_by_hand() -> None:
+    """478 + 256 is 734. Carrying the ten from 8 + 6 into the hundreds, a child gets 4 in the
+    ones, 2 in the tens (7 + 5 = 12, carry 1) and 4 + 2 + 1 + 1 = 8 hundreds: 824. Forgetting
+    the carry gives 4, 2 and 6 hundreds: 624. 503 - 178 is 325; borrowing for the ones and the
+    tens without lowering the next place leaves 13 - 8, 10 - 7 and 5 - 1: 435."""
+    assert dict(_add_slips(478, 256, regroup=True)) == {
+        "subtracted_instead": 222,
+        "forgot_the_carry": 624,
+        "carried_to_the_wrong_place": 824,
+    }
+    assert dict(_sub_slips(503, 178, regroup=True)) == {
+        "added_instead": 681,
+        "subtracted_backwards": 475,
+        "forgot_to_lower_the_next_place": 435,
+    }
 
 
 @prop
