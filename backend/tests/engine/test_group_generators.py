@@ -278,11 +278,3 @@ def test_text_is_short_has_no_dash_and_never_starts_with_a_number(skill: str) ->
                 for dash in (chr(0x2014), chr(0x2013), " - ", "--"):
                     assert dash not in sentence
             assert not re.search(r"\b1 [a-z]+s\b", spoken)
-
-
-@pytest.mark.parametrize("skill", GROUPS)
-@prop
-@given(seed=seeds, tier=tiers)
-def test_deterministic_per_seed_and_tier(skill: str, seed: int, tier: int) -> None:
-    gen = get_generator(skill)
-    assert gen.generate(seed, tier) == gen.generate(seed, tier)

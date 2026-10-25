@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given
 
 from mathquest.engine.generators import get_generator
-from mathquest.engine.generators.hundreds import _add_slips, _sub_slips  # pyright: ignore[reportPrivateUsage]
+from mathquest.engine.generators.hundreds import add_slips, sub_slips
 from mathquest.engine.types import TextPart
 from tests.engine.test_generators import (
     flatten,
@@ -118,12 +118,12 @@ def test_the_carry_and_borrow_mistakes_by_hand() -> None:
     ones, 2 in the tens (7 + 5 = 12, carry 1) and 4 + 2 + 1 + 1 = 8 hundreds: 824. Forgetting
     the carry gives 4, 2 and 6 hundreds: 624. 503 - 178 is 325; borrowing for the ones and the
     tens without lowering the next place leaves 13 - 8, 10 - 7 and 5 - 1: 435."""
-    assert dict(_add_slips(478, 256, regroup=True)) == {
+    assert dict(add_slips(478, 256, regroup=True)) == {
         "subtracted_instead": 222,
         "forgot_the_carry": 624,
         "carried_to_the_wrong_place": 824,
     }
-    assert dict(_sub_slips(503, 178, regroup=True)) == {
+    assert dict(sub_slips(503, 178, regroup=True)) == {
         "added_instead": 681,
         "subtracted_backwards": 475,
         "forgot_to_lower_the_next_place": 435,
@@ -307,14 +307,14 @@ def test_subtracting_tiers_use_the_forms_they_name(skill: str) -> None:
 
 @pytest.mark.parametrize("skill", HUNDREDS)
 def test_every_tier_has_a_spread_of_answers(skill: str) -> None:
-    """Five different answers at least, and no one answer more than 35% of the draws."""
+    """Five different answers at least, and no one answer more than a third of the draws."""
     gen = get_generator(skill)
     for tier in range(3):
         answers = [int(gen.generate(seed, tier).answer) for seed in range(3000)]
         distinct = set(answers)
         assert len(distinct) >= 5, (skill, tier, sorted(distinct))
         top = max(answers.count(a) for a in distinct) / len(answers)
-        assert top <= 0.35, (skill, tier, top)
+        assert top <= 1 / 3, (skill, tier, top)
 
 
 @pytest.mark.parametrize("skill", HUNDREDS)

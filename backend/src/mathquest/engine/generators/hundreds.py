@@ -100,7 +100,7 @@ def _ask_add(rng: random.Random, tier: int, a: int, b: int) -> tuple[Prompt, str
     return prompt, story
 
 
-def _add_slips(a: int, b: int, regroup: bool) -> list[tuple[str, int]]:
+def add_slips(a: int, b: int, regroup: bool) -> list[tuple[str, int]]:
     """What a child types for ``a + b``: the numbers subtracted, and (without carrying) the
     hundreds of the second number left out, or (with it) a carry forgotten or put in the
     wrong place."""
@@ -143,7 +143,7 @@ def _built_add(rng: random.Random, tier: int, a: int, b: int, regroup: bool) -> 
     return Built(
         prompt=prompt,
         answer=_Int(a + b),
-        wrong=named_wrongs(_add_slips(a, b, regroup), floor=1),
+        wrong=named_wrongs(add_slips(a, b, regroup), floor=1),
         values={
             "a": a,
             "b": b,
@@ -223,7 +223,7 @@ def _ask_sub(rng: random.Random, tier: int, a: int, b: int) -> tuple[Prompt, int
     return (text(rng.choice(MISSING_LEADS)), math(sentence)), b, left, story
 
 
-def _sub_slips(top: int, bottom: int, regroup: bool) -> list[tuple[str, int]]:
+def sub_slips(top: int, bottom: int, regroup: bool) -> list[tuple[str, int]]:
     """What a child types for ``top - bottom``: the numbers added, or (without borrowing)
     only some places worked, or (with it) the column slips."""
     top_hundreds, top_tens, top_ones = _split(top)
@@ -316,7 +316,7 @@ def _built_sub(rng: random.Random, tier: int, a: int, b: int, regroup: bool) -> 
     return Built(
         prompt=prompt,
         answer=_Int(answer),
-        wrong=named_wrongs(_sub_slips(a, shown, regroup), floor=1),
+        wrong=named_wrongs(sub_slips(a, shown, regroup), floor=1),
         values={
             "a": a,
             "b": b,
