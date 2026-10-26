@@ -1,0 +1,31 @@
+# Lesson for Times 6 and 7. Its examples use 11 and 12, which the skill never asks (the other number is 2 to 10),
+# so a replayed lesson never shows a problem the skill asks.
+skill: mult_6_7
+screens:
+  - title: Times 6 is five and one more
+    body_md: >-
+        Use the fives you know. Then add one more group. Five times 11 is {{= 5 \times 11 }}. Add 11 more to get {{= 6 \times 11 }}. So \(6 \times 11 = {{= 6 \times 11 }}\).
+    visual:
+      kind: array
+      params: {rows: 6, cols: 11}
+  - title: Times 7 is five and two more
+    body_md: >-
+        Use the fives and the twos. Five times 11 is {{= 5 \times 11 }}. Two times 11 is {{= 2 \times 11 }}. Add them to get {{= 7 \times 11 }}. So \(7 \times 11 = {{= 7 \times 11 }}\).
+    visual:
+      kind: array
+      params: {rows: 7, cols: 11}
+  - title: Split the array
+    body_md: >-
+        An array can be split into two easier ones. Split 7 rows of 12 into 5 rows and 2 rows. Five rows make {{= 5 \times 12 }}. Two rows make {{= 2 \times 12 }}. Together that is {{= 7 \times 12 }}.
+    visual:
+      kind: array
+      params: {rows: 7, cols: 12}
+worked_example:
+  prompt:
+    - {kind: text, value: "A hall has 6 rows of chairs. Each row has 12 chairs. How many chairs is that?"}
+  steps:
+    - There are 6 groups of 12. Write it as \(6 \times 12\).
+    - Five times 12 is {{= 5 \times 12 }}. Add one more 12.
+    - So \(6 \times 12 = {{= 6 \times 12 }}\).
+try_it:
+  tier: 0

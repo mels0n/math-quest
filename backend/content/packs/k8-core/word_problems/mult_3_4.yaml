@@ -1,0 +1,57 @@
+# Word problems for Times 3 and 4 (3.OA.C.7). Every template uses the generator's {g} groups of
+# {s} and asks for the total. Each story's groups are equal, and there are at least two of
+# them and at least two in each, so a plural noun is always right. No sentence starts with a
+# number.
+skill: mult_3_4
+templates:
+  - id: bike_rack
+    text_template: "The school has {g} bike racks. Each rack holds {s} bikes. How many bikes fit at the school?"
+    grade_band: 3
+  - id: magic_hats
+    text_template: "A magician pulls {s} scarves from each hat. How many scarves come out of {g} hats?"
+    grade_band: 3
+  - id: camp_tents
+    text_template: "At camp, {g} tents each sleep {s} campers. How many campers sleep in tents?"
+    grade_band: 3
+  - id: flower_shop
+    text_template: "A florist fills {g} vases with {s} tulips each. How many tulips does the florist use?"
+    grade_band: 3
+  - id: pizza_olives
+    text_template: "A pizza shop puts {s} olives on each pizza. How many olives go on {g} pizzas?"
+    grade_band: 3
+  - id: bead_strings
+    text_template: "{name} puts {s} beads on each necklace. How many beads does {name} need for {g} necklaces?"
+    slots: {name: names}
+    grade_band: 3
+  - id: farm_stand
+    text_template: "The farm stand sells {g} baskets of plums. Each basket has {s} plums. How many plums are for sale?"
+    grade_band: 3
+  - id: soccer_squads
+    text_template: "The league has {g} squads of {s} players. How many players are in the league?"
+    grade_band: 3
+  - id: book_bags
+    text_template: "{name} packs {s} books in every bag. How many books are in {g} bags?"
+    slots: {name: names}
+    grade_band: 3
+  - id: fair_prizes
+    text_template: "A fair game has {g} shelves. Each shelf holds {s} prizes. How many prizes are in the game?"
+    grade_band: 3
+  - id: pond_ducks
+    text_template: "On the pond, {g} duck families swim. Each family has {s} ducks. How many ducks are there?"
+    grade_band: 3
+  - id: paint_trays
+    text_template: "An art room sets out {g} trays of paint. Each tray has {s} colors. How many colors is that?"
+    grade_band: 3
+  - id: lunch_tables
+    text_template: "At lunch, {s} kids sit at each table. How many kids sit at {g} tables?"
+    grade_band: 3
+  - id: stamp_pages
+    text_template: "A stamp book has {g} pages. Each page holds {s} stamps. How many stamps fit in the book?"
+    grade_band: 3
+  - id: mug_shelves
+    text_template: "A cafe stacks {s} mugs on a shelf. How many mugs sit on {g} shelves?"
+    grade_band: 3
+  - id: window_boxes
+    text_template: "{name} grows {s} herbs in each window box. How many herbs grow in {g} boxes?"
+    slots: {name: names}
+    grade_band: 3

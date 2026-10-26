@@ -1,0 +1,10 @@
+# Three hints for Equal Groups: a nudge, the next step, then the whole answer. Only the last
+# names the total.
+skill: equal_groups
+levels:
+  - text_template: >-
+      Think of {g} equal groups. Each group has {s}.
+  - text_template: >-
+      Add {s} again and again, once for each group. Or skip count by {s}, {g} times.
+  - text_template: >-
+      Skip count by {s}, {g} times. You reach {{= g \times s }}. So the answer is {{= g \times s }}.

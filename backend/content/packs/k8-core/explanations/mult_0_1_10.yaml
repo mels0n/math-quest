@@ -1,0 +1,32 @@
+# Four ways to explain times 0, 1 and 10, plus feedback for each mistake the generator knows. They
+# work for all three kinds of fact, so they talk about groups and none shows the answer.
+skill: mult_0_1_10
+approaches:
+  - style: visual
+    body_md: >-
+      Draw the groups. The first number is how many groups. The second number is how many are in each group. Now look at your drawing. How many are there in all?
+  - style: steps
+    body_md: |-
+      1. Look at both numbers. Is one of them 0, 1 or 10?
+      2. Times zero means nothing is in the groups.
+      3. Times one means the other number stays the same.
+      4. For times ten, think of tens. Put a zero on the end of the other number.
+  - style: story
+    body_md: >-
+      A teacher puts pencils in cups. No cups means no pencils. Cups with no pencils in them hold no pencils too. One cup holds the same number it started with.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say it with the word groups. How many groups are there? How many are in each group? Use the rule for 0, 1 or 10. Then say the answer.
+misconceptions:
+  answered_the_other_number: >-
+    It looks like you wrote the other number. Zero groups hold nothing. Groups of zero hold nothing too. Think about what is in the groups.
+  added_one: >-
+    It looks like you added 1. The times sign means equal groups, not adding. Think about what one group holds.
+  answered_zero: >-
+    You were close! It looks like you used the rule for zero. A group of one still holds something. Think about what is in each group.
+  dropped_the_zero: >-
+    You were close! It looks like the zero got left off. Times 10 puts a zero on the end. Think of tens to check.
+  put_on_two_zeros: >-
+    You were close! It looks like two zeros got added. Times 10 puts just one zero on the end. Think of tens to check.
+  added_ten: >-
+    It looks like you added 10. The times sign means equal groups, not adding ten. Think of tens: the other number with a zero on the end.

@@ -1,0 +1,9 @@
+# Three hints for Subtract Hundreds: a nudge, the next step, then the whole answer worked out.
+skill: sub_3digit_no_regroup
+levels:
+  - text_template: >-
+      Take away the ones first. Then the tens. Then the hundreds.
+  - text_template: >-
+      {look} The ones are {top_ones} and {bottom_ones}. Taking them away leaves {ones_diff}. Now do the tens.
+  - text_template: >-
+      The ones leave {ones_diff}. The tens leave {tens_diff}. The hundreds leave {hundreds_diff}. So the answer is {answer}.

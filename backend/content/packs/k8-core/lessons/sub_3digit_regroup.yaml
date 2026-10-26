@@ -1,0 +1,33 @@
+# Lesson for Subtract Hundreds and Borrow. The skill always takes a three-digit number from a
+# three-digit number, so its examples take a number with fewer digits, or are told in words,
+# and a replayed lesson never shows a problem the skill asks.
+skill: sub_3digit_regroup
+screens:
+  - title: Borrow a ten
+    body_md: >-
+      Take 6 from 253. There are only 3 ones. Borrow a ten from the 5 tens. Now 253 is 2 hundreds, 4 tens and 13 ones. 13 take away 6 leaves {{= 13 - 6 }}. So you get {{= 253 - 6 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 2, tens: 4, ones: 13}
+  - title: Borrow a hundred
+    body_md: >-
+      Take 80 from 350. There are only 5 tens. Borrow a hundred. Now 350 is 2 hundreds and 15 tens. 15 tens take away 8 tens leaves {{= 15 - 8 }} tens. So you get {{= 350 - 80 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 2, tens: 15}
+  - title: A zero has nothing to lend
+    body_md: >-
+      Take 8 from 503. There are no tens to borrow from. Borrow a hundred first. It makes 10 tens. Borrow one of them. Now 503 is 4 hundreds, 9 tens and 13 ones. 13 take away 8 leaves {{= 13 - 8 }}. You get {{= 503 - 8 }}.
+    visual:
+      kind: base_ten
+      params: {hundreds: 4, tens: 9, ones: 13}
+worked_example:
+  prompt:
+    - {kind: text, value: "A baker has 624 rolls. A shop buys 87 of them. How many are left?"}
+  steps:
+    - The ones are too few. Borrow a ten. 14 take away 7 leaves {{= 14 - 7 }}.
+    - The tens are now 1. That is too few to take 8. Borrow a hundred.
+    - 11 tens take away 8 tens leaves {{= 11 - 8 }}.
+    - The hundreds are now 5. Put it together. {{= 624 - 87 }} rolls are left.
+try_it:
+  tier: 0

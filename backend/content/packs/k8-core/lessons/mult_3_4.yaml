@@ -1,0 +1,31 @@
+# Lesson for Times 3 and 4. Its examples use 11 and 12, which the skill never asks (the other number is 2 to 10),
+# so a replayed lesson never shows a problem the skill asks.
+skill: mult_3_4
+screens:
+  - title: Times 3 is a double and one more
+    body_md: >-
+        Double the number first. Then add it once more. Double 11 is {{= 2 \times 11 }}. Add 11 more to get {{= 3 \times 11 }}. So \(3 \times 11 = {{= 3 \times 11 }}\).
+    visual:
+      kind: array
+      params: {rows: 3, cols: 11}
+  - title: Times 4 is double, double
+    body_md: >-
+        Double the number. Then double your answer. Double 11 is {{= 2 \times 11 }}. Double that to get {{= 4 \times 11 }}. So \(4 \times 11 = {{= 4 \times 11 }}\).
+    visual:
+      kind: array
+      params: {rows: 4, cols: 11}
+  - title: Skip count to check
+    body_md: >-
+        Skip counting checks your answer. For 4 groups of 12, jump by 12 four times. You land on {{= 4 \times 12 }}.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 48, start: 0, jumps: [12, 12, 12, 12], end: 48}
+worked_example:
+  prompt:
+    - {kind: text, value: "A farmer has 3 coops. Each coop has 12 hens. How many hens is that?"}
+  steps:
+    - There are 3 groups of 12. Write it as \(3 \times 12\).
+    - Double 12 to get {{= 2 \times 12 }}. Then add 12 more.
+    - So \(3 \times 12 = {{= 3 \times 12 }}\).
+try_it:
+  tier: 0

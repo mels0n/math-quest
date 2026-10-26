@@ -1,0 +1,28 @@
+# Lesson for Times 2 and 5. Its examples use 11 and 12, which the skill never asks (the other number is 2 to 10),
+# so a replayed lesson never shows a problem the skill asks.
+skill: mult_2_5
+screens:
+  - title: Times 2 is a double
+    body_md: >-
+        Two groups make a double. Here are 2 rows of 12. Add 12 and 12 to get {{= 12 + 12 }}. So \(2 \times 12 = {{= 2 \times 12 }}\).
+    visual:
+      kind: array
+      params: {rows: 2, cols: 12}
+  - title: Times 5 is half of times 10
+    body_md: >-
+        Ten times a number is easy. Five times is half of that. Ten times 11 is {{= 10 \times 11 }}. Half of that is {{= 5 \times 11 }}. So \(5 \times 11 = {{= 5 \times 11 }}\).
+    visual:
+      kind: array
+      params: {rows: 5, cols: 11}
+  - title: Turn it around
+    body_md: >-
+        A fact works both ways. \(5 \times 12 = {{= 5 \times 12 }}\) and \(12 \times 5 = {{= 12 \times 5 }}\). Use the way that feels easier. Facts with 5 end in 5 or 0.
+worked_example:
+  prompt:
+    - {kind: text, value: "A shop puts 2 pears in each bag. How many pears are in 12 bags?"}
+  steps:
+    - There are 12 groups of 2. Write it as \(12 \times 2\).
+    - Turn it around. Double 12. Add 12 and 12 to get {{= 12 + 12 }}.
+    - So \(12 \times 2 = {{= 12 \times 2 }}\).
+try_it:
+  tier: 0

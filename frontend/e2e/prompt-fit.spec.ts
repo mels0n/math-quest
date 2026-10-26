@@ -53,6 +53,7 @@ const LONGEST = JSON.parse(
 ) as Record<string, { prompt: PromptPart[] }>;
 
 interface NextBody {
+	skill_id: string;
 	prompt: PromptPart[];
 	dev_answer_latex: string | null;
 	dev_answer_choice?: number | null;
@@ -60,6 +61,7 @@ interface NextBody {
 
 /** How the real problem under a replaced prompt is answered: typed, or by choice index. */
 interface Answer {
+	skill: string;
 	latex: string;
 	choice: number | null;
 }
@@ -81,7 +83,11 @@ async function servePrompts(page: Page, prompts: PromptPart[][], answers: Answer
 		const fetched = await fetchProblem(page, route);
 		const response = fetched.response;
 		const body = fetched.body as unknown as NextBody;
-		answers.push({ latex: body.dev_answer_latex ?? '', choice: body.dev_answer_choice ?? null });
+		answers.push({
+			skill: body.skill_id,
+			latex: body.dev_answer_latex ?? '',
+			choice: body.dev_answer_choice ?? null
+		});
 		const prompt = prompts.shift();
 		await route.fulfill({ response, json: prompt ? { ...body, prompt } : body });
 	});
@@ -157,7 +163,35 @@ async function expectNoOverflow(page: Page, label: string) {
 	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/longest-${label}.png`, fullPage: true });
 }
 
+/**
+ * The server takes 60 answers a minute from one player (ANSWER_LIMIT in
+ * backend/src/mathquest/api/ratelimit.py), and laying out every generator's prompt
+ * answers more than that. Answers wait, when they must, to stay under it: five under
+ * the limit and a second over its window, for clock and latency skew. The count spans
+ * the whole file, so it can only wait more than needed.
+ */
+const ANSWERS_PER_WINDOW = 55;
+const ANSWER_WINDOW_MS = 61_000;
+const answeredAt: number[] = [];
+
+async function paceAnswers(page: Page) {
+	const now = Date.now();
+	while (answeredAt.length > 0 && (answeredAt[0] as number) <= now - ANSWER_WINDOW_MS) {
+		answeredAt.shift();
+	}
+	if (answeredAt.length >= ANSWERS_PER_WINDOW) {
+		await page.waitForTimeout((answeredAt.shift() as number) + ANSWER_WINDOW_MS - now);
+	}
+	answeredAt.push(Date.now());
+}
+
 async function answerAndGoNext(page: Page, answer: Answer) {
+	await paceAnswers(page);
+	const scored = page
+		.waitForResponse((r) => /\/api\/play\/problems\/[^/]+\/answer$/.test(r.url()), {
+			timeout: 15_000
+		})
+		.catch(() => null);
 	if (answer.choice !== null) {
 		await page.getByTestId('choice').nth(answer.choice).click();
 	} else {
@@ -168,7 +202,13 @@ async function answerAndGoNext(page: Page, answer: Answer) {
 		}, answer.latex);
 		await page.getByRole('button', { name: 'Go', exact: true }).click();
 	}
-	await expect(page.getByTestId('feedback')).toHaveText("That's right!");
+	// Name the real problem and the server's reply, so a failure says which skill broke.
+	const reply = await scored;
+	const body = reply ? await reply.text().catch(() => '(body unavailable)') : '';
+	const said = `${answer.skill} answered ${JSON.stringify(answer)}: ${
+		reply ? `${reply.status()} ${body}` : 'no answer response within 15 s'
+	}`;
+	await expect(page.getByTestId('feedback'), said).toHaveText("That's right!");
 	await page.getByRole('button', { name: 'Next' }).click();
 }
 

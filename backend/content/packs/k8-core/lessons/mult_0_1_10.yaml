@@ -1,0 +1,29 @@
+# Lesson for Times 0, 1 and 10. Its examples use 12 and 15, which the skill never asks (the other
+# number is 2 to 10), so a replayed lesson never shows a problem the skill asks.
+skill: mult_0_1_10
+screens:
+  - title: Times 1
+    body_md: >-
+      One group of 12 is 12. Twelve groups of 1 is 12 too. A number times 1 is that same number. You can turn it around: \(12 \times 1 = {{= 12 \times 1 }}\) and \(1 \times 12 = {{= 1 \times 12 }}\).
+    visual:
+      kind: array
+      params: {rows: 1, cols: 12}
+  - title: Times 0
+    body_md: >-
+      Zero groups of 12 is nothing. Twelve groups of 0 is nothing too. A number times 0 is always 0. It does not matter which way you turn it. \(12 \times 0 = {{= 12 \times 0 }}\) and \(0 \times 12 = {{= 0 \times 12 }}\).
+  - title: Times 10
+    body_md: >-
+      Twelve groups of 10 is 12 tens. Twelve tens make 1 hundred and 2 tens. A number times 10 gets a zero on the end. Turn it around and it is the same. \(12 \times 10 = {{= 12 \times 10 }}\) and \(10 \times 12 = {{= 10 \times 12 }}\).
+    visual:
+      kind: base_ten
+      params: {hundreds: 1, tens: 2}
+worked_example:
+  prompt:
+    - {kind: math, value: "15 \times 10 = ?"}
+  steps:
+    - Ten is one group of ten. So 15 times 10 is 15 tens.
+    - 15 tens make 1 hundred and 5 tens.
+    - Or write 15 and put a zero on the end.
+    - So \(15 \times 10 = {{= 15 \times 10 }}\).
+try_it:
+  tier: 0

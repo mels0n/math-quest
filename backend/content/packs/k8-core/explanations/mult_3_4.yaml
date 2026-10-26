@@ -1,0 +1,33 @@
+# Four ways to explain Times 3 and 4, plus feedback for each mistake the generator knows. None of them
+# shows the total: the picture shows the groups and the others only say how to find it.
+skill: mult_3_4
+approaches:
+  - style: visual
+    body_md: >-
+        Each row of dots is one group. Turn the fact around so the table comes first. A 3 is a 2 and a 1. A 4 is two 2s. Look for the double inside the dots, then count on.
+    visual:
+      kind: array
+      params: {rows: "{table}", cols: "{other}"}
+  - style: steps
+    body_md: |-
+      1. Find the table in the fact. It is 3 or 4. Turn the fact so it comes first.
+      2. For a 3, double the other number. Then add it once more.
+      3. For a 4, double the other number. Then double again.
+      4. Skip count by the table to check.
+  - style: story
+    body_md: >-
+        A baker packs boxes of rolls. Every box gets the same number. She doubles the rolls for two boxes, then adds the rest.
+  - style: worked
+    body_md: >-
+        Let us do yours together. Find the double first. Then follow the steps for your table. Say each number as you go. The last number is the total.
+misconceptions:
+  added_instead: >-
+      It looks like you added the two numbers. The times sign means equal groups. Use the strategy for your table instead.
+  one_group_too_few: >-
+      You were close! It looks like one group got left out. There are {g} groups of {s}. Check each step.
+  one_group_too_many: >-
+      You were close! It looks like one group got counted twice. There are {g} groups of {s}. Check each step.
+  one_each_too_few: >-
+      You were close! It looks like you used the fact just below this one. Check the numbers in each step.
+  one_each_too_many: >-
+      You were close! It looks like you used the fact just above this one. Check the numbers in each step.

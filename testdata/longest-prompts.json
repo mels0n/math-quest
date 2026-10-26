@@ -39,6 +39,42 @@
       }
     ]
   },
+  "add_3digit_no_regroup": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Add 2 hundreds, 8 tens and 3 ones to "
+      },
+      {
+        "kind": "math",
+        "value": "704"
+      },
+      {
+        "kind": "text",
+        "value": ". What is the total?"
+      }
+    ]
+  },
+  "add_3digit_regroup": {
+    "tier": 2,
+    "seed": 0,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Add 4 hundreds, 8 tens and 8 ones to "
+      },
+      {
+        "kind": "math",
+        "value": "494"
+      },
+      {
+        "kind": "text",
+        "value": ". What is the total?"
+      }
+    ]
+  },
   "add_fractions_unlike": {
     "tier": 0,
     "seed": 116,
@@ -146,6 +182,16 @@
       {
         "kind": "text",
         "value": "Fatima reads 10 pages in the morning. Then Fatima reads 3 pages at night. How many pages does Fatima read in all?"
+      }
+    ]
+  },
+  "arrays": {
+    "tier": 2,
+    "seed": 45,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Lily sets out stickers in 2 rows of 4. Then Lily adds one more row. How many stickers are there now?"
       }
     ]
   },
@@ -489,6 +535,26 @@
       }
     ]
   },
+  "equal_groups": {
+    "tier": 2,
+    "seed": 33,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 3 packs. Each pack has 10 stickers. How many stickers are there in all?"
+      }
+    ]
+  },
+  "equal_groups-word": {
+    "tier": 2,
+    "seed": 5,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Fatima hands out 4 packs of pencils. Each pack has 10 pencils. How many pencils does Fatima hand out?"
+      }
+    ]
+  },
   "equal_or_not": {
     "tier": 0,
     "seed": 12,
@@ -638,6 +704,116 @@
       {
         "kind": "math",
         "value": "? + 10 = 13"
+      }
+    ]
+  },
+  "mult_0_1_10": {
+    "tier": 1,
+    "seed": 3,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 10 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_2_5": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 5 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_2_5-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A mail carrier drops 10 letters at each stop. How many letters does the carrier drop at 2 stops?"
+      }
+    ]
+  },
+  "mult_3_4": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 4 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_3_4-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "The farm stand sells 3 baskets of plums. Each basket has 10 plums. How many plums are for sale?"
+      }
+    ]
+  },
+  "mult_6_7": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 7 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_6_7-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "A teacher buys 6 sets of chalk. Each set has 10 sticks. How many sticks does the teacher get?"
+      }
+    ]
+  },
+  "mult_8_9": {
+    "tier": 1,
+    "seed": 29,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 9 groups of 10. How many are there in all?"
+      }
+    ]
+  },
+  "mult_8_9-word": {
+    "tier": 0,
+    "seed": 17,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "At assembly, the school sits in 8 circles. Each circle has 10 kids. How many kids sit at assembly?"
+      }
+    ]
+  },
+  "mult_as_groups": {
+    "tier": 2,
+    "seed": 157,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "There are 10 plates. Each plate has 3 cookies. How many cookies are there in all?"
+      }
+    ]
+  },
+  "mult_as_groups-word": {
+    "tier": 2,
+    "seed": 83,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "Fatima feeds 10 dogs at the shelter. Each dog gets 5 treats. How many treats does Fatima give out?"
       }
     ]
   },
@@ -814,6 +990,58 @@
       {
         "kind": "math",
         "value": "22"
+      },
+      {
+        "kind": "text",
+        "value": ". How many are left?"
+      }
+    ]
+  },
+  "sub_3digit_no_regroup": {
+    "tier": 1,
+    "seed": 2,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have "
+      },
+      {
+        "kind": "math",
+        "value": "215"
+      },
+      {
+        "kind": "text",
+        "value": ". You give away "
+      },
+      {
+        "kind": "math",
+        "value": "105"
+      },
+      {
+        "kind": "text",
+        "value": ". How many are left?"
+      }
+    ]
+  },
+  "sub_3digit_regroup": {
+    "tier": 1,
+    "seed": 2,
+    "prompt": [
+      {
+        "kind": "text",
+        "value": "You have "
+      },
+      {
+        "kind": "math",
+        "value": "404"
+      },
+      {
+        "kind": "text",
+        "value": ". You give away "
+      },
+      {
+        "kind": "math",
+        "value": "164"
       },
       {
         "kind": "text",

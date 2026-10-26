@@ -1,0 +1,10 @@
+# Three hints for Multiply Groups: a nudge, the next step, then the whole answer. Only the last
+# names the total.
+skill: mult_as_groups
+levels:
+  - text_template: >-
+      Find how many groups there are. Find how many are in each group. Every group is the same size.
+  - text_template: >-
+      Skip count by {s}, once for each of the {g} groups.
+  - text_template: >-
+      Skip count by {s}, {g} times. You reach {{= g \times s }}. So \({g} \times {s} = {{= g \times s }}\).

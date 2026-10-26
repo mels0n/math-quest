@@ -1,0 +1,33 @@
+# Four ways to explain Times 6 and 7, plus feedback for each mistake the generator knows. None of them
+# shows the total: the picture shows the groups and the others only say how to find it.
+skill: mult_6_7
+approaches:
+  - style: visual
+    body_md: >-
+        Each row of dots is one group. Turn the fact around so the table comes first. Draw a line after the fifth row. The top rows are a fives fact. The rows left are the extra groups.
+    visual:
+      kind: array
+      params: {rows: "{table}", cols: "{other}"}
+  - style: steps
+    body_md: |-
+      1. Find the table in the fact. It is 6 or 7. Turn the fact so it comes first.
+      2. Start with five groups of the other number.
+      3. For a 6, add one more group. For a 7, add two more.
+      4. Add the parts together to get the total.
+  - style: story
+    body_md: >-
+        A teacher sets out trays of paint. Five trays are in one pile. The extra trays sit to the side. She counts the pile, then adds the rest.
+  - style: worked
+    body_md: >-
+        Let us do yours together. Start with the fives fact. Then work out the extra groups. Add the two parts. The sum is the total.
+misconceptions:
+  added_instead: >-
+      It looks like you added the two numbers. The times sign means equal groups. Use the strategy for your table instead.
+  one_group_too_few: >-
+      You were close! It looks like one group got left out. There are {g} groups of {s}. Check each step.
+  one_group_too_many: >-
+      You were close! It looks like one group got counted twice. There are {g} groups of {s}. Check each step.
+  one_each_too_few: >-
+      You were close! It looks like you used the fact just below this one. Check the numbers in each step.
+  one_each_too_many: >-
+      You were close! It looks like you used the fact just above this one. Check the numbers in each step.

@@ -1,0 +1,29 @@
+# Four ways to explain subtracting three-digit numbers, plus feedback for each mistake the
+# generator knows. None of them shows the answer: the picture shows only the top number.
+skill: sub_3digit_no_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      Here is {top} as blocks. {look} Take away the cubes first. Then the sticks. Then the flats. Count what is left.
+    visual:
+      kind: base_ten
+      params: {hundreds: "{top_hundreds}", tens: "{top_tens}", ones: "{top_ones}"}
+  - style: steps
+    body_md: |-
+      1. Take away the ones.
+      2. Take away the tens.
+      3. Take away the hundreds.
+      4. Write the three answers side by side.
+  - style: story
+    body_md: >-
+      A bag holds {top} marbles. {story} Take away the ones, then the tens, then the hundreds.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Put the bigger number on top. Line up the places. Take away the ones first. Then the tens. Then the hundreds. No place needs borrowing.
+misconceptions:
+  added_instead: >-
+    It looks like you added the two numbers you see. This question takes one away from the other. Try taking one from the other.
+  left_out_the_ones: >-
+    You were close! It looks like the ones got left out. Take away the ones too.
+  left_out_the_hundreds: >-
+    You were close! It looks like the hundreds got left out. Take away the hundreds too.

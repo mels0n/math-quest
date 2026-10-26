@@ -1,0 +1,33 @@
+# Lesson for Rows and Columns. Its examples use 6 rows or 6 in a row, which the skill never
+# asks (an array here has at most 5 rows and 5 in a row), so a replayed lesson never shows a
+# problem the skill asks. The questions are told in words; the pictures are here (ADR-0029).
+skill: arrays
+screens:
+  - title: Rows
+    body_md: >-
+      An array puts things in rows. A row goes across. This array has 3 rows. Each row has 6 dots.
+    visual:
+      kind: array
+      params: {rows: 3, cols: 6}
+  - title: Columns
+    body_md: >-
+      A column goes up and down. This array has 6 columns. Each column has 3 dots.
+    visual:
+      kind: array
+      params: {rows: 3, cols: 6}
+  - title: Count the whole array
+    body_md: >-
+      Add one row at a time. 6 and 6 make {{= 6 + 6 }}. Then 6 more make {{= 6 + 6 + 6 }}. You can also skip count by 6, once for each row.
+    visual:
+      kind: array
+      params: {rows: 3, cols: 6}
+worked_example:
+  prompt:
+    - {kind: text, value: "Chairs are in 6 rows of 3. How many chairs are there?"}
+  steps:
+    - There are 6 rows. Each row has 3 chairs.
+    - Skip count by 3, once for each row. Say 3, 6, 9, 12, 15, 18.
+    - Or add. 3 and 3 make {{= 3 + 3 }}. Keep adding 3 until you have used all 6 rows.
+    - So there are {{= 3 + 3 + 3 + 3 + 3 + 3 }} chairs.
+try_it:
+  tier: 0
