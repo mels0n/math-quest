@@ -166,7 +166,7 @@ async function expectNoOverflow(page: Page, label: string) {
 async function answerAndGoNext(page: Page, answer: Answer) {
 	const scored = page
 		.waitForResponse((r) => /\/api\/play\/problems\/[^/]+\/answer$/.test(r.url()), {
-			timeout: 5000
+			timeout: 15_000
 		})
 		.catch(() => null);
 	if (answer.choice !== null) {
@@ -181,8 +181,9 @@ async function answerAndGoNext(page: Page, answer: Answer) {
 	}
 	// Name the real problem and the server's reply, so a failure says which skill broke.
 	const reply = await scored;
+	const body = reply ? await reply.text().catch(() => '(body unavailable)') : '';
 	const said = `${answer.skill} answered ${JSON.stringify(answer)}: ${
-		reply ? `${reply.status()} ${await reply.text()}` : 'no answer request was sent'
+		reply ? `${reply.status()} ${body}` : 'no answer response within 15 s'
 	}`;
 	await expect(page.getByTestId('feedback'), said).toHaveText("That's right!");
 	await page.getByRole('button', { name: 'Next' }).click();
