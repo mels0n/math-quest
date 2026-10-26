@@ -53,6 +53,7 @@ const LONGEST = JSON.parse(
 ) as Record<string, { prompt: PromptPart[] }>;
 
 interface NextBody {
+	skill_id: string;
 	prompt: PromptPart[];
 	dev_answer_latex: string | null;
 	dev_answer_choice?: number | null;
@@ -60,6 +61,7 @@ interface NextBody {
 
 /** How the real problem under a replaced prompt is answered: typed, or by choice index. */
 interface Answer {
+	skill: string;
 	latex: string;
 	choice: number | null;
 }
@@ -81,7 +83,11 @@ async function servePrompts(page: Page, prompts: PromptPart[][], answers: Answer
 		const fetched = await fetchProblem(page, route);
 		const response = fetched.response;
 		const body = fetched.body as unknown as NextBody;
-		answers.push({ latex: body.dev_answer_latex ?? '', choice: body.dev_answer_choice ?? null });
+		answers.push({
+			skill: body.skill_id,
+			latex: body.dev_answer_latex ?? '',
+			choice: body.dev_answer_choice ?? null
+		});
 		const prompt = prompts.shift();
 		await route.fulfill({ response, json: prompt ? { ...body, prompt } : body });
 	});
@@ -158,6 +164,11 @@ async function expectNoOverflow(page: Page, label: string) {
 }
 
 async function answerAndGoNext(page: Page, answer: Answer) {
+	const scored = page
+		.waitForResponse((r) => /\/api\/play\/problems\/[^/]+\/answer$/.test(r.url()), {
+			timeout: 5000
+		})
+		.catch(() => null);
 	if (answer.choice !== null) {
 		await page.getByTestId('choice').nth(answer.choice).click();
 	} else {
@@ -168,7 +179,12 @@ async function answerAndGoNext(page: Page, answer: Answer) {
 		}, answer.latex);
 		await page.getByRole('button', { name: 'Go', exact: true }).click();
 	}
-	await expect(page.getByTestId('feedback')).toHaveText("That's right!");
+	// Name the real problem and the server's reply, so a failure says which skill broke.
+	const reply = await scored;
+	const said = `${answer.skill} answered ${JSON.stringify(answer)}: ${
+		reply ? `${reply.status()} ${await reply.text()}` : 'no answer request was sent'
+	}`;
+	await expect(page.getByTestId('feedback'), said).toHaveText("That's right!");
 	await page.getByRole('button', { name: 'Next' }).click();
 }
 
