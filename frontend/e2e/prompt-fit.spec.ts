@@ -166,7 +166,9 @@ async function expectNoOverflow(page: Page, label: string) {
 /**
  * The server takes 60 answers a minute from one player (ANSWER_LIMIT in
  * backend/src/mathquest/api/ratelimit.py), and laying out every generator's prompt
- * answers more than that. Answers wait, when they must, to stay under it.
+ * answers more than that. Answers wait, when they must, to stay under it: five under
+ * the limit and a second over its window, for clock and latency skew. The count spans
+ * the whole file, so it can only wait more than needed.
  */
 const ANSWERS_PER_WINDOW = 55;
 const ANSWER_WINDOW_MS = 61_000;
