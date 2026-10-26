@@ -163,7 +163,28 @@ async function expectNoOverflow(page: Page, label: string) {
 	if (SHOT_DIR) await page.screenshot({ path: `${SHOT_DIR}/longest-${label}.png`, fullPage: true });
 }
 
+/**
+ * The server takes 60 answers a minute from one player (ANSWER_LIMIT in
+ * backend/src/mathquest/api/ratelimit.py), and laying out every generator's prompt
+ * answers more than that. Answers wait, when they must, to stay under it.
+ */
+const ANSWERS_PER_WINDOW = 55;
+const ANSWER_WINDOW_MS = 61_000;
+const answeredAt: number[] = [];
+
+async function paceAnswers(page: Page) {
+	const now = Date.now();
+	while (answeredAt.length > 0 && (answeredAt[0] as number) <= now - ANSWER_WINDOW_MS) {
+		answeredAt.shift();
+	}
+	if (answeredAt.length >= ANSWERS_PER_WINDOW) {
+		await page.waitForTimeout((answeredAt.shift() as number) + ANSWER_WINDOW_MS - now);
+	}
+	answeredAt.push(Date.now());
+}
+
 async function answerAndGoNext(page: Page, answer: Answer) {
+	await paceAnswers(page);
 	const scored = page
 		.waitForResponse((r) => /\/api\/play\/problems\/[^/]+\/answer$/.test(r.url()), {
 			timeout: 15_000
