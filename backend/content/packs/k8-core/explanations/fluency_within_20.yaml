@@ -1,0 +1,28 @@
+# Three ways to explain a fast fact, plus feedback for each mistake the generator knows.
+# None of them shows the answer: the line marks the first number of the fact.
+skill: fluency_within_20
+approaches:
+  - style: visual
+    body_md: >-
+      Look at the line. It marks {top}. Use the sign to decide which way to hop. Hop to a ten first if you can. Then hop the rest.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: "{top}"}
+  - style: steps
+    body_md: |-
+      1. Look at the two numbers and the sign.
+      2. Is it a double or a near double?
+      3. Can you make a ten first?
+      4. If not, count on or count back. Say the answer.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Look at {a} and {b}. Pick the trick that is fastest for them. Say each step out loud. Then say the answer.
+misconceptions:
+  subtracted_instead: >-
+    It looks like you took away. The plus sign means put the two numbers together.
+  added_instead: >-
+    It looks like you added. The minus sign means take the second number away.
+  one_too_few: >-
+    You were close! Your answer is one too small. Try a trick again to check it.
+  one_too_many: >-
+    You were close! Your answer is one too big. Try a trick again to check it.

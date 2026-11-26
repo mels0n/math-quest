@@ -1,0 +1,30 @@
+# Lesson for Add Many Numbers. The skill always adds three or four two-digit numbers, so
+# its examples mix in one-digit numbers, and a replayed lesson never shows a problem the
+# skill asks.
+skill: add_several_2digit
+screens:
+  - title: Ones first
+    body_md: >-
+      With many numbers, add all the ones first. Take 24, 7 and 8. The ones are 4, 7 and 8. They make {{= 4 + 7 + 8 }}. That is 1 ten and 9 ones.
+  - title: Carry the tens
+    body_md: >-
+      Keep the 9 in the ones place. Carry the 1 ten. Now add the tens. 2 tens and the carried ten make {{= 2 + 1 }} tens. So you get {{= 24 + 7 + 8 }}.
+    visual:
+      kind: base_ten
+      params: {tens: 3, ones: 9}
+  - title: Look for tens
+    body_md: >-
+      Look for two numbers that make ten. Take 6, 9 and 4. The 6 and the 4 make ten. Add those first. Then add the 9 to get {{= 6 + 4 + 9 }}.
+  - title: Over a hundred
+    body_md: >-
+      Sometimes the tens make ten or more. Ten tens make one hundred. So 12 tens is 1 hundred and 2 tens. That is {{= 100 + 20 }}.
+worked_example:
+  prompt:
+    - {kind: text, value: "A zoo has 38 ducks, 7 frogs and 9 fish. How many animals is that?"}
+  steps:
+    - Add the ones. 8, 7 and 9 make {{= 8 + 7 + 9 }}.
+    - That is 2 tens and 4 ones. Keep the 4. Carry the 2 tens.
+    - Add the tens. 3 tens and the carried 2 tens make {{= 3 + 2 }} tens.
+    - So the zoo has {{= 38 + 7 + 9 }} animals.
+try_it:
+  tier: 0

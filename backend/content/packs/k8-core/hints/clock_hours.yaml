@@ -1,0 +1,10 @@
+# Three hints for Clock Hours: a nudge, the next step, then the whole answer worked out.
+# The first two use words for numbers, so no digit of the working shows early.
+skill: clock_hours
+levels:
+  - text_template: >-
+      {nudge}
+  - text_template: >-
+      {step}
+  - text_template: >-
+      {worked} So the answer is {answer}.

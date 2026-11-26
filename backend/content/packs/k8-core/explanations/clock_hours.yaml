@@ -1,0 +1,34 @@
+# Four ways to explain telling time to the hour and half hour, plus feedback for each mistake
+# the generator knows. None of them shows the answer.
+skill: clock_hours
+approaches:
+  - style: visual
+    body_md: >-
+      Draw a clock face. Write the numbers one to twelve around it. Draw the short hand and the long hand as the question says.
+  - style: steps
+    body_md: |-
+      1. Find the short hand. It tells the hour.
+      2. Find the long hand. It tells the minutes.
+      3. Long hand on twelve means o'clock. Long hand on six means half past.
+      4. Say the time.
+  - style: story
+    body_md: >-
+      Think of your day. The bell rings when the long hand reaches twelve. Lunch is a few hours later. Think about which hand moves fast and which moves slowly.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Look at where each hand points. Say the hour first. Then say if it is o'clock or half past.
+misconceptions:
+  gave_the_long_hand_number: >-
+    It looks like you gave the number the long hand points to. The short hand tells the hour.
+  off_by_one_hour: >-
+    It looks like you were one hour off. The hour is the number the short hand has passed.
+  gave_the_hour: >-
+    It looks like you gave the hour on the clock. The question asks for something else. Read it again.
+  went_the_wrong_way: >-
+    It looks like you went the wrong way around the clock. Later goes on to the next number. Before goes back.
+  gave_the_minutes: >-
+    It looks like you gave a number of minutes. Read the question again. What does it ask for?
+  counted_whole_hours: >-
+    It looks like you counted whole hours only. A half hour counts too.
+  gave_the_half_hours: >-
+    It looks like you counted half hours. The question asks for minutes. How long is one half hour?

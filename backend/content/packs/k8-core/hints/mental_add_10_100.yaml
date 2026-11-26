@@ -1,0 +1,9 @@
+# Three hints for Add 10 or 100: a nudge, the next step, then the whole answer worked out.
+skill: mental_add_10_100
+levels:
+  - text_template: >-
+      Think about place value. A ten and a hundred change different places.
+  - text_template: >-
+      Look at the {place} digit of {n}. It is {digit}. Make it one {way}. {wrap_note}Keep the other digits.
+  - text_template: >-
+      One {step_word} {way} than {n} is {answer}.

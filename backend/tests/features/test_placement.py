@@ -111,10 +111,11 @@ async def _state(db: AsyncSession, pid: uuid.UUID, skill_id: str) -> str | None:
 
 async def test_the_grade_hint_picks_the_first_question(db: AsyncSession) -> None:
     pid = await _player(db)
-    assert (await _start(db, pid)).problem.skill_id == "add_within_20"
+    assert (await _start(db, pid)).problem.skill_id == "place_value_tens_ones"
     assert (await _start(db, pid, "K")).problem.skill_id == "count_to_10"
     assert (await _start(db, pid, "1")).problem.skill_id == "add_within_20"
-    assert (await _start(db, pid, "3")).problem.skill_id == "add_2digit_regroup"
+    assert (await _start(db, pid, "2")).problem.skill_id == "add_2digit_regroup"
+    assert (await _start(db, pid, "3")).problem.skill_id == "sub_2digit_regroup"
     first = await _start(db, pid, "8")
     assert first.problem.skill_id == "add_fractions_unlike"
     assert first.question == 1

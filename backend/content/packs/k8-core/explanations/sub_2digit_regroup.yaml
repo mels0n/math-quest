@@ -1,0 +1,30 @@
+# Four ways to explain subtracting with borrowing, plus feedback for each mistake the
+# generator knows. None of them shows the answer: the line marks the two numbers of the
+# question and the story uses them.
+skill: sub_2digit_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      Look at the line. It marks {bottom} and {top}. Hop from {bottom} up to the next ten. Then hop by tens. Then hop by ones until you reach {top}.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 100, start: "{bottom}", end: "{top}"}
+  - style: steps
+    body_md: |-
+      1. Look at the ones. Are there enough to take from?
+      2. If not, borrow one ten and make it ten ones.
+      3. Take the ones. Then take the tens that are left.
+      4. Put the tens and the ones together.
+  - style: story
+    body_md: >-
+      A jar holds {top} beads. {story} Think about the ones. Do you need to open a ten?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Look at the ones. Are they enough? Trade one ten for ten ones. Take away the ones. Then take away the tens. Remember the tens went down by one.
+misconceptions:
+  added_instead: >-
+    It looks like you added the two numbers you see. The sentence has a minus sign. Try taking one from the other.
+  subtracted_backwards: >-
+    It looks like you took the smaller ones from the bigger ones. The top number comes first. Borrow a ten when the ones are too few.
+  forgot_to_lower_the_tens: >-
+    You were close! It looks like you borrowed a ten but kept all the tens. After you borrow, the tens go down by one.

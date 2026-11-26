@@ -1,0 +1,86 @@
+# Word problems for Add Many Numbers. Every template uses the generator's numbers and asks
+# for their total. The generator gives three numbers ({a}, {b}, {c}) in tiers 0 and 2 and
+# four ({a} to {d}) in tier 1, so each template says which tiers it serves. All numbers
+# are two-digit, so nouns after them are always plural. Nouns are fixed words, not the
+# shared object list, so every story makes sense. Short sentences (12 words or fewer),
+# simple words, no sentence that starts with a number.
+skill: add_several_2digit
+templates:
+  - id: three_farm
+    text_template: "A farm has {a} cows, {b} pigs and {c} sheep. How many animals live on the farm?"
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_apples
+    text_template: "{name} picks {a} apples on Monday. {name} picks {b} on Tuesday and {c} on Wednesday. How many apples does {name} pick?"
+    slots: {name: names}
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_marbles
+    text_template: "A bag has {a} red, {b} blue and {c} green marbles. How many marbles are in the bag?"
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_bus
+    text_template: "A bus has {a} kids. Then {b} more get on. Next, {c} more get on. How many kids are on the bus?"
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_walk
+    text_template: "{name} walks {a} steps, then {b} steps, then {c} steps. How many steps is that?"
+    slots: {name: names}
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_cards
+    text_template: "{name} plays three games. {name} wins {a} cards, then {b} cards, then {c} cards. How many cards is that?"
+    slots: {name: names}
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_sale
+    text_template: "A class sells {a} cupcakes, {b} cookies and {c} muffins. How many treats does the class sell?"
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_pond
+    text_template: "A pond has {a} frogs, {b} fish and {c} turtles. How many animals live in the pond?"
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_beads
+    text_template: "{name} strings {a} blue beads, {b} red beads and {c} white beads. How many beads is that?"
+    slots: {name: names}
+    grade_band: 2
+    tiers: [0, 2]
+  - id: three_points
+    text_template: "A team scores {a} points, then {b} points, then {c} points. How many points does the team score?"
+    grade_band: 2
+    tiers: [0, 2]
+  - id: four_hens
+    text_template: "A farm has {a} hens, {b} ducks, {c} cows and {d} pigs. How many animals does the farm have?"
+    grade_band: 2
+    tiers: [1]
+  - id: four_stamps
+    text_template: "{name} gets stamps for four weeks. {name} gets {a}, {b}, {c} and {d}. How many stamps is that?"
+    slots: {name: names}
+    grade_band: 2
+    tiers: [1]
+  - id: four_tickets
+    text_template: "Four classes sell tickets. They sell {a}, {b}, {c} and {d} tickets. How many tickets is that?"
+    grade_band: 2
+    tiers: [1]
+  - id: four_shop
+    text_template: "A shop sells {a} pens, {b} pencils, {c} erasers and {d} rulers. How many things does the shop sell?"
+    grade_band: 2
+    tiers: [1]
+  - id: four_pages
+    text_template: "{name} reads {a}, {b}, {c} and {d} pages this week. How many pages is that?"
+    slots: {name: names}
+    grade_band: 2
+    tiers: [1]
+  - id: four_teams
+    text_template: "The red team has {a} points. The blue team has {b}. The green team has {c} and the yellow team has {d}. How many points in all?"
+    grade_band: 2
+    tiers: [1]
+  - id: four_park
+    text_template: "A park has {a} oaks, {b} pines, {c} maples and {d} plums. How many trees does the park have?"
+    grade_band: 2
+    tiers: [1]
+  - id: four_train
+    text_template: "A train has four cars. They hold {a}, {b}, {c} and {d} people. How many people ride the train?"
+    grade_band: 2
+    tiers: [1]

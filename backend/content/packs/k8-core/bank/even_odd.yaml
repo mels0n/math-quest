@@ -1,0 +1,354 @@
+# Bank items for Even or Odd: naming the kind of a number, picking the even or odd one,
+# the next even or odd number, and numbers made into pairs. Each tier has eleven items with
+# eleven different wordings, and a wrong choice is sometimes one off and sometimes further.
+# Tier 0 stays within 20, tier 1 within 100 and tier 2 within 1000.
+skill: even_odd
+items:
+  - id: eo_01
+    tier: 0
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "14"}
+      - {kind: text, value: " even or odd?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Even"}]
+      - [{kind: text, value: "Odd"}]
+  - id: eo_02
+    tier: 0
+    prompt:
+      - {kind: text, value: "Look at the number "}
+      - {kind: math, value: "7"}
+      - {kind: text, value: ". What kind of number is it?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Even"}]
+      - [{kind: text, value: "Odd"}]
+  - id: eo_03
+    tier: 0
+    prompt:
+      - {kind: text, value: "A girl puts "}
+      - {kind: math, value: "9"}
+      - {kind: text, value: " socks in pairs. Is one sock left over?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes, one is left over"}]
+      - [{kind: text, value: "No, none are left over"}]
+  - id: eo_04
+    tier: 0
+    prompt:
+      - {kind: text, value: "Which number is odd?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "8"}]
+      - [{kind: math, value: "13"}]
+      - [{kind: math, value: "6"}]
+  - id: eo_05
+    tier: 0
+    prompt:
+      - {kind: text, value: "Only one of these numbers is even. Which one?"}
+    answer: {kind: choice, value: 3}
+    choices:
+      - [{kind: math, value: "11"}]
+      - [{kind: math, value: "5"}]
+      - [{kind: math, value: "19"}]
+      - [{kind: math, value: "16"}]
+  - id: eo_06
+    tier: 0
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "12"}
+      - {kind: text, value: " an even number?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eo_07
+    tier: 0
+    prompt:
+      - {kind: text, value: "A boy tells you that "}
+      - {kind: math, value: "15"}
+      - {kind: text, value: " is even. Is he right?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Yes, he is right"}]
+      - [{kind: text, value: "No, he is not right"}]
+  - id: eo_08
+    tier: 0
+    prompt:
+      - {kind: text, value: "What is the next even number after "}
+      - {kind: math, value: "10"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "11"}]
+      - [{kind: math, value: "12"}]
+      - [{kind: math, value: "14"}]
+  - id: eo_09
+    tier: 0
+    prompt:
+      - {kind: text, value: "Say the odd numbers in order: "}
+      - {kind: math, value: "1"}
+      - {kind: text, value: ", "}
+      - {kind: math, value: "3"}
+      - {kind: text, value: ", "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: ". Which number comes next?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "6"}]
+      - [{kind: math, value: "7"}]
+      - [{kind: math, value: "8"}]
+  - id: eo_10
+    tier: 0
+    prompt:
+      - {kind: text, value: "A boy has "}
+      - {kind: math, value: "18"}
+      - {kind: text, value: " cubes. He makes pairs. How many cubes are left over?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "None"}]
+      - [{kind: text, value: "One"}]
+      - [{kind: text, value: "Two"}]
+  - id: eo_11
+    tier: 0
+    prompt:
+      - {kind: text, value: "Which of these numbers can be split into two equal groups?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "9"}]
+      - [{kind: math, value: "11"}]
+      - [{kind: math, value: "10"}]
+  - id: eo_12
+    tier: 1
+    prompt:
+      - {kind: text, value: "Pick the right word for "}
+      - {kind: math, value: "47"}
+      - {kind: text, value: "."}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Even"}]
+      - [{kind: text, value: "Odd"}]
+  - id: eo_13
+    tier: 1
+    prompt:
+      - {kind: text, value: "A card shows "}
+      - {kind: math, value: "68"}
+      - {kind: text, value: ". Is the card even or odd?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Odd"}]
+      - [{kind: text, value: "Even"}]
+  - id: eo_14
+    tier: 1
+    prompt:
+      - {kind: text, value: "Look for the odd number in the list."}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "34"}]
+      - [{kind: math, value: "58"}]
+      - [{kind: math, value: "63"}]
+      - [{kind: math, value: "20"}]
+  - id: eo_15
+    tier: 1
+    prompt:
+      - {kind: text, value: "Which of these is an even number?"}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "71"}]
+      - [{kind: math, value: "85"}]
+      - [{kind: math, value: "90"}]
+  - id: eo_16
+    tier: 1
+    prompt:
+      - {kind: text, value: "Is "}
+      - {kind: math, value: "84"}
+      - {kind: text, value: " odd?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eo_17
+    tier: 1
+    prompt:
+      - {kind: text, value: "Kids line up in pairs. Today "}
+      - {kind: math, value: "27"}
+      - {kind: text, value: " kids come. Will one kid have no partner?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eo_18
+    tier: 1
+    prompt:
+      - {kind: text, value: "Which odd number comes right after "}
+      - {kind: math, value: "39"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "40"}]
+      - [{kind: math, value: "41"}]
+      - [{kind: math, value: "43"}]
+  - id: eo_19
+    tier: 1
+    prompt:
+      - {kind: text, value: "Count back from "}
+      - {kind: math, value: "60"}
+      - {kind: text, value: ". Which odd number do you reach first?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "59"}]
+      - [{kind: math, value: "58"}]
+      - [{kind: math, value: "57"}]
+  - id: eo_20
+    tier: 1
+    prompt:
+      - {kind: text, value: "A girl says "}
+      - {kind: math, value: "56"}
+      - {kind: text, value: " is odd because it has a "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: ". Is she right?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Yes, she is right"}]
+      - [{kind: text, value: "No, she is not right"}]
+  - id: eo_21
+    tier: 1
+    prompt:
+      - {kind: text, value: "Two equal groups of "}
+      - {kind: math, value: "24"}
+      - {kind: text, value: " make "}
+      - {kind: math, value: "48"}
+      - {kind: text, value: ". Is "}
+      - {kind: math, value: "48"}
+      - {kind: text, value: " even or odd?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Even"}]
+      - [{kind: text, value: "Odd"}]
+  - id: eo_22
+    tier: 1
+    prompt:
+      - {kind: text, value: "One number has one left over when made into pairs. Which one?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "62"}]
+      - [{kind: math, value: "75"}]
+      - [{kind: math, value: "88"}]
+  - id: eo_23
+    tier: 2
+    prompt:
+      - {kind: text, value: "What kind of number is "}
+      - {kind: math, value: "538"}
+      - {kind: text, value: "?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Even"}]
+      - [{kind: text, value: "Odd"}]
+  - id: eo_24
+    tier: 2
+    prompt:
+      - {kind: text, value: "Look at the last digit of "}
+      - {kind: math, value: "761"}
+      - {kind: text, value: ". Is the number even or odd?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Even"}]
+      - [{kind: text, value: "Odd"}]
+  - id: eo_25
+    tier: 2
+    prompt:
+      - {kind: text, value: "Find the even number in this list."}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "673"}]
+      - [{kind: math, value: "581"}]
+      - [{kind: math, value: "740"}]
+      - [{kind: math, value: "395"}]
+  - id: eo_26
+    tier: 2
+    prompt:
+      - {kind: text, value: "Pick the number that is not even."}
+    answer: {kind: choice, value: 2}
+    choices:
+      - [{kind: math, value: "512"}]
+      - [{kind: math, value: "514"}]
+      - [{kind: math, value: "515"}]
+      - [{kind: math, value: "516"}]
+  - id: eo_27
+    tier: 2
+    prompt:
+      - {kind: text, value: "Can "}
+      - {kind: math, value: "430"}
+      - {kind: text, value: " be split into two equal groups?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes"}]
+      - [{kind: text, value: "No"}]
+  - id: eo_28
+    tier: 2
+    prompt:
+      - {kind: text, value: "Count on from "}
+      - {kind: math, value: "348"}
+      - {kind: text, value: " to the next even number. Which number is it?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: math, value: "349"}]
+      - [{kind: math, value: "350"}]
+      - [{kind: math, value: "360"}]
+  - id: eo_29
+    tier: 2
+    prompt:
+      - {kind: text, value: "A girl counts "}
+      - {kind: math, value: "607"}
+      - {kind: text, value: " beads. She makes pairs. How many beads have no partner?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "None"}]
+      - [{kind: text, value: "One"}]
+      - [{kind: text, value: "Seven"}]
+  - id: eo_30
+    tier: 2
+    prompt:
+      - {kind: text, value: "Every number ending in "}
+      - {kind: math, value: "5"}
+      - {kind: text, value: " is odd. Is that true?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Yes, that is true"}]
+      - [{kind: text, value: "No, that is not true"}]
+  - id: eo_31
+    tier: 2
+    prompt:
+      - {kind: text, value: "Someone says "}
+      - {kind: math, value: "1000"}
+      - {kind: text, value: " is an odd number. Is that so?"}
+    answer: {kind: choice, value: 1}
+    choices:
+      - [{kind: text, value: "Yes, that is so"}]
+      - [{kind: text, value: "No, that is not so"}]
+  - id: eo_32
+    tier: 2
+    prompt:
+      - {kind: text, value: "The number "}
+      - {kind: math, value: "246"}
+      - {kind: text, value: " is even. Which number is the next odd number?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: math, value: "247"}]
+      - [{kind: math, value: "248"}]
+      - [{kind: math, value: "249"}]
+  - id: eo_33
+    tier: 2
+    prompt:
+      - {kind: text, value: "A pattern goes "}
+      - {kind: math, value: "998"}
+      - {kind: text, value: ", "}
+      - {kind: math, value: "996"}
+      - {kind: text, value: ", "}
+      - {kind: math, value: "994"}
+      - {kind: text, value: ". Are these numbers even or odd?"}
+    answer: {kind: choice, value: 0}
+    choices:
+      - [{kind: text, value: "Even"}]
+      - [{kind: text, value: "Odd"}]

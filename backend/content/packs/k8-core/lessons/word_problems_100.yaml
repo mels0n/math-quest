@@ -1,0 +1,23 @@
+# Lesson for Story Problems to 100. The examples are told in words, with numbers the skill's
+# stories do not use together, so a replayed lesson never shows a story the skill asks.
+skill: word_problems_100
+screens:
+  - title: Read and picture
+    body_md: >-
+      A story problem tells a story with numbers. Read it slowly. Picture what happens.
+  - title: The same stories, bigger numbers
+    body_md: >-
+      The numbers can be big now. The stories work the same way. If more come, the group grows. If some go, the group gets smaller.
+  - title: Compare and find the start
+    body_md: >-
+      Some stories compare two groups. Line them up and see how many are left over. Some stories hide the start or the change. Draw it to find out.
+worked_example:
+  prompt:
+    - {kind: text, value: "A bakery makes 84 rolls. It gives 37 rolls to a school. How many rolls are left?"}
+  steps:
+    - The bakery starts with 84 rolls.
+    - Some rolls go away, so the group gets smaller.
+    - Take away the 37 rolls that went to the school.
+    - So {{= 84 - 37 }} rolls are left.
+try_it:
+  tier: 0

@@ -1,0 +1,23 @@
+# Lesson for Even or Odd. The worked example is a number over 100 told as beads in pairs, a
+# story the skill tells only for numbers to 100, so a replayed lesson never shows a question
+# the skill asks.
+skill: even_odd
+screens:
+  - title: Make pairs
+    body_md: >-
+      Put things in pairs. If none are left over, the number is even. If one is left over, the number is odd.
+  - title: Look at the ones digit
+    body_md: >-
+      Even numbers end in 0, 2, 4, 6 or 8. Odd numbers end in 1, 3, 5, 7 or 9. This works for big numbers too.
+  - title: Even and odd take turns
+    body_md: >-
+      Count up and listen. Odd, even, odd, even. Each number is a different kind from the one before.
+worked_example:
+  prompt:
+    - {kind: text, value: "A girl has 346 beads. Will they make pairs with none left over?"}
+  steps:
+    - Look at the ones digit of 346. It is 6.
+    - Numbers that end in 6 are even.
+    - So 346 beads make pairs with none left over.
+try_it:
+  tier: 0

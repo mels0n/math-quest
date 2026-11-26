@@ -1,0 +1,33 @@
+# Lesson for Subtract and Borrow. The skill always takes a two-digit number from a
+# two-digit number, so its examples take a one-digit number, and a replayed lesson never
+# shows a problem the skill asks.
+skill: sub_2digit_regroup
+screens:
+  - title: Not enough ones
+    body_md: >-
+      Sometimes the ones are too few. Take 52 and take away 7. There are not enough ones to take 7 from 2. So borrow a ten.
+    visual:
+      kind: base_ten
+      params: {tens: 5, ones: 2}
+  - title: Borrow a ten
+    body_md: >-
+      Break one ten into ten ones. Now 52 is 4 tens and 12 ones. Take away 7 ones. That leaves {{= 12 - 7 }} ones. The tens are now 4. So you get {{= 52 - 7 }}.
+    visual:
+      kind: base_ten
+      params: {tens: 4, ones: 5}
+  - title: A zero in the ones place
+    body_md: >-
+      Take 60 and take away 8. There are no ones to take from. Borrow a ten. 6 tens become 5 tens and 10 ones. Take away 8 ones. You get {{= 60 - 8 }}.
+    visual:
+      kind: base_ten
+      params: {tens: 5, ones: 2}
+worked_example:
+  prompt:
+    - {kind: text, value: "A bag holds 83 marbles. A girl gives away 6. How many are left?"}
+  steps:
+    - The ones are too few. 3 is less than 6.
+    - Borrow a ten. Now 83 is 7 tens and 13 ones.
+    - Take 6 ones from 13 ones. That leaves {{= 13 - 6 }}.
+    - Put it together. 7 tens and 7 ones make {{= 83 - 6 }}.
+try_it:
+  tier: 0

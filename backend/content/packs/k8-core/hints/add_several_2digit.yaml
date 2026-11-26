@@ -1,0 +1,9 @@
+# Three hints for Add Many Numbers: a nudge, the next step, then the whole answer worked out.
+skill: add_several_2digit
+levels:
+  - text_template: >-
+      Add the ones of all the numbers first. Then add the tens.
+  - text_template: >-
+      The ones in all {count} numbers make {ones_total}. {carry_note}Now add the tens.
+  - text_template: >-
+      The ones make {ones_total}. {carry_note}{tens_line} {hundreds_note}So the sum is {total}.

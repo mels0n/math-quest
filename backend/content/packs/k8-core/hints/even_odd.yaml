@@ -1,0 +1,9 @@
+# Three hints for Even or Odd: a nudge, the next step, then the whole answer worked out.
+skill: even_odd
+levels:
+  - text_template: >-
+      Even numbers pair up with none left over. Odd numbers always have one left over.
+  - text_template: >-
+      {step}
+  - text_template: >-
+      {worked} So the answer is {answer}.
