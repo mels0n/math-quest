@@ -141,6 +141,23 @@ def _check_teaching(pack: Pack) -> None:
             raise _fail(
                 f"word_problems/{sid}.yaml", ("skill",), f"{sid} has word_problems_fit: false"
             )
+    for sid, word in pack.word_problems.items():
+        tiers = len(pack.skills[sid].tiers)
+        for i, template in enumerate(word.templates):
+            if template.tiers is not None and any(not 0 <= t < tiers for t in template.tiers):
+                raise _fail(
+                    f"word_problems/{sid}.yaml",
+                    ("templates", i, "tiers"),
+                    f"skill {sid} has only {tiers} tiers",
+                )
+        if any(t.tiers is not None for t in word.templates):
+            for tier in range(tiers):
+                if not any(t.tiers is None or tier in t.tiers for t in word.templates):
+                    raise _fail(
+                        f"word_problems/{sid}.yaml",
+                        ("templates",),
+                        f"no template serves tier {tier} of {sid}",
+                    )
     for sid, bank in pack.bank.items():
         tiers = len(pack.skills[sid].tiers)
         for i, item in enumerate(bank.items):

@@ -1,0 +1,9 @@
+# Three hints for Subtract Tens: a nudge, the next step, then the whole answer worked out.
+skill: sub_tens_within_100
+levels:
+  - text_template: >-
+      Think in tens. Each number is some tens.
+  - text_template: >-
+      Look at the tens digits: {s1_tens} and {s2_tens}. Work with those.
+  - text_template: >-
+      {top} take away {take} leaves {rest}. So the answer is {answer}.

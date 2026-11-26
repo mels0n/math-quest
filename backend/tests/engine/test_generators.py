@@ -1,4 +1,5 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
+import itertools
 import math
 import re
 from pathlib import Path
@@ -37,6 +38,18 @@ BASES = {
     "teen_numbers": -1.7,
     "pairs_to_10": -1.5,
     "place_value_hundreds": -0.6,
+    "count_on": -1.8,
+    "make_ten_strategy": -0.9,
+    "add_three_numbers": -1.1,
+    "missing_number_20": -0.9,
+    "fact_families_20": -0.7,
+    "doubles_near_doubles": -1.3,
+    "ten_more_ten_less": -1.4,
+    "sub_tens_within_100": -0.8,
+    "add_within_100_basic": -0.7,
+    "equal_or_not": -1.0,
+    "skip_count_2_5": -0.8,
+    "word_problems_20": -0.6,
 }
 
 seeds = st.integers(0, 2**32 - 1)
@@ -150,7 +163,7 @@ def test_registry_covers_pack() -> None:
     assert set(PACK_SKILLS) <= set(all_generators())
     for gen_id, gen in all_generators().items():
         assert gen.generator_id == gen_id
-    assert len(all_generators()) == 20
+    assert len(all_generators()) == 32
 
 
 def test_unknown_skill_is_keyerror() -> None:
@@ -345,6 +358,63 @@ EXPECTED_KEYS: dict[tuple[str, int], set[str]] = {
     ("place_value_hundreds", 0): {"gave_the_number", "off_by_one"},
     ("place_value_hundreds", 1): {"gave_the_number", "confused_hundreds_tens"},
     ("place_value_hundreds", 2): {"added_the_digits", "swapped_tens_and_ones", "left_out_the_zero"},
+    **{
+        ("count_on", t): {"counted_start", "went_one_too_far", "subtracted_instead"}
+        for t in range(3)
+    },
+    ("make_ten_strategy", 0): {"counted_start", "subtracted_instead", "gave_the_leftover"},
+    ("make_ten_strategy", 1): {"gave_the_total", "gave_the_gap_to_ten", "subtracted_instead"},
+    ("make_ten_strategy", 2): {"gave_the_total", "counted_start", "added_instead"},
+    **{
+        ("add_three_numbers", t): {"left_out_the_last", "left_out_the_first", "left_out_the_middle"}
+        for t in range(3)
+    },
+    ("missing_number_20", 0): {"added_the_shown", "gave_a_shown_number"},
+    ("missing_number_20", 1): {"added_the_shown", "gave_a_shown_number"},
+    ("missing_number_20", 2): {"added_the_shown", "subtracted_the_shown", "gave_a_shown_number"},
+    ("fact_families_20", 0): {"subtracted_the_shown", "gave_a_shown_number"},
+    **{
+        ("fact_families_20", t): {"added_the_shown", "subtracted_the_shown", "gave_a_shown_number"}
+        for t in (1, 2)
+    },
+    ("doubles_near_doubles", 0): {"gave_the_number", "counted_start", "went_one_too_far"},
+    ("doubles_near_doubles", 1): {"doubled_the_smaller", "doubled_the_bigger"},
+    ("doubles_near_doubles", 2): {"gave_the_total", "doubled_instead"},
+    **{
+        ("ten_more_ten_less", t): {"wrong_direction", "changed_the_ones", "said_the_tens_digit"}
+        for t in range(3)
+    },
+    ("sub_tens_within_100", 0): {"said_the_tens_digit", "added_instead", "off_by_ten"},
+    ("sub_tens_within_100", 1): {"said_the_tens_digit", "added_instead", "off_by_ten"},
+    ("sub_tens_within_100", 2): {
+        "said_the_tens_digit",
+        "added_instead",
+        "subtracted_instead",
+        "off_by_ten",
+    },
+    ("add_within_100_basic", 0): {"added_to_the_tens", "subtracted_instead"},
+    ("add_within_100_basic", 1): {"added_to_the_ones", "added_one_ten", "subtracted_instead"},
+    ("add_within_100_basic", 2): {
+        "forgot_the_new_ten",
+        "wrote_the_ones_together",
+        "added_to_the_tens",
+    },
+    **{
+        ("equal_or_not", t): {"gave_the_total", "copied_a_number", "added_all_the_numbers"}
+        for t in range(3)
+    },
+    **{
+        ("skip_count_2_5", t): {"counted_by_ones", "used_the_other_step", "skipped_a_number"}
+        for t in range(3)
+    },
+    **{
+        ("word_problems_20", t): {
+            "used_the_other_operation",
+            "gave_the_first_number",
+            "gave_the_second_number",
+        }
+        for t in range(3)
+    },
 }
 
 
@@ -379,7 +449,7 @@ def test_place_value_digit_value_is_the_answer(seed: int, tier: int) -> None:
 
 
 # Problems these skills gave before their teaching content was written, by (skill, tier, seed);
-# the batch 1 skills are pinned from the generators' first version.
+# the batch 1 and batch 2 skills are pinned from the generators' first version.
 # A failure means the same seed now gives a different problem, so attempts stored under the
 # old one would be checked against the wrong prompt or answer.
 PINNED_PROBLEMS = (
@@ -521,6 +591,126 @@ PINNED_PROBLEMS = (
     ("skip_count_10", 1, 42, "Count by tens. 30, 40, 50, ?", 60),
     ("skip_count_10", 2, 7, "Find the missing ten. 60, ?, 80, 90, 100", 70),
     ("skip_count_10", 2, 42, "Find the missing ten. 20, ?, 40, 50, 60", 30),
+    ("count_on", 0, 7, "Say 5. Then count on 3 more. What is the last number you say?", 8),
+    ("count_on", 0, 42, "You are on 1. Jump on 1 more. Which number do you reach?", 2),
+    ("count_on", 1, 7, "Count on. 6 + 3 = ?", 9),
+    ("count_on", 1, 42, "Count on. 2 + 1 = ?", 3),
+    ("count_on", 2, 7, "Count on from the bigger number. 3 + 6 = ?", 9),
+    ("count_on", 2, 42, "Count on from the bigger number. 1 + 2 = ?", 3),
+    ("make_ten_strategy", 0, 7, "Make a ten first. 7 + 9 = ?", 16),
+    ("make_ten_strategy", 0, 42, "Make a ten first. 5 + 7 = ?", 12),
+    ("make_ten_strategy", 1, 7, "7 + 9 = 10 + ?", 6),
+    ("make_ten_strategy", 1, 42, "5 + 7 = 10 + ?", 2),
+    ("make_ten_strategy", 2, 7, "7 + ? = 16", 9),
+    ("make_ten_strategy", 2, 42, "5 + ? = 12", 7),
+    ("add_three_numbers", 0, 7, "3 + 7 + 3 = ?", 13),
+    ("add_three_numbers", 0, 42, "1 + 3 + 2 = ?", 6),
+    ("add_three_numbers", 1, 7, "4 + 3 + 6 = ?", 13),
+    ("add_three_numbers", 1, 42, "8 + 1 + 2 = ?", 11),
+    (
+        "add_three_numbers",
+        2,
+        7,
+        "Mia has 3 cups, 7 plates and 3 spoons. How many things does Mia have in all?",
+        13,
+    ),
+    (
+        "add_three_numbers",
+        2,
+        42,
+        "Sam has 1 apple, 3 pears and 2 plums. How many fruits does Sam have in all?",
+        6,
+    ),
+    ("missing_number_20", 0, 7, "Find the missing number. ? + 10 = 13", 3),
+    ("missing_number_20", 0, 42, "Find the missing number. ? + 5 = 6", 1),
+    ("missing_number_20", 1, 7, "Find the missing number. 13 = 3 + ?", 10),
+    ("missing_number_20", 1, 42, "Find the missing number. 6 - ? = 1", 5),
+    ("missing_number_20", 2, 7, "Find the missing number. 13 = ? + 10", 3),
+    ("missing_number_20", 2, 42, "Find the missing number. 1 = ? - 5", 6),
+    ("fact_families_20", 0, 7, "You know that 3 + 10 = 13. What is 10 + 3?", 13),
+    ("fact_families_20", 0, 42, "You know that 1 + 5 = 6. What is 5 + 1?", 6),
+    ("fact_families_20", 1, 7, "You know that 3 + 10 = 13. What is 13 - 10?", 3),
+    ("fact_families_20", 1, 42, "You know that 1 + 5 = 6. What is 6 - 5?", 1),
+    ("fact_families_20", 2, 7, "Finish the fact family. 13 - 10 = ?", 3),
+    ("fact_families_20", 2, 42, "Finish the fact family. 6 - ? = 5", 1),
+    ("doubles_near_doubles", 0, 7, "6 + 6 = ?", 12),
+    ("doubles_near_doubles", 0, 42, "2 + 2 = ?", 4),
+    ("doubles_near_doubles", 1, 7, "What is 6 plus 7?", 13),
+    ("doubles_near_doubles", 1, 42, "What is 2 plus 3?", 5),
+    ("doubles_near_doubles", 2, 7, "Both numbers are the same. ? + ? = 12", 6),
+    ("doubles_near_doubles", 2, 42, "Both numbers are the same. ? + ? = 4", 2),
+    ("ten_more_ten_less", 0, 7, "Find 10 less than 39.", 29),
+    ("ten_more_ten_less", 0, 42, "What number is 10 more than 13?", 23),
+    ("ten_more_ten_less", 1, 7, "39 - 10 = ?", 29),
+    ("ten_more_ten_less", 1, 42, "10 + 13 = ?", 23),
+    ("ten_more_ten_less", 2, 7, "Find the missing number. 29 = ? - 10", 39),
+    ("ten_more_ten_less", 2, 42, "Find the missing number. 23 = ? + 10", 13),
+    ("sub_tens_within_100", 0, 7, "70 - 60 = ?", 10),
+    ("sub_tens_within_100", 0, 42, "50 - 20 = ?", 30),
+    ("sub_tens_within_100", 1, 7, "Take away 60 from 70. What is left?", 10),
+    ("sub_tens_within_100", 1, 42, "Take away 20 from 50. What is left?", 30),
+    ("sub_tens_within_100", 2, 7, "Find the missing number. 70 - ? = 10", 60),
+    ("sub_tens_within_100", 2, 42, "Find the missing number. 50 - ? = 30", 20),
+    ("add_within_100_basic", 0, 7, "6 + 33 = ?", 39),
+    ("add_within_100_basic", 0, 42, "2 + 14 = ?", 16),
+    ("add_within_100_basic", 1, 7, "60 + 16 = ?", 76),
+    ("add_within_100_basic", 1, 42, "20 + 14 = ?", 34),
+    ("add_within_100_basic", 2, 7, "5 + 76 = ?", 81),
+    ("add_within_100_basic", 2, 42, "8 + 52 = ?", 60),
+    ("equal_or_not", 0, 7, "3 + 11 = 8 + ?", 6),
+    ("equal_or_not", 0, 42, "1 + 6 = 4 + ?", 3),
+    ("equal_or_not", 1, 7, "3 + 11 = 8 + ?", 6),
+    ("equal_or_not", 1, 42, "1 + 6 = ? + 4", 3),
+    ("equal_or_not", 2, 7, "18 - 4 = 12 + ?", 2),
+    ("equal_or_not", 2, 42, "19 - 12 = ? + 3", 4),
+    ("skip_count_2_5", 0, 7, "Count by 5s. 65, 70, ?", 75),
+    ("skip_count_2_5", 0, 42, "Count by 2s. 18, 20, ?", 22),
+    ("skip_count_2_5", 1, 7, "Count by 5s. 10, 15, 20, ?", 25),
+    ("skip_count_2_5", 1, 42, "Count back by 2s. 15, 13, ?", 11),
+    ("skip_count_2_5", 2, 7, "Fill in the missing number. 25, 30, ?, 40, 45", 35),
+    ("skip_count_2_5", 2, 42, "Fill in the missing number. 19, ?, 23, 25, 27", 21),
+    (
+        "word_problems_20",
+        0,
+        7,
+        "Leo has 11 dogs. Nora gives Leo 2 more. How many dogs does Leo have now?",
+        13,
+    ),
+    (
+        "word_problems_20",
+        0,
+        42,
+        "Ava has 5 cats. Leo gives Ava 1 more. How many cats does Ava have now?",
+        6,
+    ),
+    (
+        "word_problems_20",
+        1,
+        7,
+        "Leo has 11 red dogs and 2 blue dogs. How many dogs does Leo have in all?",
+        13,
+    ),
+    (
+        "word_problems_20",
+        1,
+        42,
+        "Ava has 11 cats. 4 of them are red. The rest are blue. How many are blue?",
+        7,
+    ),
+    (
+        "word_problems_20",
+        2,
+        7,
+        "Leo has 11 dogs. Then Leo gets some more. Now Leo has 15. How many did Leo get?",
+        4,
+    ),
+    (
+        "word_problems_20",
+        2,
+        42,
+        "Ava has 11 cats. Ava gives some away. Now Ava has 4. How many did Ava give away?",
+        7,
+    ),
 )
 
 
@@ -1034,11 +1224,18 @@ def test_count_on_is_one_form_in_five_in_every_tier_of_count_to_100() -> None:
         assert 0.14 <= forms.count("count_on") / 1000 <= 0.26, tier
 
 
-def test_only_the_comparing_generators_count_the_first_try_only() -> None:
+def test_only_two_candidate_generators_count_the_first_try_only() -> None:
+    """The comparing skills (two numbers to pick from) and fact families (the answer is
+    always one of the numbers shown)."""
     flagged = {
         gid for gid, gen in all_generators().items() if getattr(gen, "first_try_counts", False)
     }
-    assert flagged == {"compare_groups", "compare_numbers_20", "compare_numbers_100"}
+    assert flagged == {
+        "compare_groups",
+        "compare_numbers_20",
+        "compare_numbers_100",
+        "fact_families_20",
+    }
 
 
 def test_pair_layouts_get_harder_by_tier() -> None:
@@ -1061,3 +1258,603 @@ def test_every_batch_one_tier_has_a_spread_of_answers(skill: str) -> None:
         assert len(distinct) >= 5, (skill, tier, sorted(distinct))
         top = max(answers.count(a) for a in distinct) / len(answers)
         assert top <= 0.35, (skill, tier, top)
+
+
+# --- batch 2: strategies, number sentences, tens and stories ----------------------------
+
+BATCH_TWO = (
+    "count_on",
+    "make_ten_strategy",
+    "add_three_numbers",
+    "missing_number_20",
+    "fact_families_20",
+    "doubles_near_doubles",
+    "ten_more_ten_less",
+    "sub_tens_within_100",
+    "add_within_100_basic",
+    "equal_or_not",
+    "skip_count_2_5",
+    "word_problems_20",
+)
+
+
+def side_value(side: str) -> int:
+    """A side of a number sentence of whole numbers joined by + and -, worked left to right."""
+    tokens = side.split()
+    total = int(tokens[0])
+    for op, number in zip(tokens[1::2], tokens[2::2], strict=True):
+        total += int(number) if op == "+" else -int(number)
+    return total
+
+
+def holds(sentence: str, fill: int) -> bool:
+    """``sentence`` is true when every ``?`` in it is ``fill``."""
+    left, right = sentence.replace("?", str(fill)).split("=")
+    return side_value(left) == side_value(right)
+
+
+def maths(skill: str, seed: int, tier: int) -> list[str]:
+    problem = get_generator(skill).generate(seed, tier)
+    return [p.latex for p in problem.prompt if isinstance(p, MathPart)]
+
+
+def shape(sentence: str) -> str:
+    return re.sub(r"\d+", "#", sentence)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_count_on_numbers_forms_and_mistakes(seed: int, tier: int) -> None:
+    problem = get_generator("count_on").generate(seed, tier)
+    start, more = int(problem.values["start"]), int(problem.values["more"])
+    total = start + more
+    assert 1 <= more <= 5 and start >= 1 and total <= 20
+    assert problem.answer == total
+    shown = numbers("count_on", seed, tier)
+    if tier == 0:
+        assert shown == [start, more]
+    else:
+        assert start > more
+        assert shown == ([start, more] if tier == 1 else [more, start])
+        assert shape(maths("count_on", seed, tier)[0]) == "# + # = ?"
+        assert ("bigger number" in prompt("count_on", seed, tier)) == (tier == 2)
+    rules = {
+        "counted_start": total - 1,
+        "went_one_too_far": total + 1,
+        "subtracted_instead": abs(start - more),
+    }
+    assert wrong_answers("count_on", seed, tier) == kept(total, rules)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_make_ten_crosses_ten_in_every_form(seed: int, tier: int) -> None:
+    problem = get_generator("make_ten_strategy").generate(seed, tier)
+    values = problem.values
+    first, answer = int(values["first"]), int(problem.answer)
+    shown = numbers("make_ten_strategy", seed, tier)
+    assert values["to_ten"] == 10 - first and 1 <= int(values["to_ten"]) <= 8
+    assert first in shown and answer == values["answer"]
+    rules: dict[str, int]
+    if tier == 2:
+        known, total = shown
+        assert first == known and 2 <= known <= 9 and 11 <= total <= 18
+        assert 2 <= answer <= 9 and known + answer == total
+        rules = {
+            "gave_the_total": total,
+            "counted_start": answer + 1,
+            "added_instead": known + total,
+        }
+    else:
+        a, b = shown[:2]
+        total = a + b
+        assert 2 <= a <= 9 and 2 <= b <= 9 and 11 <= total <= 18
+        assert first == max(a, b)
+        if tier == 0:
+            assert answer == total
+            rules = {
+                "counted_start": total - 1,
+                "subtracted_instead": abs(a - b),
+                "gave_the_leftover": total - 10,
+            }
+        else:
+            assert shown[2] == 10 and answer == total - 10
+            rules = {
+                "gave_the_total": total,
+                "gave_the_gap_to_ten": 10 - first,
+                "subtracted_instead": abs(a - b),
+            }
+    assert values["past_ten"] == total - 10
+    assert wrong_answers("make_ten_strategy", seed, tier) == kept(answer, rules)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_add_three_numbers_by_tier(seed: int, tier: int) -> None:
+    problem = get_generator("add_three_numbers").generate(seed, tier)
+    v = {k: int(x) for k, x in problem.values.items()}
+    a, b, c = v["a"], v["b"], v["c"]
+    assert min(a, b, c) >= 1 and a + b + c <= 20
+    assert problem.answer == a + b + c
+    assert numbers("add_three_numbers", seed, tier) == [a, b, c]
+    assert v["p"] + v["q"] + v["r"] == a + b + c
+    if tier == 1:
+        assert a + c == 10 and (v["p"], v["q"], v["r"]) == (a, c, b)
+    else:
+        assert (v["p"], v["q"], v["r"]) == (a, b, c)
+    assert (tier == 2) == ("in all?" in prompt("add_three_numbers", seed, tier))
+    rules = {
+        "left_out_the_last": a + b,
+        "left_out_the_first": b + c,
+        "left_out_the_middle": a + c,
+    }
+    assert wrong_answers("add_three_numbers", seed, tier) == kept(a + b + c, rules)
+
+
+def test_add_three_numbers_story_agrees_with_one() -> None:
+    texts = {prompt("add_three_numbers", seed, 2) for seed in range(600)}
+    assert any(" 1 " in t for t in texts)
+    for t in texts:
+        for count, noun in re.findall(r"(\d+) ([a-z]+)", t):
+            assert noun.endswith("s") == (count != "1") or noun == "fish", t
+
+
+MISSING_SHAPES = (
+    {"# + ? = #", "? + # = #"},
+    {"# + ? = #", "? + # = #", "# - ? = #", "# = # + ?", "# = ? + #"},
+    {"? - # = #", "# = # - ?", "# = ? - #", "# = ? + #", "# - ? = #"},
+)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_missing_number_sentence_is_true_with_the_answer(seed: int, tier: int) -> None:
+    problem = get_generator("missing_number_20").generate(seed, tier)
+    (sentence,) = maths("missing_number_20", seed, tier)
+    answer = int(problem.answer)
+    assert holds(sentence, answer)
+    assert shape(sentence) in MISSING_SHAPES[tier]
+    first, second = numbers("missing_number_20", seed, tier)
+    assert (problem.values["s1"], problem.values["s2"]) == (first, second)
+    assert 1 <= answer <= 20 and max(first, second) <= 20
+    assert problem.values["answer"] == answer
+    x, y, z = (int(problem.values[k]) for k in "xyz")
+    assert x + y == z <= 20
+    rules = {
+        "added_the_shown": first + second,
+        "subtracted_the_shown": abs(first - second),
+        "gave_a_shown_number": max(first, second),
+    }
+    assert wrong_answers("missing_number_20", seed, tier) == kept(answer, rules)
+
+
+def test_missing_number_tiers_use_the_forms_they_name() -> None:
+    for tier in (0, 2):
+        seen = {shape(maths("missing_number_20", seed, tier)[0]) for seed in range(400)}
+        assert seen == MISSING_SHAPES[tier]
+    seen = {shape(maths("missing_number_20", seed, 1)[0]) for seed in range(400)}
+    assert seen == MISSING_SHAPES[1]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_fact_family_prompts_show_the_family_until_tier_two_hides_the_answer(
+    seed: int, tier: int
+) -> None:
+    problem = get_generator("fact_families_20").generate(seed, tier)
+    lo, hi, total = (int(problem.values[k]) for k in ("lo", "hi", "total"))
+    assert 1 <= lo < hi and lo + hi == total <= 20
+    answer = int(problem.answer)
+    assert answer in (lo, hi, total) and problem.values["answer"] == answer
+    if tier < 2:
+        assert set(numbers("fact_families_20", seed, tier)) == {lo, hi, total}
+    else:  # the sentence shows two numbers of the family, never the one it asks for
+        shown = set(numbers("fact_families_20", seed, tier))
+        assert shown == {lo, hi, total} - {answer}
+        assert {problem.values["s1"], problem.values["s2"]} == shown
+    parts = maths("fact_families_20", seed, tier)
+    if tier < 2:
+        assert prompt("fact_families_20", seed, tier).startswith("You know that ")
+        assert holds(parts[0], 0)  # the fact it gives is true
+        assert side_value(parts[1]) == answer
+        first, second = (int(n) for n in re.findall(r"\d+", parts[1]))
+    else:
+        assert holds(parts[0], answer)
+        first, second = (int(n) for n in re.findall(r"\d+", parts[0]))
+    rules = {
+        "added_the_shown": first + second,
+        "subtracted_the_shown": abs(first - second),
+        "gave_a_shown_number": max(first, second),
+    }
+    assert wrong_answers("fact_families_20", seed, tier) == kept(answer, rules)
+
+
+def test_fact_family_tiers_ask_the_form_they_name() -> None:
+    def asked(tier: int) -> set[str]:
+        return {shape(maths("fact_families_20", seed, tier)[-1]) for seed in range(500)}
+
+    assert asked(0) == {"# + #"}
+    assert asked(1) == {"# - #", "# + #"}
+    assert asked(2) == {"# + # = ?", "# - # = ?", "# + ? = #", "# - ? = #"}
+    known = {shape(maths("fact_families_20", seed, 1)[0]) for seed in range(500)}
+    assert known == {"# + # = #", "# - # = #"}
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_doubles_by_tier(seed: int, tier: int) -> None:
+    problem = get_generator("doubles_near_doubles").generate(seed, tier)
+    answer = int(problem.answer)
+    shown = numbers("doubles_near_doubles", seed, tier)
+    assert int(problem.values["shown"]) in shown
+    assert str(answer) in str(problem.values["worked"])
+    rules: dict[str, int]
+    if tier == 0:
+        n = shown[0]
+        assert set(shown) == {n} and 1 <= n <= 10 and answer == 2 * n
+        rules = {"gave_the_number": n, "counted_start": 2 * n - 1, "went_one_too_far": 2 * n + 1}
+    elif tier == 1:
+        left, right = shown
+        assert abs(left - right) == 1 and 1 <= min(left, right) <= 9
+        small = min(left, right)
+        assert answer == left + right
+        rules = {"doubled_the_smaller": 2 * small, "doubled_the_bigger": 2 * small + 2}
+    else:
+        (total,) = shown
+        assert total % 2 == 0 and 2 <= total <= 20 and answer == total // 2
+        rules = {"gave_the_total": total, "doubled_instead": 2 * total}
+    assert wrong_answers("doubles_near_doubles", seed, tier) == kept(answer, rules)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_ten_more_ten_less_forms_and_mistakes(seed: int, tier: int) -> None:
+    problem = get_generator("ten_more_ten_less").generate(seed, tier)
+    n, answer = int(problem.values["n"]), int(problem.answer)
+    step = answer - n
+    assert abs(step) == 10 and 10 <= answer <= 100 and 10 <= n <= 100
+    assert problem.values["dir"] == ("up" if step > 0 else "down")
+    assert problem.values["way"] == ("more" if step > 0 else "less")
+    assert sorted(numbers("ten_more_ten_less", seed, tier)) == sorted([n, 10])
+    text = prompt("ten_more_ten_less", seed, tier)
+    if tier == 0:
+        assert f"10 {problem.values['way']} than {n}" in text
+    elif tier == 1:
+        (sentence,) = maths("ten_more_ten_less", seed, tier)
+        assert sentence in (f"{n} + 10 = ?", f"10 + {n} = ?", f"{n} - 10 = ?")
+        assert side_value(sentence.split("=")[0]) == answer
+    else:
+        (sentence,) = maths("ten_more_ten_less", seed, tier)
+        assert holds(sentence, answer) and "?" in sentence
+    rules = {
+        "wrong_direction": n - step,
+        "changed_the_ones": n + (1 if step > 0 else -1),
+        "said_the_tens_digit": answer // 10,
+    }
+    assert wrong_answers("ten_more_ten_less", seed, tier) == kept(answer, rules)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_sub_tens_are_whole_tens_in_every_form(seed: int, tier: int) -> None:
+    problem = get_generator("sub_tens_within_100").generate(seed, tier)
+    v = {k: int(x) for k, x in problem.values.items()}
+    assert v["top"] % 10 == v["take"] % 10 == 0 and 20 <= v["top"] <= 90 and v["take"] >= 10
+    assert v["top"] - v["take"] == v["rest"] >= 10
+    answer = int(problem.answer)
+    assert answer == v["answer"] and answer % 10 == 0
+    shown = numbers("sub_tens_within_100", seed, tier)
+    assert len(shown) == 2
+    s1, s2 = v["s1_tens"] * 10, v["s2_tens"] * 10
+    if tier < 2:
+        assert sorted(shown) == sorted([v["top"], v["take"]]) and answer == v["rest"]
+        assert (s1, s2) == (v["top"], v["take"])
+    else:
+        (sentence,) = maths("sub_tens_within_100", seed, tier)
+        assert holds(sentence, answer)
+        assert shown == [s1, s2]
+    rules = {
+        "said_the_tens_digit": answer // 10,
+        "added_instead": s1 + s2,
+        "subtracted_instead": abs(s1 - s2),
+        "off_by_ten": answer + 10,
+    }
+    assert wrong_answers("sub_tens_within_100", seed, tier) == kept(answer, rules)
+
+
+def test_sub_tens_forms_by_tier() -> None:
+    assert {shape(maths("sub_tens_within_100", s, 0)[0]) for s in range(300)} == {"# - # = ?"}
+    assert any("Take away" in prompt("sub_tens_within_100", s, 1) for s in range(100))
+    assert any(" minus " in prompt("sub_tens_within_100", s, 1) for s in range(100))
+    two = {shape(maths("sub_tens_within_100", s, 2)[0]) for s in range(300)}
+    assert two == {"# - ? = #", "? - # = #"}
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_add_ones_and_tens_by_tier(seed: int, tier: int) -> None:
+    problem = get_generator("add_within_100_basic").generate(seed, tier)
+    a, b = int(problem.values["a"]), int(problem.values["b"])
+    assert 10 <= a <= 99 and problem.answer == a + b <= 99
+    assert sorted(numbers("add_within_100_basic", seed, tier)) == sorted([a, b])
+    if tier == 0:
+        assert 1 <= b <= 9 and a % 10 + b <= 9
+        rules = {"added_to_the_tens": a + 10 * b, "subtracted_instead": a - b}
+    elif tier == 1:
+        assert b % 10 == 0 and 10 <= b <= 80 and a // 10 + b // 10 <= 9
+        rules = {
+            "added_to_the_ones": a + b // 10,
+            "added_one_ten": a + 10,
+            "subtracted_instead": a - b,
+        }
+    else:
+        assert 1 <= b <= 9 and a % 10 + b >= 10 and a // 10 <= 8
+        rules = {
+            "forgot_the_new_ten": a + b - 10,
+            "wrote_the_ones_together": a // 10 * 100 + a % 10 + b,
+            "added_to_the_tens": a + 10 * b,
+        }
+    assert wrong_answers("add_within_100_basic", seed, tier) == kept(a + b, rules)
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_add_ones_and_tens_values_split_the_digits(seed: int, tier: int) -> None:
+    values = get_generator("add_within_100_basic").generate(seed, tier).values
+    for name in ("a", "b"):
+        tens, ones = int(values[f"{name}_tens"]), int(values[f"{name}_ones"])
+        assert tens * 10 + ones == values[name]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_skip_count_2_5_rows(seed: int, tier: int) -> None:
+    problem = get_generator("skip_count_2_5").generate(seed, tier)
+    v = problem.values
+    step, jump, answer = int(v["step"]), int(v["jump"]), int(problem.answer)
+    previous = int(v["previous"])
+    words = prompt("skip_count_2_5", seed, tier)
+    assert step in (2, 5) and abs(jump) == step and answer == previous + jump
+    assert v["way"] == ("less" if jump < 0 else "more")
+    assert v["dir"] == ("back" if jump < 0 else "up")
+    (row_text,) = maths("skip_count_2_5", seed, tier)
+    items = row_text.split(", ")
+    row = [answer if n == "?" else int(n) for n in items]
+    assert all(b - a == jump for a, b in itertools.pairwise(row))
+    assert 1 <= answer <= (100 if step == 5 else 51)
+    if tier == 2:
+        assert len(row) == 5 and jump > 0
+        hidden = items.index("?")
+        assert 1 <= hidden <= 3 and row[hidden - 1] == previous
+    else:
+        assert f"{step}s. " in words and items[-1] == "?" and 3 <= len(row) <= 5
+        assert row[-2] == previous
+    if tier == 0:
+        assert jump > 0 and answer % step == 0
+    if step == 5:
+        assert answer % 5 == 0
+    if jump < 0:
+        assert tier == 1 and ("back" in words or "down" in words)
+    sign = 1 if jump > 0 else -1
+    rules = {
+        "counted_by_ones": previous + sign,
+        "used_the_other_step": previous + sign * (7 - step),
+        "skipped_a_number": answer + jump,
+    }
+    assert wrong_answers("skip_count_2_5", seed, tier) == kept(answer, rules)
+
+
+def test_skip_count_2_5_tiers_add_counting_back_and_odd_rows() -> None:
+    gen = get_generator("skip_count_2_5")
+
+    def seen(tier: int, key: str) -> set[object]:
+        return {gen.generate(s, tier).values[key] for s in range(400)}
+
+    assert seen(0, "dir") == {"up"}
+    assert seen(1, "dir") == {"up", "back"}
+    assert seen(2, "dir") == {"up"}
+    assert seen(0, "step") == {2, 5}
+    odd = {
+        int(p.answer) % 2 for p in (gen.generate(s, 1) for s in range(400)) if p.values["step"] == 2
+    }
+    assert odd == {0, 1}
+    even = {
+        int(p.answer) % 2 for p in (gen.generate(s, 0) for s in range(400)) if p.values["step"] == 2
+    }
+    assert even == {0}
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_equal_or_not_sentence_balances(seed: int, tier: int) -> None:
+    problem = get_generator("equal_or_not").generate(seed, tier)
+    (sentence,) = maths("equal_or_not", seed, tier)
+    answer, side, beside = (int(problem.values[k]) for k in ("answer", "side", "beside"))
+    assert problem.answer == answer and answer >= 1 and holds(sentence, answer)
+    sides = [s.strip() for s in sentence.split("=")]
+    full = next(s for s in sides if "?" not in s)
+    assert side_value(full) == side and 4 <= side <= 20
+    whole = numbers("equal_or_not", seed, tier)
+    assert beside in whole and answer == side - beside
+    layouts = {"{S} = # + ?", "{S} = ? + #", "# + ? = {S}", "? + # = {S}"}
+    sums = {"# + #"} if tier < 2 else {"# + #", "# - #"}
+    allowed = {layout.replace("{S}", s) for layout in layouts for s in sums}
+    if tier == 0:
+        allowed = {"# + # = # + ?"}
+    assert shape(sentence) in allowed
+    rules = {
+        "gave_the_total": side,
+        "copied_a_number": beside,
+        "added_all_the_numbers": sum(whole),
+    }
+    assert wrong_answers("equal_or_not", seed, tier) == kept(answer, rules)
+
+
+def test_equal_or_not_tiers_use_the_forms_they_name() -> None:
+    def forms(tier: int) -> set[str]:
+        return {shape(maths("equal_or_not", seed, tier)[0]) for seed in range(400)}
+
+    assert forms(0) == {"# + # = # + ?"}
+    assert len(forms(1)) == 4 and not any("-" in f for f in forms(1))
+    assert len(forms(2)) == 8 and sum("-" in f for f in forms(2)) == 4
+
+
+WORD_SHAPES = {
+    0: ("add_to", "take_from"),
+    1: ("put_together", "take_apart", "compare_more", "compare_fewer"),
+    2: ("change_add", "change_take", "start_add", "start_take"),
+}
+
+
+def story_shape(text: str) -> tuple[str, str]:
+    """The shape a story is told in, and whether its answer adds or takes away."""
+    if "some more. Now" in text:
+        return "change_add", "take"
+    if "gives some away" in text:
+        return "change_take", "take"
+    if "at first?" in text:
+        return ("start_add", "take") if "more. Now" in text else ("start_take", "add")
+    if "red" in text and "in all?" in text:
+        return "put_together", "add"
+    if "The rest are blue" in text:
+        return "take_apart", "take"
+    if "How many more" in text:
+        return "compare_more", "take"
+    if "How many fewer" in text:
+        return "compare_fewer", "take"
+    if "more. How many" in text:
+        return "add_to", "add"
+    assert "left?" in text, text
+    return "take_from", "take"
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_word_problem_shapes_and_answers_by_tier(seed: int, tier: int) -> None:
+    problem = get_generator("word_problems_20").generate(seed, tier)
+    a, b = int(problem.values["a"]), int(problem.values["b"])
+    m, n = int(problem.values["m"]), int(problem.values["n"])
+    assert 1 <= b < a and a + b <= 20
+    assert 1 <= n < m <= 20 and m >= 3
+    text = prompt("word_problems_20", seed, tier)
+    story, op = story_shape(text)
+    assert story in WORD_SHAPES[tier]
+    told1, told2 = (a, b) if op == "add" else (m, n)
+    answer = told1 + told2 if op == "add" else told1 - told2
+    assert (problem.values["told1"], problem.values["told2"]) == (told1, told2)
+    assert problem.answer == answer == problem.values["answer"]
+    assert set(numbers("word_problems_20", seed, tier)) == {told1, told2}
+    assert str(answer) in str(problem.values["worked"])
+    other = told1 - told2 if op == "add" else told1 + told2
+    rules = {
+        "used_the_other_operation": other,
+        "gave_the_first_number": told1,
+        "gave_the_second_number": told2,
+    }
+    assert wrong_answers("word_problems_20", seed, tier) == kept(answer, rules)
+    assert not re.search(r"\b1 (?!of\b)[a-z]+s\b", text), text
+
+
+def test_take_aways_to_20_cross_ten() -> None:
+    crossing = 0
+    for seed in range(600):
+        problem = get_generator("word_problems_20").generate(seed, 0)
+        if str(problem.values["worked"]).startswith("Start with"):
+            crossing += int(problem.values["told1"]) > 10 > int(problem.answer)
+    assert crossing > 0
+
+
+def test_word_problems_tell_every_shape_in_its_tier() -> None:
+    for tier, shapes in WORD_SHAPES.items():
+        seen = {story_shape(prompt("word_problems_20", s, tier))[0] for s in range(400)}
+        assert seen == set(shapes)
+
+
+@pytest.mark.parametrize("skill", BATCH_TWO)
+def test_every_batch_two_tier_has_a_spread_of_answers(skill: str) -> None:
+    """Five different answers at least, and no one answer more than 35% of the draws."""
+    gen = get_generator(skill)
+    for tier in range(3):
+        answers = [int(gen.generate(seed, tier).answer) for seed in range(3000)]
+        distinct = set(answers)
+        assert len(distinct) >= 5, (skill, tier, sorted(distinct))
+        top = max(answers.count(a) for a in distinct) / len(answers)
+        assert top <= 0.35, (skill, tier, top)
+
+
+@pytest.mark.parametrize("skill", BATCH_TWO)
+def test_no_batch_two_tier_runs_out_of_problems(skill: str) -> None:
+    gen = get_generator(skill)
+    for tier in range(3):
+        assert len({flatten(gen.generate(seed, tier)) for seed in range(5000)}) >= 20, (skill, tier)
+
+
+@pytest.mark.parametrize("skill", BATCH_TWO)
+def test_every_batch_two_tier_names_two_mistakes(skill: str) -> None:
+    gen = get_generator(skill)
+    for tier in range(3):
+        keys = {m.key for seed in range(300) for m in gen.generate(seed, tier).misconceptions}
+        assert len(keys) >= 2, (skill, tier, keys)
+        assert keys <= set(gen.misconception_keys)
+
+
+def reads_like_a_child_text(parts: str, extra: list[str]) -> list[str]:
+    """Every sentence a generator writes in code, where the content lint does not read it."""
+    return [s for text_value in [parts, *extra] for s in re.split(r"(?<=[.?!]) ", text_value)]
+
+
+@pytest.mark.parametrize("skill", BATCH_TWO)
+def test_batch_two_text_is_short_and_has_no_dash(skill: str) -> None:
+    gen = get_generator(skill)
+    for tier in range(3):
+        for seed in range(200):
+            problem = gen.generate(seed, tier)
+            spoken = "".join(p.text if isinstance(p, TextPart) else " # " for p in problem.prompt)
+            written = [v for v in problem.values.values() if isinstance(v, str)]
+            for sentence in reads_like_a_child_text(spoken, written):
+                assert len(sentence.split()) <= 12, (skill, tier, seed, sentence)
+            for text_value in [spoken, *written]:
+                for dash in (chr(0x2014), chr(0x2013), " - ", "--"):
+                    assert dash not in text_value, (skill, tier, seed, text_value)
+
+
+def test_batch_two_hint_sentences_are_true_statements() -> None:
+    """The worked line a generator gives the last hint names the answer it works out."""
+    for skill in ("doubles_near_doubles", "word_problems_20"):
+        for tier in range(3):
+            for seed in range(100):
+                problem = get_generator(skill).generate(seed, tier)
+                assert re.search(rf"\b{problem.answer}\b", str(problem.values["worked"]))
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_batch_two_values_name_the_answer(seed: int, tier: int) -> None:
+    for skill in BATCH_TWO:
+        problem = get_generator(skill).generate(seed, tier)
+        if "answer" in problem.values:
+            assert problem.values["answer"] == problem.answer, skill
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_ten_more_values_split_the_number_into_tens_and_ones(seed: int, tier: int) -> None:
+    values = get_generator("ten_more_ten_less").generate(seed, tier).values
+    assert int(values["tens"]) * 10 + int(values["ones"]) == values["n"]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_skip_count_2_5_names_its_step_in_words(seed: int, tier: int) -> None:
+    values = get_generator("skip_count_2_5").generate(seed, tier).values
+    assert values["step_word"] == {2: "two", 5: "five"}[int(values["step"])]
+
+
+@prop
+@given(seed=seeds, tier=tiers)
+def test_doubles_hint_step_only_uses_numbers_the_prompt_shows(seed: int, tier: int) -> None:
+    problem = get_generator("doubles_near_doubles").generate(seed, tier)
+    step_numbers = [int(n) for n in re.findall(r"\d+", str(problem.values["step"]))]
+    shown = numbers("doubles_near_doubles", seed, tier)
+    assert set(step_numbers) <= set(shown)
+    assert step_numbers or tier == 2  # only the halving step names no number

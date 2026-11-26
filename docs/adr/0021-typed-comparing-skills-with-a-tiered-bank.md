@@ -1,6 +1,6 @@
 # 0021. Comparing skills are typed, with a tiered bank for what needs buttons
 
-- Status: accepted
+- Status: accepted; extended by [0023](0023-two-option-items-count-the-first-try.md) (bank items with two choices count only the first try)
 - Date: 2026-10-17
 
 ## Context

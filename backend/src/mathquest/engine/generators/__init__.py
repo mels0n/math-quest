@@ -7,7 +7,16 @@ same id.
 from collections.abc import Mapping
 from types import MappingProxyType
 
-from mathquest.engine.generators import comparing, counting, early, fractions, place_value
+from mathquest.engine.generators import (
+    comparing,
+    counting,
+    early,
+    fractions,
+    place_value,
+    stories,
+    strategies,
+    tens,
+)
 from mathquest.engine.types import Generator
 
 _REGISTRY: Mapping[str, Generator] = MappingProxyType(
@@ -19,6 +28,9 @@ _REGISTRY: Mapping[str, Generator] = MappingProxyType(
             *fractions.generators(),
             *counting.generators(),
             *comparing.generators(),
+            *strategies.generators(),
+            *tens.generators(),
+            *stories.generators(),
         ]
     }
 )

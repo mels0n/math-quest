@@ -1,6 +1,6 @@
 # 0012. Content packs: validated data, a small template language, stored variants
 
-- Status: accepted
+- Status: accepted; the three-choice minimum for a choice item is relaxed to two by [0023](0023-two-option-items-count-the-first-try.md)
 - Date: 2026-10-15
 
 ## Context

@@ -72,6 +72,20 @@ def scores_as_correct(solved: bool, wrong_tries: int, first_try_counts: bool) ->
     return solved and not (first_try_counts and wrong_tries > 0)
 
 
+TWO_CHOICES = 2
+"""A choice problem with this many choices has a sure right answer after one miss."""
+
+
+def first_try_only(generator_flag: bool, variant: str, choices: int | None) -> bool:
+    """Whether only the first try counts for a problem. A choice problem with two choices
+    always does (a miss is followed by a sure right choice); one with more never does. Any
+    other problem does when its generator is flagged (``first_try_counts``) and it is not a
+    bank item. See docs/adr/0021 and docs/adr/0023."""
+    if choices is not None:
+        return choices == TWO_CHOICES
+    return generator_flag and variant != "bank"
+
+
 def predict(rating: float, difficulty: float) -> float:
     return 1 / (1 + exp(difficulty - rating))
 

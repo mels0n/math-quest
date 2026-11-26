@@ -1,0 +1,26 @@
+# Lesson for Fact Families. The examples are told in words and plain numbers, so a replayed
+# lesson never shows a problem the skill asks.
+skill: fact_families_20
+screens:
+  - title: A family of three
+    body_md: >-
+      Three numbers can be a family. 3, 5 and 8 are a family. They make four facts. 3 and 5 make 8. 5 and 3 make 8.
+  - title: Take away too
+    body_md: >-
+      Start with the big number. Take away one small number. You get the other small number. 8 take away 3 leaves 5. 8 take away 5 leaves 3.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 10, start: 8, jumps: [-3], end: 5}
+  - title: Swap the small numbers
+    body_md: >-
+      You can swap the two small numbers. The total stays the same. If you know one fact, you know the other three.
+worked_example:
+  prompt:
+    - {kind: text, value: "You know that 4 and 7 make 11. What do 7 and 4 make?"}
+  steps:
+    - The small numbers are 4 and 7.
+    - The big number is 11.
+    - Swapping the small numbers keeps the total.
+    - So 7 and 4 make 11.
+try_it:
+  tier: 0

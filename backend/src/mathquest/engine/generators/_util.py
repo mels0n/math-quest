@@ -50,6 +50,23 @@ def math_prompt(latex: str) -> Prompt:
 
 Builder = Callable[[random.Random, int], Built]
 
+NAMES = ("Mia", "Leo", "Ava", "Sam", "Zoe", "Ben", "Lily", "Max", "Nora", "Omar", "Ana", "Kai")
+"""First names for story prompts."""
+
+
+def noun(count: int, plural: str) -> str:
+    """``plural`` agreeing with ``count``: the singular for one (every noun passed here
+    adds only an s), else the plural."""
+    return plural[:-1] if count == 1 and plural.endswith("s") else plural
+
+
+def named_wrongs(
+    pairs: Iterable[tuple[str, int]], floor: int = 0
+) -> tuple[tuple[str, sympy.Expr], ...]:
+    """The named wrong answers a child could type: whole numbers of at least ``floor``.
+    ``distinct_misconceptions`` later drops any that equal the answer or each other."""
+    return tuple((key, sympy.Integer(value)) for key, value in pairs if value >= floor)
+
 
 def tier_difficulties(base: float) -> tuple[float, float, float]:
     return (base - 1.0, base, base + 1.0)

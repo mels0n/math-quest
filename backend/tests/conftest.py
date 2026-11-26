@@ -131,10 +131,12 @@ EARLY_SKILLS = (
     "compare_numbers_20",
     "one_more_one_less",
     "skip_count_10",
+    "skip_count_2_5",
     "teen_numbers",
 )
 """The skills built after the first seven that the first seven do not build on (pairs,
-hundreds and comparing to 100 would imply add_within_10 and place_value_tens_ones). Most
+hundreds, comparing to 100 and the rest of batch 2 would imply add_within_10 and
+place_value_tens_ones; counting by twos and fives builds only on counting by tens). Most
 tests are about the addition, subtraction and place value skills, so `pass_early_skills`
 gives a player these as passed (not due for review for a year) and the ready set is the
 one those tests describe."""

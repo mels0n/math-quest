@@ -1,0 +1,29 @@
+# Four ways to explain counting by twos and fives, plus feedback for each mistake the
+# generator knows. None of them shows the answer: the number line shows the start and the jump.
+skill: skip_count_2_5
+approaches:
+  - style: visual
+    body_md: >-
+      Look at the number line. Start at {previous}. Make one hop the same size as the others in the row.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 100, start: "{previous}", jumps: ["{jump}"]}
+  - style: steps
+    body_md: |-
+      1. Look at the number before the blank.
+      2. Find the size of one jump in the row.
+      3. Count {dir} one jump from that number.
+      4. Check that the jumps match the rest of the row.
+  - style: story
+    body_md: >-
+      Hop along a path with big hops. Each hop is the same size. You stand on {previous}. Hop {dir} one time. Where do you land?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Put your finger on {previous}. Take one jump of {step_word}, going {dir}. Say the number you land on.
+misconceptions:
+  counted_by_ones: >-
+    It looks like you counted by ones. Each jump is bigger than one.
+  used_the_other_step: >-
+    It looks like you used a different jump size. Look at the numbers in the row. How far apart are they?
+  skipped_a_number: >-
+    It looks like you took two jumps. Take only one jump from {previous}.

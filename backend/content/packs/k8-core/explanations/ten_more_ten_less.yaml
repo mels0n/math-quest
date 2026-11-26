@@ -1,0 +1,29 @@
+# Four ways to explain ten more and ten less, plus feedback for each mistake the generator
+# knows. None of them shows the answer: the picture is the number in the question.
+skill: ten_more_ten_less
+approaches:
+  - style: visual
+    body_md: >-
+      Look at the blocks for {n}. The long pieces are tens. Add a piece, or take one away. Count the pieces and the cubes.
+    visual:
+      kind: base_ten
+      params: {tens: "{tens}", ones: "{ones}"}
+  - style: steps
+    body_md: |-
+      1. Look at the tens digit of {n}.
+      2. Change the tens digit by one.
+      3. Keep the ones digit the same.
+      4. Say the new number.
+  - style: story
+    body_md: >-
+      Marbles come in bags of ten. You have {n} marbles. Add one bag, or give one bag away, as the question says. How many marbles do you have now?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Point at the tens digit of {n}. Move it {dir} by one. Leave the ones digit alone. Read the new number.
+misconceptions:
+  wrong_direction: >-
+    It looks like you went the other way. Go {dir} from {n}.
+  changed_the_ones: >-
+    It looks like you changed the ones digit. Ten changes the tens digit only.
+  said_the_tens_digit: >-
+    It looks like you said just the new tens digit. Say the whole number, with the ones too.

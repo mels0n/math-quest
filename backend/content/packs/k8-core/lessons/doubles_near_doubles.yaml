@@ -1,0 +1,29 @@
+# Lesson for Doubles and Near Doubles. The examples are told in words and plain numbers, so a
+# replayed lesson never shows a problem the skill asks.
+skill: doubles_near_doubles
+screens:
+  - title: Doubles
+    body_md: >-
+      A double is a number added to the same number. 4 and 4 make 8. Two rows of 4 dots make a double.
+    visual:
+      kind: array
+      params: {rows: 2, cols: 4}
+  - title: Near doubles
+    body_md: >-
+      A near double is two numbers that are one apart. 6 and 7 are one apart. Double 6 makes 12. Then add one more to make 13.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: 12, jumps: [1], end: 13}
+  - title: Find the double
+    body_md: >-
+      Sometimes you know the total. Two of the same number make 10. Share 10 into two equal parts. Each part is 5.
+worked_example:
+  prompt:
+    - {kind: text, value: "What is 8 and 9 together?"}
+  steps:
+    - 8 and 9 are one apart.
+    - Double the smaller number. 8 and 8 make 16.
+    - 9 is one more than 8. So add one more.
+    - 16 and 1 more is 17.
+try_it:
+  tier: 0

@@ -1,0 +1,26 @@
+# Four ways to explain a story problem, plus feedback for each mistake the generator knows.
+# None of them says whether to add or take away, and none shows the answer.
+skill: word_problems_20
+approaches:
+  - style: visual
+    body_md: >-
+      Draw the story. Show {told1} with dots and {told2} with dots. Circle what the question asks about. Count the dots in the circle.
+  - style: steps
+    body_md: |-
+      1. Read the story two times.
+      2. Find the two numbers.
+      3. Draw or act out what happens.
+      4. Ask what the question wants to know.
+  - style: story
+    body_md: >-
+      Tell the story to a friend in your own words. What happens first? What happens next? What does the question ask?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Use blocks. Show {told1} blocks. Now act out the story with {told2}. Count the blocks you need to answer.
+misconceptions:
+  used_the_other_operation: >-
+    It looks like the numbers went together the other way. Act out the story. Does the group grow, or get smaller?
+  gave_the_first_number: >-
+    It looks like you gave a number from the story. The answer is a new number. Work out what the question asks.
+  gave_the_second_number: >-
+    It looks like you gave the other number from the story. The question asks for a number you do not see.

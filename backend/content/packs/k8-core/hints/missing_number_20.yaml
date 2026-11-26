@@ -1,0 +1,9 @@
+# Three hints for Find the Missing Number: a nudge, the next step, then the whole answer worked out.
+skill: missing_number_20
+levels:
+  - text_template: >-
+      Look at the number sentence. One number is hiding.
+  - text_template: >-
+      You can see {s1} and {s2}. Think of three numbers that belong together.
+  - text_template: >-
+      {x} and {y} make {z}. So the missing number is {answer}.

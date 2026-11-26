@@ -1,0 +1,29 @@
+# Four ways to explain counting on, plus feedback for each mistake the generator knows.
+# None of them shows the answer: the number line shows the start and the number of hops.
+skill: count_on
+approaches:
+  - style: visual
+    body_md: >-
+      Picture a number line. Put your finger on {start}. Hop to the right, one hop for each count. You make {more} in all. Where do you land?
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: "{start}", jumps: "{more}"}
+  - style: steps
+    body_md: |-
+      1. Pick the number to start on.
+      2. Say it, but do not count it.
+      3. Count on {more} more.
+      4. The last number you say is the answer.
+  - style: story
+    body_md: >-
+      A jar holds some marbles. You count {start} of them. Then you drop in {more} more, one at a time. Say a number each time one lands. What is the last number you say?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say {start}. Then count on {more}. Put up a finger for each number after {start}. When your fingers match {more}, stop.
+misconceptions:
+  counted_start: >-
+    You were close! It looks like you counted {start} as one of your counts. You start on {start}. The first count is the next number.
+  went_one_too_far: >-
+    It looks like you counted one extra. Stop when you have counted on {more} more from {start}.
+  subtracted_instead: >-
+    It looks like you took away. Counting on goes up. The answer is more than {start}.

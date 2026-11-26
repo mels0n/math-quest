@@ -1,0 +1,35 @@
+# Four ways to explain adding ones and tens, plus feedback for each mistake the generator
+# knows. None of them shows the answer: the picture is one number of the question.
+skill: add_within_100_basic
+approaches:
+  - style: visual
+    body_md: >-
+      Look at the blocks for {a}. The long pieces are tens and the small cubes are ones. Now add the blocks for {b}. Count the new pieces and cubes.
+    visual:
+      kind: base_ten
+      params: {tens: "{a_tens}", ones: "{a_ones}"}
+  - style: steps
+    body_md: |-
+      1. Split each number into tens and ones.
+      2. Add the ones.
+      3. If you have ten ones, make a new ten.
+      4. Add the tens. Then say the total.
+  - style: story
+    body_md: >-
+      A shelf has {a} books on it. A friend brings {b} more books. How many books are on the shelf now? That is \({a} + {b}\).
+  - style: worked
+    body_md: >-
+      Let us do yours together. Add the ones first. Do they make ten or more? If so, trade ten ones for one new ten. Then add all the tens.
+misconceptions:
+  added_to_the_tens: >-
+    It looks like you added to the tens. A number with no tens adds to the ones place.
+  subtracted_instead: >-
+    It looks like you took away. Here you put the numbers together.
+  added_to_the_ones: >-
+    It looks like you added tens to the ones. Whole tens add to the tens place.
+  added_one_ten: >-
+    It looks like you added only one ten. Count how many tens the other number has.
+  forgot_the_new_ten: >-
+    It looks like you left out the new ten. When ten ones make a new ten, add it to the tens.
+  wrote_the_ones_together: >-
+    It looks like you left the ones just as they are. Ten ones make a new ten. Move it to the tens place.

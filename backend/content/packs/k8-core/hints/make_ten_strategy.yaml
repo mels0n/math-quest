@@ -1,0 +1,9 @@
+# Three hints for Make a Ten: a nudge, the next step, then the whole answer worked out.
+skill: make_ten_strategy
+levels:
+  - text_template: >-
+      Make a ten first. Ten is an easy number to add to.
+  - text_template: >-
+      Start with {first}. How many more make ten?
+  - text_template: >-
+      {first} and {to_ten} make ten. Then add {past_ten} more past ten. So the answer is {answer}.

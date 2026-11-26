@@ -1,0 +1,9 @@
+# Three hints for Fact Families: a nudge, the next step, then the whole answer worked out.
+skill: fact_families_20
+levels:
+  - text_template: >-
+      A fact family uses the same three numbers. Find the numbers in the question.
+  - text_template: >-
+      The sentence has {s1} and {s2}. The number you want is {role}.
+  - text_template: >-
+      The family is {lo}, {hi} and {total}. {lo} and {hi} make {total}. So the number you want is {answer}.

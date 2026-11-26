@@ -1,0 +1,9 @@
+# Three hints for Count by Twos and Fives: a nudge, the next step, then the whole answer worked out.
+skill: skip_count_2_5
+levels:
+  - text_template: >-
+      Look at the numbers in the row. Each jump is the same size.
+  - text_template: >-
+      Look at {previous}. Count {dir} one jump of {step_word}.
+  - text_template: >-
+      One jump of {step_word} {dir} from {previous} lands on {answer}. So the answer is {answer}.

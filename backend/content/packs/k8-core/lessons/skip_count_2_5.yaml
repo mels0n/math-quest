@@ -1,0 +1,31 @@
+# Lesson for Count by Twos and Fives. The rows in the lesson start at zero, which the skill
+# never asks, so a replayed lesson never shows a problem the skill asks.
+skill: skip_count_2_5
+screens:
+  - title: Count by fives
+    body_md: >-
+      Counting by fives jumps five each time. Say 5, 10, 15, 20. Every number ends in 5 or 0.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 30, start: 0, jumps: [5, 5, 5, 5], end: 20}
+  - title: Count by twos
+    body_md: >-
+      Counting by twos jumps two each time. Say 2, 4, 6, 8. Every number ends in 0, 2, 4, 6 or 8.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 12, start: 0, jumps: [2, 2, 2, 2], end: 8}
+  - title: Find the hole
+    body_md: >-
+      Some numbers hide. In 0, 5, _, 15 you say 10. In 0, 2, _, 6 you say 4. Each jump is the same size.
+  - title: Back and odd
+    body_md: >-
+      You can count back too. Each jump goes down: 30, 25, 20. You can start on an odd number. Twos from 1 go 1, 3, 5, 7.
+worked_example:
+  prompt:
+    - {kind: text, value: "Count by fives. Say 35, 40, 45. What comes next?"}
+  steps:
+    - Each jump is five.
+    - Five more than 45 is 50.
+    - So you say 50 next.
+try_it:
+  tier: 0

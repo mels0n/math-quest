@@ -1,0 +1,29 @@
+# Lesson for Subtract Tens. The examples are told in words and plain numbers, so a replayed
+# lesson never shows a problem the skill asks.
+skill: sub_tens_within_100
+screens:
+  - title: Tens like ones
+    body_md: >-
+      Taking away tens is like taking away ones. 5 tens take away 2 tens leaves 3 tens. That is 50 take away 20 leaves 30.
+    visual:
+      kind: base_ten
+      params: {tens: 5}
+  - title: Cover the zeros
+    body_md: >-
+      Cover the zero in each number. Take away the tens digits. Then put the zero back. For 80 take away 50, think 8 take away 5. That is 3. So it is 30.
+  - title: Count back by tens
+    body_md: >-
+      You can count back by tens. Start at 90. Count back 3 tens. Say 80, 70, 60.
+    visual:
+      kind: number_line
+      params: {min: 50, max: 100, start: 90, jumps: [-10, -10, -10], end: 60}
+worked_example:
+  prompt:
+    - {kind: text, value: "A box has 80 beads. A girl uses 30. How many are left?"}
+  steps:
+    - Think of 80 as 8 tens.
+    - Think of 30 as 3 tens.
+    - 8 tens take away 3 tens leaves 5 tens.
+    - 5 tens is 50. So 50 beads are left.
+try_it:
+  tier: 0

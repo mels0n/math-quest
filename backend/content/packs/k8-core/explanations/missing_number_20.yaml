@@ -1,0 +1,26 @@
+# Four ways to explain a missing number, plus feedback for each mistake the generator knows.
+# None of them shows the answer, so none writes a number of the family.
+skill: missing_number_20
+approaches:
+  - style: visual
+    body_md: >-
+      Picture a number line. Find the small number and the big number. Count the jumps between them. That count is the number that hides.
+  - style: steps
+    body_md: |-
+      1. Find the question mark.
+      2. Look at the two numbers you can see.
+      3. Ask which number goes with them in a family of three.
+      4. Put your number in the sentence. Is it true?
+  - style: story
+    body_md: >-
+      A box holds some cards. A friend gives you more cards, so you have a new total. The sentence tells that story. Which number is the box hiding?
+  - style: worked
+    body_md: >-
+      Let us do yours together. Cover the question mark with your thumb. Read the sentence out loud. Now try a number in the spot. Is the sentence true? If not, try another.
+misconceptions:
+  added_the_shown: >-
+    It looks like you added the two numbers you see. One number is hiding. Think about the family of three.
+  subtracted_the_shown: >-
+    It looks like you took the two numbers apart. Put your number back in the sentence. Is it true?
+  gave_a_shown_number: >-
+    It looks like you copied a number from the sentence. The missing number is a different one. Try it in the sentence.

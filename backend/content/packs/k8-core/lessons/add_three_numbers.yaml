@@ -1,0 +1,25 @@
+# Lesson for Add Three Numbers. The examples are told in words and plain numbers, so a
+# replayed lesson never shows a problem the skill asks.
+skill: add_three_numbers
+screens:
+  - title: Add two, then one more
+    body_md: >-
+      To add three numbers, add two of them first. Then add the third. Try 2, 3 and 4. 2 and 3 make 5. Then 5 and 4 make 9.
+  - title: Look for ten
+    body_md: >-
+      Look for two numbers that make ten. Add them first. In 6, 5 and 4, the 6 and the 4 make ten. Then ten and 5 more is 15.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 20, start: 6, jumps: [4, 5], end: 15}
+  - title: Any order works
+    body_md: >-
+      You can add in any order. The total stays the same. Pick the pair that is easy for you.
+worked_example:
+  prompt:
+    - {kind: text, value: "A girl has 5 red, 7 blue and 3 green beads. How many beads does she have?"}
+  steps:
+    - Look for an easy pair. 7 and 3 make ten.
+    - Add the 5. Ten and 5 more is 15.
+    - So she has 15 beads.
+try_it:
+  tier: 0

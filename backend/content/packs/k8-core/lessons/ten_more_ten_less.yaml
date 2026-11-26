@@ -1,0 +1,29 @@
+# Lesson for Ten More, Ten Less. The examples are told in words and plain numbers, so a
+# replayed lesson never shows a problem the skill asks.
+skill: ten_more_ten_less
+screens:
+  - title: Jump by ten
+    body_md: >-
+      Ten more is one jump of ten up. Ten less is one jump of ten down. Look at 35. Ten more is 45. Ten less is 25.
+    visual:
+      kind: number_line
+      params: {min: 20, max: 50, start: 35, jumps: [10], end: 45}
+  - title: The tens digit changes
+    body_md: >-
+      Only the tens digit changes. The ones digit stays the same. 35 is 3 tens and 5 ones. Ten more is 4 tens and 5 ones.
+    visual:
+      kind: base_ten
+      params: {tens: 3, ones: 5}
+  - title: Find the start
+    body_md: >-
+      Sometimes you must find the start. If ten more is 60, the start is ten less. Go back one jump of ten.
+worked_example:
+  prompt:
+    - {kind: text, value: "What is ten more than 62?"}
+  steps:
+    - 62 is 6 tens and 2 ones.
+    - Ten more is one more ten.
+    - That is 7 tens and 2 ones.
+    - So ten more than 62 is 72.
+try_it:
+  tier: 0

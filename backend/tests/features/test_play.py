@@ -1377,3 +1377,32 @@ async def test_other_skills_and_bank_items_keep_the_plain_rule(db: AsyncSession)
     await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=wrong)
     await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=problem.correct_choice)
     assert (await _row(db, pid, "compare_numbers_20")).recent == [[1, 0]]
+
+
+async def test_a_two_option_bank_item_solved_after_a_miss_counts_as_a_miss(
+    db: AsyncSession,
+) -> None:
+    """A true or false item has a sure answer after one miss, so only the first try counts
+    (docs/adr/0023); an item with three choices keeps the plain rule."""
+    pid = await _player(db)
+    session = await service.start_session(db, pid, "adventure")
+    source = CATALOG.source("equal_or_not")
+    assert source.bank is not None
+    item = next(i for i in source.bank.items if i.tier == 0 and len(i.choices or ()) == 2)
+    bank = await _issue(db, pid, session.session_id, "equal_or_not", 0, 5, "bank", item.id)
+    problem = service.regenerate(CATALOG, bank)
+    assert problem.correct_choice is not None and len(problem.choices or ()) == 2
+    wrong = 1 - problem.correct_choice
+    miss = await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=wrong)
+    assert miss.verdict is Verdict.INCORRECT and miss.attempts_left == 1
+    right_choice = problem.correct_choice
+    hit = await service.submit_answer(db, POOL, CATALOG, pid, bank.id, choice=right_choice)
+    assert hit.solved and hit.verdict is Verdict.CORRECT  # still solved, still shown as right
+    assert (await _row(db, pid, "equal_or_not")).recent == [[0, 0]]
+
+    other = next(i for i in source.bank.items if i.tier == 0 and i.id != item.id)
+    clean = await _issue(db, pid, session.session_id, "equal_or_not", 0, 6, "bank", other.id)
+    right = service.regenerate(CATALOG, clean).correct_choice
+    assert right is not None
+    await service.submit_answer(db, POOL, CATALOG, pid, clean.id, choice=right)
+    assert (await _row(db, pid, "equal_or_not")).recent == [[0, 0], [1, 0]]
