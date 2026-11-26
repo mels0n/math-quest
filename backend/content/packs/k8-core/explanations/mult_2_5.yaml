@@ -1,0 +1,33 @@
+# Four ways to explain Times 2 and 5, plus feedback for each mistake the generator knows. None of them
+# shows the total: the picture shows the groups and the others only say how to find it.
+skill: mult_2_5
+approaches:
+  - style: visual
+    body_md: >-
+        Each row of dots is one group. Turn the fact around so the table comes first. Count the rows and count one row. Split the rows to make an easier fact. Double the number, or use half of ten rows.
+    visual:
+      kind: array
+      params: {rows: "{table}", cols: "{other}"}
+  - style: steps
+    body_md: |-
+      1. Find the table in the fact. It is 2 or 5. Turn the fact so it comes first.
+      2. For a 2, double the other number.
+      3. For a 5, find ten groups first. Then take half.
+      4. Count on in jumps to check.
+  - style: story
+    body_md: >-
+        A zoo keeper gives every seal the same number of fish. She counts seal by seal. After the last seal, she has counted every fish.
+  - style: worked
+    body_md: >-
+        Let us do yours together. Use the strategy for the table. Say each step out loud, one at a time. The last number you say is the answer.
+misconceptions:
+  added_instead: >-
+      It looks like you added the two numbers. The times sign means equal groups. Use the strategy for your table instead.
+  one_group_too_few: >-
+      You were close! It looks like one group got left out. There are {g} groups of {s}. Check each step.
+  one_group_too_many: >-
+      You were close! It looks like one group got counted twice. There are {g} groups of {s}. Check each step.
+  one_each_too_few: >-
+      You were close! It looks like you used the fact just below this one. Check the numbers in each step.
+  one_each_too_many: >-
+      You were close! It looks like you used the fact just above this one. Check the numbers in each step.

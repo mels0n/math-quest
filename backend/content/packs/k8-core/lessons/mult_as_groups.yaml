@@ -1,0 +1,31 @@
+# Lesson for Multiply Groups. Its examples use groups of 10, which the skill never asks (a
+# group here has at most 9), so a replayed lesson never shows a problem the skill asks.
+skill: mult_as_groups
+screens:
+  - title: Groups of
+    body_md: >-
+      Equal groups can be written with a times sign. This picture shows 3 groups of 10. Each row is one group. Write it as \(3 \times 10\). Read it as 3 times 10.
+    visual:
+      kind: array
+      params: {rows: 3, cols: 10}
+  - title: Find the total
+    body_md: >-
+      Add the group once for each group. 10 and 10 make {{= 10 + 10 }}. Then 10 more make {{= 10 + 10 + 10 }}. So \(3 \times 10 = {{= 3 \times 10 }}\).
+    visual:
+      kind: array
+      params: {rows: 3, cols: 10}
+  - title: Skip count
+    body_md: >-
+      Skip counting is a fast way to find the total. Count by 10, one jump for each group. You stop after the last group.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 40, start: 0, jumps: [10, 10, 10], end: 30}
+worked_example:
+  prompt:
+    - {kind: text, value: "A coach has 5 bags. Each bag has 10 balls. How many balls does the coach have?"}
+  steps:
+    - There are 5 equal groups of 10. Write it as \(5 \times 10\).
+    - Skip count by 10, five times. Say 10, 20, 30, 40, 50.
+    - So \(5 \times 10 = {{= 5 \times 10 }}\).
+try_it:
+  tier: 0

@@ -54,6 +54,10 @@ NAMES = ("Mia", "Leo", "Ava", "Sam", "Zoe", "Ben", "Lily", "Max", "Nora", "Omar"
 """First names for story prompts."""
 
 
+MISSING_LEADS = ("Find the missing number. ", "What number is missing? ")
+"""How a question that hides one number of a sentence is introduced."""
+
+
 def noun(count: int, plural: str) -> str:
     """``plural`` agreeing with ``count``: the singular for one (every noun passed here
     adds only an s), else the plural."""

@@ -1,0 +1,27 @@
+# Four ways to explain adding three-digit numbers, plus feedback for each mistake the
+# generator knows. None of them shows the answer: the picture shows only the first number.
+skill: add_3digit_no_regroup
+approaches:
+  - style: visual
+    body_md: >-
+      Here is {top} as blocks. Picture the blocks for the other number next to them. Count the cubes. Then count the sticks. Then count the flats.
+    visual:
+      kind: base_ten
+      params: {hundreds: "{top_hundreds}", tens: "{top_tens}", ones: "{top_ones}"}
+  - style: steps
+    body_md: |-
+      1. Add the ones of both numbers.
+      2. Add the tens of both numbers.
+      3. Add the hundreds of both numbers.
+      4. Write the three answers side by side.
+  - style: story
+    body_md: >-
+      You start with {top} beads in a jar. {story} Which places do you add? Start with the ones.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Line up the places. Add the ones first. Then add the tens. Then add the hundreds. No place makes ten, so there is nothing to carry.
+misconceptions:
+  subtracted_instead: >-
+    It looks like you took one number from the other. This question asks you to put them together. Add each place.
+  left_out_the_hundreds: >-
+    You were close! It looks like the hundreds of one number got left out. Add the hundreds too.

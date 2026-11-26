@@ -1,0 +1,33 @@
+# Lesson for Equal Groups. Its examples use groups of 6 and 7, which the skill never asks,
+# so a replayed lesson never shows a problem the skill asks. The picture shows each group as
+# a row, since a question cannot carry a picture (ADR-0029).
+skill: equal_groups
+screens:
+  - title: Equal groups
+    body_md: >-
+      Equal groups have the same number in each group. Here are 3 baskets with 6 eggs in each basket. Each row is one basket.
+    visual:
+      kind: array
+      params: {rows: 3, cols: 6}
+  - title: Add the group again
+    body_md: >-
+      To count all the eggs, add one group at a time. 6 and 6 make {{= 6 + 6 }}. Then 6 more make {{= 6 + 6 + 6 }}. That is all 3 baskets.
+    visual:
+      kind: array
+      params: {rows: 3, cols: 6}
+  - title: Skip count
+    body_md: >-
+      You can also skip count. Count by 6, one jump for each basket. Say 6, 12, 18. Skip counting is a fast way to add equal groups.
+    visual:
+      kind: number_line
+      params: {min: 0, max: 24, start: 0, jumps: [6, 6, 6], end: 18}
+worked_example:
+  prompt:
+    - {kind: text, value: "A shelf has 4 baskets. Each basket has 7 pears. How many pears are on the shelf?"}
+  steps:
+    - There are 4 equal groups. Each group has 7.
+    - Skip count by 7, once for each basket. Say 7, 14, 21, 28.
+    - Or add. 7 and 7 make {{= 7 + 7 }}. Then 7 more make {{= 7 + 7 + 7 }}. Then 7 more make {{= 7 + 7 + 7 + 7 }}.
+    - So there are {{= 7 + 7 + 7 + 7 }} pears on the shelf.
+try_it:
+  tier: 0

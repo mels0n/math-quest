@@ -1,0 +1,69 @@
+# Word problems for Equal Groups. Every template uses the generator's {g} groups of {s} and asks
+# for the total, found by adding the group again or skip counting. The groups are always equal
+# and there are at least two of each, so a plural noun is always right. No template uses the
+# times sign. Short sentences (12 words or fewer), no sentence that starts with a number.
+skill: equal_groups
+templates:
+  - id: home_bags
+    text_template: "{name} has {g} bags. Each bag holds {s} marbles. How many marbles does {name} have?"
+    slots: {name: names}
+    grade_band: 2
+  - id: home_laundry
+    text_template: "{name} sorts socks into {g} piles. Each pile has {s} socks. How many socks does {name} sort?"
+    slots: {name: names}
+    grade_band: 2
+  - id: home_lunch
+    text_template: "{name} packs {g} lunch bags. Each lunch bag has {s} carrots. How many carrots does {name} pack?"
+    slots: {name: names}
+    grade_band: 2
+  - id: home_vases
+    text_template: "There are {g} vases on the table. Each vase has {s} flowers. How many flowers are on the table?"
+    grade_band: 2
+  - id: school_tables
+    text_template: "At school, {g} tables each have {s} kids. How many kids are at the tables?"
+    grade_band: 2
+  - id: school_pencils
+    text_template: "{name} hands out {g} packs of pencils. Each pack has {s} pencils. How many pencils does {name} hand out?"
+    slots: {name: names}
+    grade_band: 2
+  - id: school_stars
+    text_template: "A teacher gives each of {g} kids {s} stars. How many stars does the teacher give out?"
+    grade_band: 2
+  - id: nature_pond
+    text_template: "A park has {g} ponds. Each pond has {s} frogs. How many frogs are in the park?"
+    grade_band: 2
+  - id: nature_trees
+    text_template: "{name} sees {g} trees. Each tree has {s} birds in it. How many birds does {name} see?"
+    slots: {name: names}
+    grade_band: 2
+  - id: nature_garden
+    text_template: "A garden has {g} beds. Each bed has {s} tulips. How many tulips are in the garden?"
+    grade_band: 2
+  - id: nature_rocks
+    text_template: "{name} makes {g} piles of rocks at the beach. Each pile has {s} rocks. How many rocks does {name} have?"
+    slots: {name: names}
+    grade_band: 2
+  - id: food_plates
+    text_template: "{name} puts {s} cookies on each plate. There are {g} plates. How many cookies are on the plates?"
+    slots: {name: names}
+    grade_band: 2
+  - id: food_trays
+    text_template: "A baker bakes {g} trays. Each tray has {s} muffins. How many muffins does the baker bake?"
+    grade_band: 2
+  - id: food_boxes
+    text_template: "{name} packs {g} boxes for a picnic. Each box holds {s} grapes. How many grapes is that?"
+    slots: {name: names}
+    grade_band: 2
+  - id: games_cards
+    text_template: "In a card game, each kid gets {s} cards. There are {g} kids. How many cards are in the game?"
+    grade_band: 2
+  - id: games_teams
+    text_template: "The game has {g} teams. Each team has {s} kids. How many kids are in the game?"
+    grade_band: 2
+  - id: games_balls
+    text_template: "{name} tosses {s} balls in each round. The game has {g} rounds. How many balls does {name} toss?"
+    slots: {name: names}
+    grade_band: 2
+  - id: games_cups
+    text_template: "In a marble game, {g} cups sit in a row. Each cup holds {s} marbles. How many marbles are in the game?"
+    grade_band: 2

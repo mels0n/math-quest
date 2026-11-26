@@ -1,0 +1,29 @@
+# Four ways to explain equal groups, plus feedback for each mistake the generator knows. None of
+# them shows the total: the picture shows the groups and the others only say how to count them.
+skill: equal_groups
+approaches:
+  - style: visual
+    body_md: >-
+      Each row of dots is one group. Count how many rows there are. Count how many dots are in one row. Then count by that many, once for each row.
+    visual:
+      kind: array
+      params: {rows: "{g}", cols: "{s}"}
+  - style: steps
+    body_md: |-
+      1. Find how many groups there are.
+      2. Find how many are in each group.
+      3. Add that number again and again, once for each group.
+      4. Or skip count by that number. Stop after the last group.
+  - style: story
+    body_md: >-
+      A teacher hands out the same number of pencils to each table. You know how many tables there are. You know how many pencils each table gets. Count the pencils one table at a time.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Say how many are in one group. Hold up a finger for the first group. Add the group again, and hold up another finger. Stop when your fingers match the groups. The last number you said is the answer.
+misconceptions:
+  added_instead: >-
+    It looks like you added two numbers. The number of groups is {g}. The size of one group is {s}. Add the size of a group once for each group.
+  one_group_too_few: >-
+    You were close! It looks like one group got left out. Count the groups again. There are {g} of them.
+  one_group_too_many: >-
+    You were close! It looks like one group got added twice. Count each group once. There are {g} of them.

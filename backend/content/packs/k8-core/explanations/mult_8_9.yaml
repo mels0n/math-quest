@@ -1,0 +1,35 @@
+# Four ways to explain Times 8 and 9, plus feedback for each mistake the generator knows. None of them
+# shows the total: the picture shows the groups and the others only say how to find it.
+skill: mult_8_9
+approaches:
+  - style: visual
+    body_md: >-
+        Each row of dots is one group. Find the 8 or the 9 in the fact. Turn it around so the 8 or the 9 comes first. For a 9, picture one more group to make ten groups. Take that extra group away again. For an 8, double the other number, then double again, and again.
+    visual:
+      kind: array
+      params: {rows: "{table}", cols: "{other}"}
+  - style: steps
+    body_md: |-
+      1. Find the table in the fact. It is 8 or 9. Turn the fact so it comes first.
+      2. For an 8, double the other number three times.
+      3. For a 9, find ten groups. Then take one group away.
+      4. For a 9, the digits of the answer add up to 9.
+  - style: story
+    body_md: >-
+        A farmer fills crates with the same number of pears. For a nine, she knows what ten crates would hold. Then she takes one crate away. For an eight, she doubles the pears from one crate. She doubles again, and once more.
+  - style: worked
+    body_md: >-
+        Let us do yours together. Pick the strategy for your table. Doubles work for an 8. Ten groups work for a 9. Follow it step by step.
+misconceptions:
+  added_instead: >-
+      It looks like you added the two numbers. The times sign means equal groups. Use the strategy for your table instead.
+  one_group_too_few: >-
+      You were close! It looks like one group got left out. There are {g} groups of {s}. Check each step.
+  one_group_too_many: >-
+      You were close! It looks like one group got counted twice. There are {g} groups of {s}. Check each step.
+  one_each_too_few: >-
+      You were close! It looks like you used the fact just below this one. Check the numbers in each step.
+  one_each_too_many: >-
+      You were close! It looks like you used the fact just above this one. Check the numbers in each step.
+  digits_swapped: >-
+      You were close! It looks like the two digits are the wrong way round. Which digit is the tens?

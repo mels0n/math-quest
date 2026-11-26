@@ -1,0 +1,30 @@
+# Four ways to explain multiplying groups, plus feedback for each mistake the generator knows.
+# None of them shows the total: the picture shows the groups and the others only say how to
+# count them.
+skill: mult_as_groups
+approaches:
+  - style: visual
+    body_md: >-
+      Each row of dots is one group. Count the rows to find the number of groups. Count one row to find the size of a group. The times sign joins the two numbers.
+    visual:
+      kind: array
+      params: {rows: "{g}", cols: "{s}"}
+  - style: steps
+    body_md: |-
+      1. Find the number of groups. This is the first number in a times sentence.
+      2. Find the size of one group. This is the second number.
+      3. Skip count by the size of a group, once for each group.
+      4. The last number you say is the total.
+  - style: story
+    body_md: >-
+      A baker puts the same number of berries on every cake. Count the berries cake by cake. After the last cake, you have counted every berry.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Write the sentence with the times sign. The first number is the groups. The second number is the size. Skip count by the size. Stop after the last group. The last number you said is the answer.
+misconceptions:
+  added_instead: >-
+    It looks like you added two numbers. The times sign means equal groups. Add the size of one group, once for each group.
+  one_group_too_few: >-
+    You were close! It looks like one group got left out. Count the groups again. There are {g} of them.
+  one_group_too_many: >-
+    You were close! It looks like one group got counted twice. Count each group once. There are {g} of them.

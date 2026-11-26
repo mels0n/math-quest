@@ -1,0 +1,10 @@
+# Three hints for Subtract Hundreds and Borrow: a nudge, the next step, then the whole answer
+# worked out.
+skill: sub_3digit_regroup
+levels:
+  - text_template: >-
+      Start with the ones. If the top digit is too small, borrow from the next place.
+  - text_template: >-
+      {look} {first_borrow}
+  - text_template: >-
+      {ones_line} {tens_line} {hundreds_line} So the answer is {answer}.

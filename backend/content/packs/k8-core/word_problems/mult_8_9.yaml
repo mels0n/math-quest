@@ -1,0 +1,57 @@
+# Word problems for Times 8 and 9 (3.OA.C.7). Every template uses the generator's {g} groups of
+# {s} and asks for the total. Each story's groups are equal, and there are at least two of
+# them and at least two in each, so a plural noun is always right. No sentence starts with a
+# number.
+skill: mult_8_9
+templates:
+  - id: bug_boxes
+    text_template: "The science room has {g} bug boxes. Each box has {s} beetles. How many beetles are there?"
+    grade_band: 3
+  - id: brush_jars
+    text_template: "The art room has {g} jars of brushes. Each jar has {s} brushes. How many brushes are there?"
+    grade_band: 3
+  - id: marching_band
+    text_template: "The marching band walks in {g} lines. Each line has {s} players. How many players march?"
+    grade_band: 3
+  - id: assembly_circles
+    text_template: "At assembly, the school sits in {g} circles. Each circle has {s} kids. How many kids sit at assembly?"
+    grade_band: 3
+  - id: kayak_racks
+    text_template: "A kayak shop has {g} racks. Each rack holds {s} kayaks. How many kayaks does the shop have?"
+    grade_band: 3
+  - id: tomato_plants
+    text_template: "A farmer plants {g} rows of tomatoes. Each row gets {s} plants. How many plants go in the ground?"
+    grade_band: 3
+  - id: coin_gifts
+    text_template: "{name} gives {s} coins to each of {g} friends. How many coins does {name} give away?"
+    slots: {name: names}
+    grade_band: 3
+  - id: candle_boxes
+    text_template: "A shop sells candles in boxes of {s}. How many candles are in {g} boxes?"
+    grade_band: 3
+  - id: lunch_cards
+    text_template: "Each lunch table gets a set of {s} cards. How many cards do {g} tables get?"
+    grade_band: 3
+  - id: rope_flags
+    text_template: "The climbing gym ties {s} flags on each rope. How many flags go on {g} ropes?"
+    grade_band: 3
+  - id: basket_pack
+    text_template: "{name} tucks {s} apples into every basket. How many apples are in {g} baskets?"
+    slots: {name: names}
+    grade_band: 3
+  - id: lake_docks
+    text_template: "The lake has {g} docks. Each dock has {s} boats tied to it. How many boats are on the lake?"
+    grade_band: 3
+  - id: song_books
+    text_template: "The music room stacks {g} piles of song books. Each pile has {s} books. How many books is that?"
+    grade_band: 3
+  - id: bird_feeders
+    text_template: "Birds visit {g} feeders. Each feeder has {s} birds at it. How many birds are visiting?"
+    grade_band: 3
+  - id: tower_blocks
+    text_template: "{name} stacks {g} towers of blocks. Each tower has {s} blocks. How many blocks does {name} stack?"
+    slots: {name: names}
+    grade_band: 3
+  - id: sand_castles
+    text_template: "At the beach, {g} kids build sand castles. Each kid uses {s} shells. How many shells do they use?"
+    grade_band: 3

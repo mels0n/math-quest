@@ -1,0 +1,10 @@
+# Three hints for Times 6 and 7: a nudge, the next step, then the whole answer. The generator writes
+# the strategy for the table in the fact. Only the last hint names the total.
+skill: mult_6_7
+levels:
+  - text_template: >-
+      {nudge}
+  - text_template: >-
+      {step}
+  - text_template: >-
+      {finish} So \({g} \times {s} = {{= g \times s }}\).

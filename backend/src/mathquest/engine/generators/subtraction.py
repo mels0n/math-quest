@@ -15,6 +15,7 @@ import random
 import sympy
 
 from mathquest.engine.generators._util import (
+    MISSING_LEADS,
     Built,
     SkillGenerator,
     math,
@@ -25,8 +26,6 @@ from mathquest.engine.generators._util import (
 from mathquest.engine.types import AnswerForm, Prompt
 
 _Int = sympy.Integer
-
-_LEADS = ("Find the missing number. ", "What number is missing? ")
 
 
 def _ask(rng: random.Random, tier: int, a: int, b: int) -> tuple[Prompt, int, int, str]:
@@ -59,7 +58,7 @@ def _ask(rng: random.Random, tier: int, a: int, b: int) -> tuple[Prompt, int, in
         return prompt, left, b, f"You take {b} out. How many are left?"
     sentence = rng.choice((f"{a} - ? = {left}", f"{left} = {a} - ?"))
     story = f"You take some out. Now the jar holds {left}. How many did you take out?"
-    return (text(rng.choice(_LEADS)), math(sentence)), b, left, story
+    return (text(rng.choice(MISSING_LEADS)), math(sentence)), b, left, story
 
 
 def _slips(top: int, bottom: int, regroup: bool) -> list[tuple[str, int]]:

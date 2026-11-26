@@ -1,0 +1,35 @@
+# Four ways to explain arrays, plus feedback for each mistake the generator knows. None of them
+# shows the total: the picture shows the rows and the others only say how to count them.
+skill: arrays
+approaches:
+  - style: visual
+    body_md: >-
+      Here is a picture of the rows you start with. Each row has the same number of dots. Count the dots in one row. Then count by that number, once for each row. A story may add a row or take one away. Change the rows first.
+    visual:
+      kind: array
+      params: {rows: "{r}", cols: "{c}"}
+  - style: steps
+    body_md: |-
+      1. Find how many rows there are. A story may add a row or take one away. Change that number first.
+      2. Find how many are in each row.
+      3. Skip count by the size of a row, once for each row.
+      4. The last number you say is the answer.
+  - style: story
+    body_md: >-
+      A hall has chairs in rows. Every row has the same number of chairs. To count them, you do not need to point at each one. Count one row, then count by that many for each row.
+  - style: worked
+    body_md: >-
+      Let us do yours together. Find the rows first. Then say how many are in one row. Add one row at a time. Hold up a finger each time. When your fingers match the rows, stop. The last number you said is the answer.
+misconceptions:
+  added_rows_and_columns: >-
+    It looks like you added two numbers. Those numbers tell the shape of the array. Count the whole picture. Add one row at a time.
+  counted_one_row: >-
+    You were close! It looks like you counted just one row. Every row has the same number. Count all the rows.
+  one_row_short: >-
+    You were close! It looks like one row was missed. Count the rows again. Count each row once.
+  forgot_the_change: >-
+    You were close! It looks like the array stayed the same. The story {change} a row. Change the number of rows first. Then count again.
+  changed_the_total_by_one: >-
+    It looks like you changed the total by one thing. A row has {c} things, not one. Add or take away a whole row.
+  wrong_direction: >-
+    It looks like the row went the other way. The story {change} a row. Do the same in your picture. Then count.

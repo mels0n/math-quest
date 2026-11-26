@@ -12,6 +12,7 @@ import random
 import sympy
 
 from mathquest.engine.generators._util import (
+    MISSING_LEADS,
     NAMES,
     Built,
     SkillGenerator,
@@ -185,7 +186,6 @@ def _build_add_three(rng: random.Random, tier: int) -> Built:
 
 # --- missing_number_20 ------------------------------------------------------------------
 
-_MISSING_LEADS = ("Find the missing number. ", "What number is missing? ")
 # The eight ways to hide one number of x + y = z, with the numbers shown, in order, and the
 # one that is found: (sentence, shown, answer).
 _MISSING_FORMS = {
@@ -212,7 +212,7 @@ def _build_missing_number(rng: random.Random, tier: int) -> Built:
     sentence, shown, hidden = _MISSING_FORMS[rng.choice(_MISSING_BY_TIER[tier])]
     first, second = nums[shown[0]], nums[shown[1]]
     return Built(
-        prompt=(text(rng.choice(_MISSING_LEADS)), math(sentence.format(**nums))),
+        prompt=(text(rng.choice(MISSING_LEADS)), math(sentence.format(**nums))),
         answer=_Int(nums[hidden]),
         wrong=named_wrongs(_shown_wrongs(first, second)),
         values={"x": x, "y": y, "z": z, "s1": first, "s2": second, "answer": nums[hidden]},
